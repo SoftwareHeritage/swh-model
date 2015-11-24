@@ -69,7 +69,7 @@ def validate_enum(value, expected_values):
     """Validate that value is contained in expected_values"""
     if value not in expected_values:
         raise ValidationError(
-            'Unexpected value %(value)s, expected one of %(expected_values)',
+            'Unexpected value %(value)s, expected one of %(expected_values)s',
             params={
                 'value': value,
                 'expected_values': ', '.join(sorted(expected_values)),

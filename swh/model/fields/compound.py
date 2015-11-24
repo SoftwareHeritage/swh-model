@@ -104,7 +104,7 @@ def validate_all_keys(value, keys):
     if missing_keys:
         missing_fields = ', '.join(sorted(missing_keys))
         raise ValidationError(
-            'Missing mandatory fields %(missing_fields)',
+            'Missing mandatory fields %(missing_fields)s',
             params={'missing_fields': missing_fields},
             code='missing-mandatory-field'
         )
@@ -118,9 +118,9 @@ def validate_any_key(value, keys):
     if not present_keys:
         missing_fields = ', '.join(sorted(keys))
         raise ValidationError(
-                'Must contain one of the alternative fields %(missing_fields)',
-                params={'missing_fields': missing_fields},
-                code='missing-alternative-field',
-            )
+            'Must contain one of the alternative fields %(missing_fields)s',
+            params={'missing_fields': missing_fields},
+            code='missing-alternative-field',
+        )
 
     return True

@@ -78,6 +78,7 @@ class ValidateCompound(unittest.TestCase):
             compound.validate_any_key(self.test_value, self.missing_keys)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'missing-alternative-field')
         self.assertEqual(exc.params['missing_fields'],
                          ', '.join(sorted(self.missing_keys)))
@@ -93,6 +94,7 @@ class ValidateCompound(unittest.TestCase):
             compound.validate_all_keys(self.test_value, self.missing_keys)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'missing-mandatory-field')
         self.assertEqual(exc.params['missing_fields'],
                          ', '.join(sorted(self.missing_keys)))
@@ -102,6 +104,7 @@ class ValidateCompound(unittest.TestCase):
                                        self.present_keys | self.missing_keys)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'missing-mandatory-field')
         self.assertEqual(exc.params['missing_fields'],
                          ', '.join(sorted(self.missing_keys)))
@@ -119,6 +122,7 @@ class ValidateCompound(unittest.TestCase):
                                              self.test_value_wrong_type)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'model-unexpected-type')
         self.assertEqual(exc.params['model'], self.test_model)
         self.assertEqual(exc.params['type'],
@@ -136,6 +140,7 @@ class ValidateCompound(unittest.TestCase):
         #     'mandatory_key2': [ValidationError('model-field-mandatory')],
         # })
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         for key in self.test_value_missing_keys:
             nested_key = exc.error_dict[key]
             self.assertIsInstance(nested_key, list)
@@ -155,6 +160,7 @@ class ValidateCompound(unittest.TestCase):
             )
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertNotIn(NON_FIELD_ERRORS, exc.error_dict)
 
     @istest
@@ -172,6 +178,7 @@ class ValidateCompound(unittest.TestCase):
         # })
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEquals(set(exc.error_dict.keys()), {NON_FIELD_ERRORS})
 
         non_field_errors = exc.error_dict[NON_FIELD_ERRORS]
@@ -196,6 +203,7 @@ class ValidateCompound(unittest.TestCase):
         # })
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEquals(set(exc.error_dict.keys()), {'str'})
 
         str_errors = exc.error_dict['str']
@@ -219,6 +227,7 @@ class ValidateCompound(unittest.TestCase):
         # })
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEquals(set(exc.error_dict.keys()), {'int'})
 
         int_errors = exc.error_dict['int']

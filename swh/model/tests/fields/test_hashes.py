@@ -49,6 +49,7 @@ class ValidateHashes(unittest.TestCase):
             hashes.validate_hash(self.valid_str_hashes['sha1'], hash_type)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'unexpected-hash-type')
         self.assertEqual(exc.params['hash_type'], hash_type)
 
@@ -63,6 +64,7 @@ class ValidateHashes(unittest.TestCase):
                 hashes.validate_hash(value, hash_type)
 
             exc = cm.exception
+            self.assertIsInstance(str(exc), str)
             self.assertEqual(exc.code, 'unexpected-hash-length')
             self.assertEqual(exc.params['hash_type'], hash_type)
             self.assertEqual(exc.params['length'], len(value))
@@ -78,6 +80,7 @@ class ValidateHashes(unittest.TestCase):
                 hashes.validate_hash(value, hash_type)
 
             exc = cm.exception
+            self.assertIsInstance(str(exc), str)
             self.assertEqual(exc.code, 'unexpected-hash-length')
             self.assertEqual(exc.params['hash_type'], hash_type)
             self.assertEqual(exc.params['length'], len(value))
@@ -93,6 +96,7 @@ class ValidateHashes(unittest.TestCase):
                 hashes.validate_hash(value, hash_type)
 
             exc = cm.exception
+            self.assertIsInstance(str(exc), str)
             self.assertEqual(exc.code, 'unexpected-hash-contents')
             self.assertEqual(exc.params['hash_type'], hash_type)
             self.assertEqual(exc.params['unexpected_chars'], '\xa2, \xc3')
@@ -107,6 +111,7 @@ class ValidateHashes(unittest.TestCase):
             hashes.validate_hash(self.bad_hash, 'sha1')
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'unexpected-hash-value-type')
         self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
 
@@ -122,6 +127,7 @@ class ValidateHashes(unittest.TestCase):
             hashes.validate_sha1(self.bad_hash)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'unexpected-hash-value-type')
         self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
 
@@ -136,6 +142,7 @@ class ValidateHashes(unittest.TestCase):
             hashes.validate_sha1_git(self.bad_hash)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'unexpected-hash-value-type')
         self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
 
@@ -150,5 +157,6 @@ class ValidateHashes(unittest.TestCase):
             hashes.validate_sha256(self.bad_hash)
 
         exc = cm.exception
+        self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'unexpected-hash-value-type')
         self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
