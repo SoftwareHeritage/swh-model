@@ -3,8 +3,10 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import binascii
+
 from .exceptions import ValidationError, NON_FIELD_ERRORS
-from . import fields
+from . import fields, hashutil
 
 
 def validate_content(content):
@@ -19,9 +21,11 @@ def validate_content(content):
         hashes = {'sha1', 'sha1_git', 'sha256'}
         errors = []
 
+        out = True
         if content['status'] == 'absent':
             try:
-                out = fields.validate_all_keys(content, {'reason', 'origin'})
+                out = out and fields.validate_all_keys(content, {'reason',
+                                                                 'origin'})
             except ValidationError as e:
                 errors.append(e)
             try:
@@ -30,7 +34,7 @@ def validate_content(content):
                 errors.append(e)
         else:
             try:
-                out = fields.validate_all_keys(content, hashes)
+                out = out and fields.validate_all_keys(content, hashes)
             except ValidationError as e:
                 errors.append(e)
 
@@ -38,6 +42,27 @@ def validate_content(content):
             raise ValidationError(errors)
 
         return out
+
+    def validate_hashes(content):
+        errors = []
+        if 'data' in content:
+            hashes = hashutil.hash_data(content['data'])
+            for hash_type, computed_hash in hashes.items():
+                if hash_type not in content:
+                    continue
+                content_hash = content[hash_type]
+                if isinstance(content_hash, bytes):
+                    content_hash = binascii.hexlify(content_hash).decode()
+                if content_hash != computed_hash:
+                    errors.append(ValidationError(
+                        'hash mismatch in content for hash %(hash)s',
+                        params={'hash': hash_type},
+                        code='content-hash-mismatch',
+                    ))
+            if errors:
+                raise ValidationError(errors)
+
+        return True
 
     content_schema = {
         'sha1': (False, fields.validate_sha1),
@@ -48,7 +73,8 @@ def validate_content(content):
         'ctime': (True, fields.validate_datetime),
         'reason': (False, fields.validate_str),
         'origin': (False, fields.validate_int),
-        NON_FIELD_ERRORS: validate_keys,
+        'data': (False, fields.validate_bytes),
+        NON_FIELD_ERRORS: [validate_keys, validate_hashes],
     }
 
     return fields.validate_against_schema('content', content_schema, content)
