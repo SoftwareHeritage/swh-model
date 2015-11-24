@@ -112,3 +112,43 @@ class ValidateHash(unittest.TestCase):
 
         self.assertIn('Unexpected type', str(exc))
         self.assertIn(self.bad_hash.__class__.__name__, str(exc))
+
+    @istest
+    def validate_sha1(self):
+        self.assertTrue(hashes.validate_sha1(self.valid_byte_hashes['sha1']))
+        self.assertTrue(hashes.validate_sha1(self.valid_str_hashes['sha1']))
+
+        with self.assertRaises(ValidationError) as cm:
+            hashes.validate_sha1(self.bad_hash)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 'unexpected-hash-value-type')
+        self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
+
+    @istest
+    def validate_sha1_git(self):
+        self.assertTrue(
+            hashes.validate_sha1_git(self.valid_byte_hashes['sha1_git']))
+        self.assertTrue(
+            hashes.validate_sha1_git(self.valid_str_hashes['sha1_git']))
+
+        with self.assertRaises(ValidationError) as cm:
+            hashes.validate_sha1_git(self.bad_hash)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 'unexpected-hash-value-type')
+        self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
+
+    @istest
+    def validate_sha256(self):
+        self.assertTrue(
+            hashes.validate_sha256(self.valid_byte_hashes['sha256']))
+        self.assertTrue(
+            hashes.validate_sha256(self.valid_str_hashes['sha256']))
+
+        with self.assertRaises(ValidationError) as cm:
+            hashes.validate_sha256(self.bad_hash)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 'unexpected-hash-value-type')
+        self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
