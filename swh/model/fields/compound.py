@@ -26,11 +26,12 @@ def validate_against_schema(model, schema, value):
 
     if not isinstance(value, dict):
         raise ValidationError(
-            'Unexpected type %(type)s for swh object, expected dict',
+            'Unexpected type %(type)s for %(model)s, expected dict',
             params={
-                'type': value.__class__.__name__
+                'model': model,
+                'type': value.__class__.__name__,
             },
-            code='swh-unexpected-type',
+            code='model-unexpected-type',
         )
 
     errors = defaultdict(list)
@@ -55,7 +56,7 @@ def validate_against_schema(model, schema, value):
                         ValidationError(
                             'Field %(field)s is mandatory',
                             params={'field': key},
-                            code='swh-field-mandatory',
+                            code='model-field-mandatory',
                         )
                     )
 
