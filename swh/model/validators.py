@@ -3,101 +3,52 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import string
+from .exceptions import ValidationError, NON_FIELD_ERRORS
+from . import fields
 
-from .exceptions import ValidationError
 
+def validate_content(content):
+    """Validate that a content has the correct schema.
 
-def validate_hash(value, hash_type):
-    """Validate that the given value represents a hash of the given hash_type.
+    Args: a content (dictionary) to validate."""
 
-    Args:
-        value: the value to check
-        hash_type: the type of hash the value is representing
+    def validate_content_status(status):
+        return fields.validate_enum(status, {'absent', 'visible', 'hidden'})
 
-    Returns:
-        True if the hash validates
-
-    Raises:
-        ValueError if the hash does not validate
-    """
-
-    hash_lengths = {
-        'sha1': 20,
-        'sha1_git': 20,
-        'sha256': 32,
-    }
-
-    hex_digits = set(string.hexdigits)
-
-    if hash_type not in hash_lengths:
-        raise ValidationError(
-            'Unexpected hash type %(hash_type)s, expected one of'
-            ' %(hash_types)s',
-            params={
-                'hash_type': hash_type,
-                'hash_types': ', '.join(sorted(hash_lengths)),
-            },
-            code='unexpected-hash-type')
-
-    if isinstance(value, str):
+    def validate_keys(content):
+        hashes = {'sha1', 'sha1_git', 'sha256'}
         errors = []
-        extra_chars = set(value) - hex_digits
-        if extra_chars:
-            errors.append(
-                ValidationError(
-                    "Unexpected characters `%(unexpected_chars)s' for hash "
-                    "type %(hash_type)s",
-                    params={
-                        'unexpected_chars': ', '.join(sorted(extra_chars)),
-                        'hash_type': hash_type,
-                    },
-                    code='unexpected-hash-contents',
-                )
-            )
 
-        length = len(value)
-        expected_length = 2 * hash_lengths[hash_type]
-        if length != expected_length:
-            errors.append(
-                ValidationError(
-                    'Unexpected length %(length)d for hash type '
-                    '%(hash_type)s, expected %(expected_length)d',
-                    params={
-                        'length': length,
-                        'expected_length': expected_length,
-                        'hash_type': hash_type,
-                    },
-                    code='unexpected-hash-length',
-                )
-            )
+        if content['status'] == 'absent':
+            try:
+                out = fields.validate_all_keys(content, {'reason', 'origin'})
+            except ValidationError as e:
+                errors.append(e)
+            try:
+                out = out and fields.validate_any_key(content, hashes)
+            except ValidationError as e:
+                errors.append(e)
+        else:
+            try:
+                out = fields.validate_all_keys(content, hashes)
+            except ValidationError as e:
+                errors.append(e)
 
         if errors:
             raise ValidationError(errors)
 
-        return True
+        return out
 
-    if isinstance(value, bytes):
-        length = len(value)
-        expected_length = hash_lengths[hash_type]
-        if length != expected_length:
-            raise ValidationError(
-                'Unexpected length %(length)d for hash type '
-                '%(hash_type)s, expected %(expected_length)d',
-                params={
-                    'length': length,
-                    'expected_length': expected_length,
-                    'hash_type': hash_type,
-                },
-                code='unexpected-hash-length',
-            )
+    content_schema = {
+        'sha1': (False, fields.validate_sha1),
+        'sha1_git': (False, fields.validate_sha1_git),
+        'sha256': (False, fields.validate_sha256),
+        'status': (True, validate_content_status),
+        'length': (True, fields.validate_int),
+        'ctime': (True, fields.validate_datetime),
+        'reason': (False, fields.validate_str),
+        'origin': (False, fields.validate_int),
+        NON_FIELD_ERRORS: validate_keys,
+    }
 
-        return True
-
-    raise ValidationError(
-        'Unexpected type %(type)s for hash, expected str or bytes',
-        params={
-            'type': value.__class__.__name__,
-        },
-        code='unexpected-hash-value-type',
-    )
+    return fields.validate_against_schema('content', content_schema, content)
