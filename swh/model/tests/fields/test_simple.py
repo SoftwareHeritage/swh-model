@@ -16,6 +16,8 @@ class ValidateSimple(unittest.TestCase):
     def setUp(self):
         self.valid_str = 'I am a valid string'
 
+        self.valid_bytes = b'I am a valid bytes object'
+
         self.enum_values = {'an enum value', 'other', 'and another'}
         self.invalid_enum_value = 'invalid enum value'
 
@@ -54,6 +56,36 @@ class ValidateSimple(unittest.TestCase):
         self.assertEqual(exc.code, 'unexpected-type')
         self.assertEqual(exc.params['expected_type'], 'str')
         self.assertEqual(exc.params['type'], 'int')
+
+        with self.assertRaises(ValidationError) as cm:
+            simple.validate_str(self.valid_bytes)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 'unexpected-type')
+        self.assertEqual(exc.params['expected_type'], 'str')
+        self.assertEqual(exc.params['type'], 'bytes')
+
+    @istest
+    def validate_bytes(self):
+        self.assertTrue(simple.validate_bytes(self.valid_bytes))
+
+    @istest
+    def validate_bytes_invalid_type(self):
+        with self.assertRaises(ValidationError) as cm:
+            simple.validate_bytes(self.valid_int)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 'unexpected-type')
+        self.assertEqual(exc.params['expected_type'], 'bytes')
+        self.assertEqual(exc.params['type'], 'int')
+
+        with self.assertRaises(ValidationError) as cm:
+            simple.validate_bytes(self.valid_str)
+
+        exc = cm.exception
+        self.assertEqual(exc.code, 'unexpected-type')
+        self.assertEqual(exc.params['expected_type'], 'bytes')
+        self.assertEqual(exc.params['type'], 'str')
 
     @istest
     def validate_datetime(self):

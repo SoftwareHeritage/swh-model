@@ -38,6 +38,11 @@ def validate_str(value):
     return validate_type(value, str)
 
 
+def validate_bytes(value):
+    """Validate that the given value is a bytes object"""
+    return validate_type(value, bytes)
+
+
 def validate_datetime(value):
     """Validate that the given value is either a datetime, or a numeric number
     of seconds since the UNIX epoch."""
