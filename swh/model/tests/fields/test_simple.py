@@ -12,7 +12,7 @@ from swh.model.exceptions import ValidationError
 from swh.model.fields import simple
 
 
-class ValidateHash(unittest.TestCase):
+class ValidateSimple(unittest.TestCase):
     def setUp(self):
         self.valid_str = 'I am a valid string'
 

@@ -11,7 +11,7 @@ from swh.model.exceptions import ValidationError
 from swh.model.fields import hashes
 
 
-class ValidateHash(unittest.TestCase):
+class ValidateHashes(unittest.TestCase):
     def setUp(self):
         self.valid_byte_hashes = {
             'sha1': b'\xf1\xd2\xd2\xf9\x24\xe9\x86\xac\x86\xfd\xf7\xb3\x6c\x94'
