@@ -11,7 +11,7 @@ from nose.tools import istest
 from swh.model import hashutil, identifiers
 
 
-class Identifiers(unittest.TestCase):
+class ContentIdentifier(unittest.TestCase):
     def setUp(self):
         self.content = {
             'status': 'visible',
@@ -24,6 +24,14 @@ class Identifiers(unittest.TestCase):
         self.content.update(
             hashutil.hash_data(self.content['data']))
 
+    @istest
+    def content_identifier(self):
+        self.assertEqual(identifiers.content_identifier(self.content),
+                         self.content['sha1'])
+
+
+class DirectoryIdentifier(unittest.TestCase):
+    def setUp(self):
         self.directory = {
             'id': 'c2e41aae41ac17bd4a650770d6ee77f62e52235b',
             'entries': [
@@ -118,13 +126,6 @@ class Identifiers(unittest.TestCase):
             'id': '4b825dc642cb6eb9a060e54bf8d69288fbee4904',
             'entries': [],
         }
-
-        print(self.directory)
-
-    @istest
-    def content_identifier(self):
-        self.assertEqual(identifiers.content_identifier(self.content),
-                         self.content['sha1'])
 
     @istest
     def dir_identifier(self):
