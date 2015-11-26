@@ -3,12 +3,87 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import binascii
 import datetime
 import unittest
 
 from nose.tools import istest
 
 from swh.model import hashutil, identifiers
+
+
+class UtilityFunctionsIdentifier(unittest.TestCase):
+    def setUp(self):
+        self.str_id = 'c2e41aae41ac17bd4a650770d6ee77f62e52235b'
+        self.bytes_id = binascii.unhexlify(self.str_id)
+        self.bad_type_id = object()
+
+    @istest
+    def identifier_to_bytes(self):
+        for id in [self.str_id, self.bytes_id]:
+            self.assertEqual(identifiers.identifier_to_bytes(id),
+                             self.bytes_id)
+
+            # wrong length
+            with self.assertRaises(ValueError) as cm:
+                identifiers.identifier_to_bytes(id[:-2])
+
+            self.assertIn('length', str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            identifiers.identifier_to_bytes(self.bad_type_id)
+
+        self.assertIn('type', str(cm.exception))
+
+    @istest
+    def identifier_to_str(self):
+        for id in [self.str_id, self.bytes_id]:
+            self.assertEqual(identifiers.identifier_to_str(id),
+                             self.str_id)
+
+            # wrong length
+            with self.assertRaises(ValueError) as cm:
+                identifiers.identifier_to_str(id[:-2])
+
+            self.assertIn('length', str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            identifiers.identifier_to_str(self.bad_type_id)
+
+        self.assertIn('type', str(cm.exception))
+
+
+class UtilityFunctionsDateOffset(unittest.TestCase):
+    def setUp(self):
+        self.date = datetime.datetime(
+            2015, 11, 22, 16, 33, 56, tzinfo=datetime.timezone.utc)
+        self.date_int = int(self.date.timestamp())
+        self.date_repr = b'1448210036'
+
+        self.date_microseconds = datetime.datetime(
+            2015, 11, 22, 16, 33, 56, 2342, tzinfo=datetime.timezone.utc)
+        self.date_microseconds_float = self.date_microseconds.timestamp()
+        self.date_microseconds_repr = b'1448210036.002342'
+
+        self.offsets = {
+            0: b'+0000',
+            -630: b'-1030',
+            800: b'+1320',
+        }
+
+    @istest
+    def format_date(self):
+        for date in [self.date, self.date_int]:
+            self.assertEqual(identifiers.format_date(date), self.date_repr)
+
+        for date in [self.date_microseconds, self.date_microseconds_float]:
+            self.assertEqual(identifiers.format_date(date),
+                             self.date_microseconds_repr)
+
+    @istest
+    def format_offset(self):
+        for offset, res in self.offsets.items():
+            self.assertEqual(identifiers.format_offset(offset), res)
 
 
 class ContentIdentifier(unittest.TestCase):
