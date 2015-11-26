@@ -138,3 +138,76 @@ class DirectoryIdentifier(unittest.TestCase):
         self.assertEqual(
             identifiers.directory_identifier(self.empty_directory),
             self.empty_directory['id'])
+
+
+class RevisionIdentifier(unittest.TestCase):
+    def setUp(self):
+        self.revision = {
+            'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+                'date': datetime.datetime(2015, 7, 12, 22, 10, 30,
+                                          tzinfo=datetime.timezone.utc),
+                'date_offset': -420,
+
+            },
+            'committer': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+                'date': datetime.datetime(2015, 7, 12, 22, 10, 30,
+                                          tzinfo=datetime.timezone.utc),
+                'date_offset': -420,
+
+            },
+            'message': b'Linux 4.2-rc2\n',
+        }
+
+        self.synthetic_revision = {
+            'id': b'\xb2\xa7\xe1&\x04\x92\xe3D\xfa\xb3\xcb\xf9\x1b\xc1<\x91'
+                  b'\xe0T&\xfd',
+            'author': {
+                'name': b'Software Heritage',
+                'email': b'robot@softwareheritage.org',
+                'date': datetime.datetime(2015, 7, 16, 11, 51, 35,
+                                          tzinfo=datetime.timezone.utc),
+                'date_offset': 0,
+            },
+            'type': 'tar',
+            'committer': {
+                'name': b'Software Heritage',
+                'date': datetime.datetime(2015, 7, 16, 11, 51, 35,
+                                          tzinfo=datetime.timezone.utc),
+                'email': b'robot@softwareheritage.org',
+                'date_offset': 0,
+            },
+            'synthetic': True,
+            'parents': [None],
+            'message': b'synthetic revision message\n',
+            'directory': b'\xd1\x1f\x00\xa6\xa0\xfe\xa6\x05SA\xd2U\x84\xb5\xa9'
+                         b'e\x16\xc0\xd2\xb8',
+            'metadata': {'original_artifact': [
+                {'archive_type': 'tar',
+                 'name': 'gcc-5.2.0.tar.bz2',
+                 'sha1_git': '39d281aff934d44b439730057e55b055e206a586',
+                 'sha1': 'fe3f5390949d47054b613edc36c557eb1d51c18e',
+                 'sha256': '5f835b04b5f7dd4f4d2dc96190ec1621b8d89f'
+                           '2dc6f638f9f8bc1b1014ba8cad'}]},
+
+        }
+
+    @istest
+    def revision_identifier(self):
+        self.assertEqual(
+            identifiers.revision_identifier(self.revision),
+            identifiers.identifier_to_str(self.revision['id']),
+        )
+
+    @istest
+    def revision_identifier_synthetic(self):
+        self.assertEqual(
+            identifiers.revision_identifier(self.synthetic_revision),
+            identifiers.identifier_to_str(self.synthetic_revision['id']),
+        )

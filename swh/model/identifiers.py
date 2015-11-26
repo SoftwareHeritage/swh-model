@@ -3,6 +3,8 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import binascii
+import datetime
 from functools import lru_cache
 
 from . import hashutil
@@ -35,6 +37,38 @@ def identifier_to_bytes(identifier):
                 'Wrong length for str identifier %s, expected 40' %
                 len(identifier))
         return bytes.fromhex(identifier)
+
+    raise ValueError('Wrong type for identitfier %s, expected bytes or str' %
+                     identifier.__class__.__name__)
+
+
+@lru_cache()
+def identifier_to_str(identifier):
+    """Convert an identifier to an hexadecimal string.
+
+    Args:
+        identifier: an identifier, either a 40-char hexadecimal string or a
+                    bytes object of length 20
+    Returns:
+        The length 40 string corresponding to the given identifier, hex encoded
+
+    Raises:
+        ValueError if the identifier is of an unexpected type or length.
+    """
+
+    if isinstance(identifier, str):
+        if len(identifier) != 40:
+            raise ValueError(
+                'Wrong length for str identifier %s, expected 40' %
+                len(identifier))
+        return identifier
+
+    if isinstance(identifier, bytes):
+        if len(identifier) != 20:
+            raise ValueError(
+                'Wrong length for bytes identifier %s, expected 20' %
+                len(identifier))
+        return binascii.hexlify(identifier).decode()
 
     raise ValueError('Wrong type for identitfier %s, expected bytes or str' %
                      identifier.__class__.__name__)
@@ -121,3 +155,82 @@ def directory_identifier(directory):
         ])
 
     return hashutil.hash_git_data(b''.join(components), 'tree')
+
+
+def format_date(date):
+    """Convert a date object into an UTC timestamp encoded as ascii bytes.
+
+    Git stores timestamps as an integer number of seconds since the UNIX epoch.
+
+    However, Software Heritage stores timestamps as an integer number of
+    microseconds (postgres type "datetime with timezone").
+
+    Therefore, we print timestamps with no microseconds as integers, and
+    timestamps with microseconds as floating point values.
+
+    """
+    if isinstance(date, datetime.datetime):
+        if date.microsecond == 0:
+            date = int(date.timestamp())
+        else:
+            date = date.timestamp()
+        return str(date).encode()
+    else:
+        if date == int(date):
+            date = int(date)
+        return str(date).encode()
+
+
+@lru_cache()
+def format_offset(offset):
+    """Convert an integer number of minutes into an offset representation.
+
+    The offset representation is [+-]hhmm where:
+        hh is the number of hours;
+        mm is the number of minutes.
+
+    A null offset is represented as +0000.
+    """
+    if offset >= 0:
+        sign = '+'
+    else:
+        sign = '-'
+
+    hours = abs(offset) // 60
+    minutes = abs(offset) % 60
+
+    t = '%s%02d%02d' % (sign, hours, minutes)
+    return t.encode()
+
+
+def format_author(author):
+    components = [
+        author['name'], b' <', author['email'], b'> ',
+        format_date(author['date']), b' ',
+        format_offset(author['date_offset']),
+    ]
+
+    return b''.join(components)
+
+
+def revision_identifier(revision):
+    """Return the intrinsic identifier for a revision.
+    """
+    components = [
+        b'tree ', identifier_to_str(revision['directory']).encode(), b'\n',
+    ]
+    for parent in revision['parents']:
+        if parent:
+            components.extend([
+                b'parent ', identifier_to_str(parent).encode(), b'\n',
+            ])
+
+    components.extend([
+        b'author ', format_author(revision['author']), b'\n',
+        b'committer ', format_author(revision['committer']), b'\n',
+        b'\n',
+        revision['message'],
+    ])
+
+    print(b''.join(components).decode('utf-8'))
+    return hashutil.hash_git_data(b''.join(components), 'commit')
