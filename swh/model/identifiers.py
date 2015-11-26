@@ -123,9 +123,9 @@ def directory_identifier(directory):
         - the octal representation of the permissions for the entry
           (stored in the 'perms' member), which is a representation of the
           entry type:
-            b'100644' (int 33188)for files
-            b'100755' (int 33261)for executable files
-            b'120000' (int 40960)for symbolic links
+            b'100644' (int 33188) for files
+            b'100755' (int 33261) for executable files
+            b'120000' (int 40960) for symbolic links
             b'40000' (int 16384) for directories
             b'160000' (int 57344) for references to revisions
         - an ascii space (b'\x20')
