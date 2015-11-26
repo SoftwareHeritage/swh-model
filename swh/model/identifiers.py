@@ -234,3 +234,22 @@ def revision_identifier(revision):
 
     print(b''.join(components).decode('utf-8'))
     return hashutil.hash_git_data(b''.join(components), 'commit')
+
+
+def release_identifier(release):
+    """Return the intrinsic identifier for a release."""
+    components = [
+        b'object ', identifier_to_str(release['revision']).encode(), b'\n',
+        b'type commit\n',
+        b'tag ', release['name'].encode('utf-8'), b'\n',
+    ]
+
+    if 'author' in release and release['author']:
+        components.extend([
+            b'tagger ', format_author(release['author']), b'\n',
+        ])
+
+    components.extend([b'\n', release['comment']])
+
+    print(b''.join(components).decode('utf-8'))
+    return hashutil.hash_git_data(b''.join(components), 'tag')

@@ -211,3 +211,61 @@ class RevisionIdentifier(unittest.TestCase):
             identifiers.revision_identifier(self.synthetic_revision),
             identifiers.identifier_to_str(self.synthetic_revision['id']),
         )
+
+
+class ReleaseIdentifier(unittest.TestCase):
+    def setUp(self):
+        self.release = {
+            'id': '2b10839e32c4c476e9d94492756bb1a3e1ec4aa8',
+            'revision': b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
+            'name': 'v2.6.14',
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@g5.osdl.org',
+                'date': datetime.datetime(2005, 10, 28, 0, 2, 33,
+                                          tzinfo=datetime.timezone.utc),
+                'date_offset': -420,
+            },
+            'comment': b'''\
+Linux 2.6.14 release
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.1 (GNU/Linux)
+
+iD8DBQBDYWq6F3YsRnbiHLsRAmaeAJ9RCez0y8rOBbhSv344h86l/VVcugCeIhO1
+wdLOnvj91G4wxYqrvThthbE=
+=7VeT
+-----END PGP SIGNATURE-----
+''',
+            'synthetic': False,
+        }
+
+        self.release_no_author = {
+            'id': b'&y\x1a\x8b\xcf\x0em3\xf4:\xefv\x82\xbd\xb5U#mV\xde',
+            'revision': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
+            'name': 'v2.6.12',
+            'comment': b'''\
+This is the final 2.6.12 release
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.2.4 (GNU/Linux)
+
+iD8DBQBCsykyF3YsRnbiHLsRAvPNAJ482tCZwuxp/bJRz7Q98MHlN83TpACdHr37
+o6X/3T+vm8K3bf3driRr34c=
+=sBHn
+-----END PGP SIGNATURE-----
+''',
+            'synthetic': False,
+        }
+
+    @istest
+    def release_identifier(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release),
+            identifiers.identifier_to_str(self.release['id'])
+        )
+
+    @istest
+    def release_identifier_no_author(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_no_author),
+            identifiers.identifier_to_str(self.release_no_author['id'])
+        )
