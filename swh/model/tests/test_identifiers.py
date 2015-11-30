@@ -96,13 +96,12 @@ class ContentIdentifier(unittest.TestCase):
                                        tzinfo=datetime.timezone.utc),
         }
 
-        self.content.update(
-            hashutil.hash_data(self.content['data']))
+        self.content_id = hashutil.hash_data(self.content['data'])
 
     @istest
     def content_identifier(self):
         self.assertEqual(identifiers.content_identifier(self.content),
-                         self.content['sha1'])
+                         self.content_id)
 
 
 class DirectoryIdentifier(unittest.TestCase):

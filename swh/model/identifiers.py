@@ -77,21 +77,26 @@ def identifier_to_str(identifier):
 def content_identifier(content):
     """Return the intrinsic identifier for a content.
 
-    A content's identifier is the sha1 checksum of its data.
+    A content's identifier is the sha1, sha1_git and sha256 checksums of its
+    data.
 
     Args:
         content: a content conforming to the Software Heritage schema
 
     Returns:
-        The intrinsic identifier of the content as a text string.
+        A dictionary with all the hashes for the data
 
     Raises:
         KeyError if the content doesn't have a data member.
+
     """
 
-    hashes = hashutil.hash_data(content['data'], {'sha1'})
+    hashes = hashutil.hash_data(
+        content['data'],
+        {'sha1', 'sha1_git', 'sha256'},
+    )
 
-    return hashes['sha1']
+    return hashes
 
 
 def _sort_key(entry):
