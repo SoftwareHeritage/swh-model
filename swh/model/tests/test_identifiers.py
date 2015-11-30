@@ -216,6 +216,9 @@ class DirectoryIdentifier(unittest.TestCase):
 
 class RevisionIdentifier(unittest.TestCase):
     def setUp(self):
+
+        linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
+
         self.revision = {
             'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
             'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
@@ -223,19 +226,15 @@ class RevisionIdentifier(unittest.TestCase):
             'author': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@linux-foundation.org',
-                'date': datetime.datetime(2015, 7, 12, 22, 10, 30,
-                                          tzinfo=datetime.timezone.utc),
-                'date_offset': -420,
-
             },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
             'committer': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@linux-foundation.org',
-                'date': datetime.datetime(2015, 7, 12, 22, 10, 30,
-                                          tzinfo=datetime.timezone.utc),
-                'date_offset': -420,
-
             },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
             'message': b'Linux 4.2-rc2\n',
         }
 
@@ -245,18 +244,17 @@ class RevisionIdentifier(unittest.TestCase):
             'author': {
                 'name': b'Software Heritage',
                 'email': b'robot@softwareheritage.org',
-                'date': datetime.datetime(2015, 7, 16, 11, 51, 35,
-                                          tzinfo=datetime.timezone.utc),
-                'date_offset': 0,
+            },
+            'date': {
+                'timestamp': 1437047495.0,
+                'offset': 0,
             },
             'type': 'tar',
             'committer': {
                 'name': b'Software Heritage',
-                'date': datetime.datetime(2015, 7, 16, 11, 51, 35,
-                                          tzinfo=datetime.timezone.utc),
                 'email': b'robot@softwareheritage.org',
-                'date_offset': 0,
             },
+            'committer_date': 1437047495,
             'synthetic': True,
             'parents': [None],
             'message': b'synthetic revision message\n',
@@ -289,6 +287,8 @@ class RevisionIdentifier(unittest.TestCase):
 
 class ReleaseIdentifier(unittest.TestCase):
     def setUp(self):
+        linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
+
         self.release = {
             'id': '2b10839e32c4c476e9d94492756bb1a3e1ec4aa8',
             'revision': b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
@@ -296,10 +296,9 @@ class ReleaseIdentifier(unittest.TestCase):
             'author': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@g5.osdl.org',
-                'date': datetime.datetime(2005, 10, 28, 0, 2, 33,
-                                          tzinfo=datetime.timezone.utc),
-                'date_offset': -420,
             },
+            'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
+                                      tzinfo=linus_tz),
             'comment': b'''\
 Linux 2.6.14 release
 -----BEGIN PGP SIGNATURE-----

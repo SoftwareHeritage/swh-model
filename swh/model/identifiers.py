@@ -208,14 +208,40 @@ def format_offset(offset):
     return t.encode()
 
 
-def format_author(author):
-    components = [
-        author['name'], b' <', author['email'], b'> ',
-        format_date(author['date']), b' ',
-        format_offset(author['date_offset']),
-    ]
+def format_date_offset(date_offset):
+    """Format a date-compatible object with its timezone offset.
 
-    return b''.join(components)
+    A date-compatible object is either:
+        - a dict with two members
+            timestamp: floating point number of seconds since the unix epoch
+            offset: (int) number of minutes representing the offset from UTC
+        - a datetime.datetime object with a timezone
+        - a numeric value (in which case the offset is hardcoded to 0)
+    """
+
+    # FIXME: move normalization to another module
+
+    if isinstance(date_offset, dict):
+        date = date_offset['timestamp']
+        offset = date_offset['offset']
+    elif isinstance(date_offset, datetime.datetime):
+        date = date_offset
+        utcoffset = date_offset.utcoffset()
+        if utcoffset is None:
+            raise ValueError('Received a datetime without a timezone')
+        seconds_offset = utcoffset.total_seconds()
+        if seconds_offset - int(seconds_offset) != 0 or seconds_offset % 60:
+            raise ValueError('Offset is not an integer number of minutes')
+        offset = int(seconds_offset) // 60
+    else:
+        date = date_offset
+        offset = 0
+
+    return b''.join([format_date(date), b' ', format_offset(offset)])
+
+
+def format_author(author):
+    return b''.join([author['name'], b' <', author['email'], b'>'])
 
 
 def revision_identifier(revision):
@@ -231,8 +257,10 @@ def revision_identifier(revision):
             ])
 
     components.extend([
-        b'author ', format_author(revision['author']), b'\n',
-        b'committer ', format_author(revision['committer']), b'\n',
+        b'author ', format_author(revision['author']),
+        b' ', format_date_offset(revision['date']), b'\n',
+        b'committer ', format_author(revision['committer']),
+        b' ', format_date_offset(revision['committer_date']), b'\n',
         b'\n',
         revision['message'],
     ])
@@ -251,7 +279,8 @@ def release_identifier(release):
 
     if 'author' in release and release['author']:
         components.extend([
-            b'tagger ', format_author(release['author']), b'\n',
+            b'tagger ', format_author(release['author']), b' ',
+            format_date_offset(release['date']), b'\n',
         ])
 
     components.extend([b'\n', release['comment']])
