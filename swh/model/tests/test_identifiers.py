@@ -299,7 +299,7 @@ class ReleaseIdentifier(unittest.TestCase):
             },
             'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
                                       tzinfo=linus_tz),
-            'comment': b'''\
+            'message': b'''\
 Linux 2.6.14 release
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
@@ -316,7 +316,7 @@ wdLOnvj91G4wxYqrvThthbE=
             'id': b'&y\x1a\x8b\xcf\x0em3\xf4:\xefv\x82\xbd\xb5U#mV\xde',
             'revision': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
             'name': 'v2.6.12',
-            'comment': b'''\
+            'message': b'''\
 This is the final 2.6.12 release
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.4 (GNU/Linux)

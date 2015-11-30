@@ -283,7 +283,7 @@ def release_identifier(release):
             format_date_offset(release['date']), b'\n',
         ])
 
-    components.extend([b'\n', release['comment']])
+    components.extend([b'\n', release['message']])
 
     print(b''.join(components).decode('utf-8'))
     return hashutil.hash_git_data(b''.join(components), 'tag')
