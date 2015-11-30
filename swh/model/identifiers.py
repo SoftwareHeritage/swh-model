@@ -269,11 +269,21 @@ def revision_identifier(revision):
     return hashutil.hash_git_data(b''.join(components), 'commit')
 
 
+def target_type_to_git(target_type):
+    """Convert a software heritage target type to a git object type"""
+    return {
+        'content': b'blob',
+        'directory': b'tree',
+        'revision': b'commit',
+        'release': b'tag',
+    }[target_type]
+
+
 def release_identifier(release):
     """Return the intrinsic identifier for a release."""
     components = [
-        b'object ', identifier_to_str(release['revision']).encode(), b'\n',
-        b'type commit\n',
+        b'object ', identifier_to_str(release['target']).encode(), b'\n',
+        b'type ', target_type_to_git(release['target_type']), b'\n',
         b'tag ', release['name'].encode('utf-8'), b'\n',
     ]
 
