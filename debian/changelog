@@ -1,5 +1,6 @@
-swh-model (0.0.1-1) unstable; urgency=low
+swh-model (0.0.1-1~swh1) unstable-swh; urgency=medium
 
- * Create swh-model package
+  * Initial release
+  * Prepare swh.model release v0.0.1
 
- -- Nicolas Dandrimont <olasd@debian.org>  Mon, 07 Dec 2015 15:41:28 +0100
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Mon, 07 Dec 2015 18:26:58 +0100
