@@ -19,7 +19,10 @@ setup(
     author='Software Heritage developers',
     author_email='swh-devel@inria.fr',
     url='https://forge.softwareheritage.org/diffusion/DMOD/',
-    packages=['swh.model'],  # packages's modules
+    packages=[
+        'swh.model', 'swh.model.fields',
+        'swh.model.tests', 'swh.model.tests.fields',
+    ],  # packages's modules
     scripts=[],   # scripts to package
     install_requires=parse_requirements(),
     setup_requires=['vcversioner'],
