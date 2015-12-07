@@ -265,7 +265,6 @@ def revision_identifier(revision):
         revision['message'],
     ])
 
-    print(b''.join(components).decode('utf-8'))
     return hashutil.hash_git_data(b''.join(components), 'commit')
 
 
@@ -295,5 +294,4 @@ def release_identifier(release):
 
     components.extend([b'\n', release['message']])
 
-    print(b''.join(components).decode('utf-8'))
     return hashutil.hash_git_data(b''.join(components), 'tag')
