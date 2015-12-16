@@ -1,3 +1,10 @@
+swh-model (0.0.2-1~swh1) unstable-swh; urgency=medium
+
+  * Prepare release of v0.0.2
+  * Import the rest of swh.core.hashutil
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Wed, 16 Dec 2015 18:30:12 +0100
+
 swh-model (0.0.1-1~swh1) unstable-swh; urgency=medium
 
   * Initial release
