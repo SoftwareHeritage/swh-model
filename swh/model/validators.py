@@ -3,8 +3,6 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import binascii
-
 from .exceptions import ValidationError, NON_FIELD_ERRORS
 from . import fields, hashutil
 
@@ -50,9 +48,7 @@ def validate_content(content):
             for hash_type, computed_hash in hashes.items():
                 if hash_type not in content:
                     continue
-                content_hash = content[hash_type]
-                if isinstance(content_hash, bytes):
-                    content_hash = binascii.hexlify(content_hash).decode()
+                content_hash = hashutil.hash_to_bytes(content[hash_type])
                 if content_hash != computed_hash:
                     errors.append(ValidationError(
                         'hash mismatch in content for hash %(hash)s',
