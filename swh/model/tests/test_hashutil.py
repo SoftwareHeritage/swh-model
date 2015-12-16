@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 import io
+import tempfile
 import unittest
 
 from nose.tools import istest
@@ -21,17 +22,27 @@ class Hashutil(unittest.TestCase):
                       '4a9b50ee5b5866c0d91fab0e65907311',
         }
 
-        self.git_checksums = {
+        self.checksums = {
+            type: bytes.fromhex(cksum)
+            for type, cksum in self.hex_checksums.items()
+        }
+
+        self.git_hex_checksums = {
             'blob': self.hex_checksums['sha1_git'],
             'tree': '5b2e883aa33d2efab98442693ea4dd5f1b8871b0',
             'commit': '79e4093542e72f0fcb7cbd75cb7d270f9254aa8f',
             'tag': 'd6bf62466f287b4d986c545890716ce058bddf67',
         }
 
+        self.git_checksums = {
+            type: bytes.fromhex(cksum)
+            for type, cksum in self.git_hex_checksums.items()
+        }
+
     @istest
     def hash_data(self):
         checksums = hashutil.hash_data(self.data)
-        self.assertEqual(checksums, self.hex_checksums)
+        self.assertEqual(checksums, self.checksums)
 
     @istest
     def hash_data_unknown_hash(self):
@@ -63,7 +74,7 @@ class Hashutil(unittest.TestCase):
         fobj = io.BytesIO(self.data)
 
         checksums = hashutil.hash_file(fobj, length=len(self.data))
-        self.assertEqual(checksums, self.hex_checksums)
+        self.assertEqual(checksums, self.checksums)
 
     @istest
     def hash_file_missing_length(self):
@@ -73,3 +84,28 @@ class Hashutil(unittest.TestCase):
             hashutil.hash_file(fobj, algorithms=['sha1_git'])
 
         self.assertIn('Missing length', cm.exception.args[0])
+
+    @istest
+    def hash_path(self):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(self.data)
+            f.close()
+            hashes = hashutil.hash_path(f.name)
+
+        self.assertEquals(self.checksums, hashes)
+
+    @istest
+    def hash_to_hex(self):
+        for type in self.checksums:
+            hex = self.hex_checksums[type]
+            hash = self.checksums[type]
+            self.assertEquals(hashutil.hash_to_hex(hex), hex)
+            self.assertEquals(hashutil.hash_to_hex(hash), hex)
+
+    @istest
+    def hash_to_bytes(self):
+        for type in self.checksums:
+            hex = self.hex_checksums[type]
+            hash = self.checksums[type]
+            self.assertEquals(hashutil.hash_to_bytes(hex), hash)
+            self.assertEquals(hashutil.hash_to_bytes(hash), hash)

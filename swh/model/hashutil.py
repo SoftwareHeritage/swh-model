@@ -3,8 +3,11 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import binascii
+import functools
 import hashlib
 from io import BytesIO
+import os
 
 # supported hashing algorithms
 ALGORITHMS = set(['sha1', 'sha256', 'sha1_git'])
@@ -78,7 +81,7 @@ def _new_hash(algo, length=None):
     return h
 
 
-def hash_file(fobj, length=None, algorithms=ALGORITHMS):
+def hash_file(fobj, length=None, algorithms=ALGORITHMS, chunk_cb=None):
     """Hash the contents of the given file object with the given algorithms.
 
     Args:
@@ -87,7 +90,7 @@ def hash_file(fobj, length=None, algorithms=ALGORITHMS):
                 git-specific algorithms)
         algorithms: the hashing algorithms used
 
-    Returns: a dict mapping each algorithm to a hexadecimal digest
+    Returns: a dict mapping each algorithm to a bytes digest.
 
     Raises:
         ValueError if algorithms contains an unknown hash algorithm.
@@ -100,8 +103,29 @@ def hash_file(fobj, length=None, algorithms=ALGORITHMS):
             break
         for hash in hashes.values():
             hash.update(chunk)
+        if chunk_cb:
+            chunk_cb(chunk)
 
-    return {algo: hash.hexdigest() for algo, hash in hashes.items()}
+    return {algo: hash.digest() for algo, hash in hashes.items()}
+
+
+def hash_path(path, algorithms=ALGORITHMS, chunk_cb=None):
+    """Hash the contents of the file at the given path with the given algorithms.
+
+    Args:
+        path: the path of the file to hash
+        algorithms: the hashing algorithms used
+        chunk_cb: a callback
+
+    Returns: a dict mapping each algorithm to a bytes digest.
+
+    Raises:
+        ValueError if algorithms contains an unknown hash algorithm.
+        OSError on file access error
+    """
+    length = os.path.getsize(path)
+    with open(path, 'rb') as fobj:
+        return hash_file(fobj, length, algorithms, chunk_cb)
 
 
 def hash_data(data, algorithms=ALGORITHMS):
@@ -111,7 +135,7 @@ def hash_data(data, algorithms=ALGORITHMS):
         data: a bytes object
         algorithms: the hashing algorithms used
 
-    Returns: a dict mapping each algorithm to a hexadecimal digest
+    Returns: a dict mapping each algorithm to a bytes digest
 
     Raises:
         TypeError if data does not support the buffer interface.
@@ -129,7 +153,7 @@ def hash_git_data(data, git_type, base_algo='sha1'):
         git_type: the git object type
         base_algo: the base hashing algorithm used (default: sha1)
 
-    Returns: a dict mapping each algorithm to a hexadecimal digest
+    Returns: a dict mapping each algorithm to a bytes digest
 
     Raises:
         ValueError if the git_type is unexpected.
@@ -144,4 +168,20 @@ def hash_git_data(data, git_type, base_algo='sha1'):
     h = _new_git_hash(base_algo, git_type, len(data))
     h.update(data)
 
-    return h.hexdigest()
+    return h.digest()
+
+
+@functools.lru_cache()
+def hash_to_hex(hash):
+    """Converts a hash (in hex or bytes form) to its hexadecimal ascii form"""
+    if isinstance(hash, str):
+        return hash
+    return binascii.hexlify(hash).decode('ascii')
+
+
+@functools.lru_cache()
+def hash_to_bytes(hash):
+    """Converts a hash (in hex or bytes form) to its raw bytes form"""
+    if isinstance(hash, bytes):
+        return hash
+    return bytes.fromhex(hash)
