@@ -159,7 +159,8 @@ def directory_identifier(directory):
             identifier_to_bytes(entry['target']),
         ])
 
-    return hashutil.hash_git_data(b''.join(components), 'tree')
+    return identifier_to_str(hashutil.hash_git_data(b''.join(components),
+                                                    'tree'))
 
 
 def format_date(date):
@@ -265,7 +266,8 @@ def revision_identifier(revision):
         revision['message'],
     ])
 
-    return hashutil.hash_git_data(b''.join(components), 'commit')
+    return identifier_to_str(hashutil.hash_git_data(b''.join(components),
+                                                    'commit'))
 
 
 def target_type_to_git(target_type):
@@ -294,4 +296,5 @@ def release_identifier(release):
 
     components.extend([b'\n', release['message']])
 
-    return hashutil.hash_git_data(b''.join(components), 'tag')
+    return identifier_to_str(hashutil.hash_git_data(b''.join(components),
+                                                    'tag'))
