@@ -285,7 +285,7 @@ def release_identifier(release):
     components = [
         b'object ', identifier_to_str(release['target']).encode(), b'\n',
         b'type ', target_type_to_git(release['target_type']), b'\n',
-        b'tag ', release['name'].encode('utf-8'), b'\n',
+        b'tag ', release['name'], b'\n',
     ]
 
     if 'author' in release and release['author']:
