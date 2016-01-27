@@ -1,3 +1,10 @@
+swh-model (0.0.3-1~swh1) unstable-swh; urgency=medium
+
+  * v0.0.3
+  * Release name is now in bytes
+
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 27 Jan 2016 15:50:08 +0100
+
 swh-model (0.0.2-1~swh1) unstable-swh; urgency=medium
 
   * Prepare release of v0.0.2
