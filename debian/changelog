@@ -1,8 +1,9 @@
-swh-model (0.0.2-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.3-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.3
+  * Release name is now in bytes
 
- -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Wed, 16 Dec 2015 18:30:12 +0100
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 27 Jan 2016 15:50:08 +0100
 
 swh-model (0.0.2-1~swh1) unstable-swh; urgency=medium
 

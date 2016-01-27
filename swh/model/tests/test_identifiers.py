@@ -293,7 +293,7 @@ class ReleaseIdentifier(unittest.TestCase):
             'id': '2b10839e32c4c476e9d94492756bb1a3e1ec4aa8',
             'target': b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
             'target_type': 'revision',
-            'name': 'v2.6.14',
+            'name': b'v2.6.14',
             'author': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@g5.osdl.org',
@@ -317,7 +317,7 @@ wdLOnvj91G4wxYqrvThthbE=
             'id': b'&y\x1a\x8b\xcf\x0em3\xf4:\xefv\x82\xbd\xb5U#mV\xde',
             'target': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
             'target_type': 'revision',
-            'name': 'v2.6.12',
+            'name': b'v2.6.12',
             'message': b'''\
 This is the final 2.6.12 release
 -----BEGIN PGP SIGNATURE-----
