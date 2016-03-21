@@ -3,7 +3,10 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import os
+import tempfile
 import unittest
+import subprocess
 
 from nose.tools import istest
 
@@ -131,3 +134,79 @@ blah
 
         # then
         self.assertEqual(checksum, self.checksums['tag_sha1_git'])
+
+
+class GitHashArborescenceTree(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+
+        start_path = os.path.dirname(__file__).encode('utf-8')
+        sample_folder_archive = os.path.join(start_path,
+                                             b'../../../..',
+                                             b'swh-storage-testdata',
+                                             b'dir-folders',
+                                             b'sample-folder.tgz')
+
+        cls.root_path = os.path.join(cls.tmp_root_path, b'sample-folder')
+
+        # uncompress the sample folder
+        subprocess.check_output(
+            ['tar', 'xvf', sample_folder_archive, '-C', cls.tmp_root_path])
+
+    @istest
+    def walk_and_compute_sha1_from_directory(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # same as previous behavior
+        walk0 = git.walk_and_compute_sha1_from_directory(self.tmp_root_path)
+
+        keys0 = list(walk0.keys())
+        path_excluded = os.path.join(self.tmp_root_path,
+                                     b'sample-folder',
+                                     b'foo')
+        self.assertTrue(path_excluded in keys0)  # it is not excluded here
+
+        # make the same temporary arborescence tree to hash with ignoring one
+        # folder foo
+        walk1 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            dir_ok_fn=lambda dirpath: b'sample-folder/foo' not in dirpath)
+        keys1 = list(walk1.keys())
+        self.assertTrue(path_excluded not in keys1)
+
+        # remove the keys that can't be the same (due to hash definition)
+        # Those are the top level folders
+        keys_diff = [self.tmp_root_path,
+                     os.path.join(self.tmp_root_path, b'sample-folder'),
+                     git.ROOT_TREE_KEY]
+        for k in keys_diff:
+            self.assertNotEquals(walk0[k], walk1[k])
+
+        # The remaining keys (bottom path) should have exactly the same hashes
+        # as before
+        keys = set(keys1) - set(keys_diff)
+        actual_walk1 = {}
+        for k in keys:
+            self.assertEquals(walk0[k], walk1[k])
+            actual_walk1[k] = walk1[k]
+
+        expected_checksums = {
+            os.path.join(self.tmp_root_path, b'sample-folder/empty-folder'): [],                                            # noqa
+            os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'): [{                                               # noqa
+                'type': git.GitType.BLOB,                                                                                   # noqa
+                'sha256': b'=\xb5\xae\x16\x80U\xbc\xd9:M\x08(]\xc9\x9f\xfe\xe2\x883\x03\xb2?\xac^\xab\x85\x02s\xa8\xeaUF',  # noqa
+                'name': b'another-quote.org',                                                                               # noqa
+                'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo/another-quote.org'),                    # noqa
+                'perms': git.GitPerm.BLOB,                                                                                  # noqa
+                'sha1': b'\x90\xa6\x13\x8b\xa5\x99\x15&\x1e\x17\x99H8j\xa1\xcc*\xa9"\n',                                    # noqa
+                'sha1_git': b'\x136\x93\xb1%\xba\xd2\xb4\xac1\x855\xb8I\x01\xeb\xb1\xf6\xb68'}],                            # noqa
+            os.path.join(self.tmp_root_path, b'sample-folder/bar'): [{                                                      # noqa
+                'type': git.GitType.TREE,                                                                                   # noqa
+                'perms': git.GitPerm.TREE,                                                                                  # noqa
+                'name': b'barfoo',                                                                                          # noqa
+                'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'),                                      # noqa
+                'sha1_git': b'\xc3\x02\x0fk\xf15\xa3\x8cm\xf3\xaf\xeb_\xb3\x822\xc5\xe0p\x87'}]}                            # noqa
+
+        self.assertEquals(actual_walk1, expected_checksums)

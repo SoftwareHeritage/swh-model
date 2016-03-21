@@ -179,8 +179,16 @@ def compute_tree_metadata(dirname, ls_hashes):
     }
 
 
-def walk_and_compute_sha1_from_directory(rootdir):
+def walk_and_compute_sha1_from_directory(rootdir,
+                                         dir_ok_fn=lambda dirpath: True):
     """Compute git sha1 from directory rootdir.
+
+    Args:
+        - rootdir: Root directory from which beginning the git hash computation
+
+        - dir_ok_fn: Filter function to filter directory according to rules
+        defined in the function. By default, all folders are ok.
+        Example override: dir_ok_fn = lambda dirpath: b'svn' not in dirpath
 
     Returns:
         Dictionary of entries with keys <path-name> and as values a list of
@@ -204,21 +212,30 @@ def walk_and_compute_sha1_from_directory(rootdir):
     ls_hashes = {}
     all_links = set()
 
-    for dirpath, dirnames, filenames in os.walk(rootdir, topdown=False):
+    def filtfn(dirpath, dirnames):
+        return list(filter(lambda dirname: dir_ok_fn(os.path.join(dirpath,
+                                                                  dirname)),
+                           dirnames))
+
+    gen_dir = ((dp, filtfn(dp, dns), fns) for (dp, dns, fns)
+               in os.walk(rootdir, topdown=False)
+               if dir_ok_fn(dp))
+
+    for dirpath, dirnames, filenames in gen_dir:
         hashes = []
 
-        links = [os.path.join(dirpath, file)
+        links = (os.path.join(dirpath, file)
                  for file in (filenames+dirnames)
-                 if os.path.islink(os.path.join(dirpath, file))]
+                 if os.path.islink(os.path.join(dirpath, file)))
 
         for linkpath in links:
             all_links.add(linkpath)
             m_hashes = compute_link_metadata(linkpath)
             hashes.append(m_hashes)
 
-        only_files = [os.path.join(dirpath, file)
+        only_files = (os.path.join(dirpath, file)
                       for file in filenames
-                      if os.path.join(dirpath, file) not in all_links]
+                      if os.path.join(dirpath, file) not in all_links)
         for filepath in only_files:
             m_hashes = compute_blob_metadata(filepath)
             hashes.append(m_hashes)
@@ -226,10 +243,10 @@ def walk_and_compute_sha1_from_directory(rootdir):
         ls_hashes[dirpath] = hashes
 
         dir_hashes = []
-        subdirs = [os.path.join(dirpath, dir)
+        subdirs = (os.path.join(dirpath, dir)
                    for dir in dirnames
                    if os.path.join(dirpath, dir)
-                   not in all_links]
+                   not in all_links)
         for fulldirname in subdirs:
             tree_hash = compute_tree_metadata(fulldirname, ls_hashes)
             dir_hashes.append(tree_hash)
