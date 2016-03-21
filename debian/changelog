@@ -1,8 +1,9 @@
-swh-model (0.0.3-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.4-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.4
+  * Migrate swh.loader.dir.git module to swh.model.git
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 27 Jan 2016 15:50:08 +0100
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Mon, 21 Mar 2016 15:20:28 +0100
 
 swh-model (0.0.3-1~swh1) unstable-swh; urgency=medium
 
