@@ -38,7 +38,7 @@ def identifier_to_bytes(identifier):
                 len(identifier))
         return bytes.fromhex(identifier)
 
-    raise ValueError('Wrong type for identitfier %s, expected bytes or str' %
+    raise ValueError('Wrong type for identifier %s, expected bytes or str' %
                      identifier.__class__.__name__)
 
 
@@ -70,7 +70,7 @@ def identifier_to_str(identifier):
                 len(identifier))
         return binascii.hexlify(identifier).decode()
 
-    raise ValueError('Wrong type for identitfier %s, expected bytes or str' %
+    raise ValueError('Wrong type for identifier %s, expected bytes or str' %
                      identifier.__class__.__name__)
 
 
