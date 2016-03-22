@@ -289,7 +289,7 @@ class RevisionIdentifier(unittest.TestCase):
                                                 tzinfo=linus_tz),
             'message': b'Linux 4.2-rc2\n',
             'metadata': {
-                'extra-headers': {
+                'extra_headers': {
                     'svn-revision': 10,
                     'svn-repo-uuid': '046f1af7-66c2-d61b-5410-ce57b7db7bff',
                 }

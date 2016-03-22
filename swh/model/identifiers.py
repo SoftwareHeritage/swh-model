@@ -265,8 +265,8 @@ def revision_identifier(revision):
     ])
 
     metadata = revision.get('metadata', {})
-    if 'extra-headers' in metadata:
-        headers = metadata['extra-headers']
+    if 'extra_headers' in metadata:
+        headers = metadata['extra_headers']
         keys = list(headers.keys())
         keys.sort()
         for header_key in keys:
