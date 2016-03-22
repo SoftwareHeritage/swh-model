@@ -29,6 +29,25 @@ sources:
 - commit_tree_extended: https://github.com/git/git/blob/8d530c4d64ffcc853889f7b385f554d53db375ed/commit.c#L1522
 - commit_tree: https://github.com/git/git/blob/8d530c4d64ffcc853889f7b385f554d53db375ed/commit.c#L1392
 
+Example:
+
+```sh
+$ cat commit.txt
+tree 85a74718d377195e1efd0843ba4f3260bad4fe07
+parent 01e2d0627a9a6edb24c37db45db5ecb31e9de808
+author Linus Torvalds <torvalds@linux-foundation.org> 1436739030 -0700
+committer Linus Torvalds <torvalds@linux-foundation.org> 1436739030 -0700
+svn-repo-uuid 046f1af7-66c2-d61b-5410-ce57b7db7bff
+svn-revision 10
+
+Linux 4.2-rc2
+```
+
+```
+$ cat commit.txt | git hash-object -t commit --stdin
+010d34f384fa99d047cdd5e2f41e56e5c2feee45
+```
+
 ### directory/tree
 
 sha1 git directory/tree computation:

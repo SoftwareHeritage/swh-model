@@ -262,12 +262,23 @@ def revision_identifier(revision):
         b' ', format_date_offset(revision['date']), b'\n',
         b'committer ', format_author(revision['committer']),
         b' ', format_date_offset(revision['committer_date']), b'\n',
-        b'\n',
-        revision['message'],
     ])
 
-    return identifier_to_str(hashutil.hash_git_data(b''.join(components),
-                                                    'commit'))
+    metadata = revision.get('metadata', {})
+    if 'extra-headers' in metadata:
+        headers = metadata['extra-headers']
+        keys = list(headers.keys())
+        keys.sort()
+        for header_key in keys:
+            val = headers[header_key]
+            if isinstance(val, int):
+                val = str(val).encode('utf-8')
+            components.extend([header_key, b' ', val, b'\n'])
+
+    components.extend([b'\n', revision['message']])
+
+    commit_raw = b''.join(components)
+    return identifier_to_str(hashutil.hash_git_data(commit_raw, 'commit'))
 
 
 def target_type_to_git(target_type):

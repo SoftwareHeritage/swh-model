@@ -270,6 +270,32 @@ class RevisionIdentifier(unittest.TestCase):
 
         }
 
+        # cat commit.txt | git hash-object -t commit --stdin
+        self.revision_with_extra_headers = {
+            'id': '010d34f384fa99d047cdd5e2f41e56e5c2feee45',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+            },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
+            'committer': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+            },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
+            'message': b'Linux 4.2-rc2\n',
+            'metadata': {
+                'extra-headers': {
+                    b'svn-revision': 10,
+                    b'svn-repo-uuid': b'046f1af7-66c2-d61b-5410-ce57b7db7bff',
+                }
+            }
+        }
+
     @istest
     def revision_identifier(self):
         self.assertEqual(
@@ -282,6 +308,15 @@ class RevisionIdentifier(unittest.TestCase):
         self.assertEqual(
             identifiers.revision_identifier(self.synthetic_revision),
             identifiers.identifier_to_str(self.synthetic_revision['id']),
+        )
+
+    @istest
+    def revision_identifier_with_extra_headers(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_with_extra_headers),
+            identifiers.identifier_to_str(
+                self.revision_with_extra_headers['id']),
         )
 
 
