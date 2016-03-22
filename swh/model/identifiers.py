@@ -273,7 +273,14 @@ def revision_identifier(revision):
             val = headers[header_key]
             if isinstance(val, int):
                 val = str(val).encode('utf-8')
-            components.extend([header_key, b' ', val, b'\n'])
+            if isinstance(val, str):
+                val = val.encode('utf-8')
+            if isinstance(header_key, str):
+                key = header_key.encode('utf-8')
+            else:
+                key = header_key
+
+            components.extend([key, b' ', val, b'\n'])
 
     components.extend([b'\n', revision['message']])
 
