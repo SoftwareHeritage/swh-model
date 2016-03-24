@@ -318,7 +318,7 @@ class RevisionIdentifier(unittest.TestCase):
                 'offset': 480,
             },
             'metadata': {
-                'gpgsig': b'''-----BEGIN PGP SIGNATURE-----
+                'gpgsig': '''-----BEGIN PGP SIGNATURE-----
  Version: GnuPG v1.4.13 (Darwin)\n \n iQIcBAABAgAGBQJVJcYsAAoJEBiY3kIkQRNJVAUQAJ8/XQIfMqqC5oYeEFfHOPYZ
  L7qy46bXHVBa9Qd8zAJ2Dou3IbI2ZoF6/Et89K/UggOycMlt5FKV/9toWyuZv4Po
  L682wonoxX99qvVTHo6+wtnmYO7+G0f82h+qHMErxjP+I6gzRNBvRr+SfY7VlGdK

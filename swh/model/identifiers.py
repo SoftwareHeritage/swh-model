@@ -266,7 +266,10 @@ def revision_identifier(revision):
 
     metadata = revision.get('metadata', {})
     if 'gpgsig' in metadata:
-        components.extend([b'gpgsig', b' ', metadata['gpgsig'], b'\n'])
+        gpgsig = metadata['gpgsig']
+        if isinstance(gpgsig, str):
+            gpgsig = gpgsig.encode('utf-8')
+        components.extend([b'gpgsig', b' ', gpgsig, b'\n'])
 
     if 'extra_headers' in metadata:
         headers = metadata['extra_headers']
