@@ -348,6 +348,54 @@ dg1KdHOa34shrKDaOVzW
 '''
         }
 
+        self.revision_no_message = {
+            'id': '4cfc623c9238fa92c832beed000ce2d003fd8333',
+            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
+            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
+                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'author': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'committer': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'committer_date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'message': None,
+        }
+
+        self.revision_empty_message = {
+            'id': '7442cd78bd3b4966921d6a7f7447417b7acb15eb',
+            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
+            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
+                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'author': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'committer': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'committer_date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'message': b'',
+        }
+
     @istest
     def revision_identifier(self):
         self.assertEqual(
@@ -378,6 +426,24 @@ dg1KdHOa34shrKDaOVzW
                 self.revision_with_gpgsig),
             identifiers.identifier_to_str(
                 self.revision_with_gpgsig['id']),
+        )
+
+    @istest
+    def revision_identifier_no_message(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_no_message),
+            identifiers.identifier_to_str(
+                self.revision_no_message['id']),
+        )
+
+    @istest
+    def revision_identifier_empty_message(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_empty_message),
+            identifiers.identifier_to_str(
+                self.revision_empty_message['id']),
         )
 
 
@@ -427,6 +493,34 @@ o6X/3T+vm8K3bf3driRr34c=
             'synthetic': False,
         }
 
+        self.release_no_message = {
+            'id': 'b6f4f446715f7d9543ef54e41b62982f0db40045',
+            'target': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
+            'target_type': 'revision',
+            'name': b'v2.6.12',
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@g5.osdl.org',
+            },
+            'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
+                                      tzinfo=linus_tz),
+            'message': None,
+        }
+
+        self.release_empty_message = {
+            'id': '71a0aea72444d396575dc25ac37fec87ee3c6492',
+            'target': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
+            'target_type': 'revision',
+            'name': b'v2.6.12',
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@g5.osdl.org',
+            },
+            'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
+                                      tzinfo=linus_tz),
+            'message': b'',
+        }
+
     @istest
     def release_identifier(self):
         self.assertEqual(
@@ -439,4 +533,18 @@ o6X/3T+vm8K3bf3driRr34c=
         self.assertEqual(
             identifiers.release_identifier(self.release_no_author),
             identifiers.identifier_to_str(self.release_no_author['id'])
+        )
+
+    @istest
+    def release_identifier_no_message(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_no_message),
+            identifiers.identifier_to_str(self.release_no_message['id'])
+        )
+
+    @istest
+    def release_identifier_empty_message(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_empty_message),
+            identifiers.identifier_to_str(self.release_empty_message['id'])
         )
