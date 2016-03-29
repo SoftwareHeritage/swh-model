@@ -288,7 +288,8 @@ def revision_identifier(revision):
     Multiline extra header values are escaped by indenting the continuation
     lines with one ascii space.
 
-    The headers are separated from the commit message with an empty line.
+    If the message is None, the manifest ends with the last header. Else, the
+    message is appended to the headers after an empty line.
 
     The checksum of the full manifest is computed using the 'commit' git object
     type.
@@ -330,7 +331,8 @@ def revision_identifier(revision):
         # encode the key to utf-8
         components.extend([key.encode('utf-8'), b' ', value, b'\n'])
 
-    components.extend([b'\n', revision['message']])
+    if revision['message'] is not None:
+        components.extend([b'\n', revision['message']])
 
     commit_raw = b''.join(components)
     return identifier_to_str(hash_git_data(commit_raw, 'commit'))
@@ -360,6 +362,7 @@ def release_identifier(release):
             format_date_offset(release['date']), b'\n',
         ])
 
-    components.extend([b'\n', release['message']])
+    if release['message'] is not None:
+        components.extend([b'\n', release['message']])
 
     return identifier_to_str(hash_git_data(b''.join(components), 'tag'))
