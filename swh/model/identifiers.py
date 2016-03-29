@@ -246,6 +246,53 @@ def format_author(author):
 
 def revision_identifier(revision):
     """Return the intrinsic identifier for a revision.
+
+    The fields used for the revision identifier computation are:
+     - directory
+     - parents
+     - author
+     - author_date
+     - committer
+     - committer_date
+     - metadata -> extra_headers
+     - message
+
+    A revision's identifier is the 'git'-checksum of a commit manifest
+    constructed as follows (newlines are a single ASCII newline character):
+
+    ```
+    tree <directory identifier>
+    [for each parent in parents]
+    parent <parent identifier>
+    [end for each parents]
+    author <author> <author_date>
+    committer <committer> <committer_date>
+    [for each key, value in extra_headers]
+    <key> <encoded value>
+    [end for each extra_headers]
+
+    <message>
+    ```
+
+    The directory identifier is the ascii representation of its hexadecimal
+    encoding.
+
+    Author and committer are formatted with the `format_author` function.
+    Dates are formatted with the `format_date_offset` function.
+
+    Extra headers are an ordered list of [key, value] pairs. Keys are strings
+    and get encoded to utf-8 for identifier computation. Values are either byte
+    strings, unicode strings (that get encoded to utf-8), or integers (that get
+    encoded to their utf-8 decimal representation).
+
+    Multiline extra header values are escaped by indenting the continuation
+    lines with one ascii space.
+
+    The headers are separated from the commit message with an empty line.
+
+    The checksum of the full manifest is computed using the 'commit' git object
+    type.
+
     """
     components = [
         b'tree ', identifier_to_str(revision['directory']).encode(), b'\n',
@@ -263,29 +310,25 @@ def revision_identifier(revision):
         b' ', format_date_offset(revision['committer_date']), b'\n',
     ])
 
+    # Handle extra headers
     metadata = revision.get('metadata', {})
-    if 'gpgsig' in metadata:
-        gpgsig = metadata['gpgsig']
-        if isinstance(gpgsig, str):
-            gpgsig = gpgsig.encode('utf-8')
-        components.extend([b'gpgsig', b' ', gpgsig, b'\n'])
+    for key, value in metadata.get('extra_headers', []):
 
-    if 'extra_headers' in metadata:
-        headers = metadata['extra_headers']
-        keys = list(headers.keys())
-        keys.sort()
-        for header_key in keys:
-            val = headers[header_key]
-            if isinstance(val, int):
-                val = str(val).encode('utf-8')
-            if isinstance(val, str):
-                val = val.encode('utf-8')
-            if isinstance(header_key, str):
-                key = header_key.encode('utf-8')
-            else:
-                key = header_key
+        # Integer values: decimal representation
+        if isinstance(value, int):
+            value = str(value).encode('utf-8')
 
-            components.extend([key, b' ', val, b'\n'])
+        # Unicode string values: utf-8 encoding
+        if isinstance(value, str):
+            value = value.encode('utf-8')
+
+        # multi-line values: indent continuation lines
+        if b'\n' in value:
+            value_chunks = value.split(b'\n')
+            value = b'\n '.join(value_chunks)
+
+        # encode the key to utf-8
+        components.extend([key.encode('utf-8'), b' ', value, b'\n'])
 
     components.extend([b'\n', revision['message']])
 

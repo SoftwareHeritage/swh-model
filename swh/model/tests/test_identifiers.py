@@ -220,22 +220,22 @@ class RevisionIdentifier(unittest.TestCase):
         linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
         linus_gpgsig = b'''\
 -----BEGIN PGP SIGNATURE-----
- Version: GnuPG v1.4.13 (Darwin)
-\x20
- iQIcBAABAgAGBQJVJcYsAAoJEBiY3kIkQRNJVAUQAJ8/XQIfMqqC5oYeEFfHOPYZ
- L7qy46bXHVBa9Qd8zAJ2Dou3IbI2ZoF6/Et89K/UggOycMlt5FKV/9toWyuZv4Po
- L682wonoxX99qvVTHo6+wtnmYO7+G0f82h+qHMErxjP+I6gzRNBvRr+SfY7VlGdK
- wikMKOMWC5smrScSHITnOq1Ews5pe3N7qDYMzK0XVZmgDoaem4RSWMJs4My/qVLN
- e0CqYWq2A22GX7sXl6pjneJYQvcAXUX+CAzp24QnPSb+Q22Guj91TcxLFcHCTDdn
- qgqMsEyMiisoglwrCbO+D+1xq9mjN9tNFWP66SQ48mrrHYTBV5sz9eJyDfroJaLP
- CWgbDTgq6GzRMehHT3hXfYS5NNatjnhkNISXR7pnVP/obIi/vpWh5ll6Gd8q26z+
- a/O41UzOaLTeNI365MWT4/cnXohVLRG7iVJbAbCxoQmEgsYMRc/pBAzWJtLfcB2G
- jdTswYL6+MUdL8sB9pZ82D+BP/YAdHe69CyTu1lk9RT2pYtI/kkfjHubXBCYEJSG
- +VGllBbYG6idQJpyrOYNRJyrDi9yvDJ2W+S0iQrlZrxzGBVGTB/y65S8C+2WTBcE
- lf1Qb5GDsQrZWgD+jtWTywOYHtCBwyCKSAXxSARMbNPeak9WPlcW/Jmu+fUcMe2x
- dg1KdHOa34shrKDaOVzW
- =od6m
- -----END PGP SIGNATURE-----'''
+Version: GnuPG v1.4.13 (Darwin)
+
+iQIcBAABAgAGBQJVJcYsAAoJEBiY3kIkQRNJVAUQAJ8/XQIfMqqC5oYeEFfHOPYZ
+L7qy46bXHVBa9Qd8zAJ2Dou3IbI2ZoF6/Et89K/UggOycMlt5FKV/9toWyuZv4Po
+L682wonoxX99qvVTHo6+wtnmYO7+G0f82h+qHMErxjP+I6gzRNBvRr+SfY7VlGdK
+wikMKOMWC5smrScSHITnOq1Ews5pe3N7qDYMzK0XVZmgDoaem4RSWMJs4My/qVLN
+e0CqYWq2A22GX7sXl6pjneJYQvcAXUX+CAzp24QnPSb+Q22Guj91TcxLFcHCTDdn
+qgqMsEyMiisoglwrCbO+D+1xq9mjN9tNFWP66SQ48mrrHYTBV5sz9eJyDfroJaLP
+CWgbDTgq6GzRMehHT3hXfYS5NNatjnhkNISXR7pnVP/obIi/vpWh5ll6Gd8q26z+
+a/O41UzOaLTeNI365MWT4/cnXohVLRG7iVJbAbCxoQmEgsYMRc/pBAzWJtLfcB2G
+jdTswYL6+MUdL8sB9pZ82D+BP/YAdHe69CyTu1lk9RT2pYtI/kkfjHubXBCYEJSG
++VGllBbYG6idQJpyrOYNRJyrDi9yvDJ2W+S0iQrlZrxzGBVGTB/y65S8C+2WTBcE
+lf1Qb5GDsQrZWgD+jtWTywOYHtCBwyCKSAXxSARMbNPeak9WPlcW/Jmu+fUcMe2x
+dg1KdHOa34shrKDaOVzW
+=od6m
+-----END PGP SIGNATURE-----'''
 
         self.revision = {
             'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
@@ -307,10 +307,10 @@ class RevisionIdentifier(unittest.TestCase):
                                                 tzinfo=linus_tz),
             'message': b'Linux 4.2-rc2\n',
             'metadata': {
-                'extra_headers': {
-                    'svn-revision': 10,
-                    'svn-repo-uuid': '046f1af7-66c2-d61b-5410-ce57b7db7bff',
-                }
+                'extra_headers': [
+                    ['svn-repo-uuid', '046f1af7-66c2-d61b-5410-ce57b7db7bff'],
+                    ['svn-revision', 10],
+                ]
             }
         }
 
@@ -336,7 +336,9 @@ class RevisionIdentifier(unittest.TestCase):
                 'offset': 480,
             },
             'metadata': {
-                'gpgsig': linus_gpgsig,
+                'extra_headers': [
+                    ['gpgsig', linus_gpgsig],
+                ],
             },
             'message': b'''Merge branch 'master' of git://github.com/alexhenrie/git-po
 
