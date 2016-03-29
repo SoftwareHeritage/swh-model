@@ -218,6 +218,24 @@ class RevisionIdentifier(unittest.TestCase):
     def setUp(self):
 
         linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
+        linus_gpgsig = b'''\
+-----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v1.4.13 (Darwin)
+\x20
+ iQIcBAABAgAGBQJVJcYsAAoJEBiY3kIkQRNJVAUQAJ8/XQIfMqqC5oYeEFfHOPYZ
+ L7qy46bXHVBa9Qd8zAJ2Dou3IbI2ZoF6/Et89K/UggOycMlt5FKV/9toWyuZv4Po
+ L682wonoxX99qvVTHo6+wtnmYO7+G0f82h+qHMErxjP+I6gzRNBvRr+SfY7VlGdK
+ wikMKOMWC5smrScSHITnOq1Ews5pe3N7qDYMzK0XVZmgDoaem4RSWMJs4My/qVLN
+ e0CqYWq2A22GX7sXl6pjneJYQvcAXUX+CAzp24QnPSb+Q22Guj91TcxLFcHCTDdn
+ qgqMsEyMiisoglwrCbO+D+1xq9mjN9tNFWP66SQ48mrrHYTBV5sz9eJyDfroJaLP
+ CWgbDTgq6GzRMehHT3hXfYS5NNatjnhkNISXR7pnVP/obIi/vpWh5ll6Gd8q26z+
+ a/O41UzOaLTeNI365MWT4/cnXohVLRG7iVJbAbCxoQmEgsYMRc/pBAzWJtLfcB2G
+ jdTswYL6+MUdL8sB9pZ82D+BP/YAdHe69CyTu1lk9RT2pYtI/kkfjHubXBCYEJSG
+ +VGllBbYG6idQJpyrOYNRJyrDi9yvDJ2W+S0iQrlZrxzGBVGTB/y65S8C+2WTBcE
+ lf1Qb5GDsQrZWgD+jtWTywOYHtCBwyCKSAXxSARMbNPeak9WPlcW/Jmu+fUcMe2x
+ dg1KdHOa34shrKDaOVzW
+ =od6m
+ -----END PGP SIGNATURE-----'''
 
         self.revision = {
             'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
@@ -296,7 +314,7 @@ class RevisionIdentifier(unittest.TestCase):
             }
         }
 
-        self.revision_with_gpgsign = {
+        self.revision_with_gpgsig = {
             'id': '44cc742a8ca17b9c279be4cc195a93a6ef7a320e',
             'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
             'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
@@ -318,21 +336,7 @@ class RevisionIdentifier(unittest.TestCase):
                 'offset': 480,
             },
             'metadata': {
-                'gpgsig': '''-----BEGIN PGP SIGNATURE-----
- Version: GnuPG v1.4.13 (Darwin)\n \n iQIcBAABAgAGBQJVJcYsAAoJEBiY3kIkQRNJVAUQAJ8/XQIfMqqC5oYeEFfHOPYZ
- L7qy46bXHVBa9Qd8zAJ2Dou3IbI2ZoF6/Et89K/UggOycMlt5FKV/9toWyuZv4Po
- L682wonoxX99qvVTHo6+wtnmYO7+G0f82h+qHMErxjP+I6gzRNBvRr+SfY7VlGdK
- wikMKOMWC5smrScSHITnOq1Ews5pe3N7qDYMzK0XVZmgDoaem4RSWMJs4My/qVLN
- e0CqYWq2A22GX7sXl6pjneJYQvcAXUX+CAzp24QnPSb+Q22Guj91TcxLFcHCTDdn
- qgqMsEyMiisoglwrCbO+D+1xq9mjN9tNFWP66SQ48mrrHYTBV5sz9eJyDfroJaLP
- CWgbDTgq6GzRMehHT3hXfYS5NNatjnhkNISXR7pnVP/obIi/vpWh5ll6Gd8q26z+
- a/O41UzOaLTeNI365MWT4/cnXohVLRG7iVJbAbCxoQmEgsYMRc/pBAzWJtLfcB2G
- jdTswYL6+MUdL8sB9pZ82D+BP/YAdHe69CyTu1lk9RT2pYtI/kkfjHubXBCYEJSG
- +VGllBbYG6idQJpyrOYNRJyrDi9yvDJ2W+S0iQrlZrxzGBVGTB/y65S8C+2WTBcE
- lf1Qb5GDsQrZWgD+jtWTywOYHtCBwyCKSAXxSARMbNPeak9WPlcW/Jmu+fUcMe2x
- dg1KdHOa34shrKDaOVzW
- =od6m
- -----END PGP SIGNATURE-----'''  # noqa
+                'gpgsig': linus_gpgsig,
             },
             'message': b'''Merge branch 'master' of git://github.com/alexhenrie/git-po
 
@@ -365,12 +369,12 @@ class RevisionIdentifier(unittest.TestCase):
         )
 
     @istest
-    def revision_identifier_with_gpgsign(self):
+    def revision_identifier_with_gpgsig(self):
         self.assertEqual(
             identifiers.revision_identifier(
-                self.revision_with_gpgsign),
+                self.revision_with_gpgsig),
             identifiers.identifier_to_str(
-                self.revision_with_gpgsign['id']),
+                self.revision_with_gpgsig['id']),
         )
 
 
