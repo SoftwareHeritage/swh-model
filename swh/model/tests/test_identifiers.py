@@ -218,7 +218,8 @@ class RevisionIdentifier(unittest.TestCase):
     def setUp(self):
 
         linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
-        linus_gpgsig = b'''\
+
+        gpgsig = b'''\
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.13 (Darwin)
 
@@ -337,7 +338,7 @@ dg1KdHOa34shrKDaOVzW
             },
             'metadata': {
                 'extra_headers': [
-                    ['gpgsig', linus_gpgsig],
+                    ['gpgsig', gpgsig],
                 ],
             },
             'message': b'''Merge branch 'master' of git://github.com/alexhenrie/git-po
