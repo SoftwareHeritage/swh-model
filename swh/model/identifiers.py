@@ -7,7 +7,7 @@ import binascii
 import datetime
 from functools import lru_cache
 
-from . import hashutil
+from .hashutil import hash_data, hash_git_data
 
 
 @lru_cache()
@@ -91,7 +91,7 @@ def content_identifier(content):
 
     """
 
-    hashes = hashutil.hash_data(
+    hashes = hash_data(
         content['data'],
         {'sha1', 'sha1_git', 'sha256'},
     )
@@ -159,8 +159,7 @@ def directory_identifier(directory):
             identifier_to_bytes(entry['target']),
         ])
 
-    return identifier_to_str(hashutil.hash_git_data(b''.join(components),
-                                                    'tree'))
+    return identifier_to_str(hash_git_data(b''.join(components), 'tree'))
 
 
 def format_date(date):
@@ -291,7 +290,7 @@ def revision_identifier(revision):
     components.extend([b'\n', revision['message']])
 
     commit_raw = b''.join(components)
-    return identifier_to_str(hashutil.hash_git_data(commit_raw, 'commit'))
+    return identifier_to_str(hash_git_data(commit_raw, 'commit'))
 
 
 def target_type_to_git(target_type):
@@ -320,5 +319,4 @@ def release_identifier(release):
 
     components.extend([b'\n', release['message']])
 
-    return identifier_to_str(hashutil.hash_git_data(b''.join(components),
-                                                    'tag'))
+    return identifier_to_str(hash_git_data(b''.join(components), 'tag'))
