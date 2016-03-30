@@ -187,7 +187,7 @@ def format_date(date):
 
 
 @lru_cache()
-def format_offset(offset):
+def format_offset(offset, negative_utc=None):
     """Convert an integer number of minutes into an offset representation.
 
     The offset representation is [+-]hhmm where:
@@ -196,10 +196,10 @@ def format_offset(offset):
 
     A null offset is represented as +0000.
     """
-    if offset >= 0:
-        sign = '+'
-    else:
+    if offset < 0 or offset == 0 and negative_utc:
         sign = '-'
+    else:
+        sign = '+'
 
     hours = abs(offset) // 60
     minutes = abs(offset) % 60
@@ -208,40 +208,114 @@ def format_offset(offset):
     return t.encode()
 
 
-def format_date_offset(date_offset):
-    """Format a date-compatible object with its timezone offset.
+def normalize_timestamp(time_representation):
+    """Normalize a time representation for processing by Software Heritage
 
-    A date-compatible object is either:
-        - a dict with two members
-            timestamp: floating point number of seconds since the unix epoch
-            offset: (int) number of minutes representing the offset from UTC
-        - a datetime.datetime object with a timezone
-        - a numeric value (in which case the offset is hardcoded to 0)
+    This function supports a numeric timestamp (representing a number of
+    seconds since the UNIX epoch, 1970-01-01 at 00:00 UTC), a datetime.datetime
+    object (with timezone information), or a normalized Software
+    Heritage time representation (idempotency).
+
+    Args:
+        time_representation: the representation of a timestamp
+
+    Returns: a normalized dictionary with three keys
+
+     - timestamp: a number of seconds since the UNIX epoch (1970-01-01 at 00:00
+       UTC)
+     - offset: the timezone offset as a number of minutes relative to UTC
+     - negative_utc: a boolean representing whether the offset is -0000 when
+       offset = 0.
+
     """
 
-    # FIXME: move normalization to another module
+    if time_representation is None:
+        return None
 
-    if isinstance(date_offset, dict):
-        date = date_offset['timestamp']
-        offset = date_offset['offset']
-    elif isinstance(date_offset, datetime.datetime):
-        date = date_offset
-        utcoffset = date_offset.utcoffset()
+    negative_utc = False
+
+    if isinstance(time_representation, dict):
+        timestamp = time_representation['timestamp']
+        offset = time_representation['offset']
+        if 'negative_utc' in time_representation:
+            negative_utc = time_representation['negative_utc']
+    elif isinstance(time_representation, datetime.datetime):
+        timestamp = time_representation.timestamp()
+        utcoffset = time_representation.utcoffset()
         if utcoffset is None:
-            raise ValueError('Received a datetime without a timezone')
+            raise ValueError(
+                'normalize_timestamp received datetime without timezone: %s' %
+                time_representation)
+
+        # utcoffset is an integer number of minutes
         seconds_offset = utcoffset.total_seconds()
-        if seconds_offset - int(seconds_offset) != 0 or seconds_offset % 60:
-            raise ValueError('Offset is not an integer number of minutes')
         offset = int(seconds_offset) // 60
     else:
-        date = date_offset
+        timestamp = time_representation
         offset = 0
 
-    return b''.join([format_date(date), b' ', format_offset(offset)])
+    return {
+        'timestamp': timestamp,
+        'offset': offset,
+        'negative_utc': negative_utc,
+    }
 
 
-def format_author(author):
-    return b''.join([author['name'], b' <', author['email'], b'>'])
+def format_author_line(header, author, date_offset):
+    """Format a an author line according to git standards.
+
+    An author line has four components:
+     - a header, describing the type of author (author, committer, tagger)
+     - a name, which is an arbitrary byte string
+     - an email, which is an arbitrary byte string too
+     - optionally, a timestamp with UTC offset specification
+
+    The author line is formatted thus:
+
+        `header` `name` <`email`>[ `timestamp` `utc_offset`]
+
+    If name or email are empty, they are passed as is (so you can find author
+    lines with empty square brackets or two spaces between the header and the
+    opening bracket).
+
+    The timestamp is encoded as a (decimal) number of seconds since the UNIX
+    epoch (1970-01-01 at 00:00 UTC). As an extension to the git format, we
+    support fractional timestamps, using a dot as the separator for the decimal
+    part.
+
+    The utc offset is a number of minutes encoded as '[+-]HHMM'. Note some
+    tools can pass a negative offset corresponding to the UTC timezone
+    ('-0000'), which is valid and is encoded as such.
+
+    For convenience, this function returns the whole line with its trailing
+    newline.
+
+    Args:
+        header: the header of the author line (one of 'author', 'committer',
+                'tagger')
+        author: an author specification (dict with two bytes values: name and
+                email)
+        date_offset: a normalized date/time representation as returned by
+                     `normalize_timestamp`.
+
+    Returns:
+        the newline-terminated byte string containing the author line
+
+    """
+
+    ret = [header.encode(), b' ', author['name'], b' <', author['email'], b'>']
+
+    date_offset = normalize_timestamp(date_offset)
+
+    if date_offset is not None:
+        date_f = format_date(date_offset['timestamp'])
+        offset_f = format_offset(date_offset['offset'],
+                                 date_offset['negative_utc'])
+
+        ret.extend([b' ', date_f, b' ', offset_f])
+
+    ret.append(b'\n')
+    return b''.join(ret)
 
 
 def revision_identifier(revision):
@@ -305,10 +379,9 @@ def revision_identifier(revision):
             ])
 
     components.extend([
-        b'author ', format_author(revision['author']),
-        b' ', format_date_offset(revision['date']), b'\n',
-        b'committer ', format_author(revision['committer']),
-        b' ', format_date_offset(revision['committer_date']), b'\n',
+        format_author_line('author', revision['author'], revision['date']),
+        format_author_line('committer', revision['committer'],
+                           revision['committer_date']),
     ])
 
     # Handle extra headers
@@ -357,10 +430,9 @@ def release_identifier(release):
     ]
 
     if 'author' in release and release['author']:
-        components.extend([
-            b'tagger ', format_author(release['author']), b' ',
-            format_date_offset(release['date']), b'\n',
-        ])
+        components.append(
+            format_author_line('tagger', release['author'], release['date'])
+        )
 
     if release['message'] is not None:
         components.extend([b'\n', release['message']])

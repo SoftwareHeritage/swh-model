@@ -267,6 +267,7 @@ dg1KdHOa34shrKDaOVzW
             'date': {
                 'timestamp': 1437047495.0,
                 'offset': 0,
+                'negative_utc': False,
             },
             'type': 'tar',
             'committer': {
