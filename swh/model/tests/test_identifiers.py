@@ -522,6 +522,25 @@ o6X/3T+vm8K3bf3driRr34c=
             'message': b'',
         }
 
+        self.release_negative_utc = {
+            'id': '97c8d2573a001f88e72d75f596cf86b12b82fd01',
+            'name': b'20081029',
+            'target': '54e9abca4c77421e2921f5f156c9fe4a9f7441c7',
+            'target_type': 'revision',
+            'date': {
+                'timestamp': 1225281976.0,
+                'offset': 0,
+                'negative_utc': True,
+            },
+            'author': {
+                'name': b'Otavio Salvador',
+                'email': b'otavio@debian.org',
+                'id': 17640,
+            },
+            'synthetic': False,
+            'message': b'tagging version 20081029\n\nr56558\n',
+        }
+
     @istest
     def release_identifier(self):
         self.assertEqual(
@@ -548,4 +567,11 @@ o6X/3T+vm8K3bf3driRr34c=
         self.assertEqual(
             identifiers.release_identifier(self.release_empty_message),
             identifiers.identifier_to_str(self.release_empty_message['id'])
+        )
+
+    @istest
+    def release_identifier_negative_utc(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_negative_utc),
+            identifiers.identifier_to_str(self.release_negative_utc['id'])
         )
