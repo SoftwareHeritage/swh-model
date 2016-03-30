@@ -257,6 +257,26 @@ dg1KdHOa34shrKDaOVzW
             'message': b'Linux 4.2-rc2\n',
         }
 
+        self.revision_none_metadata = {
+            'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+            },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
+            'committer': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+            },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
+            'message': b'Linux 4.2-rc2\n',
+            'metadata': None,
+        }
+
         self.synthetic_revision = {
             'id': b'\xb2\xa7\xe1&\x04\x92\xe3D\xfa\xb3\xcb\xf9\x1b\xc1<\x91'
                   b'\xe0T&\xfd',
@@ -402,6 +422,13 @@ dg1KdHOa34shrKDaOVzW
         self.assertEqual(
             identifiers.revision_identifier(self.revision),
             identifiers.identifier_to_str(self.revision['id']),
+        )
+
+    @istest
+    def revision_identifier_none_metadata(self):
+        self.assertEqual(
+            identifiers.revision_identifier(self.revision_none_metadata),
+            identifiers.identifier_to_str(self.revision_none_metadata['id']),
         )
 
     @istest

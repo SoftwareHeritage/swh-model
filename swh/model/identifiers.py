@@ -385,7 +385,10 @@ def revision_identifier(revision):
     ])
 
     # Handle extra headers
-    metadata = revision.get('metadata', {})
+    metadata = revision.get('metadata')
+    if not metadata:
+        metadata = {}
+
     for key, value in metadata.get('extra_headers', []):
 
         # Integer values: decimal representation
