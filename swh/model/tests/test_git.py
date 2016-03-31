@@ -157,6 +157,11 @@ class GitHashArborescenceTree(unittest.TestCase):
         subprocess.check_output(
             ['tar', 'xvf', sample_folder_archive, '-C', cls.tmp_root_path])
 
+    @classmethod
+    def tearDown(cls):
+        if os.path.exists(cls.tmp_root_path):
+            shutil.rmtree(cls.tmp_root_path)
+
     @istest
     def walk_and_compute_sha1_from_directory(self):
         # make a temporary arborescence tree to hash without ignoring anything
