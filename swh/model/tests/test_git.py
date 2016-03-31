@@ -138,6 +138,10 @@ blah
 
 
 class GitHashArborescenceTree(unittest.TestCase):
+    """Root class to ease walk and git hash testing without side-effecty problems.
+
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -162,6 +166,8 @@ class GitHashArborescenceTree(unittest.TestCase):
         if os.path.exists(cls.tmp_root_path):
             shutil.rmtree(cls.tmp_root_path)
 
+
+class WalkAndGitHash(GitHashArborescenceTree):
     @istest
     def walk_and_compute_sha1_from_directory(self):
         # make a temporary arborescence tree to hash without ignoring anything
@@ -216,3 +222,184 @@ class GitHashArborescenceTree(unittest.TestCase):
                 'sha1_git': b'\xc3\x02\x0fk\xf15\xa3\x8cm\xf3\xaf\xeb_\xb3\x822\xc5\xe0p\x87'}]}                            # noqa
 
         self.assertEquals(actual_walk1, expected_checksums)
+
+
+class GitHashUpdateWithNewFile(GitHashArborescenceTree):
+    @istest
+    def update_checksums_from_add_new_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way
+        # update the actual git checksums where only the modification is needed
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # update the existing file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+
+class GitHashUpdateWithModifiedFile(GitHashArborescenceTree):
+    @istest
+    def update_checksums_from_modify_existing_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way
+        # update the actual git checksums where only the modification is needed
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # update existing file
+        changed_path = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path, 'wb+') as f:
+            f.write(b'I have a dream')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'M'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+
+class GitHashUpdateWithDeletion(GitHashArborescenceTree):
+    @istest
+    def update_checksums_from_modify_existing_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way
+        # update the actual git checksums where only the modification is needed
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Remove folder
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo')
+        shutil.rmtree(changed_path)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+
+class GitHashUpdateWithAllInOne(GitHashArborescenceTree):
+    @istest
+    def update_checksums_from_modify_existing_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way
+        # update the actual git checksums where only the modification is needed
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Actions on disk (imagine a checkout of some form)
+
+        # 1. Create a new file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # 2. update the existing file
+        changed_path1 = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path1, 'wb') as f:
+            f.write(b'new line')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/foo')
+        shutil.rmtree(changed_path2)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'},
+             {'path': changed_path1, 'action': 'M'},
+             {'path': changed_path2, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+
+class GitHashUpdateWithCommonAncestor(GitHashArborescenceTree):
+    @istest
+    def update_checksums_from_common_ancestor(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way
+        # update the actual git checksums where only the modification is needed
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Actions on disk (imagine a checkout of some form)
+
+        # 1. Create a new file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # 2. update the existing file
+        changed_path1 = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path1, 'wb') as f:
+            f.write(b'new line')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/foo')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/bar/barfoo')
+        shutil.rmtree(changed_path2)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'},
+             {'path': changed_path1, 'action': 'M'},
+             {'path': changed_path2, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)

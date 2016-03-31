@@ -271,3 +271,112 @@ def walk_and_compute_sha1_from_directory(rootdir,
     ls_hashes[ROOT_TREE_KEY] = [root_hash]
 
     return ls_hashes
+
+
+def recompute_sha1_in_memory(root, deeper_rootdir, objects):
+    """Recompute git sha1 from directory deeper_rootdir to root.
+
+    This function relies exclusively on objects for hashes.
+    It expects the deeper_rootdir and every key below that path to be updated.
+
+    Args:
+
+      - root: Upper root directory (so same as
+        objects[ROOT_TREE_KEY][0]['path'])
+
+        - rootdir: Root directory from which beginning the git hash computation
+
+        - objects: objects dictionary as per returned by
+        `walk_and_compute_sha1_from_directory`
+
+    Returns:
+        Dictionary of entries with keys <path-name> and as values a list of
+        directory entries.
+        Those are list of dictionary with keys:
+          - 'perms'
+          - 'type'
+          - 'name'
+          - 'sha1_git'
+          - and specifically content: 'sha1', 'sha256', ...
+
+    Note:
+        One special key is ROOT_TREE_KEY to indicate the upper root of the
+        directory (this is the revision's directory).
+
+    Raises:
+        Nothing
+        If something is raised, this is a programmatic error.
+
+    """
+    # list of paths to update from bottom to top
+    upper_root = os.path.dirname(root)
+    rootdir = os.path.dirname(deeper_rootdir)
+    while rootdir != upper_root:
+        files = objects.get(rootdir, None)
+        if files:
+            ls_hashes = []
+            for hashfile in files:
+                fulldirname = hashfile['path']
+                if hashfile['type'] == GitType.TREE:
+                    tree_hash = compute_tree_metadata(fulldirname, objects)
+                    ls_hashes.append(tree_hash)
+                else:
+                    ls_hashes.append(hashfile)
+
+            objects[rootdir] = ls_hashes
+
+        rootdir = os.path.dirname(rootdir)
+
+    # update root
+    objects[ROOT_TREE_KEY][0]['sha1_git'] = compute_directory_git_sha1(root,
+                                                                       objects)
+
+    return objects
+
+
+def update_checksums_from(changed_paths, objects,
+                          dir_ok_fn=lambda dirpath: True):
+    """Given a list of changed paths, recompute the checksums only where needed.
+
+    Args:
+        changed_paths: List of dictionary representing path changes.
+        The dictionary has the form:
+        - path: the full path to the file Added, Modified or Deleted
+        - action: A, M or D
+        objects: dictionary returned by `walk_and_compute_sha1_from_directory`.
+
+    Returns:
+        Dictionary returned by `walk_and_compute_sha1_from_directory`
+        updated (mutated) according to necessary modifications.
+
+    """
+    root = objects[ROOT_TREE_KEY][0]['path']
+
+    # compute the list of changed paths to update (no action discrimination is
+    # necessary here since we'll walk back the fs from the deeper node's
+    # directory, so every deletion, add or modification will be seen)
+
+    # FIXME: Compute the lowest common ancestor to reduce the computations
+    # FIXME: if one changed path is a file at the rootdir, we recompute all
+    # from disk
+    for changed_path in changed_paths:
+        path = changed_path['path']
+        if changed_path['action'] == 'D':
+            objects.pop(path, None)
+
+        rootdir = os.path.dirname(path)
+        if not os.path.exists(rootdir):
+            objects.pop(rootdir, None)
+            continue
+
+        # recompute from disk the checksums
+        hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn)
+        # update the objects with new checksums for the arborescence tree below
+        # rootdir
+        for d in (k for k in hashes.keys() if k != ROOT_TREE_KEY):
+            objects[d] = hashes[d]
+
+        # now recompute the hashes in memory from deeper_rootdir to root
+        objects = recompute_sha1_in_memory(root, rootdir, objects)
+
+    return objects
