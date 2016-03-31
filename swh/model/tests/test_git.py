@@ -4,9 +4,10 @@
 # See top-level LICENSE file for more information
 
 import os
+import shutil
+import subprocess
 import tempfile
 import unittest
-import subprocess
 
 from nose.tools import istest
 
