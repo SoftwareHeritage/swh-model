@@ -330,7 +330,6 @@ def recompute_sha1_in_memory(root, deeper_rootdir, objects):
     # update root
     objects[ROOT_TREE_KEY][0]['sha1_git'] = compute_directory_git_sha1(root,
                                                                        objects)
-
     return objects
 
 
@@ -362,7 +361,9 @@ def update_checksums_from(changed_paths, objects,
     for changed_path in changed_paths:
         path = changed_path['path']
         if changed_path['action'] == 'D':
-            objects.pop(path, None)
+            new_objects = {k: objects[k] for k in objects.keys()
+                           if not k.startswith(path)}
+            objects = new_objects
 
         rootdir = os.path.dirname(path)
         if not os.path.exists(rootdir):
