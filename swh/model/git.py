@@ -114,9 +114,13 @@ def compute_link_metadata(linkpath):
 
     Returns:
         Dictionary of values:
+            - data: link's content
+            - length: link's content length
             - name: basename of the link
             - perms: git permission for link
             - type: git type for link
+            - path: absolute path to the link on filesystem
+
     """
     data = os.readlink(linkpath)
     link_metadata = hashutil.hash_data(data)
@@ -143,6 +147,7 @@ def compute_blob_metadata(filepath):
             - name: basename of the file
             - perms: git permission for file
             - type: git type for file
+            - path: absolute filepath on filesystem
 
     """
     blob_metadata = hashutil.hash_path(filepath)
@@ -165,9 +170,11 @@ def compute_tree_metadata(dirname, ls_hashes):
 
     Returns:
         Dictionary of values:
+            - sha1_git: tree's sha1 git
             - name: basename of the directory
             - perms: git permission for directory
             - type: git type for directory
+            - path: absolute path to directory on filesystem
 
     """
     return {
