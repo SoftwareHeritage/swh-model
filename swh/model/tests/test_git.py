@@ -216,6 +216,22 @@ class GitHashArborescenceTree(unittest.TestCase):
 
         self.assertEquals(actual_walk1, expected_checksums)
 
+    @istest
+    def walk_and_compute_sha1_from_directory_without_root_tree(self):
+        # compute the full checksums
+        expected_hashes = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # except for the key on that round
+        actual_hashes = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            with_root_tree=False)
+
+        # then, removing the root tree hash from the first round
+        del expected_hashes[git.ROOT_TREE_KEY]
+
+        # should give us the same checksums as the second round
+        self.assertEquals(actual_hashes, expected_hashes)
 
 
 class GitHashUpdate(GitHashArborescenceTree):

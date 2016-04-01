@@ -187,7 +187,8 @@ def compute_tree_metadata(dirname, ls_hashes):
 
 
 def walk_and_compute_sha1_from_directory(rootdir,
-                                         dir_ok_fn=lambda dirpath: True):
+                                         dir_ok_fn=lambda dirpath: True,
+                                         with_root_tree=True):
     """Compute git sha1 from directory rootdir.
 
     Args:
@@ -196,6 +197,10 @@ def walk_and_compute_sha1_from_directory(rootdir,
         - dir_ok_fn: Filter function to filter directory according to rules
         defined in the function. By default, all folders are ok.
         Example override: dir_ok_fn = lambda dirpath: b'svn' not in dirpath
+
+        - with_root_tree: Determine if we compute the upper root tree's
+          checksums. As a default, we want it. One possible use case where this
+          is not useful is the update (cf. `update_checksums_from`)
 
     Returns:
         Dictionary of entries with keys <path-name> and as values a list of
@@ -260,15 +265,16 @@ def walk_and_compute_sha1_from_directory(rootdir,
 
         ls_hashes[dirpath].extend(dir_hashes)
 
-    # compute the current directory hashes
-    root_hash = {
-        'sha1_git': compute_directory_git_sha1(rootdir, ls_hashes),
-        'path': rootdir,
-        'name': os.path.basename(rootdir),
-        'perms': GitPerm.TREE,
-        'type': GitType.TREE
-    }
-    ls_hashes[ROOT_TREE_KEY] = [root_hash]
+    if with_root_tree:
+        # compute the current directory hashes
+        root_hash = {
+            'sha1_git': compute_directory_git_sha1(rootdir, ls_hashes),
+            'path': rootdir,
+            'name': os.path.basename(rootdir),
+            'perms': GitPerm.TREE,
+            'type': GitType.TREE
+        }
+        ls_hashes[ROOT_TREE_KEY] = [root_hash]
 
     return ls_hashes
 
@@ -371,11 +377,11 @@ def update_checksums_from(changed_paths, objects,
             continue
 
         # recompute from disk the checksums
-        hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn)
+        hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn,
+                                                      with_root_tree=False)
         # update the objects with new checksums for the arborescence tree below
         # rootdir
-        for d in (k for k in hashes.keys() if k != ROOT_TREE_KEY):
-            objects[d] = hashes[d]
+        objects.update(hashes)
 
         # now recompute the hashes in memory from deeper_rootdir to root
         objects = recompute_sha1_in_memory(root, rootdir, objects)
