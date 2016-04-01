@@ -141,12 +141,8 @@ class GitHashArborescenceTree(unittest.TestCase):
     """Root class to ease walk and git hash testing without side-effecty problems.
 
     """
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+    def setUp(self):
+        self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
 
         start_path = os.path.dirname(__file__).encode('utf-8')
         sample_folder_archive = os.path.join(start_path,
@@ -155,19 +151,16 @@ class GitHashArborescenceTree(unittest.TestCase):
                                              b'dir-folders',
                                              b'sample-folder.tgz')
 
-        cls.root_path = os.path.join(cls.tmp_root_path, b'sample-folder')
+        self.root_path = os.path.join(self.tmp_root_path, b'sample-folder')
 
         # uncompress the sample folder
         subprocess.check_output(
-            ['tar', 'xvf', sample_folder_archive, '-C', cls.tmp_root_path])
+            ['tar', 'xvf', sample_folder_archive, '-C', self.tmp_root_path])
 
-    @classmethod
-    def tearDown(cls):
-        if os.path.exists(cls.tmp_root_path):
-            shutil.rmtree(cls.tmp_root_path)
+    def tearDown(self):
+        if os.path.exists(self.tmp_root_path):
+            shutil.rmtree(self.tmp_root_path)
 
-
-class WalkAndGitHash(GitHashArborescenceTree):
     @istest
     def walk_and_compute_sha1_from_directory(self):
         # make a temporary arborescence tree to hash without ignoring anything
@@ -224,12 +217,13 @@ class WalkAndGitHash(GitHashArborescenceTree):
         self.assertEquals(actual_walk1, expected_checksums)
 
 
-class GitHashUpdateWithNewFile(GitHashArborescenceTree):
+
+class GitHashUpdate(GitHashArborescenceTree):
     @istest
     def update_checksums_from_add_new_file(self):
         # make a temporary arborescence tree to hash without ignoring anything
-        # update the disk in some way
-        # update the actual git checksums where only the modification is needed
+        # update the disk in some way (add a new file)
+        # update the actual git checksums from the deeper tree modified
 
         # when
         objects = git.walk_and_compute_sha1_from_directory(
@@ -252,12 +246,10 @@ class GitHashUpdateWithNewFile(GitHashArborescenceTree):
 
         self.assertEquals(expected_dict, actual_dict)
 
-
-class GitHashUpdateWithModifiedFile(GitHashArborescenceTree):
     @istest
     def update_checksums_from_modify_existing_file(self):
         # make a temporary arborescence tree to hash without ignoring anything
-        # update the disk in some way
+        # update the disk in some way ()
         # update the actual git checksums where only the modification is needed
 
         # when
@@ -282,13 +274,11 @@ class GitHashUpdateWithModifiedFile(GitHashArborescenceTree):
 
         self.assertEquals(expected_dict, actual_dict)
 
-
-class GitHashUpdateWithDeletion(GitHashArborescenceTree):
     @istest
-    def update_checksums_from_modify_existing_file(self):
+    def update_checksums_delete_existing_file(self):
         # make a temporary arborescence tree to hash without ignoring anything
-        # update the disk in some way
-        # update the actual git checksums where only the modification is needed
+        # update the disk in some way (delete a file)
+        # update the actual git checksums from the deeper tree modified
 
         # when
         objects = git.walk_and_compute_sha1_from_directory(
@@ -310,13 +300,11 @@ class GitHashUpdateWithDeletion(GitHashArborescenceTree):
 
         self.assertEquals(expected_dict, actual_dict)
 
-
-class GitHashUpdateWithAllInOne(GitHashArborescenceTree):
     @istest
-    def update_checksums_from_modify_existing_file(self):
+    def update_checksums_from_multiple_fs_modification(self):
         # make a temporary arborescence tree to hash without ignoring anything
-        # update the disk in some way
-        # update the actual git checksums where only the modification is needed
+        # update the disk in some way (modify a file, add a new, delete one)
+        # update the actual git checksums from the deeper tree modified
 
         # when
         objects = git.walk_and_compute_sha1_from_directory(
