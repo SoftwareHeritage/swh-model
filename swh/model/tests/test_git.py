@@ -407,3 +407,46 @@ class GitHashUpdateWithCommonAncestor(GitHashArborescenceTree):
             objects)
 
         self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_detects_recomputation_from_all_is_needed(self):
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Actions on disk (imagine a checkout of some form)
+
+        # 1. Create a new file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'new-file-at-root')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # 2. update the existing file
+        changed_path1 = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path1, 'wb') as f:
+            f.write(b'new line')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/foo')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/bar/barfoo')
+        shutil.rmtree(changed_path2)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'},
+             {'path': changed_path1, 'action': 'M'},
+             {'path': changed_path2, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)

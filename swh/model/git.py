@@ -357,13 +357,14 @@ def update_checksums_from(changed_paths, objects,
     """
     root = objects[ROOT_TREE_KEY][0]['path']
 
-    # compute the list of changed paths to update (no action discrimination is
-    # necessary here since we'll walk back the fs from the deeper node's
-    # directory, so every deletion, add or modification will be seen)
-
     # FIXME: Compute the lowest common ancestor to reduce the computations
-    # FIXME: if one changed path is a file at the rootdir, we recompute all
-    # from disk
+
+    # a first round-trip to ensure we don't need to recompute everything anyway
+    for parent in (os.path.dirname(p['path']) for p in changed_paths):
+        if parent == root:
+            return walk_and_compute_sha1_from_directory(root, dir_ok_fn)
+
+    # Recompute only what's needed
     for changed_path in changed_paths:
         path = changed_path['path']
         if changed_path['action'] == 'D':
@@ -376,14 +377,18 @@ def update_checksums_from(changed_paths, objects,
             objects.pop(rootdir, None)
             continue
 
-        # recompute from disk the checksums
+        # recompute from disk the checksums from impacted rootdir changes
+        # and update the original objects with new checksums for the
+        # arborescence tree below rootdir
         hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn,
                                                       with_root_tree=False)
-        # update the objects with new checksums for the arborescence tree below
-        # rootdir
         objects.update(hashes)
 
-        # now recompute the hashes in memory from deeper_rootdir to root
+        # FIXME: In some cases, there will be too much computations
+        # here. We cannot postpone the computations though since the
+        # keys in the dict are not sorted.
+
+        # Recompute the hashes in memory from rootdir to root
         objects = recompute_sha1_in_memory(root, rootdir, objects)
 
     return objects
