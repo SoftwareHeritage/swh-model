@@ -137,7 +137,7 @@ blah
         self.assertEqual(checksum, self.checksums['tag_sha1_git'])
 
 
-class GitHashArborescenceTree(unittest.TestCase):
+class GitHashWalkArborescenceTree(unittest.TestCase):
     """Root class to ease walk and git hash testing without side-effecty problems.
 
     """
@@ -161,6 +161,12 @@ class GitHashArborescenceTree(unittest.TestCase):
         if os.path.exists(self.tmp_root_path):
             shutil.rmtree(self.tmp_root_path)
 
+
+class GitHashFromScratch(GitHashWalkArborescenceTree):
+    """Test the main `walk_and_compute_sha1_from_directory` algorithm that
+    scans and compute the disk for checksums.
+
+    """
     @istest
     def walk_and_compute_sha1_from_directory(self):
         # make a temporary arborescence tree to hash without ignoring anything
@@ -234,7 +240,10 @@ class GitHashArborescenceTree(unittest.TestCase):
         self.assertEquals(actual_hashes, expected_hashes)
 
 
-class GitHashUpdate(GitHashArborescenceTree):
+class GitHashUpdate(GitHashWalkArborescenceTree):
+    """Test `walk and git hash only on modified fs` functions.
+
+    """
     @istest
     def update_checksums_from_add_new_file(self):
         # make a temporary arborescence tree to hash without ignoring anything
@@ -291,6 +300,19 @@ class GitHashUpdate(GitHashArborescenceTree):
         self.assertEquals(expected_dict, actual_dict)
 
     @istest
+    def update_checksums_no_change(self):
+        # when
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # nothing changes on disk
+
+        # then
+        actual_dict = git.update_checksums_from([], expected_dict)
+
+        self.assertEquals(actual_dict, expected_dict)
+
+    @istest
     def update_checksums_delete_existing_file(self):
         # make a temporary arborescence tree to hash without ignoring anything
         # update the disk in some way (delete a file)
@@ -314,10 +336,10 @@ class GitHashUpdate(GitHashArborescenceTree):
             [{'path': changed_path, 'action': 'D'}],
             objects)
 
-        self.assertEquals(expected_dict, actual_dict)
+        self.assertEquals(actual_dict, expected_dict)
 
     @istest
-    def update_checksums_from_multiple_fs_modification(self):
+    def update_checksums_from_multiple_fs_modifications(self):
         # make a temporary arborescence tree to hash without ignoring anything
         # update the disk in some way (modify a file, add a new, delete one)
         # update the actual git checksums from the deeper tree modified
@@ -359,19 +381,27 @@ class GitHashUpdate(GitHashArborescenceTree):
 
         self.assertEquals(expected_dict, actual_dict)
 
-
-class GitHashUpdateWithCommonAncestor(GitHashArborescenceTree):
     @istest
     def update_checksums_from_common_ancestor(self):
-        # make a temporary arborescence tree to hash without ignoring anything
-        # update the disk in some way
-        # update the actual git checksums where only the modification is needed
-
         # when
+        # Add some new arborescence below a folder destined to be removed
+        # want to check that old keys does not remain
+        future_folder_to_remove = os.path.join(self.tmp_root_path,
+                                               b'sample-folder/bar/barfoo')
+
+        # add .../barfoo/hello/world under (.../barfoo which will be destroyed)
+        new_folder = os.path.join(future_folder_to_remove, b'hello')
+        os.makedirs(new_folder, exist_ok=True)
+        with open(os.path.join(future_folder_to_remove, b'world'), 'wb') as f:
+            f.write(b"i'm sad 'cause i'm destined to be removed...")
+
+        # now we scan the disk
         objects = git.walk_and_compute_sha1_from_directory(
             self.tmp_root_path)
 
-        # Actions on disk (imagine a checkout of some form)
+        assert objects[future_folder_to_remove]
+
+        # Actions on disk (to simulate a checkout of some sort)
 
         # 1. Create a new file
         changed_path = os.path.join(self.tmp_root_path,
@@ -386,14 +416,8 @@ class GitHashUpdateWithCommonAncestor(GitHashArborescenceTree):
         with open(changed_path1, 'wb') as f:
             f.write(b'new line')
 
-        # 3. Remove some folder
-        changed_path2 = os.path.join(self.tmp_root_path,
-                                     b'sample-folder/foo')
-
-        # 3. Remove some folder
-        changed_path2 = os.path.join(self.tmp_root_path,
-                                     b'sample-folder/bar/barfoo')
-        shutil.rmtree(changed_path2)
+        # 3. Remove folder
+        shutil.rmtree(future_folder_to_remove)
 
         # Actually walking the fs will be the resulting expectation
         expected_dict = git.walk_and_compute_sha1_from_directory(
@@ -403,7 +427,7 @@ class GitHashUpdateWithCommonAncestor(GitHashArborescenceTree):
         actual_dict = git.update_checksums_from(
             [{'path': changed_path, 'action': 'A'},
              {'path': changed_path1, 'action': 'M'},
-             {'path': changed_path2, 'action': 'D'}],
+             {'path': future_folder_to_remove, 'action': 'D'}],
             objects)
 
         self.assertEquals(expected_dict, actual_dict)
@@ -450,3 +474,25 @@ class GitHashUpdateWithCommonAncestor(GitHashArborescenceTree):
             objects)
 
         self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def commonpath(self):
+        paths = ['r/0/h',
+                 'r/1/d', 'r/1/i/a', 'r/1/i/b', 'r/1/i/c',
+                 'r/2/e', 'r/2/f', 'r/2/g']
+        self.assertEquals(git.commonpath(paths), 'r')
+
+        paths = ['r/1/d', 'r/1/i/a', 'r/1/i/b', 'r/1/i/c']
+        self.assertEquals(git.commonpath(paths), 'r/1')
+
+        paths = ['/a/r/2/g', '/a/r/1/i/c', '/a/r/0/h']
+        self.assertEquals(git.commonpath(paths), '/a/r')
+
+        paths = [b'/a/r/2/g', b'/b/r/1/i/c', b'/c/r/0/h']
+        self.assertEquals(git.commonpath(paths), b'/')
+
+        paths = ['a/z', 'a/z', 'a/z']
+        self.assertEquals(git.commonpath(paths), 'a/z')
+
+        paths = ['0']
+        self.assertEquals(git.commonpath(paths), '0')

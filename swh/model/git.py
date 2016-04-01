@@ -339,56 +339,95 @@ def recompute_sha1_in_memory(root, deeper_rootdir, objects):
     return objects
 
 
+def commonpath(paths):
+    """Given a sequence of path names, returns the longest common sub-path.
+
+    Copied from Python3.5
+
+    """
+
+    if not paths:
+        raise ValueError('commonpath() arg is an empty sequence')
+
+    if isinstance(paths[0], bytes):
+        sep = b'/'
+        curdir = b'.'
+    else:
+        sep = '/'
+        curdir = '.'
+
+    try:
+        split_paths = [path.split(sep) for path in paths]
+
+        try:
+            isabs, = set(p[:1] == sep for p in paths)
+        except ValueError:
+            raise ValueError("Can't mix absolute and relative paths")
+
+        split_paths = [
+            [c for c in s if c and c != curdir] for s in split_paths]
+        s1 = min(split_paths)
+        s2 = max(split_paths)
+        common = s1
+        for i, c in enumerate(s1):
+            if c != s2[i]:
+                common = s1[:i]
+                break
+
+        prefix = sep if isabs else sep[:0]
+        return prefix + sep.join(common)
+    except (TypeError, AttributeError):
+        raise
+
+
 def update_checksums_from(changed_paths, objects,
                           dir_ok_fn=lambda dirpath: True):
-    """Given a list of changed paths, recompute the checksums only where needed.
+    """Given a list of changed paths, recompute the checksums only where
+    needed.
 
     Args:
-        changed_paths: List of dictionary representing path changes.
-        The dictionary has the form:
+        changed_paths: Dictionary list representing path changes.
+        A dictionary has the form:
         - path: the full path to the file Added, Modified or Deleted
         - action: A, M or D
         objects: dictionary returned by `walk_and_compute_sha1_from_directory`.
 
     Returns:
         Dictionary returned by `walk_and_compute_sha1_from_directory`
-        updated (mutated) according to necessary modifications.
+        updated (mutated) according to latest filesystem modifications.
 
     """
     root = objects[ROOT_TREE_KEY][0]['path']
 
-    # FIXME: Compute the lowest common ancestor to reduce the computations
-
-    # a first round-trip to ensure we don't need to recompute everything anyway
-    for parent in (os.path.dirname(p['path']) for p in changed_paths):
-        if parent == root:
-            return walk_and_compute_sha1_from_directory(root, dir_ok_fn)
-
-    # Recompute only what's needed
+    paths = []
+    # a first round-trip to ensure we don't need to...
     for changed_path in changed_paths:
         path = changed_path['path']
-        if changed_path['action'] == 'D':
-            new_objects = {k: objects[k] for k in objects.keys()
-                           if not k.startswith(path)}
-            objects = new_objects
+        parent = os.path.dirname(path)
+        if parent == root:  # ... recompute everything anyway
+            return walk_and_compute_sha1_from_directory(root, dir_ok_fn)
 
-        rootdir = os.path.dirname(path)
-        if not os.path.exists(rootdir):
-            objects.pop(rootdir, None)
-            continue
+        if changed_path['action'] == 'D':  # (D)elete
+            k = objects.pop(path, None)
+            if k:  # it's a dir, we need to remove the descendant paths
+                prefix_path = path + b'/'
+                new_objects = {k: objects[k] for k in objects.keys()
+                               if not k.startswith(prefix_path)}
+                objects = new_objects
 
-        # recompute from disk the checksums from impacted rootdir changes
-        # and update the original objects with new checksums for the
-        # arborescence tree below rootdir
-        hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn,
-                                                      with_root_tree=False)
-        objects.update(hashes)
+        paths.append(parent)
 
-        # FIXME: In some cases, there will be too much computations
-        # here. We cannot postpone the computations though since the
-        # keys in the dict are not sorted.
+    if not paths:  # no modification on paths
+        return objects
 
-        # Recompute the hashes in memory from rootdir to root
-        objects = recompute_sha1_in_memory(root, rootdir, objects)
+    rootdir = commonpath(paths)
 
-    return objects
+    # Recompute from disk the checksums from impacted common ancestor
+    # rootdir changes. Then update the original objects with new
+    # checksums for the arborescence tree below rootdir
+    hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn,
+                                                  with_root_tree=False)
+    objects.update(hashes)
+
+    # Recompute the hashes in memory from rootdir to root
+    return recompute_sha1_in_memory(root, rootdir, objects)
