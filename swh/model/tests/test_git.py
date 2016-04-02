@@ -207,6 +207,7 @@ class GitHashFromScratch(GitHashWalkArborescenceTree):
             os.path.join(self.tmp_root_path, b'sample-folder/empty-folder'): [],                                            # noqa
             os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'): [{                                               # noqa
                 'type': git.GitType.BLOB,                                                                                   # noqa
+                'length': 72,
                 'sha256': b'=\xb5\xae\x16\x80U\xbc\xd9:M\x08(]\xc9\x9f\xfe\xe2\x883\x03\xb2?\xac^\xab\x85\x02s\xa8\xeaUF',  # noqa
                 'name': b'another-quote.org',                                                                               # noqa
                 'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo/another-quote.org'),                    # noqa
