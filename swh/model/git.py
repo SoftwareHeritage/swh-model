@@ -282,15 +282,16 @@ def walk_and_compute_sha1_from_directory(rootdir,
 def recompute_sha1_in_memory(root, deeper_rootdir, objects):
     """Recompute git sha1 from directory deeper_rootdir to root.
 
-    This function relies exclusively on objects for hashes.
-    It expects the deeper_rootdir and every key below that path to be updated.
+    This function relies exclusively on `objects` for hashes.  It
+    expects the deeper_rootdir and every key below that path to be
+    already updated.
 
     Args:
-
       - root: Upper root directory (so same as
         objects[ROOT_TREE_KEY][0]['path'])
 
-        - rootdir: Root directory from which beginning the git hash computation
+        - deeper_rootdir: Root directory from which the git hash
+          computation begins
 
         - objects: objects dictionary as per returned by
         `walk_and_compute_sha1_from_directory`
@@ -307,7 +308,7 @@ def recompute_sha1_in_memory(root, deeper_rootdir, objects):
 
     Note:
         One special key is ROOT_TREE_KEY to indicate the upper root of the
-        directory (this is the revision's directory).
+        directory (this is the revision's target directory).
 
     Raises:
         Nothing
