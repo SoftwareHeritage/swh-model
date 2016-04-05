@@ -224,6 +224,9 @@ def walk_and_compute_sha1_from_directory(rootdir,
     ls_hashes = {}
     all_links = set()
 
+    if rootdir.endswith(b'/'):
+        rootdir = rootdir.rstrip(b'/')
+
     def filtfn(dirpath, dirnames):
         return list(filter(lambda dirname: dir_ok_fn(os.path.join(dirpath,
                                                                   dirname)),
@@ -399,14 +402,18 @@ def update_checksums_from(changed_paths, objects,
 
     """
     root = objects[ROOT_TREE_KEY][0]['path']
+    if root.endswith(b'/'):
+        root = root.rstrip(b'/')
 
     paths = []
     # a first round-trip to ensure we don't need to...
     for changed_path in changed_paths:
         path = changed_path['path']
+
         parent = os.path.dirname(path)
         if parent == root:  # ... recompute everything anyway
-            return walk_and_compute_sha1_from_directory(root, dir_ok_fn)
+            return walk_and_compute_sha1_from_directory(root,
+                                                        dir_ok_fn)
 
         if changed_path['action'] == 'D':  # (D)elete
             k = objects.pop(path, None)
@@ -422,6 +429,12 @@ def update_checksums_from(changed_paths, objects,
         return objects
 
     rootdir = commonpath(paths)
+
+    # common ancestor is the root anyway, no optimization possible,
+    # recompute all
+    if root == rootdir:
+        return walk_and_compute_sha1_from_directory(root,
+                                                    dir_ok_fn)
 
     # Recompute from disk the checksums from impacted common ancestor
     # rootdir changes. Then update the original objects with new
