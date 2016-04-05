@@ -145,17 +145,17 @@ class GitHashWalkArborescenceTree(unittest.TestCase):
         self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
 
         start_path = os.path.dirname(__file__).encode('utf-8')
-        sample_folder_archive = os.path.join(start_path,
-                                             b'../../../..',
-                                             b'swh-storage-testdata',
-                                             b'dir-folders',
-                                             b'sample-folder.tgz')
+        pkg_doc_linux_r11 = os.path.join(start_path,
+                                         b'../../../..',
+                                         b'swh-storage-testdata',
+                                         b'dir-folders',
+                                         b'sample-folder.tgz')
 
         self.root_path = os.path.join(self.tmp_root_path, b'sample-folder')
 
         # uncompress the sample folder
         subprocess.check_output(
-            ['tar', 'xvf', sample_folder_archive, '-C', self.tmp_root_path])
+            ['tar', 'xvf', pkg_doc_linux_r11, '-C', self.tmp_root_path])
 
     def tearDown(self):
         if os.path.exists(self.tmp_root_path):
@@ -497,3 +497,136 @@ class GitHashUpdate(GitHashWalkArborescenceTree):
 
         paths = ['0']
         self.assertEquals(git.commonpath(paths), '0')
+
+
+def untar(archive, dest):
+    # cleanup
+    shutil.rmtree(dest)
+    os.mkdir(dest)
+    # untar
+    cmd = [b'tar', b'xf', archive, b'-C', dest]
+    subprocess.check_output(cmd)
+
+
+def ignore_svn_folder(dirpath):
+    return b'.svn' not in dirpath
+
+
+class GitHashUpdateRealUseCase(GitHashWalkArborescenceTree):
+    """Test `walk and git hash only on modified fs` functions.
+
+    """
+    def setUp(self):
+        self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+
+        archives_folder = os.path.join(
+            os.path.dirname(__file__).encode('utf-8'),
+            b'../../../..',
+            b'swh-storage-testdata',
+            b'svn-folders')
+
+        self.pkg_doc_linux_r10 = os.path.join(archives_folder,
+                                              b'pkg-doc-linux-r10.tgz')
+        self.pkg_doc_linux_r11 = os.path.join(archives_folder,
+                                              b'pkg-doc-linux-r11.tgz')
+        self.pkg_doc_linux_r12 = os.path.join(archives_folder,
+                                              b'pkg-doc-linux-r12.tgz')
+
+    def tearDown(self):
+        if os.path.exists(self.tmp_root_path):
+            shutil.rmtree(self.tmp_root_path)
+
+    @istest
+    def use_case_1_r10_r11(self):
+        # given
+        # untar the svn revision 10
+        untar(self.pkg_doc_linux_r10, self.tmp_root_path)
+
+        objects_r10 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        # untar the svn revision 11
+        untar(self.pkg_doc_linux_r11, self.tmp_root_path)
+
+        objects_r11 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        assert objects_r10 != objects_r11
+
+        changes = [
+            {'action': 'D', 'path': os.path.join(self.tmp_root_path, b'copyrights/non-free/Kiosk')},         # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'copyrights/undistributable/Kiosk')},  # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'copyrights/undistributable')},        # noqa
+            {'action': 'D', 'path': os.path.join(self.tmp_root_path, b'copyrights/non-free/UPS')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'copyrights/undistributable/UPS')}     # noqa
+        ]
+
+        # when
+        # update from objects from previous revision (r10) with
+        # actual changes from r10 to r11
+        actual_objects = git.update_checksums_from(changes,
+                                                   objects_r10,
+                                                   ignore_svn_folder)
+
+        # then
+        self.assertEquals(actual_objects, objects_r11)
+
+    @istest
+    def use_case_2_r11_r12(self):
+        # given
+        # untar the svn revision 11
+        untar(self.pkg_doc_linux_r11, self.tmp_root_path)
+
+        objects_r11 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        # untar the svn revision 12
+        untar(self.pkg_doc_linux_r12, self.tmp_root_path)
+
+        objects_r12 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        assert objects_r11 != objects_r12
+        changes = [
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk')},                                                # noqa
+            {'action': 'D', 'path': os.path.join(self.tmp_root_path, b'copyrights')},                                           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/copyright.head')},                # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/split-package')},                 # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-base.faq')},                  # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/make-copyright')},                # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.menu')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/redirect.patch')},                # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.overrides')},      # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.prerm')},          # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/README.updating')},               # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.preinst')},        # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.dirs')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/changelog')},                     # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian')},                               # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-text.README.Debian')},  # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/html2docs')},                     # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/rules')},                         # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.postrm')},         # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux')},                                      # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/make-omf')},                      # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-text.preinst')},        # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.postinst')},       # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/copyrights')},                    # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/control')},                       # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-text.dirs')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.README.Debian')}   # noqa
+        ]
+
+        # when
+        # update from objects from previous revision (r11) with
+        # actual changes from r11 to r12
+        actual_objects = git.update_checksums_from(changes,
+                                                   objects_r11,
+                                                   ignore_svn_folder)
+
+        # then
+        self.assertEquals(actual_objects, objects_r12)
