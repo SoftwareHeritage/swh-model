@@ -318,12 +318,14 @@ dg1KdHOa34shrKDaOVzW
             'author': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@linux-foundation.org',
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
             },
             'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
                                       tzinfo=linus_tz),
             'committer': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@linux-foundation.org',
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
             },
             'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
                                                 tzinfo=linus_tz),
@@ -344,6 +346,7 @@ dg1KdHOa34shrKDaOVzW
             'author': {
                 'name': b'Jiang Xin',
                 'email': b'worldhello.net@gmail.com',
+                'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
             },
             'date': {
                 'timestamp': '1428538899',
@@ -377,6 +380,7 @@ dg1KdHOa34shrKDaOVzW
             'author': {
                 'name': b'Jiang Xin',
                 'email': b'worldhello.net@gmail.com',
+                'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
             },
             'date': {
                 'timestamp': '1428538899',
@@ -401,6 +405,7 @@ dg1KdHOa34shrKDaOVzW
             'author': {
                 'name': b'Jiang Xin',
                 'email': b'worldhello.net@gmail.com',
+                'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
             },
             'date': {
                 'timestamp': '1428538899',
@@ -415,6 +420,29 @@ dg1KdHOa34shrKDaOVzW
                 'offset': 480,
             },
             'message': b'',
+        }
+
+        self.revision_only_fullname = {
+            'id': '010d34f384fa99d047cdd5e2f41e56e5c2feee45',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
+            },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
+            'committer': {
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
+            },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
+            'message': b'Linux 4.2-rc2\n',
+            'metadata': {
+                'extra_headers': [
+                    ['svn-repo-uuid', '046f1af7-66c2-d61b-5410-ce57b7db7bff'],
+                    ['svn-revision', 10],
+                ]
+            }
         }
 
     @istest
@@ -472,6 +500,15 @@ dg1KdHOa34shrKDaOVzW
                 self.revision_empty_message),
             identifiers.identifier_to_str(
                 self.revision_empty_message['id']),
+        )
+
+    @istest
+    def revision_identifier_only_fullname(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_only_fullname),
+            identifiers.identifier_to_str(
+                self.revision_only_fullname['id']),
         )
 
 

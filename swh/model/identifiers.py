@@ -261,22 +261,44 @@ def normalize_timestamp(time_representation):
     }
 
 
+def format_author(author):
+    """Format the specification of an author.
+
+    An author is either a byte string (passed unchanged), or a dict with three
+    keys, fullname, name and email.
+
+    If the fullname exists, return it; if it doesn't, we construct a fullname
+    using the following heuristics: if the name value is None, we return the
+    email in angle brackets, else, we return the name, a space, and the email
+    in angle brackets.
+
+    """
+    if isinstance(author, bytes) or author is None:
+        return author
+
+    if 'fullname' in author:
+        return author['fullname']
+
+    ret = []
+    if author['name'] is not None:
+        ret.append(author['name'])
+    if author['email'] is not None:
+        ret.append(b''.join([b'<', author['email'], b'>']))
+
+    return b' '.join(ret)
+
+
 def format_author_line(header, author, date_offset):
     """Format a an author line according to git standards.
 
-    An author line has four components:
+    An author line has three components:
      - a header, describing the type of author (author, committer, tagger)
-     - a name, which is an arbitrary byte string
-     - an email, which is an arbitrary byte string too
+     - a name and email, which is an arbitrary bytestring
      - optionally, a timestamp with UTC offset specification
 
     The author line is formatted thus:
 
-        `header` `name` <`email`>[ `timestamp` `utc_offset`]
-
-    If name or email are empty, they are passed as is (so you can find author
-    lines with empty square brackets or two spaces between the header and the
-    opening bracket).
+        `header` `name and email`[ `timestamp` `utc_offset`]
 
     The timestamp is encoded as a (decimal) number of seconds since the UNIX
     epoch (1970-01-01 at 00:00 UTC). As an extension to the git format, we
@@ -294,7 +316,7 @@ def format_author_line(header, author, date_offset):
         header: the header of the author line (one of 'author', 'committer',
                 'tagger')
         author: an author specification (dict with two bytes values: name and
-                email)
+                email, or byte value)
         date_offset: a normalized date/time representation as returned by
                      `normalize_timestamp`.
 
@@ -303,7 +325,7 @@ def format_author_line(header, author, date_offset):
 
     """
 
-    ret = [header.encode(), b' ', author['name'], b' <', author['email'], b'>']
+    ret = [header.encode(), b' ', format_author(author)]
 
     date_offset = normalize_timestamp(date_offset)
 
