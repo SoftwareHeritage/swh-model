@@ -92,6 +92,7 @@ class Hashutil(unittest.TestCase):
             f.close()
             hashes = hashutil.hash_path(f.name)
 
+        self.checksums['length'] = len(self.data)
         self.assertEquals(self.checksums, hashes)
 
     @istest

@@ -125,7 +125,9 @@ def hash_path(path, algorithms=ALGORITHMS, chunk_cb=None):
     """
     length = os.path.getsize(path)
     with open(path, 'rb') as fobj:
-        return hash_file(fobj, length, algorithms, chunk_cb)
+        hash = hash_file(fobj, length, algorithms, chunk_cb)
+    hash['length'] = length
+    return hash
 
 
 def hash_data(data, algorithms=ALGORITHMS):
