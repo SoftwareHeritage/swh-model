@@ -1,8 +1,11 @@
-swh-model (0.0.4-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.5-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.5
+  * Add update git hash computation from existing data
+  * Add revision identifier data for hash identifier computation (extra-
+    headers)
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Mon, 21 Mar 2016 15:20:29 +0100
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Fri, 15 Apr 2016 12:51:21 +0200
 
 swh-model (0.0.4-1~swh1) unstable-swh; urgency=medium
 

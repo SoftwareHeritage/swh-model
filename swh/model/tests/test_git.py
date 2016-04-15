@@ -4,9 +4,10 @@
 # See top-level LICENSE file for more information
 
 import os
+import shutil
+import subprocess
 import tempfile
 import unittest
-import subprocess
 
 from nose.tools import istest
 
@@ -136,26 +137,36 @@ blah
         self.assertEqual(checksum, self.checksums['tag_sha1_git'])
 
 
-class GitHashArborescenceTree(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+class GitHashWalkArborescenceTree(unittest.TestCase):
+    """Root class to ease walk and git hash testing without side-effecty problems.
 
-        cls.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+    """
+    def setUp(self):
+        self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
 
         start_path = os.path.dirname(__file__).encode('utf-8')
-        sample_folder_archive = os.path.join(start_path,
-                                             b'../../../..',
-                                             b'swh-storage-testdata',
-                                             b'dir-folders',
-                                             b'sample-folder.tgz')
+        pkg_doc_linux_r11 = os.path.join(start_path,
+                                         b'../../../..',
+                                         b'swh-storage-testdata',
+                                         b'dir-folders',
+                                         b'sample-folder.tgz')
 
-        cls.root_path = os.path.join(cls.tmp_root_path, b'sample-folder')
+        self.root_path = os.path.join(self.tmp_root_path, b'sample-folder')
 
         # uncompress the sample folder
         subprocess.check_output(
-            ['tar', 'xvf', sample_folder_archive, '-C', cls.tmp_root_path])
+            ['tar', 'xvf', pkg_doc_linux_r11, '-C', self.tmp_root_path])
 
+    def tearDown(self):
+        if os.path.exists(self.tmp_root_path):
+            shutil.rmtree(self.tmp_root_path)
+
+
+class GitHashFromScratch(GitHashWalkArborescenceTree):
+    """Test the main `walk_and_compute_sha1_from_directory` algorithm that
+    scans and compute the disk for checksums.
+
+    """
     @istest
     def walk_and_compute_sha1_from_directory(self):
         # make a temporary arborescence tree to hash without ignoring anything
@@ -196,6 +207,7 @@ class GitHashArborescenceTree(unittest.TestCase):
             os.path.join(self.tmp_root_path, b'sample-folder/empty-folder'): [],                                            # noqa
             os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'): [{                                               # noqa
                 'type': git.GitType.BLOB,                                                                                   # noqa
+                'length': 72,
                 'sha256': b'=\xb5\xae\x16\x80U\xbc\xd9:M\x08(]\xc9\x9f\xfe\xe2\x883\x03\xb2?\xac^\xab\x85\x02s\xa8\xeaUF',  # noqa
                 'name': b'another-quote.org',                                                                               # noqa
                 'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo/another-quote.org'),                    # noqa
@@ -210,3 +222,411 @@ class GitHashArborescenceTree(unittest.TestCase):
                 'sha1_git': b'\xc3\x02\x0fk\xf15\xa3\x8cm\xf3\xaf\xeb_\xb3\x822\xc5\xe0p\x87'}]}                            # noqa
 
         self.assertEquals(actual_walk1, expected_checksums)
+
+    @istest
+    def walk_and_compute_sha1_from_directory_without_root_tree(self):
+        # compute the full checksums
+        expected_hashes = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # except for the key on that round
+        actual_hashes = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            with_root_tree=False)
+
+        # then, removing the root tree hash from the first round
+        del expected_hashes[git.ROOT_TREE_KEY]
+
+        # should give us the same checksums as the second round
+        self.assertEquals(actual_hashes, expected_hashes)
+
+
+class GitHashUpdate(GitHashWalkArborescenceTree):
+    """Test `walk and git hash only on modified fs` functions.
+
+    """
+    @istest
+    def update_checksums_from_add_new_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way (add a new file)
+        # update the actual git checksums from the deeper tree modified
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # update the existing file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_from_modify_existing_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way ()
+        # update the actual git checksums where only the modification is needed
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # update existing file
+        changed_path = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path, 'wb+') as f:
+            f.write(b'I have a dream')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'M'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_no_change(self):
+        # when
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # nothing changes on disk
+
+        # then
+        actual_dict = git.update_checksums_from([], expected_dict)
+
+        self.assertEquals(actual_dict, expected_dict)
+
+    @istest
+    def update_checksums_delete_existing_file(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way (delete a file)
+        # update the actual git checksums from the deeper tree modified
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Remove folder
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo')
+        shutil.rmtree(changed_path)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(actual_dict, expected_dict)
+
+    @istest
+    def update_checksums_from_multiple_fs_modifications(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way (modify a file, add a new, delete one)
+        # update the actual git checksums from the deeper tree modified
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Actions on disk (imagine a checkout of some form)
+
+        # 1. Create a new file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # 2. update the existing file
+        changed_path1 = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path1, 'wb') as f:
+            f.write(b'new line')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/foo')
+        shutil.rmtree(changed_path2)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'},
+             {'path': changed_path1, 'action': 'M'},
+             {'path': changed_path2, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_from_common_ancestor(self):
+        # when
+        # Add some new arborescence below a folder destined to be removed
+        # want to check that old keys does not remain
+        future_folder_to_remove = os.path.join(self.tmp_root_path,
+                                               b'sample-folder/bar/barfoo')
+
+        # add .../barfoo/hello/world under (.../barfoo which will be destroyed)
+        new_folder = os.path.join(future_folder_to_remove, b'hello')
+        os.makedirs(new_folder, exist_ok=True)
+        with open(os.path.join(future_folder_to_remove, b'world'), 'wb') as f:
+            f.write(b"i'm sad 'cause i'm destined to be removed...")
+
+        # now we scan the disk
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        assert objects[future_folder_to_remove]
+
+        # Actions on disk (to simulate a checkout of some sort)
+
+        # 1. Create a new file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # 2. update the existing file
+        changed_path1 = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path1, 'wb') as f:
+            f.write(b'new line')
+
+        # 3. Remove folder
+        shutil.rmtree(future_folder_to_remove)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'},
+             {'path': changed_path1, 'action': 'M'},
+             {'path': future_folder_to_remove, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_detects_recomputation_from_all_is_needed(self):
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # Actions on disk (imagine a checkout of some form)
+
+        # 1. Create a new file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'new-file-at-root')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # 2. update the existing file
+        changed_path1 = os.path.join(
+            self.tmp_root_path,
+            b'sample-folder/bar/barfoo/another-quote.org')
+        with open(changed_path1, 'wb') as f:
+            f.write(b'new line')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/foo')
+
+        # 3. Remove some folder
+        changed_path2 = os.path.join(self.tmp_root_path,
+                                     b'sample-folder/bar/barfoo')
+        shutil.rmtree(changed_path2)
+
+        # Actually walking the fs will be the resulting expectation
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'},
+             {'path': changed_path1, 'action': 'M'},
+             {'path': changed_path2, 'action': 'D'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def commonpath(self):
+        paths = ['r/0/h',
+                 'r/1/d', 'r/1/i/a', 'r/1/i/b', 'r/1/i/c',
+                 'r/2/e', 'r/2/f', 'r/2/g']
+        self.assertEquals(git.commonpath(paths), 'r')
+
+        paths = ['r/1/d', 'r/1/i/a', 'r/1/i/b', 'r/1/i/c']
+        self.assertEquals(git.commonpath(paths), 'r/1')
+
+        paths = ['/a/r/2/g', '/a/r/1/i/c', '/a/r/0/h']
+        self.assertEquals(git.commonpath(paths), '/a/r')
+
+        paths = [b'/a/r/2/g', b'/b/r/1/i/c', b'/c/r/0/h']
+        self.assertEquals(git.commonpath(paths), b'/')
+
+        paths = ['a/z', 'a/z', 'a/z']
+        self.assertEquals(git.commonpath(paths), 'a/z')
+
+        paths = ['0']
+        self.assertEquals(git.commonpath(paths), '0')
+
+
+def untar(archive, dest):
+    # cleanup
+    shutil.rmtree(dest)
+    os.mkdir(dest)
+    # untar
+    cmd = [b'tar', b'xf', archive, b'-C', dest]
+    subprocess.check_output(cmd)
+
+
+def ignore_svn_folder(dirpath):
+    return b'.svn' not in dirpath
+
+
+class GitHashUpdateRealUseCase(GitHashWalkArborescenceTree):
+    """Test `walk and git hash only on modified fs` functions.
+
+    """
+    def setUp(self):
+        self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+
+        archives_folder = os.path.join(
+            os.path.dirname(__file__).encode('utf-8'),
+            b'../../../..',
+            b'swh-storage-testdata',
+            b'svn-folders')
+
+        self.pkg_doc_linux_r10 = os.path.join(archives_folder,
+                                              b'pkg-doc-linux-r10.tgz')
+        self.pkg_doc_linux_r11 = os.path.join(archives_folder,
+                                              b'pkg-doc-linux-r11.tgz')
+        self.pkg_doc_linux_r12 = os.path.join(archives_folder,
+                                              b'pkg-doc-linux-r12.tgz')
+
+    def tearDown(self):
+        if os.path.exists(self.tmp_root_path):
+            shutil.rmtree(self.tmp_root_path)
+
+    @istest
+    def use_case_1_r10_r11(self):
+        # given
+        # untar the svn revision 10
+        untar(self.pkg_doc_linux_r10, self.tmp_root_path)
+
+        objects_r10 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        # untar the svn revision 11
+        untar(self.pkg_doc_linux_r11, self.tmp_root_path)
+
+        objects_r11 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        assert objects_r10 != objects_r11
+
+        changes = [
+            {'action': 'D', 'path': os.path.join(self.tmp_root_path, b'copyrights/non-free/Kiosk')},         # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'copyrights/undistributable/Kiosk')},  # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'copyrights/undistributable')},        # noqa
+            {'action': 'D', 'path': os.path.join(self.tmp_root_path, b'copyrights/non-free/UPS')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'copyrights/undistributable/UPS')}     # noqa
+        ]
+
+        # when
+        # update from objects from previous revision (r10) with
+        # actual changes from r10 to r11
+        actual_objects = git.update_checksums_from(changes,
+                                                   objects_r10,
+                                                   ignore_svn_folder)
+
+        # then
+        self.assertEquals(actual_objects, objects_r11)
+
+    @istest
+    def use_case_2_r11_r12(self):
+        # given
+        # untar the svn revision 11
+        untar(self.pkg_doc_linux_r11, self.tmp_root_path)
+
+        objects_r11 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        # untar the svn revision 12
+        untar(self.pkg_doc_linux_r12, self.tmp_root_path)
+
+        objects_r12 = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path,
+            ignore_svn_folder)
+
+        assert objects_r11 != objects_r12
+        changes = [
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk')},                                                # noqa
+            {'action': 'D', 'path': os.path.join(self.tmp_root_path, b'copyrights')},                                           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/copyright.head')},                # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/split-package')},                 # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-base.faq')},                  # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/make-copyright')},                # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.menu')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/redirect.patch')},                # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.overrides')},      # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.prerm')},          # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/README.updating')},               # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.preinst')},        # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.dirs')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/changelog')},                     # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian')},                               # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-text.README.Debian')},  # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/html2docs')},                     # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/rules')},                         # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.postrm')},         # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux')},                                      # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/make-omf')},                      # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-text.preinst')},        # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.postinst')},       # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/copyrights')},                    # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/control')},                       # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-text.dirs')},           # noqa
+            {'action': 'A', 'path': os.path.join(self.tmp_root_path, b'trunk/doc-linux/debian/doc-linux-html.README.Debian')}   # noqa
+        ]
+
+        # when
+        # update from objects from previous revision (r11) with
+        # actual changes from r11 to r12
+        actual_objects = git.update_checksums_from(changes,
+                                                   objects_r11,
+                                                   ignore_svn_folder)
+
+        # then
+        self.assertEquals(actual_objects, objects_r12)
