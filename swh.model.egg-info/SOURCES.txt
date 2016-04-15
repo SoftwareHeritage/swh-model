@@ -4,6 +4,7 @@ LICENSE
 MANIFEST.in
 Makefile
 Makefile.local
+README-dev.md
 requirements.txt
 setup.py
 version.txt

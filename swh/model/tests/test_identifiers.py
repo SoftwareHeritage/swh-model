@@ -219,6 +219,25 @@ class RevisionIdentifier(unittest.TestCase):
 
         linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
 
+        gpgsig = b'''\
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.13 (Darwin)
+
+iQIcBAABAgAGBQJVJcYsAAoJEBiY3kIkQRNJVAUQAJ8/XQIfMqqC5oYeEFfHOPYZ
+L7qy46bXHVBa9Qd8zAJ2Dou3IbI2ZoF6/Et89K/UggOycMlt5FKV/9toWyuZv4Po
+L682wonoxX99qvVTHo6+wtnmYO7+G0f82h+qHMErxjP+I6gzRNBvRr+SfY7VlGdK
+wikMKOMWC5smrScSHITnOq1Ews5pe3N7qDYMzK0XVZmgDoaem4RSWMJs4My/qVLN
+e0CqYWq2A22GX7sXl6pjneJYQvcAXUX+CAzp24QnPSb+Q22Guj91TcxLFcHCTDdn
+qgqMsEyMiisoglwrCbO+D+1xq9mjN9tNFWP66SQ48mrrHYTBV5sz9eJyDfroJaLP
+CWgbDTgq6GzRMehHT3hXfYS5NNatjnhkNISXR7pnVP/obIi/vpWh5ll6Gd8q26z+
+a/O41UzOaLTeNI365MWT4/cnXohVLRG7iVJbAbCxoQmEgsYMRc/pBAzWJtLfcB2G
+jdTswYL6+MUdL8sB9pZ82D+BP/YAdHe69CyTu1lk9RT2pYtI/kkfjHubXBCYEJSG
++VGllBbYG6idQJpyrOYNRJyrDi9yvDJ2W+S0iQrlZrxzGBVGTB/y65S8C+2WTBcE
+lf1Qb5GDsQrZWgD+jtWTywOYHtCBwyCKSAXxSARMbNPeak9WPlcW/Jmu+fUcMe2x
+dg1KdHOa34shrKDaOVzW
+=od6m
+-----END PGP SIGNATURE-----'''
+
         self.revision = {
             'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
             'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
@@ -238,6 +257,26 @@ class RevisionIdentifier(unittest.TestCase):
             'message': b'Linux 4.2-rc2\n',
         }
 
+        self.revision_none_metadata = {
+            'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+            },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
+            'committer': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+            },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
+            'message': b'Linux 4.2-rc2\n',
+            'metadata': None,
+        }
+
         self.synthetic_revision = {
             'id': b'\xb2\xa7\xe1&\x04\x92\xe3D\xfa\xb3\xcb\xf9\x1b\xc1<\x91'
                   b'\xe0T&\xfd',
@@ -248,6 +287,7 @@ class RevisionIdentifier(unittest.TestCase):
             'date': {
                 'timestamp': 1437047495.0,
                 'offset': 0,
+                'negative_utc': False,
             },
             'type': 'tar',
             'committer': {
@@ -270,6 +310,141 @@ class RevisionIdentifier(unittest.TestCase):
 
         }
 
+        # cat commit.txt | git hash-object -t commit --stdin
+        self.revision_with_extra_headers = {
+            'id': '010d34f384fa99d047cdd5e2f41e56e5c2feee45',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
+            },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
+            'committer': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@linux-foundation.org',
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
+            },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
+            'message': b'Linux 4.2-rc2\n',
+            'metadata': {
+                'extra_headers': [
+                    ['svn-repo-uuid', '046f1af7-66c2-d61b-5410-ce57b7db7bff'],
+                    ['svn-revision', 10],
+                ]
+            }
+        }
+
+        self.revision_with_gpgsig = {
+            'id': '44cc742a8ca17b9c279be4cc195a93a6ef7a320e',
+            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
+            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
+                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'author': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+                'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
+            },
+            'date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'committer': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'committer_date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'metadata': {
+                'extra_headers': [
+                    ['gpgsig', gpgsig],
+                ],
+            },
+            'message': b'''Merge branch 'master' of git://github.com/alexhenrie/git-po
+
+* 'master' of git://github.com/alexhenrie/git-po:
+  l10n: ca.po: update translation
+'''
+        }
+
+        self.revision_no_message = {
+            'id': '4cfc623c9238fa92c832beed000ce2d003fd8333',
+            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
+            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
+                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'author': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+                'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
+            },
+            'date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'committer': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'committer_date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'message': None,
+        }
+
+        self.revision_empty_message = {
+            'id': '7442cd78bd3b4966921d6a7f7447417b7acb15eb',
+            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
+            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
+                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'author': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+                'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
+            },
+            'date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'committer': {
+                'name': b'Jiang Xin',
+                'email': b'worldhello.net@gmail.com',
+            },
+            'committer_date': {
+                'timestamp': '1428538899',
+                'offset': 480,
+            },
+            'message': b'',
+        }
+
+        self.revision_only_fullname = {
+            'id': '010d34f384fa99d047cdd5e2f41e56e5c2feee45',
+            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'author': {
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
+            },
+            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                      tzinfo=linus_tz),
+            'committer': {
+                'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
+            },
+            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                                tzinfo=linus_tz),
+            'message': b'Linux 4.2-rc2\n',
+            'metadata': {
+                'extra_headers': [
+                    ['svn-repo-uuid', '046f1af7-66c2-d61b-5410-ce57b7db7bff'],
+                    ['svn-revision', 10],
+                ]
+            }
+        }
+
     @istest
     def revision_identifier(self):
         self.assertEqual(
@@ -278,10 +453,62 @@ class RevisionIdentifier(unittest.TestCase):
         )
 
     @istest
+    def revision_identifier_none_metadata(self):
+        self.assertEqual(
+            identifiers.revision_identifier(self.revision_none_metadata),
+            identifiers.identifier_to_str(self.revision_none_metadata['id']),
+        )
+
+    @istest
     def revision_identifier_synthetic(self):
         self.assertEqual(
             identifiers.revision_identifier(self.synthetic_revision),
             identifiers.identifier_to_str(self.synthetic_revision['id']),
+        )
+
+    @istest
+    def revision_identifier_with_extra_headers(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_with_extra_headers),
+            identifiers.identifier_to_str(
+                self.revision_with_extra_headers['id']),
+        )
+
+    @istest
+    def revision_identifier_with_gpgsig(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_with_gpgsig),
+            identifiers.identifier_to_str(
+                self.revision_with_gpgsig['id']),
+        )
+
+    @istest
+    def revision_identifier_no_message(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_no_message),
+            identifiers.identifier_to_str(
+                self.revision_no_message['id']),
+        )
+
+    @istest
+    def revision_identifier_empty_message(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_empty_message),
+            identifiers.identifier_to_str(
+                self.revision_empty_message['id']),
+        )
+
+    @istest
+    def revision_identifier_only_fullname(self):
+        self.assertEqual(
+            identifiers.revision_identifier(
+                self.revision_only_fullname),
+            identifiers.identifier_to_str(
+                self.revision_only_fullname['id']),
         )
 
 
@@ -331,6 +558,53 @@ o6X/3T+vm8K3bf3driRr34c=
             'synthetic': False,
         }
 
+        self.release_no_message = {
+            'id': 'b6f4f446715f7d9543ef54e41b62982f0db40045',
+            'target': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
+            'target_type': 'revision',
+            'name': b'v2.6.12',
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@g5.osdl.org',
+            },
+            'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
+                                      tzinfo=linus_tz),
+            'message': None,
+        }
+
+        self.release_empty_message = {
+            'id': '71a0aea72444d396575dc25ac37fec87ee3c6492',
+            'target': '9ee1c939d1cb936b1f98e8d81aeffab57bae46ab',
+            'target_type': 'revision',
+            'name': b'v2.6.12',
+            'author': {
+                'name': b'Linus Torvalds',
+                'email': b'torvalds@g5.osdl.org',
+            },
+            'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
+                                      tzinfo=linus_tz),
+            'message': b'',
+        }
+
+        self.release_negative_utc = {
+            'id': '97c8d2573a001f88e72d75f596cf86b12b82fd01',
+            'name': b'20081029',
+            'target': '54e9abca4c77421e2921f5f156c9fe4a9f7441c7',
+            'target_type': 'revision',
+            'date': {
+                'timestamp': 1225281976.0,
+                'offset': 0,
+                'negative_utc': True,
+            },
+            'author': {
+                'name': b'Otavio Salvador',
+                'email': b'otavio@debian.org',
+                'id': 17640,
+            },
+            'synthetic': False,
+            'message': b'tagging version 20081029\n\nr56558\n',
+        }
+
     @istest
     def release_identifier(self):
         self.assertEqual(
@@ -343,4 +617,25 @@ o6X/3T+vm8K3bf3driRr34c=
         self.assertEqual(
             identifiers.release_identifier(self.release_no_author),
             identifiers.identifier_to_str(self.release_no_author['id'])
+        )
+
+    @istest
+    def release_identifier_no_message(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_no_message),
+            identifiers.identifier_to_str(self.release_no_message['id'])
+        )
+
+    @istest
+    def release_identifier_empty_message(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_empty_message),
+            identifiers.identifier_to_str(self.release_empty_message['id'])
+        )
+
+    @istest
+    def release_identifier_negative_utc(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_negative_utc),
+            identifiers.identifier_to_str(self.release_negative_utc['id'])
         )
