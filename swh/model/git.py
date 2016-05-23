@@ -293,8 +293,8 @@ def recompute_sha1_in_memory(root, deeper_rootdir, objects):
       - root: Upper root directory (so same as
         objects[ROOT_TREE_KEY][0]['path'])
 
-        - deeper_rootdir: Root directory from which the git hash
-          computation begins
+        - deeper_rootdir: Upper root directory from which the git hash
+          computation has alredy been updated.
 
         - objects: objects dictionary as per returned by
         `walk_and_compute_sha1_from_directory`
@@ -322,24 +322,25 @@ def recompute_sha1_in_memory(root, deeper_rootdir, objects):
     upper_root = os.path.dirname(root)
     rootdir = os.path.dirname(deeper_rootdir)
     while rootdir != upper_root:
-        files = objects.get(rootdir, None)
-        if files:
-            ls_hashes = []
-            for hashfile in files:
-                fulldirname = hashfile['path']
-                if hashfile['type'] == GitType.TREE:
-                    tree_hash = compute_tree_metadata(fulldirname, objects)
-                    ls_hashes.append(tree_hash)
-                else:
-                    ls_hashes.append(hashfile)
+        files = objects[rootdir]
+        ls_hashes = []
+        for hashfile in files:
+            fulldirname = hashfile['path']
+            if hashfile['type'] == GitType.TREE:
+                tree_hash = compute_tree_metadata(fulldirname, objects)
+                ls_hashes.append(tree_hash)
+            else:
+                ls_hashes.append(hashfile)
 
             objects[rootdir] = ls_hashes
 
-        rootdir = os.path.dirname(rootdir)
+        parent = os.path.dirname(rootdir)
+        rootdir = parent
 
     # update root
-    objects[ROOT_TREE_KEY][0]['sha1_git'] = compute_directory_git_sha1(root,
-                                                                       objects)
+
+    root_tree_hash = compute_directory_git_sha1(root, objects)
+    objects[ROOT_TREE_KEY][0]['sha1_git'] = root_tree_hash
     return objects
 
 
@@ -384,28 +385,45 @@ def commonpath(paths):
         raise
 
 
-def __remove_paths_from_objects(objects, rootpaths):
+def __remove_paths_from_objects(objects, rootpaths,
+                                dir_ok_fn=lambda dirpath: True):
     """Given top paths to remove, remove all paths and descendants from
     objects.
 
     Args:
         objects: The dictionary of paths to clean up.
         rootpaths: The rootpaths to remove from objects.
+        - dir_ok_fn: Validation function on folder/file names.
+        Default to accept all.
 
     Returns:
         Objects dictionary without the rootpaths and their descendants.
 
     """
-    child_dirpaths = []
+    dirpaths_to_clean = set()
     for path in rootpaths:
         path_list = objects.pop(path, None)
         if path_list:  # need to remove the children directories too
             for child in path_list:
                 if child['type'] == GitType.TREE:
-                    child_dirpaths.append(child['path'])
+                    dirpaths_to_clean.add(child['path'])
 
-    if child_dirpaths:
-        objects = __remove_paths_from_objects(objects, child_dirpaths)
+        parent = os.path.dirname(path)
+        # Is the parent still ok? (e.g. not an empty dir for example)
+        parent_check = dir_ok_fn(parent)
+        if not parent_check and parent not in dirpaths_to_clean:
+            dirpaths_to_clean.add(parent)
+        else:
+            # we need to pop the reference to path in the parent list
+            if objects.get(parent):
+                objects[parent] = filter(
+                    lambda p: p != path,
+                    objects.get(parent, []))
+
+    if dirpaths_to_clean:
+        objects = __remove_paths_from_objects(objects,
+                                              dirpaths_to_clean,
+                                              dir_ok_fn)
 
     return objects
 
@@ -421,6 +439,8 @@ def update_checksums_from(changed_paths, objects,
         - path: the full path to the file Added, Modified or Deleted
         - action: A, M or D
         objects: dictionary returned by `walk_and_compute_sha1_from_directory`.
+        - dir_ok_fn: Validation function on folder/file names.
+        Default to accept all.
 
     Returns:
         Dictionary returned by `walk_and_compute_sha1_from_directory`
@@ -431,43 +451,48 @@ def update_checksums_from(changed_paths, objects,
     if root.endswith(b'/'):
         root = root.rstrip(b'/')
 
-    paths = []            # contain the list of impacted paths (A, D, M)
-    paths_to_remove = []  # will contain the list of deletion paths (only D)
+    paths = set()            # contain the list of impacted paths (A, D, M)
+    paths_to_remove = set()  # will contain the list of deletion paths (only D)
     # a first round-trip to ensure we don't need to...
     for changed_path in changed_paths:
         path = changed_path['path']
 
         parent = os.path.dirname(path)
         if parent == root:  # ... recompute everything anyway
-            return walk_and_compute_sha1_from_directory(root,
-                                                        dir_ok_fn)
+            return walk_and_compute_sha1_from_directory(root, dir_ok_fn)
 
         if changed_path['action'] == 'D':  # (D)elete
-            paths_to_remove.append(path)
+            paths_to_remove.add(path)
 
-        paths.append(parent)
+        paths.add(parent)
 
     # no modification on paths (paths also contain deletion paths if any)
     if not paths:
         return objects
 
-    rootdir = commonpath(paths)
+    rootdir = commonpath(list(paths))
 
-    # common ancestor is the root anyway, no optimization possible,
-    # recompute all
-    if root == rootdir:
+    if paths_to_remove:
+        # Now we can remove the deleted directories from objects dictionary
+        objects = __remove_paths_from_objects(objects,
+                                              paths_to_remove,
+                                              dir_ok_fn)
+
+    # Recompute from disk the checksums from impacted common ancestor
+    # rootdir changes.
+    if not objects.get(rootdir, None):
+        # rootdir no longer exists, recompute all
+        # folder could have been previously ignored
+        # (e.g. in svn case with ignore flag activated)
         return walk_and_compute_sha1_from_directory(root,
                                                     dir_ok_fn)
 
-    # Now we can remove the deleted directories from objects dictionary
-    objects = __remove_paths_from_objects(objects, paths_to_remove)
-
-    # Recompute from disk the checksums from impacted common ancestor
-    # rootdir changes. Then update the original objects with new
-    # checksums for the arborescence tree below rootdir
     hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn,
                                                   with_root_tree=False)
+
+    # Then update the original objects with new
+    # checksums for the arborescence tree below rootdir
     objects.update(hashes)
 
-    # Recompute the hashes in memory from rootdir to root
+    # Recompute hashes in memory from rootdir to root
     return recompute_sha1_in_memory(root, rootdir, objects)
