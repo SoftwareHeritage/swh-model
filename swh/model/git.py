@@ -384,6 +384,32 @@ def commonpath(paths):
         raise
 
 
+def __remove_paths_from_objects(objects, rootpaths):
+    """Given top paths to remove, remove all paths and descendants from
+    objects.
+
+    Args:
+        objects: The dictionary of paths to clean up.
+        rootpaths: The rootpaths to remove from objects.
+
+    Returns:
+        Objects dictionary without the rootpaths and their descendants.
+
+    """
+    child_dirpaths = []
+    for path in rootpaths:
+        path_list = objects.pop(path, None)
+        if path_list:  # need to remove the children directories too
+            for child in path_list:
+                if child['type'] == GitType.TREE:
+                    child_dirpaths.append(child['path'])
+
+    if child_dirpaths:
+        objects = __remove_paths_from_objects(objects, child_dirpaths)
+
+    return objects
+
+
 def update_checksums_from(changed_paths, objects,
                           dir_ok_fn=lambda dirpath: True):
     """Given a list of changed paths, recompute the checksums only where
@@ -405,7 +431,8 @@ def update_checksums_from(changed_paths, objects,
     if root.endswith(b'/'):
         root = root.rstrip(b'/')
 
-    paths = []
+    paths = []            # contain the list of impacted paths (A, D, M)
+    paths_to_remove = []  # will contain the list of deletion paths (only D)
     # a first round-trip to ensure we don't need to...
     for changed_path in changed_paths:
         path = changed_path['path']
@@ -416,16 +443,12 @@ def update_checksums_from(changed_paths, objects,
                                                         dir_ok_fn)
 
         if changed_path['action'] == 'D':  # (D)elete
-            k = objects.pop(path, None)
-            if k:  # it's a dir, we need to remove the descendant paths
-                prefix_path = path + b'/'
-                new_objects = {k: objects[k] for k in objects.keys()
-                               if not k.startswith(prefix_path)}
-                objects = new_objects
+            paths_to_remove.append(path)
 
         paths.append(parent)
 
-    if not paths:  # no modification on paths
+    # no modification on paths (paths also contain deletion paths if any)
+    if not paths:
         return objects
 
     rootdir = commonpath(paths)
@@ -435,6 +458,9 @@ def update_checksums_from(changed_paths, objects,
     if root == rootdir:
         return walk_and_compute_sha1_from_directory(root,
                                                     dir_ok_fn)
+
+    # Now we can remove the deleted directories from objects dictionary
+    objects = __remove_paths_from_objects(objects, paths_to_remove)
 
     # Recompute from disk the checksums from impacted common ancestor
     # rootdir changes. Then update the original objects with new
