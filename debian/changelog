@@ -1,3 +1,11 @@
+swh-model (0.0.6-1~swh1) unstable-swh; urgency=medium
+
+  * v0.0.6
+  * Improve corner case on git hash memory update function
+  * debian packaging: Ignore fs tests for packaging
+
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Tue, 24 May 2016 17:01:06 +0200
+
 swh-model (0.0.5-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.5
