@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import unittest
 
+from nose.plugins.attrib import attr
 from nose.tools import istest
 
 from swh.model import git
@@ -137,8 +138,10 @@ blah
         self.assertEqual(checksum, self.checksums['tag_sha1_git'])
 
 
+@attr('fs')
 class GitHashWalkArborescenceTree(unittest.TestCase):
-    """Root class to ease walk and git hash testing without side-effecty problems.
+    """Root class to ease walk and git hash testing without side-effecty
+    problems.
 
     """
     def setUp(self):
@@ -512,7 +515,8 @@ def ignore_svn_folder(dirpath):
     return b'.svn' not in dirpath
 
 
-class GitHashUpdateRealUseCase(GitHashWalkArborescenceTree):
+@attr('fs')
+class GitHashUpdateRealUseCase(unittest.TestCase):
     """Test `walk and git hash only on modified fs` functions.
 
     """
