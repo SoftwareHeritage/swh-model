@@ -496,14 +496,18 @@ def update_checksums_from(changed_paths, objects,
 
     # Recompute from disk the checksums from impacted common ancestor
     # rootdir changes.
-    if not objects.get(rootdir, None):
-        # rootdir no longer exists, recompute all
-        # folder could have been previously ignored
-        # (e.g. in svn case with ignore flag activated)
-        return walk_and_compute_sha1_from_directory(
-            root,
-            dir_ok_fn=dir_ok_fn,
-            remove_empty_folder=remove_empty_folder)
+    while not objects.get(rootdir, None):
+        # it could happened that the path is not found.
+        # In the case of an ignored folder for example.
+        # So we'll find the next existing parent
+        rootdir = os.path.dirname(rootdir)
+
+        if rootdir == root:     # fallback, if we hit root, walk
+                                # everything anyway
+            return walk_and_compute_sha1_from_directory(
+                root,
+                dir_ok_fn=dir_ok_fn,
+                remove_empty_folder=remove_empty_folder)
 
     hashes = walk_and_compute_sha1_from_directory(
         rootdir,
