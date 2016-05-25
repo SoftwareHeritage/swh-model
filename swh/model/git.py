@@ -188,7 +188,8 @@ def compute_tree_metadata(dirname, ls_hashes):
 
 def walk_and_compute_sha1_from_directory(rootdir,
                                          dir_ok_fn=lambda dirpath: True,
-                                         with_root_tree=True):
+                                         with_root_tree=True,
+                                         remove_empty_folder=False):
     """Compute git sha1 from directory rootdir.
 
     Args:
@@ -231,6 +232,17 @@ def walk_and_compute_sha1_from_directory(rootdir,
         return list(filter(lambda dirname: dir_ok_fn(os.path.join(dirpath,
                                                                   dirname)),
                            dirnames))
+
+    if remove_empty_folder:  # round-trip to remove empty folders
+        gen_dir = ((dp, filtfn(dp, dns), fns) for (dp, dns, fns)
+                   in os.walk(rootdir, topdown=False)
+                   if dir_ok_fn(dp))
+        for dirpath, dirnames, filenames in gen_dir:
+            if dirnames == [] and filenames == []:
+                if os.path.islink(dirpath):
+                    os.remove(dirpath)
+                else:
+                    os.removedirs(dirpath)
 
     gen_dir = ((dp, filtfn(dp, dns), fns) for (dp, dns, fns)
                in os.walk(rootdir, topdown=False)
@@ -429,7 +441,8 @@ def __remove_paths_from_objects(objects, rootpaths,
 
 
 def update_checksums_from(changed_paths, objects,
-                          dir_ok_fn=lambda dirpath: True):
+                          dir_ok_fn=lambda dirpath: True,
+                          remove_empty_folder=False):
     """Given a list of changed paths, recompute the checksums only where
     needed.
 
@@ -459,7 +472,10 @@ def update_checksums_from(changed_paths, objects,
 
         parent = os.path.dirname(path)
         if parent == root:  # ... recompute everything anyway
-            return walk_and_compute_sha1_from_directory(root, dir_ok_fn)
+            return walk_and_compute_sha1_from_directory(
+                root,
+                dir_ok_fn=dir_ok_fn,
+                remove_empty_folder=remove_empty_folder)
 
         if changed_path['action'] == 'D':  # (D)elete
             paths_to_remove.add(path)
@@ -480,15 +496,24 @@ def update_checksums_from(changed_paths, objects,
 
     # Recompute from disk the checksums from impacted common ancestor
     # rootdir changes.
-    if not objects.get(rootdir, None):
-        # rootdir no longer exists, recompute all
-        # folder could have been previously ignored
-        # (e.g. in svn case with ignore flag activated)
-        return walk_and_compute_sha1_from_directory(root,
-                                                    dir_ok_fn)
+    while not objects.get(rootdir, None):
+        # it could happened that the path is not found.
+        # In the case of an ignored folder for example.
+        # So we'll find the next existing parent
+        rootdir = os.path.dirname(rootdir)
 
-    hashes = walk_and_compute_sha1_from_directory(rootdir, dir_ok_fn,
-                                                  with_root_tree=False)
+        if rootdir == root:     # fallback, if we hit root, walk
+                                # everything anyway
+            return walk_and_compute_sha1_from_directory(
+                root,
+                dir_ok_fn=dir_ok_fn,
+                remove_empty_folder=remove_empty_folder)
+
+    hashes = walk_and_compute_sha1_from_directory(
+        rootdir,
+        dir_ok_fn=dir_ok_fn,
+        with_root_tree=False,
+        remove_empty_folder=remove_empty_folder)
 
     # Then update the original objects with new
     # checksums for the arborescence tree below rootdir
