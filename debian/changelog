@@ -1,8 +1,10 @@
-swh-model (0.0.6-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.7-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.7
+  * Improve corner case policy about walking and computing hash tree (+
+    update)
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Tue, 24 May 2016 17:01:06 +0200
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 25 May 2016 23:47:19 +0200
 
 swh-model (0.0.6-1~swh1) unstable-swh; urgency=medium
 

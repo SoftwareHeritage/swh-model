@@ -146,6 +146,7 @@ class GitHashWalkArborescenceTree(unittest.TestCase):
     """
     def setUp(self):
         self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+        self.maxDiff = None
 
         start_path = os.path.dirname(__file__).encode('utf-8')
         pkg_doc_linux_r11 = os.path.join(start_path,
