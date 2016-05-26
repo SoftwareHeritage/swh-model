@@ -149,17 +149,17 @@ class GitHashWalkArborescenceTree(unittest.TestCase):
         self.maxDiff = None
 
         start_path = os.path.dirname(__file__).encode('utf-8')
-        pkg_doc_linux_r11 = os.path.join(start_path,
-                                         b'../../../..',
-                                         b'swh-storage-testdata',
-                                         b'dir-folders',
-                                         b'sample-folder.tgz')
+        sample_folder = os.path.join(start_path,
+                                     b'../../../..',
+                                     b'swh-storage-testdata',
+                                     b'dir-folders',
+                                     b'sample-folder.tgz')
 
         self.root_path = os.path.join(self.tmp_root_path, b'sample-folder')
 
         # uncompress the sample folder
         subprocess.check_output(
-            ['tar', 'xvf', pkg_doc_linux_r11, '-C', self.tmp_root_path])
+            ['tar', 'xvf', sample_folder, '-C', self.tmp_root_path])
 
     def tearDown(self):
         if os.path.exists(self.tmp_root_path):
@@ -268,6 +268,97 @@ class GitHashUpdate(GitHashWalkArborescenceTree):
         # walk1 (this will be our expectation)
         expected_dict = git.walk_and_compute_sha1_from_directory(
             self.tmp_root_path)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_from_add_new_file_with_validation(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way (add a new file)
+        # update the actual git checksums from the deeper tree modified
+        # + Add some validation on some file to ignore
+
+        def dir_ok_fn(dirpath):
+            return b'empty-folder' not in dirpath
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path, dir_ok_fn=dir_ok_fn)
+
+        # update the existing file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path, dir_ok_fn=dir_ok_fn)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_from_add_new_file_remove_empty_folder(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way (add a new file)
+        # update the actual git checksums from the deeper tree modified
+        # + Add some validation on some file to ignore
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path, remove_empty_folder=True)
+
+        # update the existing file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path, remove_empty_folder=True)
+
+        # then
+        actual_dict = git.update_checksums_from(
+            [{'path': changed_path, 'action': 'A'}],
+            objects)
+
+        self.assertEquals(expected_dict, actual_dict)
+
+    @istest
+    def update_checksums_new_file_with_validation_and_ignore_empty_dir(self):
+        # make a temporary arborescence tree to hash without ignoring anything
+        # update the disk in some way (add a new file)
+        # update the actual git checksums from the deeper tree modified
+        # + Add some validation on some file to ignore
+        # + ignore empty folder
+
+        def dir_ok_fn(dirpath):
+            return b'some-binary' not in dirpath
+
+        # when
+        objects = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path, dir_ok_fn=dir_ok_fn, remove_empty_folder=True)
+
+        # update the existing file
+        changed_path = os.path.join(self.tmp_root_path,
+                                    b'sample-folder/bar/barfoo/new')
+        with open(changed_path, 'wb') as f:
+            f.write(b'new line')
+
+        # walk1 (this will be our expectation)
+        expected_dict = git.walk_and_compute_sha1_from_directory(
+            self.tmp_root_path, dir_ok_fn=dir_ok_fn, remove_empty_folder=True)
 
         # then
         actual_dict = git.update_checksums_from(
