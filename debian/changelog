@@ -1,8 +1,10 @@
-swh-model (0.0.8-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.9-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.9
+  * Add coverage on edge case
+  * Optimize git hash walk
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Thu, 26 May 2016 12:33:59 +0200
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Thu, 26 May 2016 12:56:17 +0200
 
 swh-model (0.0.8-1~swh1) unstable-swh; urgency=medium
 
