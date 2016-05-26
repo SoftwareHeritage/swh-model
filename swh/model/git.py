@@ -275,10 +275,8 @@ def __walk(rootdir,
                     # need to remove it because folder of empty folder
                     # is an empty folder!!!
                     if os.path.islink(dp):
-                        print('remove link to empty folder')
                         os.remove(dp)
                     else:
-                        print('remove empty folder')
                         os.rmdir(dp)
                     parent = os.path.dirname(dp)
                     # edge case about parent containing one empty
