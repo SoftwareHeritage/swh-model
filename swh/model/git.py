@@ -759,3 +759,36 @@ def update_checksums_from(changed_paths, objects,
 
     # Recompute hashes in memory from rootdir to root
     return recompute_sha1_in_memory(root, rootdir, objects)
+
+
+def objects_per_type(filter_type, objects_per_path):
+    """Given an object dictionary returned by
+    `swh.model.git.walk_and_compute_sha1_from_directory_2`, yields
+    corresponding element type's hashes
+
+    Args:
+        filter_type: one of GitType enum
+        objects_per_path:
+
+    Yields:
+        Elements of type filter_type's hashes
+
+    """
+    def __children_hash(objects, children):
+        for p in children:
+            c = objects.get(p, None)
+            if c:
+                h = c.get('checksums', None)
+                if h:
+                    yield h
+
+    for path, obj in objects_per_path.items():
+        o = obj['checksums']
+        if o['type'] == filter_type:
+            if 'children' in obj:  # for trees
+                if obj['children']:
+                    o['children'] = __children_hash(objects_per_path,
+                                                    obj['children'])
+                else:
+                    o['children'] = []
+            yield o
