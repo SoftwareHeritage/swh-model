@@ -31,11 +31,10 @@ class GitPerm(Enum):
     LINK = b'120000'
 
 
-def compute_directory_git_sha1(dirpath, hashes):
-    """Compute a directory git sha1 for a dirpath.
+def _compute_directory_git_sha1(hashes):
+    """Compute a directory git sha1 from hashes.
 
     Args:
-        dirpath: the directory's absolute path
         hashes: list of tree entries with keys:
             - sha1_git: the tree entry's sha1
             - name: file or subdir's name
@@ -57,10 +56,30 @@ def compute_directory_git_sha1(dirpath, hashes):
                 'target': entry['sha1_git'],
                 'type': 'dir' if entry['perms'] == GitPerm.TREE else 'file',
             }
-            for entry in hashes[dirpath]
+            for entry in hashes
         ]
     }
     return hashutil.hash_to_bytes(identifiers.directory_identifier(directory))
+
+
+def compute_directory_git_sha1(dirpath, hashes):
+    """Compute a directory git sha1 for a dirpath.
+
+    Args:
+        dirpath: the directory's absolute path
+        hashes: list of tree entries with keys:
+            - sha1_git: the tree entry's sha1
+            - name: file or subdir's name
+            - perms: the tree entry's sha1 permissions
+
+        Returns:
+            the binary sha1 of the dictionary's identifier
+
+        Assumes:
+            Every path exists in hashes.
+
+    """
+    return _compute_directory_git_sha1(hashes[dirpath])
 
 
 def compute_revision_sha1_git(revision):
@@ -162,11 +181,15 @@ def compute_blob_metadata(filepath):
     return blob_metadata
 
 
-def compute_tree_metadata(dirname, ls_hashes):
+def _compute_tree_metadata(dirname, hashes):
     """Given a dirname, compute the git metadata.
 
     Args:
         dirname: absolute pathname of the directory.
+        hashes: list of tree dirname's entries with keys:
+            - sha1_git: the tree entry's sha1
+            - name: file or subdir's name
+            - perms: the tree entry's sha1 permissions
 
     Returns:
         Dictionary of values:
@@ -178,12 +201,31 @@ def compute_tree_metadata(dirname, ls_hashes):
 
     """
     return {
-        'sha1_git': compute_directory_git_sha1(dirname, ls_hashes),
+        'sha1_git': _compute_directory_git_sha1(hashes),
         'name': os.path.basename(dirname),
         'perms': GitPerm.TREE,
         'type': GitType.TREE,
         'path': dirname
     }
+
+
+def compute_tree_metadata(dirname, ls_hashes):
+    """Given a dirname, compute the git metadata.
+
+    Args:
+        dirname: absolute pathname of the directory.
+        ls_hashes: dictionary of path, hashes
+
+    Returns:
+        Dictionary of values:
+            - sha1_git: tree's sha1 git
+            - name: basename of the directory
+            - perms: git permission for directory
+            - type: git type for directory
+            - path: absolute path to directory on filesystem
+
+    """
+    return _compute_tree_metadata(dirname, ls_hashes[dirname])
 
 
 def default_validation_dir(dirpath):
@@ -296,7 +338,10 @@ def walk_and_compute_sha1_from_directory(rootdir,
                                          dir_ok_fn=default_validation_dir,
                                          with_root_tree=True,
                                          remove_empty_folder=False):
-    """Compute git sha1 from directory rootdir.
+    """(Deprecated) TODO migrate the code to
+    walk_and_compute_sha1_from_directory_2.
+
+    Compute git sha1 from directory rootdir.
 
     Args:
         - rootdir: Root directory from which beginning the git hash computation
@@ -355,7 +400,8 @@ def walk_and_compute_sha1_from_directory(rootdir,
 
         dir_hashes = []
         for fulldirname in (dir for dir in dirnames if dir not in all_links):
-            tree_hash = compute_tree_metadata(fulldirname, ls_hashes)
+            tree_hash = _compute_tree_metadata(fulldirname,
+                                               ls_hashes[fulldirname])
             dir_hashes.append(tree_hash)
 
         ls_hashes[dirpath].extend(dir_hashes)
@@ -363,7 +409,7 @@ def walk_and_compute_sha1_from_directory(rootdir,
     if with_root_tree:
         # compute the current directory hashes
         root_hash = {
-            'sha1_git': compute_directory_git_sha1(rootdir, ls_hashes),
+            'sha1_git': _compute_directory_git_sha1(ls_hashes[rootdir]),
             'path': rootdir,
             'name': os.path.basename(rootdir),
             'perms': GitPerm.TREE,
@@ -374,8 +420,120 @@ def walk_and_compute_sha1_from_directory(rootdir,
     return ls_hashes
 
 
+def walk_and_compute_sha1_from_directory_2(rootdir,
+                                           dir_ok_fn=default_validation_dir,
+                                           remove_empty_folder=False):
+    """Compute git sha1 from directory rootdir.
+
+    Args:
+        - rootdir: Root directory from which beginning the git hash
+          computation
+
+        - dir_ok_fn: Filter function to filter directory according to rules
+        defined in the function. By default, all folders are ok.
+        Example override: dir_ok_fn = lambda dirpath: b'svn' not in dirpath
+
+    Returns:
+        Dictionary of entries with keys absolute path name.
+        Path-name can be a file/link or directory.
+        The associated value is a dictionary with:
+        - checksums: the dictionary with the hashes for the link/file/dir
+        Those are list of dictionary with keys:
+          - 'perms'
+          - 'type'
+          - 'name'
+          - 'sha1_git'
+          - and specifically content: 'sha1', 'sha256', ...
+
+        - children: Only for a directory, the set of children paths
+
+    Note:
+        One special key is the / which indicates the upper root of
+        the directory (this is the revision's directory).
+
+    Raises:
+        Nothing
+        If something is raised, this is a programmatic error.
+
+    """
+    def __get_dict_from_dirpath(_dict, path):
+        """Retrieve the default associated value for key path.
+
+        """
+        return _dict.get(path, dict(children=set(), checksums=None))
+
+    def __get_dict_from_filepath(_dict, path):
+        """Retrieve the default associated value for key path.
+
+        """
+        return _dict.get(path, dict(checksums=None))
+
+    ls_hashes = {}
+    all_links = set()
+
+    if rootdir.endswith(b'/'):
+        rootdir = rootdir.rstrip(b'/')
+
+    for dirpath, dirnames, filenames in __walk(
+            rootdir, dir_ok_fn, remove_empty_folder):
+
+        dir_entry = __get_dict_from_dirpath(ls_hashes, dirpath)
+        children = dir_entry['children']
+
+        links = (file
+                 for file in filenames.union(dirnames)
+                 if os.path.islink(file))
+
+        for linkpath in links:
+            all_links.add(linkpath)
+            m_hashes = compute_link_metadata(linkpath)
+            d = __get_dict_from_filepath(ls_hashes, linkpath)
+            d['checksums'] = m_hashes
+            ls_hashes[linkpath] = d
+            children.add(linkpath)
+
+        for filepath in (file for file in filenames if file not in all_links):
+            m_hashes = compute_blob_metadata(filepath)
+            d = __get_dict_from_filepath(ls_hashes, filepath)
+            d['checksums'] = m_hashes
+            ls_hashes[filepath] = d
+            children.add(filepath)
+
+        for fulldirname in (dir for dir in dirnames if dir not in all_links):
+            d_hashes = __get_dict_from_dirpath(ls_hashes, fulldirname)
+            tree_hash = _compute_tree_metadata(
+                fulldirname,
+                (ls_hashes[p]['checksums'] for p in d_hashes['children'])
+            )
+            d = __get_dict_from_dirpath(ls_hashes, fulldirname)
+            d['checksums'] = tree_hash
+            ls_hashes[fulldirname] = d
+            children.add(fulldirname)
+
+        dir_entry['children'] = children
+        ls_hashes[dirpath] = dir_entry
+
+    # compute the current directory hashes
+    d_hashes = __get_dict_from_dirpath(ls_hashes, rootdir)
+    root_hash = {
+        'sha1_git': _compute_directory_git_sha1(
+            (ls_hashes[p]['checksums'] for p in d_hashes['children'])
+        ),
+        'path': rootdir,
+        'name': os.path.basename(rootdir),
+        'perms': GitPerm.TREE,
+        'type': GitType.TREE
+    }
+    d_hashes['checksums'] = root_hash
+    ls_hashes[rootdir] = d_hashes
+
+    return ls_hashes
+
+
 def recompute_sha1_in_memory(root, deeper_rootdir, objects):
-    """Recompute git sha1 from directory deeper_rootdir to root.
+    """TODO: Use git.walk_and_compute_sha1_from_directory_2
+
+    Recompute git sha1 from directory deeper_rootdir to root.
 
     This function relies exclusively on `objects` for hashes.  It
     expects the deeper_rootdir and every key below that path to be
@@ -601,3 +759,36 @@ def update_checksums_from(changed_paths, objects,
 
     # Recompute hashes in memory from rootdir to root
     return recompute_sha1_in_memory(root, rootdir, objects)
+
+
+def objects_per_type(filter_type, objects_per_path):
+    """Given an object dictionary returned by
+    `swh.model.git.walk_and_compute_sha1_from_directory_2`, yields
+    corresponding element type's hashes
+
+    Args:
+        filter_type: one of GitType enum
+        objects_per_path:
+
+    Yields:
+        Elements of type filter_type's hashes
+
+    """
+    def __children_hash(objects, children):
+        for p in children:
+            c = objects.get(p, None)
+            if c:
+                h = c.get('checksums', None)
+                if h:
+                    yield h
+
+    for path, obj in objects_per_path.items():
+        o = obj['checksums']
+        if o['type'] == filter_type:
+            if 'children' in obj:  # for trees
+                if obj['children']:
+                    o['children'] = __children_hash(objects_per_path,
+                                                    obj['children'])
+                else:
+                    o['children'] = []
+            yield o
