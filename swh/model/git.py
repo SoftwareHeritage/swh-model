@@ -339,7 +339,7 @@ def walk_and_compute_sha1_from_directory(rootdir,
                                          with_root_tree=True,
                                          remove_empty_folder=False):
     """(Deprecated) TODO migrate the code to
-    walk_and_compute_sha1_from_directory_2.
+    compute_hashes_from_directory.
 
     Compute git sha1 from directory rootdir.
 
@@ -420,9 +420,9 @@ def walk_and_compute_sha1_from_directory(rootdir,
     return ls_hashes
 
 
-def walk_and_compute_sha1_from_directory_2(rootdir,
-                                           dir_ok_fn=default_validation_dir,
-                                           remove_empty_folder=False):
+def compute_hashes_from_directory(rootdir,
+                                  dir_ok_fn=default_validation_dir,
+                                  remove_empty_folder=False):
     """Compute git sha1 from directory rootdir.
 
     Args:
@@ -763,7 +763,7 @@ def update_checksums_from(changed_paths, objects,
 
 def objects_per_type(filter_type, objects_per_path):
     """Given an object dictionary returned by
-    `swh.model.git.walk_and_compute_sha1_from_directory_2`, yields
+    `swh.model.git.compute_hashes_from_directory`, yields
     corresponding element type's hashes
 
     Args:
