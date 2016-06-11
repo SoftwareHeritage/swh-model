@@ -530,6 +530,26 @@ def compute_hashes_from_directory(rootdir,
     return ls_hashes
 
 
+def children_hashes(children, objects):
+    """Given a collection of children path, yield the corresponding
+    hashes.
+
+    Args:
+        objects: objects hash as returned by git.compute_hashes_from_directory.
+        children: collection of bytes path
+
+    Yields:
+        Dictionary hashes
+
+    """
+    for p in children:
+        c = objects.get(p)
+        if c:
+            h = c.get('checksums')
+            if h:
+                yield h
+
+
 def objects_per_type(filter_type, objects_per_path):
     """Given an object dictionary returned by
     `swh.model.git.compute_hashes_from_directory`, yields
@@ -543,21 +563,13 @@ def objects_per_type(filter_type, objects_per_path):
         Elements of type filter_type's hashes
 
     """
-    def __children_hash(objects, children):
-        for p in children:
-            c = objects.get(p, None)
-            if c:
-                h = c.get('checksums', None)
-                if h:
-                    yield h
-
     for path, obj in objects_per_path.items():
         o = obj['checksums']
         if o['type'] == filter_type:
             if 'children' in obj:  # for trees
                 if obj['children']:
-                    o['children'] = __children_hash(objects_per_path,
-                                                    obj['children'])
+                    o['children'] = children_hashes(obj['children'],
+                                                    objects_per_path)
                 else:
                     o['children'] = []
             yield o
