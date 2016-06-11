@@ -1,8 +1,12 @@
-swh-model (0.0.10-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.11-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.11
+  * Open git.children_hashes api
+  * Rename git.walk_and_compute_sha1_from_directory_2 to
+    git.compute_hashes_from_directory
+  * Remove dead code
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 08 Jun 2016 15:54:59 +0200
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Sat, 11 Jun 2016 02:23:19 +0200
 
 swh-model (0.0.10-1~swh1) unstable-swh; urgency=medium
 
