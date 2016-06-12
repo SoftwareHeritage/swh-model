@@ -318,7 +318,7 @@ class TestObjectsPerType(unittest.TestCase):
                     'data': b'foo',
                     'sha1_git': b'\x19\x10(\x15f=#\xf8\xb7ZG\xe7\xa0\x19e\xdc\xdc\x96F\x8c',  # noqa
                     'path': b'/tmp/tmp7w3oi_j8/sample-folder/link-to-foo',
-                    'sha256': b',\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4\x13B-pd\x83\xbf\xa0\xf9\x8a^\x88bf\xe7\xae',  # noqa
+                    'sha256': b',&\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4\x13B-pd\x83\xbf\xa0\xf9\x8a^\x88bf\xe7\xae',  # noqa
                     'perms': git.GitPerm.LINK,
                     'type': git.GitType.BLOB,
                     'length': 3
@@ -397,7 +397,7 @@ class TestObjectsPerType(unittest.TestCase):
             },
             b'/tmp/tmp7w3oi_j8/sample-folder/foo/quotes.md': {
                 'checksums': {'name': b'quotes.md',
-                              'sha1': b'\x1b\xf0\xbbr\x1a\xc9,x18\xa1\x9b\x13\xc0\xeb=t\x1c\xbf\xad\xeb\xfc',  # noqa
+                              'sha1': b'\x1b\xf0\xbbr\x1a\xc9,\x18\xa1\x9b\x13\xc0\xeb=t\x1c\xbf\xad\xeb\xfc',  # noqa
                               'sha1_git': b'|LW\xba\x9f\xf4\x96\xad\x17\x9b\x8fe\xb1\xd2\x86\xed\xbd\xa3L\x9a',  # noqa
                               'path': b'/tmp/tmp7w3oi_j8/sample-folder/foo/quotes.md',  # noqa
                               'sha256': b'\xca\xca\x94*\xed\xa7\xb3\x08\x85\x9e\xb5o\x90\x9e\xc9m\x07\xa4\x99I\x16\x90\xc4S\xf7;\x98\x00\xa9;\x16Y',  # noqa
@@ -449,7 +449,7 @@ class TestObjectsPerType(unittest.TestCase):
                 'data': b'foo',
                 'sha1_git': b'\x19\x10(\x15f=#\xf8\xb7ZG\xe7\xa0\x19e\xdc\xdc\x96F\x8c',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder/link-to-foo',
-                'sha256': b'\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4\x13B-pd\x83\xbf\xa0\xf9\x8a^\x88bf\xe7\xae',  # noqa
+                'sha256': b',&\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4\x13B-pd\x83\xbf\xa0\xf9\x8a^\x88bf\xe7\xae',  # noqa
                 'perms': git.GitPerm.LINK,
                 'type': git.GitType.BLOB,
                 'length': 3
@@ -488,7 +488,7 @@ class TestObjectsPerType(unittest.TestCase):
             },
             {
                 'name': b'quotes.md',
-                'sha1': b'\x1b\xf0\xbbr\x1a\xc9,x18\xa1\x9b\x13\xc0\xeb=t\x1c\xbf\xad\xeb\xfc',  # noqa
+                'sha1': b'\x1b\xf0\xbbr\x1a\xc9,\x18\xa1\x9b\x13\xc0\xeb=t\x1c\xbf\xad\xeb\xfc',  # noqa
                 'sha1_git': b'|LW\xba\x9f\xf4\x96\xad\x17\x9b\x8fe\xb1\xd2\x86\xed\xbd\xa3L\x9a',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder/foo/quotes.md',
                 'sha256': b'\xca\xca\x94*\xed\xa7\xb3\x08\x85\x9e\xb5o\x90\x9e\xc9m\x07\xa4\x99I\x16\x90\xc4S\xf7;\x98\x00\xa9;\x16Y',  # noqa
@@ -576,8 +576,6 @@ class TestObjectsPerType(unittest.TestCase):
         expected_sha1_trees = list(
             ((c['sha1_git'], git.GitType.TREE, c['children'])
              for c in expected_trees))
-
-        print(expected_sha1_trees)
 
         # when
         actual_sha1_trees = list(
