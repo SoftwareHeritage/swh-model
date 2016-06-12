@@ -139,12 +139,13 @@ blah
 
 
 @attr('fs')
-class GitHashWalkArborescenceTree(unittest.TestCase):
+class GitHashWalkArborescenceTree:
     """Root class to ease walk and git hash testing without side-effecty
     problems.
 
     """
     def setUp(self):
+        super().setUp()
         self.tmp_root_path = tempfile.mkdtemp().encode('utf-8')
         self.maxDiff = None
 
@@ -166,7 +167,7 @@ class GitHashWalkArborescenceTree(unittest.TestCase):
             shutil.rmtree(self.tmp_root_path)
 
 
-class GitHashFromScratch(GitHashWalkArborescenceTree):
+class GitHashFromScratch(GitHashWalkArborescenceTree, unittest.TestCase):
     """Test the main `walk_and_compute_sha1_from_directory` algorithm that
     scans and compute the disk for checksums.
 
@@ -245,8 +246,11 @@ class GitHashFromScratch(GitHashWalkArborescenceTree):
         self.assertEquals(actual_hashes, expected_hashes)
 
 
-class TestObjectsPerType(unittest.TestCase):
+class WithSampleFolderChecksums:
     def setUp(self):
+        super().setUp()
+
+        self.rootkey = b'/tmp/tmp7w3oi_j8'
         self.objects = {
             b'/tmp/tmp7w3oi_j8': {
                 'children': {b'/tmp/tmp7w3oi_j8/sample-folder'},
@@ -407,6 +411,8 @@ class TestObjectsPerType(unittest.TestCase):
             },
         }
 
+
+class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
     @istest
     def objects_per_type_blob(self):
         # given
@@ -585,3 +591,99 @@ class TestObjectsPerType(unittest.TestCase):
         self.assertEquals(len(actual_sha1_trees), len(expected_sha1_trees))
         for e in actual_sha1_trees:
             self.assertTrue(e in expected_sha1_trees)
+
+
+class TestComputeHashesFromDirectory(WithSampleFolderChecksums,
+                                     GitHashWalkArborescenceTree,
+                                     unittest.TestCase):
+
+    def __adapt_object_to_rootpath(self, rootpath):
+        def _replace_slash(s,
+                           rootpath=self.rootkey,
+                           newrootpath=rootpath):
+            return s.replace(rootpath, newrootpath)
+
+        def _update_children(children):
+            return set((_replace_slash(c) for c in children))
+
+        # given
+        expected_objects = {}
+        for path, v in self.objects.items():
+            p = _replace_slash(path)
+            v['checksums']['path'] = _replace_slash(v['checksums']['path'])
+            v['checksums']['name'] = os.path.basename(v['checksums']['path'])
+            if 'children' in v:
+                v['children'] = _update_children(v['children'])
+            expected_objects[p] = v
+
+        return expected_objects
+
+    @istest
+    def compute_hashes_from_directory_default(self):
+        # given
+        expected_objects = self.__adapt_object_to_rootpath(self.tmp_root_path)
+
+        # when
+        actual_hashes = git.compute_hashes_from_directory(self.tmp_root_path)
+
+        # then
+        self.assertEquals(actual_hashes, expected_objects)
+
+    @istest
+    def compute_hashes_from_directory_no_empty_folder(self):
+        # given
+        def _replace_slash(s,
+                           rootpath=self.rootkey,
+                           newrootpath=self.tmp_root_path):
+            return s.replace(rootpath, newrootpath)
+
+        expected_objects = self.__adapt_object_to_rootpath(self.tmp_root_path)
+
+        # when
+        actual_hashes = git.compute_hashes_from_directory(
+            self.tmp_root_path,
+            remove_empty_folder=True)
+
+        # then
+
+        # One folder less, so plenty of hashes are different now
+        self.assertNotEquals(actual_hashes, expected_objects)
+        keys = set(actual_hashes.keys())
+
+        assert (b'/tmp/tmp7w3oi_j8/sample-folder/empty-folder'
+                in self.objects.keys())
+        new_empty_folder_path = _replace_slash(
+            b'/tmp/tmp7w3oi_j8/sample-folder/empty-folder')
+        self.assertNotIn(new_empty_folder_path, keys)
+
+        self.assertEqual(len(keys), len(expected_objects.keys()) - 1)
+
+    @istest
+    def compute_hashes_from_directory_ignore_some_folder(self):
+        # given
+        def _replace_slash(s,
+                           rootpath=self.rootkey,
+                           newrootpath=self.tmp_root_path):
+            return s.replace(rootpath, newrootpath)
+
+        ignore_path = b'/tmp/tmp7w3oi_j8/sample-folder'
+
+        # when
+        actual_hashes = git.compute_hashes_from_directory(
+            self.tmp_root_path,
+            dir_ok_fn=lambda dirpath: b'sample-folder' not in dirpath)
+
+        # then
+
+        # One entry less, so plenty of hashes are different now
+        # self.assertNotEquals(actual_hashes, expected_objects)
+        keys = set(actual_hashes.keys())
+        print(keys)
+
+        assert ignore_path in self.objects.keys()
+
+        new_ignore_path = _replace_slash(ignore_path)
+        self.assertNotIn(new_ignore_path, keys)
+
+        # top level directory contains the folder to ignore
+        self.assertEqual(len(keys), 1)
