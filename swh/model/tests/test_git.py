@@ -678,7 +678,6 @@ class TestComputeHashesFromDirectory(WithSampleFolderChecksums,
         # One entry less, so plenty of hashes are different now
         # self.assertNotEquals(actual_hashes, expected_objects)
         keys = set(actual_hashes.keys())
-        print(keys)
 
         assert ignore_path in self.objects.keys()
 
