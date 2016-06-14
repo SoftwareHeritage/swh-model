@@ -1,3 +1,10 @@
+swh-model (0.0.12-1~swh1) unstable-swh; urgency=medium
+
+  * Release swh.model v0.0.12
+  * Add more tests to git tree hash computations
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Tue, 14 Jun 2016 17:08:20 +0200
+
 swh-model (0.0.11-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.11
