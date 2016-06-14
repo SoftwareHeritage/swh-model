@@ -1,8 +1,9 @@
-swh-model (0.0.11-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.12-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * Release swh.model v0.0.12
+  * Add more tests to git tree hash computations
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Sat, 11 Jun 2016 02:23:19 +0200
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Tue, 14 Jun 2016 17:08:20 +0200
 
 swh-model (0.0.11-1~swh1) unstable-swh; urgency=medium
 
