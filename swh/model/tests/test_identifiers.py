@@ -55,15 +55,23 @@ class UtilityFunctionsIdentifier(unittest.TestCase):
 
 class UtilityFunctionsDateOffset(unittest.TestCase):
     def setUp(self):
-        self.date = datetime.datetime(
-            2015, 11, 22, 16, 33, 56, tzinfo=datetime.timezone.utc)
-        self.date_int = int(self.date.timestamp())
-        self.date_repr = b'1448210036'
-
-        self.date_microseconds = datetime.datetime(
-            2015, 11, 22, 16, 33, 56, 2342, tzinfo=datetime.timezone.utc)
-        self.date_microseconds_float = self.date_microseconds.timestamp()
-        self.date_microseconds_repr = b'1448210036.002342'
+        self.dates = {
+            b'1448210036': {
+                'seconds': 1448210036,
+                'microseconds': 0,
+            },
+            b'1448210036.002342': {
+                'seconds': 1448210036,
+                'microseconds': 2342,
+            },
+            b'1448210036.12': {
+                'seconds': 1448210036,
+                'microseconds': 120000,
+            }
+        }
+        self.broken_dates = [
+            1448210036.12,
+        ]
 
         self.offsets = {
             0: b'+0000',
@@ -73,12 +81,14 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
 
     @istest
     def format_date(self):
-        for date in [self.date, self.date_int]:
-            self.assertEqual(identifiers.format_date(date), self.date_repr)
+        for date_repr, date in self.dates.items():
+            self.assertEqual(identifiers.format_date(date), date_repr)
 
-        for date in [self.date_microseconds, self.date_microseconds_float]:
-            self.assertEqual(identifiers.format_date(date),
-                             self.date_microseconds_repr)
+    @istest
+    def format_date_fail(self):
+        for date in self.broken_dates:
+            with self.assertRaises(ValueError):
+                identifiers.format_date(date)
 
     @istest
     def format_offset(self):
@@ -285,7 +295,7 @@ dg1KdHOa34shrKDaOVzW
                 'email': b'robot@softwareheritage.org',
             },
             'date': {
-                'timestamp': 1437047495.0,
+                'timestamp': {'seconds': 1437047495},
                 'offset': 0,
                 'negative_utc': False,
             },
@@ -349,7 +359,7 @@ dg1KdHOa34shrKDaOVzW
                 'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
             },
             'date': {
-                'timestamp': '1428538899',
+                'timestamp': 1428538899,
                 'offset': 480,
             },
             'committer': {
@@ -357,7 +367,7 @@ dg1KdHOa34shrKDaOVzW
                 'email': b'worldhello.net@gmail.com',
             },
             'committer_date': {
-                'timestamp': '1428538899',
+                'timestamp': 1428538899,
                 'offset': 480,
             },
             'metadata': {
@@ -383,7 +393,7 @@ dg1KdHOa34shrKDaOVzW
                 'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
             },
             'date': {
-                'timestamp': '1428538899',
+                'timestamp': 1428538899,
                 'offset': 480,
             },
             'committer': {
@@ -391,7 +401,7 @@ dg1KdHOa34shrKDaOVzW
                 'email': b'worldhello.net@gmail.com',
             },
             'committer_date': {
-                'timestamp': '1428538899',
+                'timestamp': 1428538899,
                 'offset': 480,
             },
             'message': None,
@@ -408,7 +418,7 @@ dg1KdHOa34shrKDaOVzW
                 'fullname': b'Jiang Xin <worldhello.net@gmail.com>',
             },
             'date': {
-                'timestamp': '1428538899',
+                'timestamp': 1428538899,
                 'offset': 480,
             },
             'committer': {
@@ -416,7 +426,7 @@ dg1KdHOa34shrKDaOVzW
                 'email': b'worldhello.net@gmail.com',
             },
             'committer_date': {
-                'timestamp': '1428538899',
+                'timestamp': 1428538899,
                 'offset': 480,
             },
             'message': b'',
@@ -592,7 +602,7 @@ o6X/3T+vm8K3bf3driRr34c=
             'target': '54e9abca4c77421e2921f5f156c9fe4a9f7441c7',
             'target_type': 'revision',
             'date': {
-                'timestamp': 1225281976.0,
+                'timestamp': {'seconds': 1225281976},
                 'offset': 0,
                 'negative_utc': True,
             },

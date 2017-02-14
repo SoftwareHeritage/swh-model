@@ -1,8 +1,9 @@
-swh-model (0.0.12-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.13-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * Release swh.model v0.0.13
+  * Timestamps are now fully integer values
 
- -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Tue, 14 Jun 2016 17:08:20 +0200
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Tue, 14 Feb 2017 19:32:24 +0100
 
 swh-model (0.0.12-1~swh1) unstable-swh; urgency=medium
 
