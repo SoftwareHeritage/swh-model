@@ -241,9 +241,9 @@ def default_validation_dir(dirpath):
     return True
 
 
-def __walk(rootdir,
-           dir_ok_fn=default_validation_dir,
-           remove_empty_folder=False):
+def _walk(rootdir,
+          dir_ok_fn=default_validation_dir,
+          remove_empty_folder=False):
     """Walk the filesystem and yields a 3 tuples (dirpath, dirnames as set
     of absolute paths, filenames as set of abslute paths)
 
@@ -379,7 +379,7 @@ def walk_and_compute_sha1_from_directory(rootdir,
     if rootdir.endswith(b'/'):
         rootdir = rootdir.rstrip(b'/')
 
-    for dirpath, dirnames, filenames in __walk(
+    for dirpath, dirnames, filenames in _walk(
             rootdir, dir_ok_fn, remove_empty_folder):
         hashes = []
 
@@ -456,13 +456,13 @@ def compute_hashes_from_directory(rootdir,
         If something is raised, this is a programmatic error.
 
     """
-    def __get_dict_from_dirpath(_dict, path):
+    def _get_dict_from_dirpath(_dict, path):
         """Retrieve the default associated value for key path.
 
         """
         return _dict.get(path, dict(children=set(), checksums=None))
 
-    def __get_dict_from_filepath(_dict, path):
+    def _get_dict_from_filepath(_dict, path):
         """Retrieve the default associated value for key path.
 
         """
@@ -474,10 +474,10 @@ def compute_hashes_from_directory(rootdir,
     if rootdir.endswith(b'/'):
         rootdir = rootdir.rstrip(b'/')
 
-    for dirpath, dirnames, filenames in __walk(
+    for dirpath, dirnames, filenames in _walk(
             rootdir, dir_ok_fn, remove_empty_folder):
 
-        dir_entry = __get_dict_from_dirpath(ls_hashes, dirpath)
+        dir_entry = _get_dict_from_dirpath(ls_hashes, dirpath)
         children = dir_entry['children']
 
         links = (file
@@ -487,25 +487,25 @@ def compute_hashes_from_directory(rootdir,
         for linkpath in links:
             all_links.add(linkpath)
             m_hashes = compute_link_metadata(linkpath)
-            d = __get_dict_from_filepath(ls_hashes, linkpath)
+            d = _get_dict_from_filepath(ls_hashes, linkpath)
             d['checksums'] = m_hashes
             ls_hashes[linkpath] = d
             children.add(linkpath)
 
         for filepath in (file for file in filenames if file not in all_links):
             m_hashes = compute_blob_metadata(filepath)
-            d = __get_dict_from_filepath(ls_hashes, filepath)
+            d = _get_dict_from_filepath(ls_hashes, filepath)
             d['checksums'] = m_hashes
             ls_hashes[filepath] = d
             children.add(filepath)
 
         for fulldirname in (dir for dir in dirnames if dir not in all_links):
-            d_hashes = __get_dict_from_dirpath(ls_hashes, fulldirname)
+            d_hashes = _get_dict_from_dirpath(ls_hashes, fulldirname)
             tree_hash = _compute_tree_metadata(
                 fulldirname,
                 (ls_hashes[p]['checksums'] for p in d_hashes['children'])
             )
-            d = __get_dict_from_dirpath(ls_hashes, fulldirname)
+            d = _get_dict_from_dirpath(ls_hashes, fulldirname)
             d['checksums'] = tree_hash
             ls_hashes[fulldirname] = d
             children.add(fulldirname)
@@ -514,7 +514,7 @@ def compute_hashes_from_directory(rootdir,
         ls_hashes[dirpath] = dir_entry
 
     # compute the current directory hashes
-    d_hashes = __get_dict_from_dirpath(ls_hashes, rootdir)
+    d_hashes = _get_dict_from_dirpath(ls_hashes, rootdir)
     root_hash = {
         'sha1_git': _compute_directory_git_sha1(
             (ls_hashes[p]['checksums'] for p in d_hashes['children'])
