@@ -171,19 +171,21 @@ def format_date(date):
     microseconds (postgres type "datetime with timezone").
 
     Therefore, we print timestamps with no microseconds as integers, and
-    timestamps with microseconds as floating point values.
+    timestamps with microseconds as floating point values. We elide the
+    trailing zeroes from microsecond values, to "future-proof" our
+    representation if we ever need more precision in timestamps.
 
     """
-    if isinstance(date, datetime.datetime):
-        if date.microsecond == 0:
-            date = int(date.timestamp())
-        else:
-            date = date.timestamp()
-        return str(date).encode()
+    if not isinstance(date, dict):
+        raise ValueError('format_date only supports dicts, %r received' % date)
+
+    seconds = date.get('seconds', 0)
+    microseconds = date.get('microseconds', 0)
+    if not microseconds:
+        return str(seconds).encode()
     else:
-        if date == int(date):
-            date = int(date)
-        return str(date).encode()
+        float_value = ('%d.%06d' % (seconds, microseconds))
+        return float_value.rstrip('0').encode()
 
 
 @lru_cache()
@@ -221,8 +223,9 @@ def normalize_timestamp(time_representation):
 
     Returns: a normalized dictionary with three keys
 
-     - timestamp: a number of seconds since the UNIX epoch (1970-01-01 at 00:00
-       UTC)
+     - timestamp: a dict with two optional keys:
+        - seconds: the integral number of seconds since the UNIX epoch
+        - microseconds: the integral number of microseconds
      - offset: the timezone offset as a number of minutes relative to UTC
      - negative_utc: a boolean representing whether the offset is -0000 when
        offset = 0.
@@ -235,12 +238,23 @@ def normalize_timestamp(time_representation):
     negative_utc = False
 
     if isinstance(time_representation, dict):
-        timestamp = time_representation['timestamp']
+        ts = time_representation['timestamp']
+        if isinstance(ts, dict):
+            seconds = ts.get('seconds', 0)
+            microseconds = ts.get('microseconds', 0)
+        elif isinstance(ts, int):
+            seconds = ts
+            microseconds = 0
+        else:
+            raise ValueError(
+                'normalize_timestamp received non-integer timestamp member:'
+                ' %r' % ts)
         offset = time_representation['offset']
         if 'negative_utc' in time_representation:
             negative_utc = time_representation['negative_utc']
     elif isinstance(time_representation, datetime.datetime):
-        timestamp = time_representation.timestamp()
+        seconds = int(time_representation.timestamp())
+        microseconds = time_representation.microsecond
         utcoffset = time_representation.utcoffset()
         if utcoffset is None:
             raise ValueError(
@@ -250,12 +264,20 @@ def normalize_timestamp(time_representation):
         # utcoffset is an integer number of minutes
         seconds_offset = utcoffset.total_seconds()
         offset = int(seconds_offset) // 60
-    else:
-        timestamp = time_representation
+    elif isinstance(time_representation, int):
+        seconds = time_representation
+        microseconds = 0
         offset = 0
+    else:
+        raise ValueError(
+            'normalize_timestamp received non-integer timestamp:'
+            ' %r' % time_representation)
 
     return {
-        'timestamp': timestamp,
+        'timestamp': {
+            'seconds': seconds,
+            'microseconds': microseconds,
+        },
         'offset': offset,
         'negative_utc': negative_utc,
     }

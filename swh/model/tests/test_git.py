@@ -517,7 +517,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
 
     @istest
     def objects_per_type_tree(self):
-        def __children_hashes(path, objects=self.objects):
+        def _children_hashes(path, objects=self.objects):
             return set((c['sha1_git']
                        for c in git.children_hashes(
                            objects[path]['children'], objects)))
@@ -531,7 +531,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
                 'perms': git.GitPerm.TREE,
                 # we only add children's sha1_git here, in reality,
                 # it's a full dict of hashes.
-                'children': __children_hashes(b'/tmp/tmp7w3oi_j8')
+                'children': _children_hashes(b'/tmp/tmp7w3oi_j8')
             },
             {
                 'type': git.GitType.TREE,
@@ -539,7 +539,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
                 'sha1_git': b'\xe8\xb0\xf1Fj\xf8`\x8c\x8a?\xb9\x87\x9d\xb1r\xb8\x87\xe8\x07Y',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder',
                 'perms': git.GitPerm.TREE,
-                'children': __children_hashes(
+                'children': _children_hashes(
                     b'/tmp/tmp7w3oi_j8/sample-folder')
             },
             {
@@ -548,7 +548,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
                 'sha1_git': b'K\x82]\xc6B\xcbn\xb9\xa0`\xe5K\xf8\xd6\x92\x88\xfb\xeeI\x04',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder/empty-folder',
                 'perms': git.GitPerm.TREE,
-                'children': __children_hashes(
+                'children': _children_hashes(
                     b'/tmp/tmp7w3oi_j8/sample-folder/empty-folder')
             },
             {
@@ -557,7 +557,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
                 'sha1_git': b'<\x1fW\x83\x94\xf4b?t\xa0\xba\x7f\xe7ar\x9fY\xfcn\xc4',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder/bar',
                 'perms': git.GitPerm.TREE,
-                'children': __children_hashes(
+                'children': _children_hashes(
                     b'/tmp/tmp7w3oi_j8/sample-folder/bar')
             },
             {
@@ -566,7 +566,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
                 'sha1_git': b'\xc3\x02\x0fk\xf15\xa3\x8cm\xf3\xaf\xeb_\xb3\x822\xc5\xe0p\x87',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder/bar/barfoo',
                 'perms': git.GitPerm.TREE,
-                'children': __children_hashes(
+                'children': _children_hashes(
                     b'/tmp/tmp7w3oi_j8/sample-folder/bar/barfoo'),
             },
             {
@@ -575,7 +575,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
                 'sha1_git': b'+A\xc4\x0f\r\x1f\xbf\xfc\xba\x12I}\xb7\x1f\xba\x83\xfc\xca\x96\xe5',  # noqa
                 'path': b'/tmp/tmp7w3oi_j8/sample-folder/foo',
                 'perms': git.GitPerm.TREE,
-                'children': __children_hashes(
+                'children': _children_hashes(
                     b'/tmp/tmp7w3oi_j8/sample-folder/foo')
             },
         ]
@@ -585,7 +585,7 @@ class TestObjectsPerType(WithSampleFolderChecksums, unittest.TestCase):
 
         # when
         actual_sha1_trees = list(
-            ((c['sha1_git'], c['type'], __children_hashes(c['path']))
+            ((c['sha1_git'], c['type'], _children_hashes(c['path']))
              for c in git.objects_per_type(git.GitType.TREE, self.objects)))
 
         self.assertEquals(len(actual_sha1_trees), len(expected_sha1_trees))
