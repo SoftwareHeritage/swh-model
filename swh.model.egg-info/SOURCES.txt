@@ -5,9 +5,12 @@ MANIFEST.in
 Makefile
 Makefile.local
 README-dev.md
+requirements-swh.txt
 requirements.txt
 setup.py
 version.txt
+bin/git-revhash
+bin/swh-revhash
 debian/changelog
 debian/compat
 debian/control
