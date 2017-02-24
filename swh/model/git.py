@@ -157,12 +157,13 @@ def compute_link_metadata(linkpath):
 
 
 def compute_blob_metadata(filepath):
-    """Given a filepath, compute the git metadata.
+    """Given a filepath resolving to a regular file, compute the metadata.
+    Other file types (fifo, character or block device, symlink) will
+    be considered empty regular file.  To deal properly with symlinks,
+    use swh.model.git.compute_link_metadata.
 
     Args:
-        filepath: absolute pathname of the file.
-                  This could be special files (fifo, character or
-                  block device), they will be considered empty files.
+        filepath: absolute pathname of the regular file.
 
     Returns:
         Dictionary of values:
