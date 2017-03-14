@@ -84,14 +84,7 @@ def _new_hash(algo, length=None):
             base_algo = _algo[0]
             variable_length = int(_algo[1])
 
-            if base_algo == 'blake2b':
-                h = hashlib.blake2b(digest_size=variable_length)
-            elif base_algo == 'blake2s':
-                h = hashlib.blake2s(digest_size=variable_length)
-            else:
-                raise ValueError('Unexpected hashing algorithm %s, '
-                                 'expected one of %s' %
-                                 (algo, ', '.join(sorted(ALGORITHMS))))
+            h = hashlib.new('%s%s' % (base_algo, variable_length))
         else:
             raise ValueError('Unsupported hashing algorithm %s' % algo)
     else:
