@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from nose.tools import istest
+from unittest.mock import MagicMock, patch
 
 from swh.model import hashutil
 
@@ -123,6 +124,50 @@ class Hashutil(unittest.TestCase):
             self.assertEqual(self.checksums[algo],
                              hashutil.bytehex_to_hash(
                                  self.hex_checksums[algo].encode()))
+
+    @istest
+    def new_hash_unsupported_hashing_algorithm(self):
+        try:
+            hashutil._new_hash('blake2:10')
+        except ValueError as e:
+            self.assertEquals(str(e),
+                              'Unsupported hashing algorithm blake2:10')
+
+    @patch('swh.model.hashutil.sys')
+    @istest
+    def new_hash_unexpected_hashing_algo(self, mock_sys):
+        mock_sys.version_info = MagicMock(major=3, minor=6)
+
+        try:
+            hashutil._new_hash('blake3:256')
+        except ValueError as e:
+            self.assertEquals(str(e),
+                              'Unexpected hashing algorithm blake3:256, '
+                              'expected one of sha1, sha1_git, sha256')
+
+    @patch('swh.model.hashutil.sys')
+    @patch('swh.model.hashutil.hashlib')
+    @istest
+    def new_hash_blake2b(self, mock_hashlib, mock_sys):
+        mock_sys.version_info = MagicMock(major=3, minor=6)
+        mock_hashlib.blake2b.return_value = 'some-hashlib-object'
+
+        h = hashutil._new_hash('blake2b:256')
+
+        self.assertEquals(h, 'some-hashlib-object')
+        mock_hashlib.blake2b.assert_called_with(digest_size=256)
+
+    @patch('swh.model.hashutil.sys')
+    @patch('swh.model.hashutil.hashlib')
+    @istest
+    def new_hash_blake2s(self, mock_hashlib, mock_sys):
+        mock_sys.version_info = MagicMock(major=3, minor=6)
+        mock_hashlib.blake2s.return_value = 'some-hashlib-object'
+
+        h = hashutil._new_hash('blake2s:128')
+
+        self.assertEquals(h, 'some-hashlib-object')
+        mock_hashlib.blake2s.assert_called_with(digest_size=128)
 
 
 class HashlibGit(unittest.TestCase):

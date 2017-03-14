@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2017  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -6,8 +6,10 @@
 import binascii
 import functools
 import hashlib
-from io import BytesIO
 import os
+import sys
+
+from io import BytesIO
 
 # supported hashing algorithms
 ALGORITHMS = set(['sha1', 'sha256', 'sha1_git'])
@@ -64,7 +66,7 @@ def _new_hash(algo, length=None):
         ValueError if algo is unknown, or length is missing for a git-specific
         hash.
     """
-    if algo not in ALGORITHMS:
+    if algo not in ALGORITHMS and ':' not in algo:
         raise ValueError('Unexpected hashing algorithm %s, '
                          'expected one of %s' %
                          (algo, ', '.join(sorted(ALGORITHMS))))
@@ -75,6 +77,23 @@ def _new_hash(algo, length=None):
             raise ValueError('Missing length for git hashing algorithm')
         base_algo = algo[:-4]
         h = _new_git_hash(base_algo, 'blob', length)
+    elif ':' in algo:   # variable length hashing algorithms (only from
+                        # python3 >= 3.6)
+        if sys.version_info.major == 3 and sys.version_info.minor >= 6:
+            _algo = algo.split(':')
+            base_algo = _algo[0]
+            variable_length = int(_algo[1])
+
+            if base_algo == 'blake2b':
+                h = hashlib.blake2b(digest_size=variable_length)
+            elif base_algo == 'blake2s':
+                h = hashlib.blake2s(digest_size=variable_length)
+            else:
+                raise ValueError('Unexpected hashing algorithm %s, '
+                                 'expected one of %s' %
+                                 (algo, ', '.join(sorted(ALGORITHMS))))
+        else:
+            raise ValueError('Unsupported hashing algorithm %s' % algo)
     else:
         h = hashlib.new(algo)
 
