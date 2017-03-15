@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2017  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -136,6 +136,41 @@ blah
 
         # then
         self.assertEqual(checksum, self.checksums['tag_sha1_git'])
+
+
+@attr('fs')
+class ComputeBlobMetadata(unittest.TestCase):
+    @istest
+    def compute_blob_metadata__special_file_returns_nothing(self):
+        # prepare
+        tmp_root_path = tempfile.mkdtemp().encode('utf-8')
+        name = b'fifo-file'
+        path = os.path.join(tmp_root_path, name)
+
+        # given
+        os.mkfifo(path)
+
+        # when
+        actual_metadata = git.compute_blob_metadata(path)
+
+        # then
+        expected_metadata = {
+            'sha1': b'\xda9\xa3\xee^kK\r2U\xbf\xef\x95`\x18\x90\xaf\xd8\x07\t',
+            'sha1_git': b'\xe6\x9d\xe2\x9b\xb2\xd1\xd6CK\x8b)\xaewZ\xd8\xc2'
+                        b'\xe4\x8cS\x91',
+            'sha256': b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o"
+                      b"\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+            'perms': git.GitPerm.BLOB,
+            'path': path,
+            'name': name,
+            'type': git.GitType.BLOB,
+            'length': 0
+        }
+
+        self.assertEquals(actual_metadata, expected_metadata)
+
+        # cleanup
+        shutil.rmtree(tmp_root_path)
 
 
 @attr('fs')

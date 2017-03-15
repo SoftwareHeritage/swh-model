@@ -114,6 +114,18 @@ def _perms_to_bytes(perms):
     return oc.encode('ascii')
 
 
+def escape_newlines(snippet):
+    """Escape the newlines present in snippet according to git rules.
+
+    New lines in git manifests are escaped by indenting the next line by one
+    space."""
+
+    if b'\n' in snippet:
+        return b'\n '.join(snippet.split(b'\n'))
+    else:
+        return snippet
+
+
 def directory_identifier(directory):
     """Return the intrinsic identifier for a directory.
 
@@ -347,7 +359,7 @@ def format_author_line(header, author, date_offset):
 
     """
 
-    ret = [header.encode(), b' ', format_author(author)]
+    ret = [header.encode(), b' ', escape_newlines(format_author(author))]
 
     date_offset = normalize_timestamp(date_offset)
 
@@ -443,13 +455,9 @@ def revision_identifier(revision):
         if isinstance(value, str):
             value = value.encode('utf-8')
 
-        # multi-line values: indent continuation lines
-        if b'\n' in value:
-            value_chunks = value.split(b'\n')
-            value = b'\n '.join(value_chunks)
-
         # encode the key to utf-8
-        components.extend([key.encode('utf-8'), b' ', value, b'\n'])
+        components.extend([key.encode('utf-8'), b' ',
+                           escape_newlines(value), b'\n'])
 
     if revision['message'] is not None:
         components.extend([b'\n', revision['message']])
