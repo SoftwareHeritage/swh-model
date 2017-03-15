@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2017  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -615,6 +615,29 @@ o6X/3T+vm8K3bf3driRr34c=
             'message': b'tagging version 20081029\n\nr56558\n',
         }
 
+        self.release_newline_in_author = {
+            'author': {
+                'email': b'esycat@gmail.com',
+                'fullname': b'Eugene Janusov\n<esycat@gmail.com>',
+                'name': b'Eugene Janusov\n',
+            },
+            'date': {
+                'negative_utc': None,
+                'offset': 600,
+                'timestamp': {
+                    'microseconds': 0,
+                    'seconds': 1377480558,
+                },
+            },
+            'id': b'\\\x98\xf5Y\xd04\x16-\xe2->\xbe\xb9T3\xe6\xf8\x88R1',
+            'message': b'Release of v0.3.2.',
+            'name': b'0.3.2',
+            'synthetic': False,
+            'target': (b'\xc0j\xa3\xd9;x\xa2\x86\\I5\x17'
+                       b'\x000\xf8\xc2\xd79o\xd3'),
+            'target_type': 'revision',
+        }
+
     @istest
     def release_identifier(self):
         self.assertEqual(
@@ -648,4 +671,11 @@ o6X/3T+vm8K3bf3driRr34c=
         self.assertEqual(
             identifiers.release_identifier(self.release_negative_utc),
             identifiers.identifier_to_str(self.release_negative_utc['id'])
+        )
+
+    @istest
+    def release_identifier_newline_in_author(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_newline_in_author),
+            identifiers.identifier_to_str(self.release_newline_in_author['id'])
         )
