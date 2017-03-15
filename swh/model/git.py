@@ -1,10 +1,11 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2017  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 
 import os
+import stat
 
 from enum import Enum
 
@@ -156,21 +157,32 @@ def compute_link_metadata(linkpath):
 
 
 def compute_blob_metadata(filepath):
-    """Given a filepath, compute the git metadata.
+    """Given a filepath resolving to a regular file, compute the metadata.
+    Other file types (fifo, character or block device, symlink) will
+    be considered empty regular file.  To deal properly with symlinks,
+    use swh.model.git.compute_link_metadata.
 
     Args:
-        filepath: absolute pathname of the file.
+        filepath: absolute pathname of the regular file.
 
     Returns:
         Dictionary of values:
             - name: basename of the file
+            - length: data length
             - perms: git permission for file
             - type: git type for file
             - path: absolute filepath on filesystem
 
     """
-    blob_metadata = hashutil.hash_path(filepath)
-    perms = GitPerm.EXEC if os.access(filepath, os.X_OK) else GitPerm.BLOB
+    mode = os.lstat(filepath).st_mode
+    if not stat.S_ISREG(mode):  # special (block or character device, fifo)
+        perms = GitPerm.BLOB
+        blob_metadata = hashutil.hash_data(b'')
+        blob_metadata['length'] = 0
+    else:
+        perms = GitPerm.EXEC if os.access(filepath, os.X_OK) else GitPerm.BLOB
+        blob_metadata = hashutil.hash_path(filepath)
+
     blob_metadata.update({
         'name': os.path.basename(filepath),
         'perms': perms,

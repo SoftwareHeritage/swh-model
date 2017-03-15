@@ -182,8 +182,20 @@ def hash_to_hex(hash):
 
 
 @functools.lru_cache()
+def hash_to_bytehex(hash):
+    """Converts a hash to its hexadecimal bytes representation"""
+    return binascii.hexlify(hash)
+
+
+@functools.lru_cache()
 def hash_to_bytes(hash):
     """Converts a hash (in hex or bytes form) to its raw bytes form"""
     if isinstance(hash, bytes):
         return hash
     return bytes.fromhex(hash)
+
+
+@functools.lru_cache()
+def bytehex_to_hash(hex):
+    """Converts a hexadecimal bytes representation of a hash to that hash"""
+    return hash_to_bytes(hex.decode())
