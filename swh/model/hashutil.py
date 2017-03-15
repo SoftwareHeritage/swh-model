@@ -7,7 +7,6 @@ import binascii
 import functools
 import hashlib
 import os
-import sys
 
 from io import BytesIO
 
@@ -77,16 +76,11 @@ def _new_hash(algo, length=None):
             raise ValueError('Missing length for git hashing algorithm')
         base_algo = algo[:-4]
         h = _new_git_hash(base_algo, 'blob', length)
-    elif ':' in algo:   # variable length hashing algorithms (only from
-                        # python3 >= 3.6)
-        if sys.version_info.major == 3 and sys.version_info.minor >= 6:
-            _algo = algo.split(':')
-            base_algo = _algo[0]
-            variable_length = int(_algo[1])
-
-            h = hashlib.new('%s%s' % (base_algo, variable_length))
-        else:
-            raise ValueError('Unsupported hashing algorithm %s' % algo)
+    elif ':' in algo:   # variable length hashing algorithms
+        _algo = algo.split(':')
+        base_algo = _algo[0]
+        variable_length = int(_algo[1])
+        h = hashlib.new('%s%s' % (base_algo, variable_length))
     else:
         h = hashlib.new(algo)
 

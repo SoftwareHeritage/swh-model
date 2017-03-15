@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 from nose.tools import istest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from swh.model import hashutil
 
@@ -131,24 +131,11 @@ class Hashutil(unittest.TestCase):
             hashutil._new_hash('blake2:10')
         except ValueError as e:
             self.assertEquals(str(e),
-                              'Unsupported hashing algorithm blake2:10')
+                              'unsupported hash type blake210')
 
-    @patch('swh.model.hashutil.sys')
-    @istest
-    def new_hash_unexpected_hashing_algo(self, mock_sys):
-        mock_sys.version_info = MagicMock(major=3, minor=6)
-
-        try:
-            hashutil._new_hash('blake3:256')
-        except ValueError as e:
-            self.assertEquals(str(e),
-                              'unsupported hash type blake3256')
-
-    @patch('swh.model.hashutil.sys')
     @patch('swh.model.hashutil.hashlib')
     @istest
-    def new_hash_blake2b(self, mock_hashlib, mock_sys):
-        mock_sys.version_info = MagicMock(major=3, minor=6)
+    def new_hash_blake2b(self, mock_hashlib):
         mock_hashlib.new.return_value = 'some-hashlib-object'
 
         h = hashutil._new_hash('blake2b:512')
@@ -156,17 +143,14 @@ class Hashutil(unittest.TestCase):
         self.assertEquals(h, 'some-hashlib-object')
         mock_hashlib.new.assert_called_with('blake2b512')
 
-    @patch('swh.model.hashutil.sys')
     @patch('swh.model.hashutil.hashlib')
     @istest
-    def new_hash_blake2s(self, mock_hashlib, mock_sys):
-        mock_sys.version_info = MagicMock(major=3, minor=6)
+    def new_hash_blake2s(self, mock_hashlib):
         mock_hashlib.new.return_value = 'some-hashlib-object'
 
         h = hashutil._new_hash('blake2s:256')
 
         self.assertEquals(h, 'some-hashlib-object')
-        mock_hashlib.blake2s.assert_called_with(digest_size=128)
         mock_hashlib.new.assert_called_with('blake2s256')
 
 
