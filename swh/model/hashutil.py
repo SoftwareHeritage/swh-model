@@ -28,6 +28,7 @@ import binascii
 import functools
 import hashlib
 import os
+import sys
 
 from io import BytesIO
 
@@ -40,6 +41,15 @@ DEFAULT_ALGORITHMS = set(['sha1', 'sha256', 'sha1_git'])
 # should be a multiple of 64 (sha1/sha256's block size)
 # FWIW coreutils' sha1sum uses 32768
 HASH_BLOCK_SIZE = 32768
+
+# Prior to python3.4, only blake2 is available through pyblake2 module
+# From 3.5 onwards, it's been integrated in python
+if sys.version_info.major == 3 and sys.version_info.minor <= 4:
+    import pyblake2
+    # register those hash algorithms in hashlib
+    __cache = hashlib.__builtin_constructor_cache
+    __cache['blake2s256'] = pyblake2.blake2s
+    __cache['blake2b512'] = pyblake2.blake2b
 
 
 def _new_git_hash(base_algo, git_type, length):
