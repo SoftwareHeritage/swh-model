@@ -131,14 +131,16 @@ class Hashutil(unittest.TestCase):
             hashutil._new_hash('blake2:10')
         except ValueError as e:
             self.assertEquals(str(e),
-                              'unsupported hash type blake210')
+                              'Unexpected hashing algorithm blake2:10, '
+                              'expected one of blake2b512, blake2s256, '
+                              'sha1, sha1_git, sha256')
 
     @patch('swh.model.hashutil.hashlib')
     @istest
     def new_hash_blake2b(self, mock_hashlib):
         mock_hashlib.new.return_value = 'some-hashlib-object'
 
-        h = hashutil._new_hash('blake2b:512')
+        h = hashutil._new_hash('blake2b512')
 
         self.assertEquals(h, 'some-hashlib-object')
         mock_hashlib.new.assert_called_with('blake2b512')
@@ -148,7 +150,7 @@ class Hashutil(unittest.TestCase):
     def new_hash_blake2s(self, mock_hashlib):
         mock_hashlib.new.return_value = 'some-hashlib-object'
 
-        h = hashutil._new_hash('blake2s:256')
+        h = hashutil._new_hash('blake2s256')
 
         self.assertEquals(h, 'some-hashlib-object')
         mock_hashlib.new.assert_called_with('blake2s256')

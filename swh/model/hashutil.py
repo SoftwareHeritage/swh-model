@@ -3,6 +3,27 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""Module in charge of hashing function definitions. This is the base
+module use to compute swh's hashes.
+
+Only a subset of hashing algorithms is supported as defined in the
+ALGORITHMS set. Any provided algorithms not in that list will result
+in a ValueError explaining the error.
+
+This modules defines the following hashing functions:
+
+- hash_file: Hash the contents of the given file object with the given
+  algorithms (defaulting to DEFAULT_ALGORITHMS if none provided).
+
+- hash_data: Hash the given binary blob with the given algorithms
+  (defaulting to DEFAULT_ALGORITHMS if none provided).
+
+- hash_path: Hash the contents of the file at the given path with the
+  given algorithms (defaulting to DEFAULT_ALGORITHMS if none
+  provided).
+
+"""
+
 import binascii
 import functools
 import hashlib
@@ -10,8 +31,11 @@ import os
 
 from io import BytesIO
 
-# supported hashing algorithms
-ALGORITHMS = set(['sha1', 'sha256', 'sha1_git'])
+# Supported algorithms
+ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256', 'blake2b512'])
+
+# Default algorithms used
+DEFAULT_ALGORITHMS = set(['sha1', 'sha256', 'sha1_git'])
 
 # should be a multiple of 64 (sha1/sha256's block size)
 # FWIW coreutils' sha1sum uses 32768
@@ -47,16 +71,16 @@ def _new_git_hash(base_algo, git_type, length):
 
 
 def _new_hash(algo, length=None):
-    """Initialize a digest object (as returned by python's hashlib) for the
-    requested algorithm. See the constant ALGORITHMS for the list of supported
-    algorithms. If a git-specific hashing algorithm is requested (e.g.,
-    "sha1_git"), the hashing object will be pre-fed with the needed header; for
-    this to work, length must be given.
+    """Initialize a digest object (as returned by python's hashlib) for
+    the requested algorithm. See the constant ALGORITHMS for the list
+    of supported algorithms. If a git-specific hashing algorithm is
+    requested (e.g., "sha1_git"), the hashing object will be pre-fed
+    with the needed header; for this to work, length must be given.
 
     Args:
-        algo: a hashing algorithm (one of ALGORITHMS)
-        length: the length of the hashed payload (needed for git-specific
-                algorithms)
+        algo (str): a hashing algorithm (one of ALGORITHMS)
+        length (int): the length of the hashed payload (needed for
+                git-specific algorithms)
 
     Returns:
         a hashutil.hash object
@@ -64,30 +88,23 @@ def _new_hash(algo, length=None):
     Raises:
         ValueError if algo is unknown, or length is missing for a git-specific
         hash.
-    """
-    if algo not in ALGORITHMS and ':' not in algo:
-        raise ValueError('Unexpected hashing algorithm %s, '
-                         'expected one of %s' %
-                         (algo, ', '.join(sorted(ALGORITHMS))))
 
-    h = None
+    """
+    if algo not in ALGORITHMS:
+        raise ValueError(
+            'Unexpected hashing algorithm %s, expected one of %s' %
+            (algo, ', '.join(sorted(ALGORITHMS))))
+
     if algo.endswith('_git'):
         if length is None:
             raise ValueError('Missing length for git hashing algorithm')
         base_algo = algo[:-4]
-        h = _new_git_hash(base_algo, 'blob', length)
-    elif ':' in algo:   # variable length hashing algorithms
-        _algo = algo.split(':')
-        base_algo = _algo[0]
-        variable_length = int(_algo[1])
-        h = hashlib.new('%s%s' % (base_algo, variable_length))
-    else:
-        h = hashlib.new(algo)
+        return _new_git_hash(base_algo, 'blob', length)
 
-    return h
+    return hashlib.new(algo)
 
 
-def hash_file(fobj, length=None, algorithms=ALGORITHMS, chunk_cb=None):
+def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
     """Hash the contents of the given file object with the given algorithms.
 
     Args:
@@ -115,8 +132,9 @@ def hash_file(fobj, length=None, algorithms=ALGORITHMS, chunk_cb=None):
     return {algo: hash.digest() for algo, hash in hashes.items()}
 
 
-def hash_path(path, algorithms=ALGORITHMS, chunk_cb=None):
-    """Hash the contents of the file at the given path with the given algorithms.
+def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
+    """Hash the contents of the file at the given path with the given
+       algorithms.
 
     Args:
         path: the path of the file to hash
@@ -128,6 +146,7 @@ def hash_path(path, algorithms=ALGORITHMS, chunk_cb=None):
     Raises:
         ValueError if algorithms contains an unknown hash algorithm.
         OSError on file access error
+
     """
     length = os.path.getsize(path)
     with open(path, 'rb') as fobj:
@@ -136,7 +155,7 @@ def hash_path(path, algorithms=ALGORITHMS, chunk_cb=None):
     return hash
 
 
-def hash_data(data, algorithms=ALGORITHMS):
+def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
     """Hash the given binary blob with the given algorithms.
 
     Args:
