@@ -21,6 +21,8 @@ class Hashutil(unittest.TestCase):
             'sha1_git': '568aaf43d83b2c3df8067f3bedbb97d83260be6d',
             'sha256': '26602113b4b9afd9d55466b08580d3c2'
                       '4a9b50ee5b5866c0d91fab0e65907311',
+            'blake2s256': '63cfb259e1fdb485bc5c55749697a6b21ef31fb7445f6c78a'
+                          'c9422f9f2dc8906',
         }
 
         self.checksums = {

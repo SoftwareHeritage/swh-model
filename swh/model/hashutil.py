@@ -36,7 +36,7 @@ from io import BytesIO
 ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256', 'blake2b512'])
 
 # Default algorithms used
-DEFAULT_ALGORITHMS = set(['sha1', 'sha256', 'sha1_git'])
+DEFAULT_ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256'])
 
 # should be a multiple of 64 (sha1/sha256's block size)
 # FWIW coreutils' sha1sum uses 32768
