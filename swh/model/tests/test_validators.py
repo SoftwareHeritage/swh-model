@@ -67,9 +67,9 @@ class TestValidators(unittest.TestCase):
 
         hash_mismatches = exc.error_dict[exceptions.NON_FIELD_ERRORS]
         self.assertIsInstance(hash_mismatches, list)
-        self.assertEqual(len(hash_mismatches), 3)
+        self.assertEqual(len(hash_mismatches), 4)
         self.assertTrue(all(mismatch.code == 'content-hash-mismatch'
                             for mismatch in hash_mismatches))
         self.assertEqual(set(mismatch.params['hash']
                              for mismatch in hash_mismatches),
-                         {'sha1', 'sha1_git', 'sha256'})
+                         {'sha1', 'sha1_git', 'sha256', 'blake2s256'})

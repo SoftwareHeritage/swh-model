@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from nose.tools import istest
+from unittest.mock import patch
 
 from swh.model import hashutil
 
@@ -20,6 +21,8 @@ class Hashutil(unittest.TestCase):
             'sha1_git': '568aaf43d83b2c3df8067f3bedbb97d83260be6d',
             'sha256': '26602113b4b9afd9d55466b08580d3c2'
                       '4a9b50ee5b5866c0d91fab0e65907311',
+            'blake2s256': '63cfb259e1fdb485bc5c55749697a6b21ef31fb7445f6c78a'
+                          'c9422f9f2dc8906',
         }
 
         self.checksums = {
@@ -123,6 +126,36 @@ class Hashutil(unittest.TestCase):
             self.assertEqual(self.checksums[algo],
                              hashutil.bytehex_to_hash(
                                  self.hex_checksums[algo].encode()))
+
+    @istest
+    def new_hash_unsupported_hashing_algorithm(self):
+        try:
+            hashutil._new_hash('blake2:10')
+        except ValueError as e:
+            self.assertEquals(str(e),
+                              'Unexpected hashing algorithm blake2:10, '
+                              'expected one of blake2b512, blake2s256, '
+                              'sha1, sha1_git, sha256')
+
+    @patch('swh.model.hashutil.hashlib')
+    @istest
+    def new_hash_blake2b(self, mock_hashlib):
+        mock_hashlib.new.return_value = 'some-hashlib-object'
+
+        h = hashutil._new_hash('blake2b512')
+
+        self.assertEquals(h, 'some-hashlib-object')
+        mock_hashlib.new.assert_called_with('blake2b512')
+
+    @patch('swh.model.hashutil.hashlib')
+    @istest
+    def new_hash_blake2s(self, mock_hashlib):
+        mock_hashlib.new.return_value = 'some-hashlib-object'
+
+        h = hashutil._new_hash('blake2s256')
+
+        self.assertEquals(h, 'some-hashlib-object')
+        mock_hashlib.new.assert_called_with('blake2s256')
 
 
 class HashlibGit(unittest.TestCase):
