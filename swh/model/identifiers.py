@@ -7,7 +7,7 @@ import binascii
 import datetime
 from functools import lru_cache
 
-from .hashutil import hash_data, hash_git_data
+from .hashutil import hash_data, hash_git_data, DEFAULT_ALGORITHMS
 
 
 @lru_cache()
@@ -91,12 +91,7 @@ def content_identifier(content):
 
     """
 
-    hashes = hash_data(
-        content['data'],
-        {'sha1', 'sha1_git', 'sha256'},
-    )
-
-    return hashes
+    return hash_data(content['data'], DEFAULT_ALGORITHMS)
 
 
 def _sort_key(entry):

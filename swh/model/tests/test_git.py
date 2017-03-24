@@ -160,6 +160,8 @@ class ComputeBlobMetadata(unittest.TestCase):
                         b'\xe4\x8cS\x91',
             'sha256': b"\xe3\xb0\xc4B\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8\x99o"
                       b"\xb9$'\xaeA\xe4d\x9b\x93L\xa4\x95\x99\x1bxR\xb8U",
+            'blake2s256': b'i!z0y\x90\x80\x94\xe1\x11!\xd0B5J|\x1fU\xb6H,\xa1'
+                          b'\xa5\x1e\x1b%\r\xfd\x1e\xd0\xee\xf9',
             'perms': git.GitPerm.BLOB,
             'path': path,
             'name': name,
@@ -244,22 +246,23 @@ class GitHashFromScratch(GitHashWalkArborescenceTree, unittest.TestCase):
             actual_walk1[k] = walk1[k]
 
         expected_checksums = {
-            os.path.join(self.tmp_root_path, b'sample-folder/empty-folder'): [],                                            # noqa
-            os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'): [{                                               # noqa
-                'type': git.GitType.BLOB,                                                                                   # noqa
+            os.path.join(self.tmp_root_path, b'sample-folder/empty-folder'): [],                                                      # noqa
+            os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'): [{                                                         # noqa
+                'type': git.GitType.BLOB,                                                                                             # noqa
                 'length': 72,
-                'sha256': b'=\xb5\xae\x16\x80U\xbc\xd9:M\x08(]\xc9\x9f\xfe\xe2\x883\x03\xb2?\xac^\xab\x85\x02s\xa8\xeaUF',  # noqa
-                'name': b'another-quote.org',                                                                               # noqa
-                'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo/another-quote.org'),                    # noqa
-                'perms': git.GitPerm.BLOB,                                                                                  # noqa
-                'sha1': b'\x90\xa6\x13\x8b\xa5\x99\x15&\x1e\x17\x99H8j\xa1\xcc*\xa9"\n',                                    # noqa
-                'sha1_git': b'\x136\x93\xb1%\xba\xd2\xb4\xac1\x855\xb8I\x01\xeb\xb1\xf6\xb68'}],                            # noqa
-            os.path.join(self.tmp_root_path, b'sample-folder/bar'): [{                                                      # noqa
-                'type': git.GitType.TREE,                                                                                   # noqa
-                'perms': git.GitPerm.TREE,                                                                                  # noqa
-                'name': b'barfoo',                                                                                          # noqa
-                'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'),                                      # noqa
-                'sha1_git': b'\xc3\x02\x0fk\xf15\xa3\x8cm\xf3\xaf\xeb_\xb3\x822\xc5\xe0p\x87'}]}                            # noqa
+                'sha256': b'=\xb5\xae\x16\x80U\xbc\xd9:M\x08(]\xc9\x9f\xfe\xe2\x883\x03\xb2?\xac^\xab\x85\x02s\xa8\xeaUF',            # noqa
+                'name': b'another-quote.org',                                                                                         # noqa
+                'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo/another-quote.org'),                              # noqa
+                'perms': git.GitPerm.BLOB,                                                                                            # noqa
+                'sha1': b'\x90\xa6\x13\x8b\xa5\x99\x15&\x1e\x17\x99H8j\xa1\xcc*\xa9"\n',                                              # noqa
+                'blake2s256': b'\xd2l\x1c\xad\x82\xd4=\xf0\xbf\xfa^{\xe1\x1a`\xe3J\xdb\x85\xa2\x18\xb43\xcb\xceRx\xb1\x0b\x95O\xe8',  # noqa
+                'sha1_git': b'\x136\x93\xb1%\xba\xd2\xb4\xac1\x855\xb8I\x01\xeb\xb1\xf6\xb68'}],                                      # noqa
+            os.path.join(self.tmp_root_path, b'sample-folder/bar'): [{                                                                # noqa
+                'type': git.GitType.TREE,                                                                                             # noqa
+                'perms': git.GitPerm.TREE,                                                                                            # noqa
+                'name': b'barfoo',                                                                                                    # noqa
+                'path': os.path.join(self.tmp_root_path, b'sample-folder/bar/barfoo'),                                                # noqa
+                'sha1_git': b'\xc3\x02\x0fk\xf15\xa3\x8cm\xf3\xaf\xeb_\xb3\x822\xc5\xe0p\x87'}]}                                      # noqa
 
         self.assertEquals(actual_walk1, expected_checksums)
 
@@ -286,6 +289,7 @@ class WithSampleFolderChecksums:
         super().setUp()
 
         self.rootkey = b'/tmp/tmp7w3oi_j8'
+
         self.objects = {
             b'/tmp/tmp7w3oi_j8': {
                 'children': {b'/tmp/tmp7w3oi_j8/sample-folder'},
@@ -330,6 +334,7 @@ class WithSampleFolderChecksums:
                     'sha1': b'\xd0$\x87\x14\x94\x8b:H\xa2T8#*o\x99\xf01\x8fY\xf1',  # noqa
                     'data': b'some-binary',
                     'sha1_git': b'\xe8kE\xe58\xd9\xb6\x88\x8c\x96\x9c\x89\xfb\xd2*\x85\xaa\x0e\x03f',  # noqa
+                    'blake2s256': b'\x9c\xe1\x8b\x1a\xde\xcb3\xf8\x91\xca6fM\xa6v\xe1,w,\xc1\x93w\x8a\xac\x9a\x13{\x8d\xc5\x83K\x9b',  # noqa
                     'path': b'/tmp/tmp7w3oi_j8/sample-folder/link-to-binary',
                     'sha256': b'\x14\x12n\x97\xd8?}&\x1cZh\x89\xce\xe76\x19w\x0f\xf0\x9e@\xc5I\x86\x85\xab\xa7E\xbe\x88.\xff',  # noqa
                     'perms': git.GitPerm.LINK,
@@ -343,6 +348,7 @@ class WithSampleFolderChecksums:
                     'sha1': b'\xcb\xee\xd1^yY\x9c\x90\xdes\x83\xf4 \xfe\xd7\xac\xb4\x8e\xa1q',  # noqa
                     'data': b'bar/barfoo/another-quote.org',
                     'sha1_git': b'}\\\x08\x11\x1e!\xc8\xa9\xf7\x15@\x93\x99\x98U\x16\x837_\xad',  # noqa
+                    'blake2s256': b"-\x0es\xce\xa0\x1b\xa9I\xc1\x02-\xc1\x0c\x8aC\xe6a\x80c\x96b\xe5\xdc'7\xb8C8/{\x19\x10",  # noqa
                     'path': b'/tmp/tmp7w3oi_j8/sample-folder/link-to-another-quote',  # noqa
                     'sha256': b'\xe6\xe1}\x07\x93\xaau\n\x04@\xeb\x9a\xd5\xb8\x0b%\x80vc~\xf0\xfbh\xf3\xac.Y\xe4\xb9\xac;\xa6',  # noqa
                     'perms': git.GitPerm.LINK,
@@ -356,6 +362,7 @@ class WithSampleFolderChecksums:
                     'sha1': b'\x0b\xee\xc7\xb5\xea?\x0f\xdb\xc9]\r\xd4\x7f<[\xc2u\xda\x8a3',  # noqa
                     'data': b'foo',
                     'sha1_git': b'\x19\x10(\x15f=#\xf8\xb7ZG\xe7\xa0\x19e\xdc\xdc\x96F\x8c',  # noqa
+                    'blake2s256': b'\x08\xd6\xca\xd8\x80u\xde\x8f\x19-\xb0\x97W=\x0e\x82\x94\x11\xcd\x91\xebn\xc6^\x8f\xc1l\x01~\xdf\xdbt',  # noqa
                     'path': b'/tmp/tmp7w3oi_j8/sample-folder/link-to-foo',
                     'sha256': b',&\xb4kh\xff\xc6\x8f\xf9\x9bE<\x1d0A4\x13B-pd\x83\xbf\xa0\xf9\x8a^\x88bf\xe7\xae',  # noqa
                     'perms': git.GitPerm.LINK,
@@ -368,6 +375,7 @@ class WithSampleFolderChecksums:
                     'name': b'some-binary',
                     'sha1': b'\x0b\xbc\x12\xd7\xf4\xa2\xa1[\x14=\xa8F\x17\xd9\\\xb2#\xc9\xb2<',  # noqa
                     'sha1_git': b'hv\x95y\xc3\xea\xad\xbeUSy\xb9\xc3S\x8ef(\xba\xe1\xeb',  # noqa
+                    'blake2s256': b"\x92.\x0fp\x15\x03R\x12I[\t\x0c'WsW\xa7@\xdd\xd7{\x0b\x9e\x0c\xd2;T\x80\xc0z\x18\xc6",  # noqa
                     'path': b'/tmp/tmp7w3oi_j8/sample-folder/some-binary',
                     'sha256': b'\xba\xc6P\xd3Jv8\xbb\n\xebSBdm$\xe3\xb9\xadkD\xc9\xb3\x83b\x1f\xaaH+\x99\n6}',  # noqa
                     'perms': git.GitPerm.EXEC,
@@ -394,6 +402,7 @@ class WithSampleFolderChecksums:
                 'checksums': {'name': b'another-quote.org',
                               'sha1': b'\x90\xa6\x13\x8b\xa5\x99\x15&\x1e\x17\x99H8j\xa1\xcc*\xa9"\n',  # noqa
                               'sha1_git': b'\x136\x93\xb1%\xba\xd2\xb4\xac1\x855\xb8I\x01\xeb\xb1\xf6\xb68',  # noqa
+                              'blake2s256': b'\xd2l\x1c\xad\x82\xd4=\xf0\xbf\xfa^{\xe1\x1a`\xe3J\xdb\x85\xa2\x18\xb43\xcb\xceRx\xb1\x0b\x95O\xe8',  # noqa
                               'path': b'/tmp/tmp7w3oi_j8/sample-folder/bar/barfoo/another-quote.org',  # noqa
                               'sha256': b'=\xb5\xae\x16\x80U\xbc\xd9:M\x08(]\xc9\x9f\xfe\xe2\x883\x03\xb2?\xac^\xab\x85\x02s\xa8\xeaUF',  # noqa
                               'perms': git.GitPerm.BLOB,
@@ -417,6 +426,7 @@ class WithSampleFolderChecksums:
                               'sha1': b'\x90W\xeem\x01bPn\x01\xc4\xd9\xd5E\x9az\xdd\x1f\xed\xac7',  # noqa
                               'data': b'bar/barfoo',
                               'sha1_git': b'\x81\x85\xdf\xb2\xc0\xc2\xc5\x97\xd1ou\xa8\xa0\xc3vhV|=~',  # noqa
+                              'blake2s256': b'\xe1%/,\xaaJre<N\xfd\x9a\xf8q\xb6+\xf2\xab\xb7\xbb/\x1b\x0e\x95\x96\x92\x04\xbd\x8ap\xd4\xcd',  # noqa
                               'path': b'/tmp/tmp7w3oi_j8/sample-folder/foo/barfoo',  # noqa
                               'sha256': b')\xad?W%2\x1b\x94\x032\xc7\x8e@6\x01\xaf\xffa\xda\xea\x85\xe9\xc8\x0bJpc\xb6\x88~\xadh',  # noqa
                               'perms': git.GitPerm.LINK,
@@ -430,6 +440,7 @@ class WithSampleFolderChecksums:
                               'sha1_git': b'\xac\xac2m\xddc\xb0\xbcp\x84\x06Y\xd4\xacCa\x94\x84\xe6\x9f',  # noqa
                               'path': b'/tmp/tmp7w3oi_j8/sample-folder/foo/rel-link-to-barfoo',  # noqa
                               'sha256': b'\x80\x07\xd2\r\xb2\xaf@C_B\xdd\xefK\x8a\xd7k\x80\xad\xbe\xc2k$\x9f\xdf\x04s5?\x8d\x99\xdf\x08',  # noqa
+                              'blake2s256': b"\xd9\xc3'B\x15\x88\xa1\xcfa\xf3\x16aP\x05\xa2\xe9\xc1:\xc3\xa4\xe9mC\xa2A8\xd7\x18\xfa\x0e0\xdb",  # noqa
                               'perms': git.GitPerm.LINK,
                               'type': git.GitType.BLOB,
                               'length': 13}
@@ -438,6 +449,7 @@ class WithSampleFolderChecksums:
                 'checksums': {'name': b'quotes.md',
                               'sha1': b'\x1b\xf0\xbbr\x1a\xc9,\x18\xa1\x9b\x13\xc0\xeb=t\x1c\xbf\xad\xeb\xfc',  # noqa
                               'sha1_git': b'|LW\xba\x9f\xf4\x96\xad\x17\x9b\x8fe\xb1\xd2\x86\xed\xbd\xa3L\x9a',  # noqa
+                              'blake2s256': b'\xbf|\xe4\xfe0Cxe\x1e\xe64\x8d>\x936\xedZ\xd6\x03\xd3>\x83\xc8;\xa4\xe1KF\xf9\xb8\xa8\x0b',  # noqa
                               'path': b'/tmp/tmp7w3oi_j8/sample-folder/foo/quotes.md',  # noqa
                               'sha256': b'\xca\xca\x94*\xed\xa7\xb3\x08\x85\x9e\xb5o\x90\x9e\xc9m\x07\xa4\x99I\x16\x90\xc4S\xf7;\x98\x00\xa9;\x16Y',  # noqa
                               'perms': git.GitPerm.BLOB,
