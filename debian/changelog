@@ -1,8 +1,10 @@
-swh-model (0.0.14-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.15-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.15
+  * Add possibility to compute new blake2 hashes
+  * Add blake2s256 hash as default new hash computation algorithm
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 15 Mar 2017 16:00:56 +0100
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Fri, 24 Mar 2017 16:32:35 +0100
 
 swh-model (0.0.14-1~swh1) unstable-swh; urgency=medium
 
