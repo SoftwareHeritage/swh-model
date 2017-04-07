@@ -1,3 +1,10 @@
+swh-model (0.0.16-1~swh1) unstable-swh; urgency=medium
+
+  * Release swh.model v0.0.16
+  * Make sure we generate proper permissions in directories
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Fri, 07 Apr 2017 14:32:34 +0200
+
 swh-model (0.0.15-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.15
