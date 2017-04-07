@@ -7,7 +7,7 @@
 import os
 import stat
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 from swh.model import hashutil, identifiers
 
@@ -25,11 +25,11 @@ class GitType(Enum):
     REFS = b'ref'
 
 
-class GitPerm(Enum):
-    BLOB = b'100644'
-    TREE = b'40000'
-    EXEC = b'100755'
-    LINK = b'120000'
+class GitPerm(IntEnum):
+    BLOB = 0o100644
+    TREE = 0o040000
+    EXEC = 0o100755
+    LINK = 0o120000
 
 
 def _compute_directory_git_sha1(hashes):
@@ -53,7 +53,7 @@ def _compute_directory_git_sha1(hashes):
         [
             {
                 'name': entry['name'],
-                'perms': int(entry['perms'].value, 8),
+                'perms': entry['perms'],
                 'target': entry['sha1_git'],
                 'type': 'dir' if entry['perms'] == GitPerm.TREE else 'file',
             }
