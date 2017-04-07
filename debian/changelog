@@ -1,8 +1,9 @@
-swh-model (0.0.15-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.16-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * Release swh.model v0.0.16
+  * Make sure we generate proper permissions in directories
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Fri, 24 Mar 2017 16:32:35 +0100
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Fri, 07 Apr 2017 14:32:34 +0200
 
 swh-model (0.0.15-1~swh1) unstable-swh; urgency=medium
 
