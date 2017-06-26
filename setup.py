@@ -1,3 +1,5 @@
+import sys
+
 from setuptools import setup
 
 
@@ -13,6 +15,10 @@ def parse_requirements():
     return requirements
 
 
+extra_requirements = []
+if sys.version_info < (3, 5):
+    extra_requirements = ['pyblake2']
+
 setup(
     name='swh.model',
     description='Software Heritage data model',
@@ -24,7 +30,7 @@ setup(
         'swh.model.tests', 'swh.model.tests.fields',
     ],  # packages's modules
     scripts=[],   # scripts to package
-    install_requires=parse_requirements(),
+    install_requires=parse_requirements() + extra_requirements,
     setup_requires=['vcversioner'],
     vcversioner={},
     include_package_data=True,
