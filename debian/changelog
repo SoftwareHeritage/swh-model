@@ -1,3 +1,10 @@
+swh-model (0.0.17-1~swh1) unstable-swh; urgency=medium
+
+  * Release swh.model v0.0.17
+  * Clean up pyblake2 requirement for Python 3.5+
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Mon, 26 Jun 2017 14:41:49 +0200
+
 swh-model (0.0.16-1~swh1) unstable-swh; urgency=medium
 
   * Release swh.model v0.0.16
