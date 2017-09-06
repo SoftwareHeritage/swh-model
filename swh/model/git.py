@@ -36,7 +36,8 @@ def _compute_directory_git_sha1(hashes):
     """Compute a directory git sha1 from hashes.
 
     Args:
-        hashes: list of tree entries with keys:
+        hashes (list): list of tree entries with the following keys:
+
             - sha1_git: the tree entry's sha1
             - name: file or subdir's name
             - perms: the tree entry's sha1 permissions
@@ -68,7 +69,8 @@ def compute_directory_git_sha1(dirpath, hashes):
 
     Args:
         dirpath: the directory's absolute path
-        hashes: list of tree entries with keys:
+        hashes (list): list of tree entries with keys:
+
             - sha1_git: the tree entry's sha1
             - name: file or subdir's name
             - perms: the tree entry's sha1 permissions
@@ -88,8 +90,8 @@ def compute_revision_sha1_git(revision):
 
     Args:
         revision: Additional dictionary information needed to compute a
-        synthetic
-        revision. Following keys are expected:
+            synthetic revision. The following keys are expected:
+
             - author
             - date
             - committer
@@ -112,7 +114,8 @@ def compute_release_sha1_git(release):
 
     Args:
         release: Additional dictionary information needed to compute a
-        synthetic release. Following keys are expected:
+            synthetic release. Following keys are expected:
+
             - name
             - message
             - date
@@ -133,7 +136,8 @@ def compute_link_metadata(linkpath):
         linkpath: absolute pathname of the link
 
     Returns:
-        Dictionary of values:
+        dict: Dictionary of values with the following keys:
+
             - data: link's content
             - length: link's content length
             - name: basename of the link
@@ -166,7 +170,8 @@ def compute_blob_metadata(filepath):
         filepath: absolute pathname of the regular file.
 
     Returns:
-        Dictionary of values:
+        dict: Dictionary of values with the following keys:
+
             - name: basename of the file
             - length: data length
             - perms: git permission for file
@@ -198,13 +203,15 @@ def _compute_tree_metadata(dirname, hashes):
 
     Args:
         dirname: absolute pathname of the directory.
-        hashes: list of tree dirname's entries with keys:
+        hashes (list): list of tree dirname's entries with keys:
+
             - sha1_git: the tree entry's sha1
             - name: file or subdir's name
             - perms: the tree entry's sha1 permissions
 
     Returns:
-        Dictionary of values:
+        dict: Dictionary of values with the following keys:
+
             - sha1_git: tree's sha1 git
             - name: basename of the directory
             - perms: git permission for directory
@@ -229,7 +236,8 @@ def compute_tree_metadata(dirname, ls_hashes):
         ls_hashes: dictionary of path, hashes
 
     Returns:
-        Dictionary of values:
+        dict: Dictionary of values with the following keys:
+
             - sha1_git: tree's sha1 git
             - name: basename of the directory
             - perms: git permission for directory
@@ -266,11 +274,11 @@ def _walk(rootdir,
 
     Args:
         - rootdir: starting walk root directory path
-        - dir_ok_fn: validation function. if folder encountered are
-        not ok, they are ignored.  Default to default_validation_dir
-        which does nothing.
-         - remove_empty_folder: Flag to remove and ignore any
-          encountered empty folders.
+        - dir_ok_fn: validation function. if folder encountered are not ok,
+              they are ignored.  Default to default_validation_dir which does
+              nothing.
+         - remove_empty_folder: Flag to remove and ignore any encountered empty
+               folders.
 
     Yields:
         3 tuples dirpath, set of absolute children dirname paths, set
@@ -356,33 +364,27 @@ def walk_and_compute_sha1_from_directory(rootdir,
     Compute git sha1 from directory rootdir.
 
     Args:
-        - rootdir: Root directory from which beginning the git hash computation
-
-        - dir_ok_fn: Filter function to filter directory according to rules
-        defined in the function. By default, all folders are ok.
-        Example override: dir_ok_fn = lambda dirpath: b'svn' not in dirpath
-
-        - with_root_tree: Determine if we compute the upper root tree's
-          checksums. As a default, we want it. One possible use case where this
-          is not useful is the update (cf. `update_checksums_from`)
+        rootdir: Root directory from which beginning the git hash computation
+        dir_ok_fn: Filter function to filter directory according to rules
+            defined in the function. By default, all folders are ok.  Example
+            override: ``dir_ok_fn = lambda dirpath: b'svn' not in dirpath``
+        with_root_tree: Determine if we compute the upper root tree's
+            checksums. As a default, we want it. One possible use case where
+            this is not useful is the update (cf. `update_checksums_from`)
 
     Returns:
-        Dictionary of entries with keys <path-name> and as values a list of
-        directory entries.
-        Those are list of dictionary with keys:
-          - 'perms'
-          - 'type'
-          - 'name'
-          - 'sha1_git'
-          - and specifically content: 'sha1', 'sha256', ...
+        dict: Dictionary of entries with keys <path-name> and as values a list
+        of directory entries.  Those are list of dictionary with keys:
+
+        - perms
+        - type
+        - name
+        - sha1_git
+        - and specifically for content: sha1, sha256, etc.
 
     Note:
         One special key is ROOT_TREE_KEY to indicate the upper root of the
         directory (this is the revision's directory).
-
-    Raises:
-        Nothing
-        If something is raised, this is a programmatic error.
 
     """
     ls_hashes = {}
@@ -438,34 +440,31 @@ def compute_hashes_from_directory(rootdir,
     """Compute git sha1 from directory rootdir.
 
     Args:
-        - rootdir: Root directory from which beginning the git hash
-          computation
-
-        - dir_ok_fn: Filter function to filter directory according to rules
-        defined in the function. By default, all folders are ok.
-        Example override: dir_ok_fn = lambda dirpath: b'svn' not in dirpath
+        rootdir: Root directory from which beginning the git hash
+            computation
+        dir_ok_fn: Filter function to filter directory according to rules
+            defined in the function. By default, all folders are ok.  Example
+            override: ``dir_ok_fn = lambda dirpath: b'svn' not in dirpath``
 
     Returns:
-        Dictionary of entries with keys absolute path name.
+        dict: Dictionary of entries with keys absolute path name.
         Path-name can be a file/link or directory.
-        The associated value is a dictionary with:
-        - checksums: the dictionary with the hashes for the link/file/dir
-        Those are list of dictionary with keys:
-          - 'perms'
-          - 'type'
-          - 'name'
-          - 'sha1_git'
-          - and specifically content: 'sha1', 'sha256', ...
+        The associated value is a dictionary with keys:
 
+        - checksums: the dictionary with the hashes for the link/file/dir
+
+        Those are list of dictionary with keys:
+
+        - 'perms'
+        - 'type'
+        - 'name'
+        - 'sha1_git'
+        - and specifically for content: sha1, sha256, etc.
         - children: Only for a directory, the set of children paths
 
     Note:
-        One special key is the / which indicates the upper root of
-        the directory (this is the revision's directory).
-
-    Raises:
-        Nothing
-        If something is raised, this is a programmatic error.
+        One special key is the / which indicates the upper root of the
+        directory (this is the revision's directory).
 
     """
     def _get_dict_from_dirpath(_dict, path):
@@ -547,7 +546,7 @@ def children_hashes(children, objects):
     hashes.
 
     Args:
-        objects: objects hash as returned by git.compute_hashes_from_directory.
+        objects: objects hash as returned by git.compute_hashes_from_directory
         children: collection of bytes path
 
     Yields:
@@ -564,8 +563,8 @@ def children_hashes(children, objects):
 
 def objects_per_type(filter_type, objects_per_path):
     """Given an object dictionary returned by
-    `swh.model.git.compute_hashes_from_directory`, yields
-    corresponding element type's hashes
+    :py:func:`compute_hashes_from_directory`, yields corresponding element
+    type's hashes
 
     Args:
         filter_type: one of GitType enum
