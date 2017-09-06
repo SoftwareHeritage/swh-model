@@ -563,7 +563,7 @@ def children_hashes(children, objects):
 
 def objects_per_type(filter_type, objects_per_path):
     """Given an object dictionary returned by
-    :py:func:`compute_hashes_from_directory`, yields corresponding element
+    :func:`compute_hashes_from_directory`, yields corresponding element
     type's hashes
 
     Args:
