@@ -31,15 +31,17 @@ import os
 
 from io import BytesIO
 
-# Supported algorithms
 ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256', 'blake2b512'])
+"""Hashing algorithms supported by this module"""
 
-# Default algorithms used
 DEFAULT_ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256'])
+"""Algorithms computed by default when calling the functions from this module.
 
-# should be a multiple of 64 (sha1/sha256's block size)
-# FWIW coreutils' sha1sum uses 32768
+Subset of :const:`ALGORITHMS`.
+"""
+
 HASH_BLOCK_SIZE = 32768
+"""Block size for streaming hash computations made in this module"""
 
 # Load blake2 hashes from pyblake2 if they are not available in the builtin
 # hashlib
@@ -64,7 +66,7 @@ def _new_git_hash(base_algo, git_type, length):
      - One NUL byte
 
     Args:
-        base_algo: a hashlib-supported algorithm
+        base_algo (str from :const:`ALGORITHMS`): a hashlib-supported algorithm
         git_type: the type of the git object (supposedly one of 'blob',
                   'commit', 'tag', 'tree')
         length: the length of the git object you're encoding
@@ -90,7 +92,7 @@ def _new_hash(algo, length=None):
     Args:
         algo (str): a hashing algorithm (one of ALGORITHMS)
         length (int): the length of the hashed payload (needed for
-                git-specific algorithms)
+          git-specific algorithms)
 
     Returns:
         a hashutil.hash object
@@ -210,7 +212,15 @@ def hash_git_data(data, git_type, base_algo='sha1'):
 
 @functools.lru_cache()
 def hash_to_hex(hash):
-    """Converts a hash (in hex or bytes form) to its hexadecimal ascii form"""
+    """Converts a hash (in hex or bytes form) to its hexadecimal ascii form
+
+    Args:
+      hash (str or bytes): a :class:`bytes` hash or a :class:`str` containing
+        the hexadecimal form of the hash
+
+    Returns:
+      str: the hexadecimal form of the hash
+    """
     if isinstance(hash, str):
         return hash
     return binascii.hexlify(hash).decode('ascii')
@@ -218,13 +228,28 @@ def hash_to_hex(hash):
 
 @functools.lru_cache()
 def hash_to_bytehex(hash):
-    """Converts a hash to its hexadecimal bytes representation"""
+    """Converts a hash to its hexadecimal bytes representation
+
+    Args:
+      hash (bytes): a :class:`bytes` hash
+
+    Returns:
+      bytes: the hexadecimal form of the hash, as :class:`bytes`
+    """
     return binascii.hexlify(hash)
 
 
 @functools.lru_cache()
 def hash_to_bytes(hash):
-    """Converts a hash (in hex or bytes form) to its raw bytes form"""
+    """Converts a hash (in hex or bytes form) to its raw bytes form
+
+    Args:
+      hash (str or bytes): a :class:`bytes` hash or a :class:`str` containing
+        the hexadecimal form of the hash
+
+    Returns:
+      bytes: the :class:`bytes` form of the hash
+    """
     if isinstance(hash, bytes):
         return hash
     return bytes.fromhex(hash)
@@ -232,5 +257,13 @@ def hash_to_bytes(hash):
 
 @functools.lru_cache()
 def bytehex_to_hash(hex):
-    """Converts a hexadecimal bytes representation of a hash to that hash"""
+    """Converts a hexadecimal bytes representation of a hash to that hash
+
+    Args:
+      hash (bytes): a :class:`bytes` containing the hexadecimal form of the
+        hash encoded in ascii
+
+    Returns:
+      bytes: the :class:`bytes` form of the hash
+    """
     return hash_to_bytes(hex.decode())
