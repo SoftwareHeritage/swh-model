@@ -6,6 +6,11 @@ Software Heritage - Development Documentation
    :caption: Contents:
 
 
+Overview
+--------
+
+* :ref:`data-model`
+
 
 Indices and tables
 ==================
