@@ -299,7 +299,7 @@ class Directory(MerkleNode):
 
     def __getitem__(self, key):
         if not isinstance(key, bytes):
-            raise ValueError('Can only get a bytes from directory')
+            raise ValueError('Can only get a bytes from Directory')
 
         # Convenience shortcut
         if key == b'':
@@ -313,9 +313,9 @@ class Directory(MerkleNode):
 
     def __setitem__(self, key, value):
         if not isinstance(key, bytes):
-            raise ValueError('Can only set a bytes directory entry')
+            raise ValueError('Can only set a bytes Directory entry')
         if not isinstance(value, (Content, Directory)):
-            raise ValueError('Can only set a directory entry to a Content or '
+            raise ValueError('Can only set a Directory entry to a Content or '
                              'Directory')
 
         if key == b'':
@@ -331,7 +331,7 @@ class Directory(MerkleNode):
 
     def __delitem__(self, key):
         if not isinstance(key, bytes):
-            raise ValueError('Can only delete a bytes directory entry')
+            raise ValueError('Can only delete a bytes Directory entry')
 
         if b'/' not in key:
             super().__delitem__(key)

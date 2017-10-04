@@ -10,7 +10,7 @@ import unittest
 
 from swh.model import from_disk
 from swh.model.from_disk import Content, Directory, DentryPerms
-from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes
+from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
 
 
 class ModeToPerms(unittest.TestCase):
@@ -481,6 +481,7 @@ class TestContent(DataMixin, unittest.TestCase):
             conv_content = Content.from_bytes(mode=content['mode'],
                                               data=content['data'])
             self.assertContentEqual(conv_content, content)
+            self.assertIn(hash_to_hex(conv_content.hash), repr(conv_content))
 
 
 class SymlinkToContent(DataMixin, unittest.TestCase):
@@ -649,6 +650,38 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                          len(self.contents)
                          + 1)
 
+    def test_directory_to_objects_ignore_name_case(self):
+        directory = Directory.from_disk(
+            path=self.tmpdir.name,
+            dir_filter=from_disk.ignore_named_directories([b'symLiNks'],
+                                                          case_sensitive=False)
+        )
+        for name, value in self.contents.items():
+            self.assertContentEqual(directory[b'contents/' + name], value)
+
+        for name in self.specials:
+            self.assertContentEqual(
+                directory[b'specials/' + name],
+                self.empty_content,
+            )
+
+        self.assertEqual(
+            directory[b'empty1/empty2'].get_data(),
+            self.empty_directory,
+        )
+
+        with self.assertRaisesRegex(KeyError, "b'symlinks'"):
+            directory[b'symlinks']
+
+        objs = directory.collect()
+
+        self.assertCountEqual(['content', 'directory'], objs)
+
+        self.assertEqual(len(objs['directory']), 5)
+        self.assertEqual(len(objs['content']),
+                         len(self.contents)
+                         + 1)
+
 
 class TarballTest(DataMixin, unittest.TestCase):
     def setUp(self):
@@ -668,3 +701,84 @@ class TarballTest(DataMixin, unittest.TestCase):
                 self.assertDirectoryEqual(obj, data)
             else:
                 raise self.failureException('Unknown type for %s' % obj)
+
+
+class DirectoryManipulation(DataMixin, unittest.TestCase):
+    def test_directory_access_nested(self):
+        d = Directory()
+        d[b'a'] = Directory()
+        d[b'a/b'] = Directory()
+
+        self.assertEqual(d[b'a/b'].get_data(), self.empty_directory)
+
+    def test_directory_del_nested(self):
+        d = Directory()
+        d[b'a'] = Directory()
+        d[b'a/b'] = Directory()
+
+        with self.assertRaisesRegex(KeyError, "b'c'"):
+            del d[b'a/b/c']
+
+        with self.assertRaisesRegex(KeyError, "b'level2'"):
+            del d[b'a/level2/c']
+
+        del d[b'a/b']
+
+        self.assertEqual(d[b'a'].get_data(), self.empty_directory)
+
+    def test_directory_access_self(self):
+        d = Directory()
+        self.assertIs(d, d[b''])
+        self.assertIs(d, d[b'/'])
+        self.assertIs(d, d[b'//'])
+
+    def test_directory_access_wrong_type(self):
+        d = Directory()
+        with self.assertRaisesRegex(ValueError, 'bytes from Directory'):
+            d['foo']
+        with self.assertRaisesRegex(ValueError, 'bytes from Directory'):
+            d[42]
+
+    def test_directory_repr(self):
+        entries = [b'a', b'b', b'c']
+        d = Directory()
+        for entry in entries:
+            d[entry] = Directory()
+
+        r = repr(d)
+        self.assertIn(hash_to_hex(d.hash), r)
+
+        for entry in entries:
+            self.assertIn(str(entry), r)
+
+    def test_directory_set_wrong_type_name(self):
+        d = Directory()
+        with self.assertRaisesRegex(ValueError, 'bytes Directory entry'):
+            d['foo'] = Directory()
+        with self.assertRaisesRegex(ValueError, 'bytes Directory entry'):
+            d[42] = Directory()
+
+    def test_directory_set_nul_in_name(self):
+        d = Directory()
+
+        with self.assertRaisesRegex(ValueError, 'nul bytes'):
+            d[b'\x00\x01'] = Directory()
+
+    def test_directory_set_empty_name(self):
+        d = Directory()
+        with self.assertRaisesRegex(ValueError, 'must have a name'):
+            d[b''] = Directory()
+        with self.assertRaisesRegex(ValueError, 'must have a name'):
+            d[b'/'] = Directory()
+
+    def test_directory_set_wrong_type(self):
+        d = Directory()
+        with self.assertRaisesRegex(ValueError, 'Content or Directory'):
+            d[b'entry'] = object()
+
+    def test_directory_del_wrong_type(self):
+        d = Directory()
+        with self.assertRaisesRegex(ValueError, 'bytes Directory entry'):
+            del d['foo']
+        with self.assertRaisesRegex(ValueError, 'bytes Directory entry'):
+            del d[42]
