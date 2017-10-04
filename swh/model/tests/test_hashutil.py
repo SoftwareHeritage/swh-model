@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 import io
+import os
 import tempfile
 import unittest
 
@@ -92,8 +93,9 @@ class Hashutil(unittest.TestCase):
     def hash_path(self):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(self.data)
-            f.close()
-            hashes = hashutil.hash_path(f.name)
+
+        hashes = hashutil.hash_path(f.name)
+        os.remove(f.name)
 
         self.checksums['length'] = len(self.data)
         self.assertEquals(self.checksums, hashes)
