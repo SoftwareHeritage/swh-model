@@ -309,7 +309,7 @@ class Directory(MerkleNode):
             return super().__getitem__(key)
         else:
             key1, key2 = key.split(b'/', 1)
-            return super().__getitem__(key1)[key2]
+            return self.__getitem__(key1)[key2]
 
     def __setitem__(self, key, value):
         if not isinstance(key, bytes):
@@ -327,7 +327,7 @@ class Directory(MerkleNode):
             return super().__setitem__(key, value)
         else:
             key1, key2 = key.rsplit(b'/', 1)
-            self[key1].add_child(key2, value)
+            self[key1].__setitem__(key2, value)
 
     def __delitem__(self, key):
         if not isinstance(key, bytes):
@@ -337,10 +337,10 @@ class Directory(MerkleNode):
             super().__delitem__(key)
         else:
             key1, key2 = key.rsplit(b'/', 1)
-            del super().__getitem__(key1)[key2]
+            del self[key1][key2]
 
     def __repr__(self):
-        return 'Directory(%s, id=%s)' % (
-            self.data['name'],
-            id_to_str(self.hash) if self.hash else '?',
+        return 'Directory(id=%s, entries=[%s])' % (
+            id_to_str(self.hash),
+            ', '.join(str(entry) for entry in self),
         )
