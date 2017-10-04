@@ -395,7 +395,8 @@ class DataMixin:
     def tearDown(self):
         self.tmpdir.cleanup()
 
-    def assertContentEqual(self, left, right, check_data=False):  # NoQA
+    def assertContentEqual(self, left, right, *, check_data=False,  # noqa
+                           check_path=False):
         if not isinstance(left, Content):
             raise ValueError('%s is not a Content' % left)
         if isinstance(right, Content):
@@ -407,6 +408,8 @@ class DataMixin:
         }
         if check_data:
             keys |= {'data'}
+        if check_path:
+            keys |= {'path'}
 
         failed = []
         for key in keys:
@@ -501,7 +504,8 @@ class FileToContent(DataMixin, unittest.TestCase):
         self.make_specials(self.tmpdir.name)
 
     def test_file_to_content(self):
-        for data in [False, True]:
+        # Check whether loading the data works
+        for data in [True, False]:
             for filename, symlink in self.symlinks.items():
                 path = os.path.join(self.tmpdir.name, filename)
                 conv_content = Content.from_file(path=path, data=data)
@@ -515,8 +519,16 @@ class FileToContent(DataMixin, unittest.TestCase):
             for filename in self.specials:
                 path = os.path.join(self.tmpdir.name, filename)
                 conv_content = Content.from_file(path=path, data=data)
-                self.assertContentEqual(conv_content, self.empty_content,
-                                        check_data=data)
+                self.assertContentEqual(conv_content, self.empty_content)
+
+    def test_file_to_content_with_path(self):
+        for filename, content in self.contents.items():
+            content_w_path = content.copy()
+            path = os.path.join(self.tmpdir.name, filename)
+            content_w_path['path'] = path
+            conv_content = Content.from_file(path=path, save_path=True)
+            self.assertContentEqual(conv_content, content_w_path,
+                                    check_path=True)
 
 
 class DirectoryToObjects(DataMixin, unittest.TestCase):

@@ -90,7 +90,7 @@ class Content(MerkleLeaf):
         return cls.from_bytes(mode=mode, data=os.readlink(path))
 
     @classmethod
-    def from_file(cls, *, path, data=False):
+    def from_file(cls, *, path, data=False, save_path=False):
         """Compute the Software Heritage content entry corresponding to an on-disk
         file.
 
@@ -102,6 +102,7 @@ class Content(MerkleLeaf):
           path (bytes): path to the file for which we're computing the
             content entry
           data (bool): add the file data to the entry
+          save_path (bool): add the file path to the entry
         """
         file_stat = os.lstat(path)
         mode = file_stat.st_mode
@@ -129,6 +130,8 @@ class Content(MerkleLeaf):
 
             ret['data'] = b''.join(chunks)
 
+        if save_path:
+            ret['path'] = path
         ret['perms'] = mode_to_perms(mode)
         ret['length'] = length
 
@@ -212,13 +215,14 @@ class Directory(MerkleNode):
     type = 'directory'
 
     @classmethod
-    def from_disk(cls, *, path, data=False,
+    def from_disk(cls, *, path, data=False, save_path=False,
                   dir_filter=accept_all_directories):
         """Compute the Software Heritage objects for a given directory tree
 
         Args:
           path (bytes): the directory to traverse
           data (bool): whether to add the data to the content objects
+          save_path (bool): whether to add the path to the content objects
           dir_filter (function): a filter to ignore some directories by
             name or contents. Takes two arguments: dirname and entries, and
             returns True if the directory should be added, False if the
@@ -235,7 +239,8 @@ class Directory(MerkleNode):
             for name in fentries + dentries:
                 path = os.path.join(root, name)
                 if not os.path.isdir(path) or os.path.islink(path):
-                    content = Content.from_file(path=path, data=data)
+                    content = Content.from_file(path=path, data=data,
+                                                save_path=save_path)
                     entries[name] = content
                 else:
                     if dir_filter(name, dirs[path].entries):
