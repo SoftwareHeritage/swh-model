@@ -16,12 +16,12 @@ def identifier_to_bytes(identifier):
 
     Args:
         identifier: an identifier, either a 40-char hexadecimal string or a
-                    bytes object of length 20
+            bytes object of length 20
     Returns:
         The length 20 bytestring corresponding to the given identifier
 
     Raises:
-        ValueError if the identifier is of an unexpected type or length.
+        ValueError: if the identifier is of an unexpected type or length.
     """
 
     if isinstance(identifier, bytes):
@@ -48,7 +48,8 @@ def identifier_to_str(identifier):
 
     Args:
         identifier: an identifier, either a 40-char hexadecimal string or a
-                    bytes object of length 20
+            bytes object of length 20
+
     Returns:
         The length 40 string corresponding to the given identifier, hex encoded
 
@@ -87,7 +88,7 @@ def content_identifier(content):
         A dictionary with all the hashes for the data
 
     Raises:
-        KeyError if the content doesn't have a data member.
+        KeyError: if the content doesn't have a data member.
 
     """
 
@@ -113,7 +114,9 @@ def escape_newlines(snippet):
     """Escape the newlines present in snippet according to git rules.
 
     New lines in git manifests are escaped by indenting the next line by one
-    space."""
+    space.
+
+    """
 
     if b'\n' in snippet:
         return b'\n '.join(snippet.split(b'\n'))
@@ -129,27 +132,30 @@ def directory_identifier(directory):
     trees:
 
     1. Entries of the directory are sorted using the name (or the name with '/'
-    appended for directory entries) as key, in bytes order.
+       appended for directory entries) as key, in bytes order.
 
     2. For each entry of the directory, the following bytes are output:
-        - the octal representation of the permissions for the entry
-          (stored in the 'perms' member), which is a representation of the
-          entry type:
-            b'100644' (int 33188) for files
-            b'100755' (int 33261) for executable files
-            b'120000' (int 40960) for symbolic links
-            b'40000' (int 16384) for directories
-            b'160000' (int 57344) for references to revisions
-        - an ascii space (b'\x20')
-        - the entry's name (as raw bytes), stored in the 'name' member
-        - a null byte (b'\x00')
-        - the 20 byte long identifier of the object pointed at by the entry,
-          stored in the 'target' member:
-            for files or executable files: their blob sha1_git
-            for symbolic links: the blob sha1_git of a file containing the
-                                link destination
-            for directories: their intrinsic identifier
-            for revisions: their intrinsic identifier
+
+      - the octal representation of the permissions for the entry (stored in
+        the 'perms' member), which is a representation of the entry type:
+
+        - b'100644' (int 33188) for files
+        - b'100755' (int 33261) for executable files
+        - b'120000' (int 40960) for symbolic links
+        - b'40000'  (int 16384) for directories
+        - b'160000' (int 57344) for references to revisions
+
+      - an ascii space (b'\x20')
+      - the entry's name (as raw bytes), stored in the 'name' member
+      - a null byte (b'\x00')
+      - the 20 byte long identifier of the object pointed at by the entry,
+        stored in the 'target' member:
+
+        - for files or executable files: their blob sha1_git
+        - for symbolic links: the blob sha1_git of a file containing the link
+          destination
+        - for directories: their intrinsic identifier
+        - for revisions: their intrinsic identifier
 
       (Note that there is no separator between entries)
 
@@ -200,8 +206,9 @@ def format_offset(offset, negative_utc=None):
     """Convert an integer number of minutes into an offset representation.
 
     The offset representation is [+-]hhmm where:
-        hh is the number of hours;
-        mm is the number of minutes.
+
+    - hh is the number of hours;
+    - mm is the number of minutes.
 
     A null offset is represented as +0000.
     """
@@ -221,21 +228,25 @@ def normalize_timestamp(time_representation):
     """Normalize a time representation for processing by Software Heritage
 
     This function supports a numeric timestamp (representing a number of
-    seconds since the UNIX epoch, 1970-01-01 at 00:00 UTC), a datetime.datetime
-    object (with timezone information), or a normalized Software
-    Heritage time representation (idempotency).
+    seconds since the UNIX epoch, 1970-01-01 at 00:00 UTC), a
+    :obj:`datetime.datetime` object (with timezone information), or a
+    normalized Software Heritage time representation (idempotency).
 
     Args:
         time_representation: the representation of a timestamp
 
-    Returns: a normalized dictionary with three keys
+    Returns:
+        dict: a normalized dictionary with three keys:
 
-     - timestamp: a dict with two optional keys:
-        - seconds: the integral number of seconds since the UNIX epoch
-        - microseconds: the integral number of microseconds
-     - offset: the timezone offset as a number of minutes relative to UTC
-     - negative_utc: a boolean representing whether the offset is -0000 when
-       offset = 0.
+            - timestamp: a dict with two optional keys:
+
+               - seconds: the integral number of seconds since the UNIX epoch
+               - microseconds: the integral number of microseconds
+
+            - offset: the timezone offset as a number of minutes relative to
+              UTC
+            - negative_utc: a boolean representing whether the offset is -0000
+              when offset = 0.
 
     """
 
@@ -321,11 +332,12 @@ def format_author_line(header, author, date_offset):
     """Format a an author line according to git standards.
 
     An author line has three components:
-     - a header, describing the type of author (author, committer, tagger)
-     - a name and email, which is an arbitrary bytestring
-     - optionally, a timestamp with UTC offset specification
 
-    The author line is formatted thus:
+    - a header, describing the type of author (author, committer, tagger)
+    - a name and email, which is an arbitrary bytestring
+    - optionally, a timestamp with UTC offset specification
+
+    The author line is formatted thus::
 
         `header` `name and email`[ `timestamp` `utc_offset`]
 
@@ -343,11 +355,11 @@ def format_author_line(header, author, date_offset):
 
     Args:
         header: the header of the author line (one of 'author', 'committer',
-                'tagger')
+            'tagger')
         author: an author specification (dict with two bytes values: name and
-                email, or byte value)
+            email, or byte value)
         date_offset: a normalized date/time representation as returned by
-                     `normalize_timestamp`.
+            :func:`normalize_timestamp`.
 
     Returns:
         the newline-terminated byte string containing the author line
@@ -373,37 +385,36 @@ def revision_identifier(revision):
     """Return the intrinsic identifier for a revision.
 
     The fields used for the revision identifier computation are:
-     - directory
-     - parents
-     - author
-     - author_date
-     - committer
-     - committer_date
-     - metadata -> extra_headers
-     - message
+
+    - directory
+    - parents
+    - author
+    - author_date
+    - committer
+    - committer_date
+    - metadata -> extra_headers
+    - message
 
     A revision's identifier is the 'git'-checksum of a commit manifest
-    constructed as follows (newlines are a single ASCII newline character):
+    constructed as follows (newlines are a single ASCII newline character)::
 
-    ```
-    tree <directory identifier>
-    [for each parent in parents]
-    parent <parent identifier>
-    [end for each parents]
-    author <author> <author_date>
-    committer <committer> <committer_date>
-    [for each key, value in extra_headers]
-    <key> <encoded value>
-    [end for each extra_headers]
+        tree <directory identifier>
+        [for each parent in parents]
+        parent <parent identifier>
+        [end for each parents]
+        author <author> <author_date>
+        committer <committer> <committer_date>
+        [for each key, value in extra_headers]
+        <key> <encoded value>
+        [end for each extra_headers]
 
-    <message>
-    ```
+        <message>
 
     The directory identifier is the ascii representation of its hexadecimal
     encoding.
 
-    Author and committer are formatted with the `format_author` function.
-    Dates are formatted with the `format_date_offset` function.
+    Author and committer are formatted with the :func:`format_author` function.
+    Dates are formatted with the :func:`format_offset` function.
 
     Extra headers are an ordered list of [key, value] pairs. Keys are strings
     and get encoded to utf-8 for identifier computation. Values are either byte
