@@ -1,3 +1,9 @@
+swh-model (0.0.18-1~swh1~bpo9+1) stretch-swh; urgency=medium
+
+  * Rebuild for stretch-backports.
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Thu, 05 Oct 2017 20:48:29 +0200
+
 swh-model (0.0.18-1~swh1) unstable-swh; urgency=medium
 
   * Release swh.model v0.0.18
