@@ -8,6 +8,8 @@ import tarfile
 import tempfile
 import unittest
 
+from nose.plugins.attrib import attr
+
 from swh.model import from_disk
 from swh.model.from_disk import Content, Directory, DentryPerms
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
@@ -683,6 +685,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                          + 1)
 
 
+@attr('fs')
 class TarballTest(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
