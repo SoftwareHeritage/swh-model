@@ -1,4 +1,4 @@
-import sys
+import hashlib
 
 from setuptools import setup
 
@@ -16,8 +16,11 @@ def parse_requirements():
 
 
 extra_requirements = []
-if sys.version_info < (3, 5):
-    extra_requirements = ['pyblake2']
+
+
+pyblake2_hashes = {'blake2s256', 'blake2b512'}
+if pyblake2_hashes - set(hashlib.algorithms_available):
+    extra_requirements.append('pyblake2')
 
 setup(
     name='swh.model',
