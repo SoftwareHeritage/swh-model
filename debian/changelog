@@ -1,3 +1,11 @@
+swh-model (0.0.18-1~swh1) unstable-swh; urgency=medium
+
+  * Release swh.model v0.0.18
+  * Replace swh.model.git with swh.model.from_disk (T709).
+  * Clean up documentation
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Thu, 05 Oct 2017 20:48:29 +0200
+
 swh-model (0.0.17-1~swh1) unstable-swh; urgency=medium
 
   * Release swh.model v0.0.17
