@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
 
-export PYBUILD_NAME=swh-model
+export PYBUILD_NAME=swh.model
+export PYBUILD_TEST_ARGS=--with-doctest -sv -a !db,!fs
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild
 
-override_dh_auto_test:
-	PYBUILD_SYSTEM=custom \
-        PYBUILD_TEST_ARGS="cd {build_dir}; python{version} -m nose swh -sva '!db,!fs'" \
-        dh_auto_test
+override_dh_install:
+	dh_install
+	rm -v $(CURDIR)/debian/python3-*/usr/lib/python*/dist-packages/swh/__init__.py
