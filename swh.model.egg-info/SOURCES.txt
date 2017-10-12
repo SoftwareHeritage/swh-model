@@ -24,6 +24,7 @@ docs/data-model.rst
 docs/index.rst
 docs/_static/.placeholder
 docs/_templates/.placeholder
+swh/__init__.py
 swh.model.egg-info/PKG-INFO
 swh.model.egg-info/SOURCES.txt
 swh.model.egg-info/dependency_links.txt
