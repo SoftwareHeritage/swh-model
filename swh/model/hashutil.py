@@ -198,7 +198,7 @@ def hash_git_data(data, git_type, base_algo='sha1'):
         ValueError if the git_type is unexpected.
     """
 
-    git_object_types = {'blob', 'tree', 'commit', 'tag'}
+    git_object_types = {'blob', 'tree', 'commit', 'tag', 'snapshot'}
 
     if git_type not in git_object_types:
         raise ValueError('Unexpected git object type %s, expected one of %s' %
