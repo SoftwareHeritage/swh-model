@@ -499,3 +499,88 @@ def release_identifier(release):
         components.extend([b'\n', release['message']])
 
     return identifier_to_str(hash_git_data(b''.join(components), 'tag'))
+
+
+def snapshot_identifier(snapshot, *, ignore_unresolved=False):
+    """Return the intrinsic identifier for a snapshot.
+
+    Snapshots are a set of named branches, which are pointers to objects at any
+    level of the Software Heritage DAG.
+
+    As well as pointing to other objects in the Software Heritage DAG, branches
+    can also be *alias*es, in which case their target is the name of another
+    branch in the same snapshot, or *dangling*, in which case the target is
+    unknown (and represented by the ``None`` value).
+
+    A snapshot identifier is a salted sha1 (using the git hashing algorithm
+    with the ``snapshot`` object type) of a manifest following the algorithm:
+
+    1. Branches are sorted using the name as key, in bytes order.
+
+    2. For each branch, the following bytes are output:
+
+      - the type of the branch target:
+
+        - ``content``, ``directory``, ``revision``, ``release`` or ``snapshot``
+          for the corresponding entries in the DAG;
+        - ``alias`` for branches referencing another branch;
+        - ``dangling`` for dangling branches
+
+      - an ascii space (``\\x20``)
+      - the branch name (as raw bytes)
+      - a null byte (``\\x00``)
+      - the length of the target identifier, as an ascii-encoded decimal number
+        (``20`` for current intrinisic identifiers, ``0`` for dangling
+        branches, the length of the target branch name for branch aliases)
+      - a colon (``:``)
+      - the identifier of the target object pointed at by the branch,
+        stored in the 'target' member:
+
+        - for contents: their *sha1_git*
+        - for directories, revisions, releases or snapshots: their intrinsic
+          identifier
+        - for branch aliases, the name of the target branch (as raw bytes)
+        - for dangling branches, the empty string
+
+      Note that, akin to directory manifests, there is no separator between
+      entries. Because of symbolic branches, identifiers are of arbitrary
+      length but are length-encoded to avoid ambiguity.
+
+    Args:
+      snapshot (dict): the snapshot of which to compute the identifier. A
+        single entry is needed, ``'branches'``, which is itself a :class:`dict`
+        mapping each branch to its target
+      ignore_unresolved (bool): if `True`, ignore unresolved branch aliases.
+
+    Returns:
+      str: the intrinsic identifier for `snapshot`
+
+    """
+
+    unresolved = []
+    lines = []
+
+    for name, target in sorted(snapshot['branches'].items()):
+        if not target:
+            target_type = b'dangling'
+            target_id = b''
+        elif target['target_type'] == 'alias':
+            target_type = b'alias'
+            target_id = target['target']
+            if target_id not in snapshot['branches'] or target_id == name:
+                unresolved.append((name, target_id))
+        else:
+            target_type = target['target_type'].encode()
+            target_id = identifier_to_bytes(target['target'])
+
+        lines.extend([
+            target_type, b'\x20', name, b'\x00',
+            ('%d:' % len(target_id)).encode(), target_id,
+        ])
+
+    if unresolved and not ignore_unresolved:
+        raise ValueError('Branch aliases unresolved: %s' %
+                         ', '.join('%s -> %s' % (name, target)
+                                   for name, target in unresolved))
+
+    return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
