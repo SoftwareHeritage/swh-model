@@ -1,3 +1,12 @@
+swh-model (0.0.20-1~swh1) unstable-swh; urgency=medium
+
+  * v0.0.20
+  * swh.model.hashutil.hash_data: Optionally integrate length in result
+  * hashutil: add `snapshot` object type for git hashes
+  * docs: add absolute anchor to documentation index
+
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 20 Dec 2017 10:47:10 +0100
+
 swh-model (0.0.19-1~swh1) unstable-swh; urgency=medium
 
   * Release swh.model version 0.0.19
