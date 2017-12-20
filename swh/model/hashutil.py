@@ -167,12 +167,13 @@ def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
     return hash
 
 
-def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
+def hash_data(data, algorithms=DEFAULT_ALGORITHMS, with_length=False):
     """Hash the given binary blob with the given algorithms.
 
     Args:
-        data: a bytes object
-        algorithms: the hashing algorithms used
+        data (bytes): raw content to hash
+        algorithms (list): the hashing algorithms used
+        with_length (bool): add the length key in the resulting dict
 
     Returns: a dict mapping each algorithm to a bytes digest
 
@@ -181,7 +182,11 @@ def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
         ValueError if algorithms contains an unknown hash algorithm.
     """
     fobj = BytesIO(data)
-    return hash_file(fobj, len(data), algorithms)
+    length = len(data)
+    data = hash_file(fobj, length, algorithms)
+    if with_length:
+        data['length'] = length
+    return data
 
 
 def hash_git_data(data, git_type, base_algo='sha1'):
