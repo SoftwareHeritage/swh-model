@@ -47,6 +47,17 @@ class Hashutil(unittest.TestCase):
     def hash_data(self):
         checksums = hashutil.hash_data(self.data)
         self.assertEqual(checksums, self.checksums)
+        self.assertFalse('length' in checksums)
+
+    @istest
+    def hash_data_with_length(self):
+        expected_checksums = self.checksums.copy()
+        expected_checksums['length'] = len(self.data)
+
+        checksums = hashutil.hash_data(self.data, with_length=True)
+
+        self.assertEqual(checksums, expected_checksums)
+        self.assertTrue('length' in checksums)
 
     @istest
     def hash_data_unknown_hash(self):

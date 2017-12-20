@@ -679,3 +679,92 @@ o6X/3T+vm8K3bf3driRr34c=
             identifiers.release_identifier(self.release_newline_in_author),
             identifiers.identifier_to_str(self.release_newline_in_author['id'])
         )
+
+
+class SnapshotIdentifier(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.empty = {
+            'id': '1a8893e6a86f444e8be8e7bda6cb34fb1735a00e',
+            'branches': {},
+        }
+
+        self.dangling_branch = {
+            'id': 'c84502e821eb21ed84e9fd3ec40973abc8b32353',
+            'branches': {
+                b'HEAD': None,
+            },
+        }
+
+        self.unresolved = {
+            'id': '84b4548ea486e4b0a7933fa541ff1503a0afe1e0',
+            'branches': {
+                b'foo': {
+                    'target': b'bar',
+                    'target_type': 'alias',
+                },
+            },
+        }
+
+        self.all_types = {
+            'id': '6e65b86363953b780d92b0a928f3e8fcdd10db36',
+            'branches': {
+                b'directory': {
+                    'target': '1bd0e65f7d2ff14ae994de17a1e7fe65111dcad8',
+                    'target_type': 'directory',
+                },
+                b'content': {
+                    'target': 'fe95a46679d128ff167b7c55df5d02356c5a1ae1',
+                    'target_type': 'content',
+                },
+                b'alias': {
+                    'target': b'revision',
+                    'target_type': 'alias',
+                },
+                b'revision': {
+                    'target': 'aafb16d69fd30ff58afdd69036a26047f3aebdc6',
+                    'target_type': 'revision',
+                },
+                b'release': {
+                    'target': '7045404f3d1c54e6473c71bbb716529fbad4be24',
+                    'target_type': 'release',
+                },
+                b'snapshot': {
+                    'target': '1a8893e6a86f444e8be8e7bda6cb34fb1735a00e',
+                    'target_type': 'snapshot',
+                },
+                b'dangling': None,
+            }
+        }
+
+    def test_empty_snapshot(self):
+        self.assertEqual(
+            identifiers.snapshot_identifier(self.empty),
+            identifiers.identifier_to_str(self.empty['id']),
+        )
+
+    def test_dangling_branch(self):
+        self.assertEqual(
+            identifiers.snapshot_identifier(self.dangling_branch),
+            identifiers.identifier_to_str(self.dangling_branch['id']),
+        )
+
+    def test_unresolved(self):
+        with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
+            identifiers.snapshot_identifier(self.unresolved)
+
+    def test_unresolved_force(self):
+        self.assertEqual(
+            identifiers.snapshot_identifier(
+                self.unresolved,
+                ignore_unresolved=True,
+            ),
+            identifiers.identifier_to_str(self.unresolved['id']),
+        )
+
+    def test_all_types(self):
+        self.assertEqual(
+            identifiers.snapshot_identifier(self.all_types),
+            identifiers.identifier_to_str(self.all_types['id']),
+        )

@@ -1,3 +1,5 @@
+.. _swh-model:
+
 Software Heritage - Development Documentation
 =============================================
 
