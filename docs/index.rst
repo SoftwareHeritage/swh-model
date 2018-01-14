@@ -12,6 +12,7 @@ Overview
 --------
 
 * :ref:`data-model`
+* :ref:`persistent-identifiers`
 
 
 Indices and tables
