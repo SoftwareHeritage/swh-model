@@ -15,7 +15,7 @@ HASH_ALGO = 'sha1_git'
 
 
 def hash_file(fname):
-    return hash_to_hex(Content.from_file(path=fname).hash)
+    return hash_to_hex(Content.from_file(path=fname.encode()).hash)
 
 
 def main(fnames):
