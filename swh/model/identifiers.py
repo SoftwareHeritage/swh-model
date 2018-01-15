@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2018  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -8,6 +8,14 @@ import datetime
 from functools import lru_cache
 
 from .hashutil import hash_data, hash_git_data, DEFAULT_ALGORITHMS
+from .hashutil import hash_to_hex
+
+
+SNAPSHOT = 'snapshot'
+REVISION = 'revision'
+RELEASE = 'release'
+DIRECTORY = 'directory'
+CONTENT = 'content'
 
 
 @lru_cache()
@@ -584,3 +592,47 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
                                    for name, target in unresolved))
 
     return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
+
+
+def persistent_identifier(type, hash):
+    """Compute persistent identifier as per the documentation.
+
+    Source: https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
+
+    Args:
+        type (str): Object type
+        hash (str): Object hash
+
+    Returns:
+        Persistent identifier as string.
+
+    """
+    _map = {
+        SNAPSHOT: 'snp',
+        RELEASE: 'rel',
+        REVISION: 'rev',
+        DIRECTORY: 'dir',
+        CONTENT: 'cnt',
+    }
+    _hash = hash_to_hex(hash)
+
+    return 'swh:1:%s:%s' % (_map[type], _hash)
+
+
+def parse_persistent_identifier(persistent_id):
+    """Parse swh's persistent identifier.
+
+    Args:
+        persistent_id (str): A persistent identifier
+
+    Returns:
+        dict with keys namespace, scheme_version, object_type, object_id
+
+    """
+    data = persistent_id.split(':')
+    return {
+        'namespace': data[0],  # should be 'swh'
+        'scheme_version': data[1],
+        'object_type': data[2],
+        'object_id': data[3],
+    }
