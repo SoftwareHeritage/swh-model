@@ -594,33 +594,55 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
     return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
 
 
-def persistent_identifier(type, hash):
-    """Compute persistent identifier as per the documentation.
+def persistent_identifier(type, object, version=1):
+    """Compute persistent identifier (stable over time) as per
+       documentation.
 
-    Source: https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
+    Documentation:
+        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
 
     Args:
-        type (str): Object type
-        hash (str): Object hash
+        type (str): Object's type
+        object (str): Object's dict representation
+        version (int): persistent identifier version (default to 1)
 
     Returns:
         Persistent identifier as string.
 
     """
     _map = {
-        SNAPSHOT: 'snp',
-        RELEASE: 'rel',
-        REVISION: 'rev',
-        DIRECTORY: 'dir',
-        CONTENT: 'cnt',
+        SNAPSHOT: {
+            'short_name': 'snp',
+            'key_id': 'id'
+        },
+        RELEASE: {
+            'short_name': 'rel',
+            'key_id': 'id'
+        },
+        REVISION: {
+            'short_name': 'rev',
+            'key_id': 'id'
+        },
+        DIRECTORY: {
+            'short_name': 'dir',
+            'key_id': 'id'
+        },
+        CONTENT: {
+            'short_name': 'cnt',
+            'key_id': 'sha1_git'
+        },
     }
-    _hash = hash_to_hex(hash)
+    o = _map[type]
+    _hash = hash_to_hex(object[o['key_id']])
+    return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
 
-    return 'swh:1:%s:%s' % (_map[type], _hash)
+
+PERSISTENT_IDENTIFIER_KEYS = [
+    'namespace', 'scheme_version', 'object_type', 'object_id']
 
 
 def parse_persistent_identifier(persistent_id):
-    """Parse swh's persistent identifier.
+    """Parse swh's persistent identifier scheme.
 
     Args:
         persistent_id (str): A persistent identifier
@@ -630,9 +652,4 @@ def parse_persistent_identifier(persistent_id):
 
     """
     data = persistent_id.split(':')
-    return {
-        'namespace': data[0],  # should be 'swh'
-        'scheme_version': data[1],
-        'object_type': data[2],
-        'object_id': data[3],
-    }
+    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, data))
