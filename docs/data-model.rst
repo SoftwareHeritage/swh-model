@@ -1,7 +1,7 @@
 .. _data-model:
 
-Software Heritage data model
-============================
+Data model
+==========
 
 TODO
 

@@ -10,6 +10,7 @@ requirements.txt
 setup.py
 version.txt
 bin/git-revhash
+bin/swh-hash-file
 bin/swh-revhash
 debian/changelog
 debian/compat
@@ -22,6 +23,7 @@ docs/Makefile
 docs/conf.py
 docs/data-model.rst
 docs/index.rst
+docs/persistent-identifiers.rst
 docs/_static/.placeholder
 docs/_templates/.placeholder
 swh/__init__.py

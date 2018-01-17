@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017  The Software Heritage developers
+# Copyright (C) 2015-2018  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -10,6 +10,9 @@ import unittest
 from nose.tools import istest
 
 from swh.model import hashutil, identifiers
+
+from swh.model.identifiers import SNAPSHOT, RELEASE, REVISION, DIRECTORY
+from swh.model.identifiers import CONTENT
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -768,3 +771,53 @@ class SnapshotIdentifier(unittest.TestCase):
             identifiers.snapshot_identifier(self.all_types),
             identifiers.identifier_to_str(self.all_types['id']),
         )
+
+    def test_persistent_identifier(self):
+        _snapshot = {'id': hashutil.hash_to_bytes(
+                    'c7c108084bc0bf3d81436bf980b46e98bd338453')}
+        _release = {'id': '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'}
+        _revision = {'id': '309cf2674ee7a0749978cf8265ab91a60aea0f7d'}
+        _directory = {'id': 'd198bc9d7a6bcf6db04f476d29314f157507d505'}
+        _content = {'sha1_git': '94a9ed024d3859793618152ea559a168bbcbb5e2'}
+        for full_type, _hash, expected_persistent_id, version in [
+                (SNAPSHOT, _snapshot,
+                 'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', None),
+                (RELEASE, _release,
+                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 2),
+                (REVISION, _revision,
+                 'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', None),
+                (DIRECTORY, _directory,
+                 'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', None),
+                (CONTENT, _content,
+                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 1)
+        ]:
+            if version:
+                actual_value = identifiers.persistent_identifier(
+                    full_type, _hash, version)
+            else:
+                actual_value = identifiers.persistent_identifier(
+                    full_type, _hash)
+
+            self.assertEquals(actual_value, expected_persistent_id)
+
+    def test_parse_persistent_identifier(self):
+        for pid, _type, _version, _hash in [
+                ('swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 'cnt',
+                 '1', '94a9ed024d3859793618152ea559a168bbcbb5e2'),
+                ('swh:2:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', 'dir',
+                 '2', 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
+                ('swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', 'rev',
+                 '1', '309cf2674ee7a0749978cf8265ab91a60aea0f7d'),
+                ('swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 'rel',
+                 '1', '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'),
+                ('swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', 'snp',
+                 '1', 'c7c108084bc0bf3d81436bf980b46e98bd338453'),
+        ]:
+            expected_result = {
+                'namespace': 'swh',
+                'scheme_version': _version,
+                'object_type': _type,
+                'object_id': _hash,
+            }
+            actual_result = identifiers.parse_persistent_identifier(pid)
+            self.assertEquals(actual_result, expected_result)

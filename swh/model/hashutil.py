@@ -122,8 +122,9 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
     Args:
         fobj: a file-like object
         length: the length of the contents of the file-like object (for the
-                git-specific algorithms)
-        algorithms: the hashing algorithms used
+          git-specific algorithms)
+        algorithms: the hashing algorithms to be used, as an iterable over
+          strings
 
     Returns: a dict mapping each algorithm to a bytes digest.
 

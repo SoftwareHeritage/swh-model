@@ -1,8 +1,12 @@
-swh-model (0.0.20-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.21-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.21
+  * swh.model.identifiers: Add persistent identifier function
+  * docs: document the naming scheme for persistent identifiers
+  * bin/swh-hash-file: new binary to compute SWH-style content
+    identifiers
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 20 Dec 2017 10:47:10 +0100
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 17 Jan 2018 11:06:33 +0100
 
 swh-model (0.0.20-1~swh1) unstable-swh; urgency=medium
 
