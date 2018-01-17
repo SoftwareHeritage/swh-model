@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2018  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -8,6 +8,14 @@ import datetime
 from functools import lru_cache
 
 from .hashutil import hash_data, hash_git_data, DEFAULT_ALGORITHMS
+from .hashutil import hash_to_hex
+
+
+SNAPSHOT = 'snapshot'
+REVISION = 'revision'
+RELEASE = 'release'
+DIRECTORY = 'directory'
+CONTENT = 'content'
 
 
 @lru_cache()
@@ -584,3 +592,64 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
                                    for name, target in unresolved))
 
     return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
+
+
+def persistent_identifier(type, object, version=1):
+    """Compute persistent identifier (stable over time) as per
+       documentation.
+
+    Documentation:
+        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
+
+    Args:
+        type (str): Object's type
+        object (str): Object's dict representation
+        version (int): persistent identifier version (default to 1)
+
+    Returns:
+        Persistent identifier as string.
+
+    """
+    _map = {
+        SNAPSHOT: {
+            'short_name': 'snp',
+            'key_id': 'id'
+        },
+        RELEASE: {
+            'short_name': 'rel',
+            'key_id': 'id'
+        },
+        REVISION: {
+            'short_name': 'rev',
+            'key_id': 'id'
+        },
+        DIRECTORY: {
+            'short_name': 'dir',
+            'key_id': 'id'
+        },
+        CONTENT: {
+            'short_name': 'cnt',
+            'key_id': 'sha1_git'
+        },
+    }
+    o = _map[type]
+    _hash = hash_to_hex(object[o['key_id']])
+    return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
+
+
+PERSISTENT_IDENTIFIER_KEYS = [
+    'namespace', 'scheme_version', 'object_type', 'object_id']
+
+
+def parse_persistent_identifier(persistent_id):
+    """Parse swh's persistent identifier scheme.
+
+    Args:
+        persistent_id (str): A persistent identifier
+
+    Returns:
+        dict with keys namespace, scheme_version, object_type, object_id
+
+    """
+    data = persistent_id.split(':')
+    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, data))

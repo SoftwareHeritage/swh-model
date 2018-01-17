@@ -1,0 +1,32 @@
+#!/usr/bin/python3
+
+# Copyright (C) 2018  The Software Heritage developers
+# See the AUTHORS file at the top-level directory of this distribution
+# License: GNU General Public License version 3, or any later version
+# See top-level LICENSE file for more information
+
+import sys
+
+from swh.model.from_disk import Content
+from swh.model.hashutil import hash_to_hex
+
+
+HASH_ALGO = 'sha1_git'
+
+
+def hash_file(fname):
+    return hash_to_hex(Content.from_file(path=fname.encode()).hash)
+
+
+def main(fnames):
+    for f in fnames:
+        print(f, hash_file(f), sep='\t')
+
+
+if __name__ == '__main__':
+    fnames = sys.argv[1:]
+    if not fnames:
+        print('Usage: swh-hash-file FILE...')
+        sys.exit(2)
+
+    main(fnames)
