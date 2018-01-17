@@ -1,3 +1,13 @@
+swh-model (0.0.21-1~swh1) unstable-swh; urgency=medium
+
+  * v0.0.21
+  * swh.model.identifiers: Add persistent identifier function
+  * docs: document the naming scheme for persistent identifiers
+  * bin/swh-hash-file: new binary to compute SWH-style content
+    identifiers
+
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Wed, 17 Jan 2018 11:06:33 +0100
+
 swh-model (0.0.20-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.20
