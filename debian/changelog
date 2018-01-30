@@ -1,3 +1,9 @@
+swh-model (0.0.22-1~swh1) unstable-swh; urgency=medium
+
+  * version 0.0.22
+
+ -- Antoine Pietri <antoine.pietri1@gmail.com>  Tue, 30 Jan 2018 18:22:42 +0100
+
 swh-model (0.0.21-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.21
