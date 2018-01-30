@@ -68,7 +68,7 @@ captured by ``<object_type>``:
 * ``rel`` to **releases**,
 * ``rev`` to **revisions**,
 * ``dir`` to **directories**,
-* ``cnt`` to **releases**.
+* ``cnt`` to **contents**.
 
 The actual object pointed to is identified by the intrinsic identifier
 ``<object_id>``, which is a hex-encoded (using lowercase ASCII characters) SHA1
