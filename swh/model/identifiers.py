@@ -538,7 +538,7 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
       - the branch name (as raw bytes)
       - a null byte (``\\x00``)
       - the length of the target identifier, as an ascii-encoded decimal number
-        (``20`` for current intrinisic identifiers, ``0`` for dangling
+        (``20`` for current intrinsic identifiers, ``0`` for dangling
         branches, the length of the target branch name for branch aliases)
       - a colon (``:``)
       - the identifier of the target object pointed at by the branch,
