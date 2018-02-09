@@ -1,5 +1,5 @@
 
-MERKLE_DAG = swh-merkle-dag.svg
+MERKLE_DAG =  swh-merkle-dag.pdf swh-merkle-dag.svg
 
 BUILD_TARGETS =
 BUILD_TARGETS += $(MERKLE_DAG)
