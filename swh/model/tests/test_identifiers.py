@@ -818,6 +818,32 @@ class SnapshotIdentifier(unittest.TestCase):
                 'scheme_version': _version,
                 'object_type': _type,
                 'object_id': _hash,
+                'metadata': {}
+            }
+            actual_result = identifiers.parse_persistent_identifier(pid)
+            self.assertEquals(actual_result, expected_result)
+
+        for pid, _type, _version, _hash, _metadata in [
+                ('swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython', # noqa
+                 'cnt', '1', '9c95815d9e9d91b8dae8e05d8bbc696fe19f796b',
+                 {
+                     'lines': '1-18',
+                     'origin': 'https://github.com/python/cpython'
+                 }),
+                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=deb://Debian/packages/linuxdoc-tools', # noqa
+                  'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d',
+                 {
+                     'origin': 'deb://Debian/packages/linuxdoc-tools'
+                 }),
+                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed', # noqa
+                  'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d', {})
+        ]:
+            expected_result = {
+                'namespace': 'swh',
+                'scheme_version': _version,
+                'object_type': _type,
+                'object_id': _hash,
+                'metadata': _metadata
             }
             actual_result = identifiers.parse_persistent_identifier(pid)
             self.assertEquals(actual_result, expected_result)

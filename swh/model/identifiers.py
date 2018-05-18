@@ -638,18 +638,35 @@ def persistent_identifier(type, object, version=1):
 
 
 PERSISTENT_IDENTIFIER_KEYS = [
-    'namespace', 'scheme_version', 'object_type', 'object_id']
+    'namespace', 'scheme_version', 'object_type', 'object_id', 'metadata']
+
+PERSISTENT_IDENTIFIER_PARTS_SEP = ';'
 
 
 def parse_persistent_identifier(persistent_id):
-    """Parse swh's persistent identifier scheme.
+    """Parse swh's :ref:`persistent-identifiers` scheme.
 
     Args:
         persistent_id (str): A persistent identifier
 
     Returns:
-        dict with keys namespace, scheme_version, object_type, object_id
+        dict: dict with keys :
+
+            * namespace, holding str value
+            * scheme_version, holding str value
+            * object_type, holding str value
+            * object_id, holding str value
+            * metadata, holding dict value
 
     """
-    data = persistent_id.split(':')
+    persistent_id_parts = persistent_id.split(PERSISTENT_IDENTIFIER_PARTS_SEP)
+    data = persistent_id_parts.pop(0).split(':')
+    persistent_id_metadata = {}
+    for part in persistent_id_parts:
+        try:
+            key, val = part.split('=')
+            persistent_id_metadata[key] = val
+        except Exception:
+            pass
+    data.append(persistent_id_metadata)
     return dict(zip(PERSISTENT_IDENTIFIER_KEYS, data))
