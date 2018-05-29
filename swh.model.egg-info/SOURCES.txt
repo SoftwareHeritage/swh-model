@@ -26,6 +26,9 @@ docs/index.rst
 docs/persistent-identifiers.rst
 docs/_static/.placeholder
 docs/_templates/.placeholder
+docs/images/.gitignore
+docs/images/Makefile
+docs/images/swh-merkle-dag.dia
 swh/__init__.py
 swh.model.egg-info/PKG-INFO
 swh.model.egg-info/SOURCES.txt

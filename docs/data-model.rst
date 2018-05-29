@@ -3,11 +3,11 @@
 Data model
 ==========
 
-TODO
+.. _swh-merkle-dag:
+.. figure:: images/swh-merkle-dag.svg
+   :width: 1024px
+   :align: center
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+   Software Heritage archive as a Merkle DAG, augmented with crawling
+   information (click to zoom).
+
