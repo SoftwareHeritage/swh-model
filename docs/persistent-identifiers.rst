@@ -134,15 +134,15 @@ Resolution
 Persistent identifiers can be resolved using the Software Heritage Web
 application (see :py:mod:`swh.web`).
 
-In particular, the ``/browse/`` endpoint can be given a persistent identifier
-and will lead to the browsing page of the corresponding object, like this:
-``https://archive.softwareheritage.org/browse/<identifier>``. For example:
+In particular, the root endpoint ``/`` can be given a persistent identifier and
+will lead to the browsing page of the corresponding object, like this:
+``https://archive.softwareheritage.org/<identifier>``. For example:
 
-* `<https://archive.softwareheritage.org/browse/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
+* `<https://archive.softwareheritage.org/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
+* `<https://archive.softwareheritage.org/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
+* `<https://archive.softwareheritage.org/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
+* `<https://archive.softwareheritage.org/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
+* `<https://archive.softwareheritage.org/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
 
 
 Contextual information
