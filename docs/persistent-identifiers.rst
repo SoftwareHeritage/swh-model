@@ -176,17 +176,17 @@ by the ``<identifier_with_context>`` entry point of the grammar:
 Semantics
 ---------
 
-";" is used a separator between persistent identifiers and additional optional
-contextual information. Each piece of contextual information is specified as a
-key/value pair, using "=" as a separator.
+``;`` is used as separator between persistent identifiers and additional
+optional contextual information. Each piece of contextual information is
+specified as a key/value pair, using ``=`` as a separator.
 
 The following piece of contextual information are supported:
 
 * line numbers: it is possible to specify a single line number or a line range,
-  separating two numbers with "-". Note that line numbers are purely indicative
-  and are not meant to be stable, as in some degenerate cases (e.g., text files
-  which mix different types of line terminators) it is impossible to resolve
-  them unambiguously.
+  separating two numbers with ``-``. Note that line numbers are purely
+  indicative and are not meant to be stable, as in some degenerate cases
+  (e.g., text files which mix different types of line terminators) it is
+  impossible to resolve them unambiguously.
 
 * software origin: where a given object has been found or observed in the wild,
   as the URI that was used by Software Heritage to ingest the object into the
