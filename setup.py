@@ -31,6 +31,10 @@ setup(
     packages=find_packages(),  # packages's modules
     scripts=[],   # scripts to package
     install_requires=parse_requirements() + extra_requirements,
+    entry_points='''
+        [console_scripts]
+        swh-identify=swh.model.cli:identify
+    ''',
     setup_requires=['vcversioner'],
     vcversioner={},
     include_package_data=True,
