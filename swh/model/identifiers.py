@@ -702,6 +702,7 @@ def parse_persistent_identifier(persistent_id):
             key, val = part.split('=')
             persistent_id_metadata[key] = val
         except Exception:
-            pass
+            msg = 'Contextual data is badly formatted, form key=val expected'
+            raise SWHMalformedIdentifierException(msg)
     pid_data.append(persistent_id_metadata)
     return dict(zip(PERSISTENT_IDENTIFIER_KEYS, pid_data))

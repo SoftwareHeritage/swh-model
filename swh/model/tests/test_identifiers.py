@@ -834,9 +834,7 @@ class SnapshotIdentifier(unittest.TestCase):
                   'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d',
                  {
                      'origin': 'deb://Debian/packages/linuxdoc-tools'
-                 }),
-                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed', # noqa
-                  'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d', {})
+                 })
         ]:
             expected_result = {
                 'namespace': 'swh',
@@ -858,6 +856,8 @@ class SnapshotIdentifier(unittest.TestCase):
                  'Wrong format: There should be 4 mandatory parameters'),
                 ('swh:',
                  'Wrong format: There should be 4 mandatory parameters'),
+                ('swh:1:cnt:',
+                 'Wrong format: Identifier should be present'),
                 ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505',
                  'Wrong format: Supported namespace is \'swh\''),
                 ('swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505',
@@ -865,8 +865,9 @@ class SnapshotIdentifier(unittest.TestCase):
                 ('swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505',
                  'Wrong format: Supported types are %s' % (
                      ', '.join(PERSISTENT_IDENTIFIER_TYPES))),
-                ('swh:1:cnt:',
-                 'Wrong format: Identifier should be present'),
+                ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;'
+                 'malformed',
+                 'Contextual data is badly formatted, form key=val expected')
         ]:
             with self.assertRaisesRegex(
                     SWHMalformedIdentifierException, _error):
