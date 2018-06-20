@@ -637,10 +637,19 @@ def persistent_identifier(type, object, version=1):
     return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
 
 
+PERSISTENT_IDENTIFIER_TYPES = ['snp', 'rel', 'rev', 'dir', 'cnt']
+
 PERSISTENT_IDENTIFIER_KEYS = [
     'namespace', 'scheme_version', 'object_type', 'object_id', 'metadata']
 
 PERSISTENT_IDENTIFIER_PARTS_SEP = ';'
+
+
+class SWHMalformedIdentifierException(ValueError):
+    """Exception when a string representing an identifier is badly formatted.
+
+    """
+    pass
 
 
 def parse_persistent_identifier(persistent_id):
@@ -659,8 +668,34 @@ def parse_persistent_identifier(persistent_id):
             * metadata, holding dict value
 
     """
+    # <pid>;<contextual-information>
     persistent_id_parts = persistent_id.split(PERSISTENT_IDENTIFIER_PARTS_SEP)
-    data = persistent_id_parts.pop(0).split(':')
+    pid_data = persistent_id_parts.pop(0).split(':')
+
+    if len(pid_data) != 4:
+        raise SWHMalformedIdentifierException(
+            'Wrong format: There should be 4 mandatory parameters')
+
+    # Checking for parsing errors
+    _ns, _version, _type, _id = pid_data
+    if _ns != 'swh':
+        raise SWHMalformedIdentifierException(
+            'Wrong format: Supported namespace is \'swh\'')
+
+    if _version != '1':
+        raise SWHMalformedIdentifierException(
+            'Wrong format: Supported version is 1')
+
+    expected_types = PERSISTENT_IDENTIFIER_TYPES
+    if _type not in expected_types:
+        raise SWHMalformedIdentifierException(
+            'Wrong format: Supported types are %s' % (
+                ', '.join(expected_types)))
+
+    if not _id:
+        raise SWHMalformedIdentifierException(
+            'Wrong format: Identifier should be present')
+
     persistent_id_metadata = {}
     for part in persistent_id_parts:
         try:
@@ -668,5 +703,5 @@ def parse_persistent_identifier(persistent_id):
             persistent_id_metadata[key] = val
         except Exception:
             pass
-    data.append(persistent_id_metadata)
-    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, data))
+    pid_data.append(persistent_id_metadata)
+    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, pid_data))

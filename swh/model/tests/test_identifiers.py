@@ -804,8 +804,8 @@ class SnapshotIdentifier(unittest.TestCase):
         for pid, _type, _version, _hash in [
                 ('swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 'cnt',
                  '1', '94a9ed024d3859793618152ea559a168bbcbb5e2'),
-                ('swh:2:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', 'dir',
-                 '2', 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
+                ('swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', 'dir',
+                 '1', 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
                 ('swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', 'rev',
                  '1', '309cf2674ee7a0749978cf8265ab91a60aea0f7d'),
                 ('swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 'rel',
@@ -847,3 +847,27 @@ class SnapshotIdentifier(unittest.TestCase):
             }
             actual_result = identifiers.parse_persistent_identifier(pid)
             self.assertEquals(actual_result, expected_result)
+
+    def test_parse_persistent_identifier_parsing_error(self):
+        from swh.model.identifiers import (SWHMalformedIdentifierException,
+                                           PERSISTENT_IDENTIFIER_TYPES)
+        for pid, _error in [
+                ('swh:1:cnt',
+                 'Wrong format: There should be 4 mandatory parameters'),
+                ('swh:1:',
+                 'Wrong format: There should be 4 mandatory parameters'),
+                ('swh:',
+                 'Wrong format: There should be 4 mandatory parameters'),
+                ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505',
+                 'Wrong format: Supported namespace is \'swh\''),
+                ('swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505',
+                 'Wrong format: Supported version is 1'),
+                ('swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505',
+                 'Wrong format: Supported types are %s' % (
+                     ', '.join(PERSISTENT_IDENTIFIER_TYPES))),
+                ('swh:1:cnt:',
+                 'Wrong format: Identifier should be present'),
+        ]:
+            with self.assertRaisesRegex(
+                    SWHMalformedIdentifierException, _error):
+                identifiers.parse_persistent_identifier(pid)
