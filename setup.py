@@ -17,9 +17,21 @@ def parse_requirements():
 
 extra_requirements = []
 
+pyblake2_hash_sets = [
+    # Built-in implementation in Python 3.6+
+    {'blake2s', 'blake2b'},
+    # Potentially shipped by OpenSSL 1.1 (e.g. Python 3.5 in Debian stretch
+    # has these)
+    {'blake2s256', 'blake2b512'},
+]
 
-pyblake2_hashes = {'blake2s256', 'blake2b512'}
-if pyblake2_hashes - set(hashlib.algorithms_available):
+for pyblake2_hashes in pyblake2_hash_sets:
+    if not pyblake2_hashes - set(hashlib.algorithms_available):
+        # The required blake2 hashes have been found
+        break
+else:
+    # None of the possible sets of blake2 hashes are available.
+    # use pyblake2 instead
     extra_requirements.append('pyblake2')
 
 setup(
