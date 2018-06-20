@@ -867,7 +867,11 @@ class SnapshotIdentifier(unittest.TestCase):
                      ', '.join(PERSISTENT_IDENTIFIER_TYPES))),
                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;'
                  'malformed',
-                 'Contextual data is badly formatted, form key=val expected')
+                 'Contextual data is badly formatted, form key=val expected'),
+                ('swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d',
+                 'Wrong format: Identifier should be a valid hash'),
+                ('swh:1:snp:foo',
+                 'Wrong format: Identifier should be a valid hash')
         ]:
             with self.assertRaisesRegex(
                     SWHMalformedIdentifierException, _error):

@@ -7,6 +7,8 @@ import binascii
 import datetime
 from functools import lru_cache
 
+from .exceptions import ValidationError
+from .fields.hashes import validate_sha1
 from .hashutil import hash_data, hash_git_data, DEFAULT_ALGORITHMS
 from .hashutil import hash_to_hex
 
@@ -695,6 +697,12 @@ def parse_persistent_identifier(persistent_id):
     if not _id:
         raise SWHMalformedIdentifierException(
             'Wrong format: Identifier should be present')
+
+    try:
+        validate_sha1(_id)
+    except ValidationError:
+        raise SWHMalformedIdentifierException(
+           'Wrong format: Identifier should be a valid hash')
 
     persistent_id_metadata = {}
     for part in persistent_id_parts:
