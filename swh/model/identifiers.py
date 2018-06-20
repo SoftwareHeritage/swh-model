@@ -605,7 +605,7 @@ def persistent_identifier(type, object, version=1):
 
     Args:
         type (str): Object's type
-        object (str): Object's dict representation
+        object (dict): Object's dict representation
         version (int): persistent identifier version (default to 1)
 
     Returns:
