@@ -609,6 +609,12 @@ def persistent_identifier(type, object, version=1):
                                  identifier
         version (int): persistent identifier version (default to 1)
 
+    Raises:
+        ValidationError (class) in case of:
+
+            invalid type
+            invalid hash object
+
     Returns:
         Persistent identifier as string.
 
@@ -635,11 +641,16 @@ def persistent_identifier(type, object, version=1):
             'key_id': 'sha1_git'
         },
     }
-    o = _map[type]
+    o = _map.get(type)
+    if not o:
+        raise ValidationError('Wrong input: Supported types are %s' % (
+            list(_map.keys())))
+
     if isinstance(object, dict):  # internal swh representation resolution
         _hash = object[o['key_id']]
     else:  # client passed direct identifier (bytes/str)
         _hash = object
+    validate_sha1(_hash)  # can raise if invalid hash
     _hash = hash_to_hex(_hash)
     return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
 

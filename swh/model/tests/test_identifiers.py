@@ -11,6 +11,7 @@ from nose.tools import istest
 
 from swh.model import hashutil, identifiers
 
+from swh.model.exceptions import ValidationError
 from swh.model.identifiers import SNAPSHOT, RELEASE, REVISION, DIRECTORY
 from swh.model.identifiers import CONTENT
 
@@ -815,6 +816,18 @@ class SnapshotIdentifier(unittest.TestCase):
                     full_type, _hash)
 
             self.assertEquals(actual_value, expected_persistent_id)
+
+    def test_persistent_identifier_wrong_input(self):
+        _snapshot_id = 'notahash4bc0bf3d81436bf980b46e98bd338453'
+        _snapshot = {'id': _snapshot_id}
+
+        for _type, _hash, _error in [
+                (SNAPSHOT, _snapshot_id, 'Unexpected characters'),
+                (SNAPSHOT, _snapshot, 'Unexpected characters'),
+                ('foo', '', 'Wrong input: Supported types are'),
+        ]:
+            with self.assertRaisesRegex(ValidationError, _error):
+                identifiers.persistent_identifier(_type, _hash)
 
     def test_parse_persistent_identifier(self):
         for pid, _type, _version, _hash in [
