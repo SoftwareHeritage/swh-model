@@ -605,7 +605,8 @@ def persistent_identifier(type, object, version=1):
 
     Args:
         type (str): Object's type
-        object (dict): Object's dict representation
+        object (dict/bytes/str): Object's dict representation or object
+                                 identifier
         version (int): persistent identifier version (default to 1)
 
     Returns:
@@ -635,7 +636,11 @@ def persistent_identifier(type, object, version=1):
         },
     }
     o = _map[type]
-    _hash = hash_to_hex(object[o['key_id']])
+    if isinstance(object, dict):  # internal swh representation resolution
+        _hash = object[o['key_id']]
+    else:  # client passed direct identifier (bytes/str)
+        _hash = object
+    _hash = hash_to_hex(_hash)
     return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
 
 
