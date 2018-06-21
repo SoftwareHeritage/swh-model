@@ -8,8 +8,8 @@ import os
 import sys
 
 from swh.model import identifiers as pids
+from swh.model.exceptions import ValidationError
 from swh.model.from_disk import Content, Directory
-from swh.model.identifiers import SWHMalformedIdentifierException
 
 
 class PidParamType(click.ParamType):
@@ -19,7 +19,7 @@ class PidParamType(click.ParamType):
         try:
             pids.parse_persistent_identifier(value)
             return value  # return as string, as we need just that
-        except SWHMalformedIdentifierException as e:
+        except ValidationError as e:
             self.fail('%s is not a valid PID. %s.' % (value, e), param, ctx)
 
 

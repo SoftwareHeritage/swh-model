@@ -13,7 +13,7 @@ from swh.model import hashutil, identifiers
 
 from swh.model.exceptions import ValidationError
 from swh.model.identifiers import SNAPSHOT, RELEASE, REVISION, DIRECTORY
-from swh.model.identifiers import CONTENT
+from swh.model.identifiers import CONTENT, PERSISTENT_IDENTIFIER_TYPES
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -876,8 +876,6 @@ class SnapshotIdentifier(unittest.TestCase):
             self.assertEquals(actual_result, expected_result)
 
     def test_parse_persistent_identifier_parsing_error(self):
-        from swh.model.identifiers import (SWHMalformedIdentifierException,
-                                           PERSISTENT_IDENTIFIER_TYPES)
         for pid, _error in [
                 ('swh:1:cnt',
                  'Wrong format: There should be 4 mandatory parameters'),
@@ -903,5 +901,5 @@ class SnapshotIdentifier(unittest.TestCase):
                  'Wrong format: Identifier should be a valid hash')
         ]:
             with self.assertRaisesRegex(
-                    SWHMalformedIdentifierException, _error):
+                    ValidationError, _error):
                 identifiers.parse_persistent_identifier(pid)

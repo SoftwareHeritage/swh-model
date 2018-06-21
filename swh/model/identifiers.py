@@ -663,18 +663,21 @@ PERSISTENT_IDENTIFIER_KEYS = [
 PERSISTENT_IDENTIFIER_PARTS_SEP = ';'
 
 
-class SWHMalformedIdentifierException(ValueError):
-    """Exception when a string representing an identifier is badly formatted.
-
-    """
-    pass
-
-
 def parse_persistent_identifier(persistent_id):
     """Parse swh's :ref:`persistent-identifiers` scheme.
 
     Args:
         persistent_id (str): A persistent identifier
+
+    Raises:
+        ValidationError (class) in case of:
+
+            missing mandatory values (4)
+            invalid namespace supplied
+            invalid version supplied
+            invalid type supplied
+            missing hash
+            invalid hash identifier supplied
 
     Returns:
         dict: dict with keys :
@@ -691,33 +694,33 @@ def parse_persistent_identifier(persistent_id):
     pid_data = persistent_id_parts.pop(0).split(':')
 
     if len(pid_data) != 4:
-        raise SWHMalformedIdentifierException(
+        raise ValidationError(
             'Wrong format: There should be 4 mandatory parameters')
 
     # Checking for parsing errors
     _ns, _version, _type, _id = pid_data
     if _ns != 'swh':
-        raise SWHMalformedIdentifierException(
+        raise ValidationError(
             'Wrong format: Supported namespace is \'swh\'')
 
     if _version != '1':
-        raise SWHMalformedIdentifierException(
+        raise ValidationError(
             'Wrong format: Supported version is 1')
 
     expected_types = PERSISTENT_IDENTIFIER_TYPES
     if _type not in expected_types:
-        raise SWHMalformedIdentifierException(
+        raise ValidationError(
             'Wrong format: Supported types are %s' % (
                 ', '.join(expected_types)))
 
     if not _id:
-        raise SWHMalformedIdentifierException(
+        raise ValidationError(
             'Wrong format: Identifier should be present')
 
     try:
         validate_sha1(_id)
     except ValidationError:
-        raise SWHMalformedIdentifierException(
+        raise ValidationError(
            'Wrong format: Identifier should be a valid hash')
 
     persistent_id_metadata = {}
@@ -727,6 +730,6 @@ def parse_persistent_identifier(persistent_id):
             persistent_id_metadata[key] = val
         except Exception:
             msg = 'Contextual data is badly formatted, form key=val expected'
-            raise SWHMalformedIdentifierException(msg)
+            raise ValidationError(msg)
     pid_data.append(persistent_id_metadata)
     return dict(zip(PERSISTENT_IDENTIFIER_KEYS, pid_data))
