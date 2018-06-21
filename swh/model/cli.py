@@ -9,6 +9,7 @@ import sys
 
 from swh.model import identifiers as pids
 from swh.model.from_disk import Content, Directory
+from swh.model.identifiers import SWHMalformedIdentifierException
 
 
 class PidParamType(click.ParamType):
@@ -16,12 +17,10 @@ class PidParamType(click.ParamType):
 
     def convert(self, value, param, ctx):
         try:
-            _parsed_pid = pids.parse_persistent_identifier(value)  # noqa
+            pids.parse_persistent_identifier(value)
             return value  # return as string, as we need just that
-        except Exception:
-            # TODO catch more specific parsing exception. Requires
-            # https://forge.softwareheritage.org/T1104 to be addressed first.
-            self.fail('%s is not a valid PID' % value, param, ctx)
+        except SWHMalformedIdentifierException as e:
+            self.fail('%s is not a valid PID. %s.' % (value, e), param, ctx)
 
 
 def pid_of_file(path):
