@@ -8,12 +8,14 @@ import tempfile
 import unittest
 
 from click.testing import CliRunner
+from nose.plugins.attrib import attr
 
 from swh.model import cli
 from swh.model.tests.test_from_disk import DataMixin
 from swh.model.hashutil import hash_to_hex
 
 
+@attr('fs')
 class TestIdentify(DataMixin, unittest.TestCase):
 
     def setUp(self):
