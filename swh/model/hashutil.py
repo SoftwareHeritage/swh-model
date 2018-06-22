@@ -43,15 +43,61 @@ Subset of :const:`ALGORITHMS`.
 HASH_BLOCK_SIZE = 32768
 """Block size for streaming hash computations made in this module"""
 
-# Load blake2 hashes from pyblake2 if they are not available in the builtin
-# hashlib
-__pyblake2_hashes = {'blake2s256': 'blake2s',
-                     'blake2b512': 'blake2b'}
-__cache = hashlib.__builtin_constructor_cache
-for __hash, __pyblake2_fn in __pyblake2_hashes.items():
-    if __hash not in hashlib.algorithms_available:
-        import pyblake2
-        __cache[__hash] = getattr(pyblake2, __pyblake2_fn)
+_blake2_hash_cache = {}
+
+
+def _new_blake2_hash(algo):
+    """Return a function that initializes a blake2 hash.
+
+    """
+    if algo in _blake2_hash_cache:
+        return _blake2_hash_cache[algo]()
+
+    lalgo = algo.lower()
+    if not lalgo.startswith('blake2'):
+        raise ValueError('Algorithm %s is not a blake2 hash' % algo)
+
+    blake_family = lalgo[:7]
+
+    digest_size = None
+    if lalgo[7:]:
+        try:
+            digest_size, remainder = divmod(int(lalgo[7:]), 8)
+        except ValueError:
+            raise ValueError(
+                'Unknown digest size for algo %s' % algo
+            ) from None
+        if remainder:
+            raise ValueError(
+                'Digest size for algorithm %s must be a multiple of 8' % algo
+            )
+
+    if lalgo in hashlib.algorithms_available:
+        # Handle the case where OpenSSL ships the given algorithm
+        # (e.g. Python 3.5 on Debian 9 stretch)
+        _blake2_hash_cache[algo] = lambda: hashlib.new(lalgo)
+    else:
+        # Try using the built-in implementation for Python 3.6+
+        if blake_family in hashlib.algorithms_available:
+            blake2 = getattr(hashlib, blake_family)
+        else:
+            import pyblake2
+            blake2 = getattr(pyblake2, blake_family)
+
+        _blake2_hash_cache[algo] = lambda: blake2(digest_size=digest_size)
+
+    return _blake2_hash_cache[algo]()
+
+
+def _new_hashlib_hash(algo):
+    """Initialize a digest object from hashlib.
+
+    Handle the swh-specific names for the blake2-related algorithms
+    """
+    if algo.startswith('blake2'):
+        return _new_blake2_hash(algo)
+    else:
+        return hashlib.new(algo)
 
 
 def _new_git_hash(base_algo, git_type, length):
@@ -75,7 +121,7 @@ def _new_git_hash(base_algo, git_type, length):
         a hashutil.hash object
     """
 
-    h = hashlib.new(base_algo)
+    h = _new_hashlib_hash(base_algo)
     git_header = '%s %d\0' % (git_type, length)
     h.update(git_header.encode('ascii'))
 
@@ -113,7 +159,7 @@ def _new_hash(algo, length=None):
         base_algo = algo[:-4]
         return _new_git_hash(base_algo, 'blob', length)
 
-    return hashlib.new(algo)
+    return _new_hashlib_hash(algo)
 
 
 def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):

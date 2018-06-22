@@ -7,6 +7,8 @@ import binascii
 import datetime
 from functools import lru_cache
 
+from .exceptions import ValidationError
+from .fields.hashes import validate_sha1
 from .hashutil import hash_data, hash_git_data, DEFAULT_ALGORITHMS
 from .hashutil import hash_to_hex
 
@@ -603,8 +605,15 @@ def persistent_identifier(type, object, version=1):
 
     Args:
         type (str): Object's type
-        object (str): Object's dict representation
+        object (dict/bytes/str): Object's dict representation or object
+                                 identifier
         version (int): persistent identifier version (default to 1)
+
+    Raises:
+        ValidationError (class) in case of:
+
+            invalid type
+            invalid hash object
 
     Returns:
         Persistent identifier as string.
@@ -632,10 +641,21 @@ def persistent_identifier(type, object, version=1):
             'key_id': 'sha1_git'
         },
     }
-    o = _map[type]
-    _hash = hash_to_hex(object[o['key_id']])
+    o = _map.get(type)
+    if not o:
+        raise ValidationError('Wrong input: Supported types are %s' % (
+            list(_map.keys())))
+
+    if isinstance(object, dict):  # internal swh representation resolution
+        _hash = object[o['key_id']]
+    else:  # client passed direct identifier (bytes/str)
+        _hash = object
+    validate_sha1(_hash)  # can raise if invalid hash
+    _hash = hash_to_hex(_hash)
     return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
 
+
+PERSISTENT_IDENTIFIER_TYPES = ['snp', 'rel', 'rev', 'dir', 'cnt']
 
 PERSISTENT_IDENTIFIER_KEYS = [
     'namespace', 'scheme_version', 'object_type', 'object_id', 'metadata']
@@ -649,6 +669,16 @@ def parse_persistent_identifier(persistent_id):
     Args:
         persistent_id (str): A persistent identifier
 
+    Raises:
+        ValidationError (class) in case of:
+
+            missing mandatory values (4)
+            invalid namespace supplied
+            invalid version supplied
+            invalid type supplied
+            missing hash
+            invalid hash identifier supplied
+
     Returns:
         dict: dict with keys :
 
@@ -659,14 +689,47 @@ def parse_persistent_identifier(persistent_id):
             * metadata, holding dict value
 
     """
+    # <pid>;<contextual-information>
     persistent_id_parts = persistent_id.split(PERSISTENT_IDENTIFIER_PARTS_SEP)
-    data = persistent_id_parts.pop(0).split(':')
+    pid_data = persistent_id_parts.pop(0).split(':')
+
+    if len(pid_data) != 4:
+        raise ValidationError(
+            'Wrong format: There should be 4 mandatory parameters')
+
+    # Checking for parsing errors
+    _ns, _version, _type, _id = pid_data
+    if _ns != 'swh':
+        raise ValidationError(
+            'Wrong format: Supported namespace is \'swh\'')
+
+    if _version != '1':
+        raise ValidationError(
+            'Wrong format: Supported version is 1')
+
+    expected_types = PERSISTENT_IDENTIFIER_TYPES
+    if _type not in expected_types:
+        raise ValidationError(
+            'Wrong format: Supported types are %s' % (
+                ', '.join(expected_types)))
+
+    if not _id:
+        raise ValidationError(
+            'Wrong format: Identifier should be present')
+
+    try:
+        validate_sha1(_id)
+    except ValidationError:
+        raise ValidationError(
+           'Wrong format: Identifier should be a valid hash')
+
     persistent_id_metadata = {}
     for part in persistent_id_parts:
         try:
             key, val = part.split('=')
             persistent_id_metadata[key] = val
         except Exception:
-            pass
-    data.append(persistent_id_metadata)
-    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, data))
+            msg = 'Contextual data is badly formatted, form key=val expected'
+            raise ValidationError(msg)
+    pid_data.append(persistent_id_metadata)
+    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, pid_data))

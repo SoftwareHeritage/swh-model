@@ -47,8 +47,8 @@ entry point of the grammar:
     | "cnt"  (* content *)
     ;
   <object_id> ::= 40 * <hex_digit> ;  (* intrinsic object id, as hex-encoded SHA1 *)
-  <hex_digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-                | "a" | "b" | "c" | "d" | "e" | "f" ;
+  <dec_digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  <hex_digit> ::= <dec_digit> | "a" | "b" | "c" | "d" | "e" | "f" ;
 
 
 Semantics
@@ -134,12 +134,60 @@ Resolution
 Persistent identifiers can be resolved using the Software Heritage Web
 application (see :py:mod:`swh.web`).
 
-In particular, the ``/browse/`` endpoint can be given a persistent identifier
-and will lead to the browsing page of the corresponding object, like this:
-``https://archive.softwareheritage.org/browse/<identifier>``. For example:
+In particular, the root endpoint ``/`` can be given a persistent identifier and
+will lead to the browsing page of the corresponding object, like this:
+``https://archive.softwareheritage.org/<identifier>``. For example:
 
-* `<https://archive.softwareheritage.org/browse/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
-* `<https://archive.softwareheritage.org/browse/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
+* `<https://archive.softwareheritage.org/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
+* `<https://archive.softwareheritage.org/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
+* `<https://archive.softwareheritage.org/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
+* `<https://archive.softwareheritage.org/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
+* `<https://archive.softwareheritage.org/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
+
+
+Contextual information
+======================
+
+It is often useful to complement persistent identifiers with **contextual
+information** about where the identified object has been found as well as which
+specific parts of it are of interest. To that end it is possible, via a
+dedicated syntax, to extend persistent identifiers with the following pieces of
+information:
+
+* the **software origin** where an object has been found/observed
+* the **line number(s)** of interest, usually within a content object
+
+
+Syntax
+------
+
+The full-syntax to complement identifiers with contextual information is given
+by the ``<identifier_with_context>`` entry point of the grammar:
+
+.. code-block:: bnf
+
+  <identifier_with_context> ::= <identifier> [<lines_ctxt>] [<origin_ctxt>]
+  <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
+  <origin_ctxt> ::= ";" "origin" "=" <url>
+  <line_number> ::= <dec_digit> +
+  <url> ::= (* RFC 3986 compliant URLs *)
+
+
+Semantics
+---------
+
+``;`` is used as separator between persistent identifiers and additional
+optional contextual information. Each piece of contextual information is
+specified as a key/value pair, using ``=`` as a separator.
+
+The following piece of contextual information are supported:
+
+* line numbers: it is possible to specify a single line number or a line range,
+  separating two numbers with ``-``. Note that line numbers are purely
+  indicative and are not meant to be stable, as in some degenerate cases
+  (e.g., text files which mix different types of line terminators) it is
+  impossible to resolve them unambiguously.
+
+* software origin: where a given object has been found or observed in the wild,
+  as the URI that was used by Software Heritage to ingest the object into the
+  archive
