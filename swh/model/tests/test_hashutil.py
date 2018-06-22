@@ -3,6 +3,7 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import hashlib
 import io
 import os
 import tempfile
@@ -16,6 +17,9 @@ from swh.model import hashutil
 
 class Hashutil(unittest.TestCase):
     def setUp(self):
+        # Reset function cache
+        hashutil._blake2_hash_cache = {}
+
         self.data = b'1984\n'
         self.hex_checksums = {
             'sha1': '62be35bf00ff0c624f4a621e2ea5595a049e0731',
@@ -150,25 +154,103 @@ class Hashutil(unittest.TestCase):
                               'expected one of blake2b512, blake2s256, '
                               'sha1, sha1_git, sha256')
 
-    @patch('swh.model.hashutil.hashlib')
+    @patch('hashlib.new')
     @istest
-    def new_hash_blake2b(self, mock_hashlib):
-        mock_hashlib.new.return_value = 'some-hashlib-object'
+    def new_hash_blake2b_blake2b512_builtin(self, mock_hashlib_new):
+        if 'blake2b512' not in hashlib.algorithms_available:
+            self.skipTest('blake2b512 not built-in')
+        mock_hashlib_new.return_value = sentinel = object()
 
         h = hashutil._new_hash('blake2b512')
 
-        self.assertEquals(h, 'some-hashlib-object')
-        mock_hashlib.new.assert_called_with('blake2b512')
+        self.assertIs(h, sentinel)
+        mock_hashlib_new.assert_called_with('blake2b512')
 
-    @patch('swh.model.hashutil.hashlib')
+    @patch('hashlib.new')
     @istest
-    def new_hash_blake2s(self, mock_hashlib):
-        mock_hashlib.new.return_value = 'some-hashlib-object'
+    def new_hash_blake2s_blake2s256_builtin(self, mock_hashlib_new):
+        if 'blake2s256' not in hashlib.algorithms_available:
+            self.skipTest('blake2s256 not built-in')
+        mock_hashlib_new.return_value = sentinel = object()
 
         h = hashutil._new_hash('blake2s256')
 
-        self.assertEquals(h, 'some-hashlib-object')
-        mock_hashlib.new.assert_called_with('blake2s256')
+        self.assertIs(h, sentinel)
+        mock_hashlib_new.assert_called_with('blake2s256')
+
+    @istest
+    def new_hash_blake2b_builtin(self):
+        removed_hash = False
+
+        try:
+            if 'blake2b512' in hashlib.algorithms_available:
+                removed_hash = True
+                hashlib.algorithms_available.remove('blake2b512')
+            if 'blake2b' not in hashlib.algorithms_available:
+                self.skipTest('blake2b not built in')
+
+            with patch('hashlib.blake2b') as mock_blake2b:
+                mock_blake2b.return_value = sentinel = object()
+
+                h = hashutil._new_hash('blake2b512')
+
+                self.assertIs(h, sentinel)
+                mock_blake2b.assert_called_with(digest_size=512//8)
+        finally:
+            if removed_hash:
+                hashlib.algorithms_available.add('blake2b512')
+
+    @istest
+    def new_hash_blake2s_builtin(self):
+        removed_hash = False
+
+        try:
+            if 'blake2s256' in hashlib.algorithms_available:
+                removed_hash = True
+                hashlib.algorithms_available.remove('blake2s256')
+            if 'blake2s' not in hashlib.algorithms_available:
+                self.skipTest('blake2s not built in')
+
+            with patch('hashlib.blake2s') as mock_blake2s:
+                mock_blake2s.return_value = sentinel = object()
+
+                h = hashutil._new_hash('blake2s256')
+
+                self.assertIs(h, sentinel)
+                mock_blake2s.assert_called_with(digest_size=256//8)
+        finally:
+            if removed_hash:
+                hashlib.algorithms_available.add('blake2s256')
+
+    @istest
+    def new_hash_blake2b_pyblake2(self):
+        if 'blake2b512' in hashlib.algorithms_available:
+            self.skipTest('blake2b512 built in')
+        if 'blake2b' in hashlib.algorithms_available:
+            self.skipTest('blake2b built in')
+
+        with patch('pyblake2.blake2b') as mock_blake2b:
+            mock_blake2b.return_value = sentinel = object()
+
+            h = hashutil._new_hash('blake2b512')
+
+            self.assertIs(h, sentinel)
+            mock_blake2b.assert_called_with(digest_size=512//8)
+
+    @istest
+    def new_hash_blake2s_pyblake2(self):
+        if 'blake2s256' in hashlib.algorithms_available:
+            self.skipTest('blake2s256 built in')
+        if 'blake2s' in hashlib.algorithms_available:
+            self.skipTest('blake2s built in')
+
+        with patch('pyblake2.blake2s') as mock_blake2s:
+            mock_blake2s.return_value = sentinel = object()
+
+            h = hashutil._new_hash('blake2s256')
+
+            self.assertIs(h, sentinel)
+            mock_blake2s.assert_called_with(digest_size=256//8)
 
 
 class HashlibGit(unittest.TestCase):

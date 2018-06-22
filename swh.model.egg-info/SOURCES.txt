@@ -4,13 +4,11 @@ LICENSE
 MANIFEST.in
 Makefile
 Makefile.local
-README-dev.md
 requirements-swh.txt
 requirements.txt
 setup.py
 version.txt
 bin/git-revhash
-bin/swh-hash-file
 bin/swh-revhash
 debian/changelog
 debian/compat
@@ -33,9 +31,11 @@ swh/__init__.py
 swh.model.egg-info/PKG-INFO
 swh.model.egg-info/SOURCES.txt
 swh.model.egg-info/dependency_links.txt
+swh.model.egg-info/entry_points.txt
 swh.model.egg-info/requires.txt
 swh.model.egg-info/top_level.txt
 swh/model/__init__.py
+swh/model/cli.py
 swh/model/exceptions.py
 swh/model/from_disk.py
 swh/model/hashutil.py
@@ -49,6 +49,7 @@ swh/model/fields/hashes.py
 swh/model/fields/simple.py
 swh/model/tests/__init__.py
 swh/model/tests/generate_testdata_from_disk.py
+swh/model/tests/test_cli.py
 swh/model/tests/test_from_disk.py
 swh/model/tests/test_hashutil.py
 swh/model/tests/test_identifiers.py
