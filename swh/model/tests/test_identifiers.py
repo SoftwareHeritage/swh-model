@@ -11,8 +11,9 @@ from nose.tools import istest
 
 from swh.model import hashutil, identifiers
 
+from swh.model.exceptions import ValidationError
 from swh.model.identifiers import SNAPSHOT, RELEASE, REVISION, DIRECTORY
-from swh.model.identifiers import CONTENT
+from swh.model.identifiers import CONTENT, PERSISTENT_IDENTIFIER_TYPES
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -773,13 +774,29 @@ class SnapshotIdentifier(unittest.TestCase):
         )
 
     def test_persistent_identifier(self):
-        _snapshot = {'id': hashutil.hash_to_bytes(
-                    'c7c108084bc0bf3d81436bf980b46e98bd338453')}
-        _release = {'id': '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'}
-        _revision = {'id': '309cf2674ee7a0749978cf8265ab91a60aea0f7d'}
-        _directory = {'id': 'd198bc9d7a6bcf6db04f476d29314f157507d505'}
-        _content = {'sha1_git': '94a9ed024d3859793618152ea559a168bbcbb5e2'}
+        _snapshot_id = hashutil.hash_to_bytes(
+                    'c7c108084bc0bf3d81436bf980b46e98bd338453')
+        _release_id = '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'
+        _revision_id = '309cf2674ee7a0749978cf8265ab91a60aea0f7d'
+        _directory_id = 'd198bc9d7a6bcf6db04f476d29314f157507d505'
+        _content_id = '94a9ed024d3859793618152ea559a168bbcbb5e2'
+        _snapshot = {'id': _snapshot_id}
+        _release = {'id': _release_id}
+        _revision = {'id': _revision_id}
+        _directory = {'id': _directory_id}
+        _content = {'sha1_git': _content_id}
+
         for full_type, _hash, expected_persistent_id, version in [
+                (SNAPSHOT, _snapshot_id,
+                 'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', None),
+                (RELEASE, _release_id,
+                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 2),
+                (REVISION, _revision_id,
+                 'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', None),
+                (DIRECTORY, _directory_id,
+                 'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', None),
+                (CONTENT, _content_id,
+                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 1),
                 (SNAPSHOT, _snapshot,
                  'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', None),
                 (RELEASE, _release,
@@ -789,7 +806,7 @@ class SnapshotIdentifier(unittest.TestCase):
                 (DIRECTORY, _directory,
                  'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', None),
                 (CONTENT, _content,
-                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 1)
+                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 1),
         ]:
             if version:
                 actual_value = identifiers.persistent_identifier(
@@ -800,12 +817,24 @@ class SnapshotIdentifier(unittest.TestCase):
 
             self.assertEquals(actual_value, expected_persistent_id)
 
+    def test_persistent_identifier_wrong_input(self):
+        _snapshot_id = 'notahash4bc0bf3d81436bf980b46e98bd338453'
+        _snapshot = {'id': _snapshot_id}
+
+        for _type, _hash, _error in [
+                (SNAPSHOT, _snapshot_id, 'Unexpected characters'),
+                (SNAPSHOT, _snapshot, 'Unexpected characters'),
+                ('foo', '', 'Wrong input: Supported types are'),
+        ]:
+            with self.assertRaisesRegex(ValidationError, _error):
+                identifiers.persistent_identifier(_type, _hash)
+
     def test_parse_persistent_identifier(self):
         for pid, _type, _version, _hash in [
                 ('swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 'cnt',
                  '1', '94a9ed024d3859793618152ea559a168bbcbb5e2'),
-                ('swh:2:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', 'dir',
-                 '2', 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
+                ('swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', 'dir',
+                 '1', 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
                 ('swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', 'rev',
                  '1', '309cf2674ee7a0749978cf8265ab91a60aea0f7d'),
                 ('swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 'rel',
@@ -834,9 +863,7 @@ class SnapshotIdentifier(unittest.TestCase):
                   'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d',
                  {
                      'origin': 'deb://Debian/packages/linuxdoc-tools'
-                 }),
-                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed', # noqa
-                  'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d', {})
+                 })
         ]:
             expected_result = {
                 'namespace': 'swh',
@@ -847,3 +874,32 @@ class SnapshotIdentifier(unittest.TestCase):
             }
             actual_result = identifiers.parse_persistent_identifier(pid)
             self.assertEquals(actual_result, expected_result)
+
+    def test_parse_persistent_identifier_parsing_error(self):
+        for pid, _error in [
+                ('swh:1:cnt',
+                 'Wrong format: There should be 4 mandatory parameters'),
+                ('swh:1:',
+                 'Wrong format: There should be 4 mandatory parameters'),
+                ('swh:',
+                 'Wrong format: There should be 4 mandatory parameters'),
+                ('swh:1:cnt:',
+                 'Wrong format: Identifier should be present'),
+                ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505',
+                 'Wrong format: Supported namespace is \'swh\''),
+                ('swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505',
+                 'Wrong format: Supported version is 1'),
+                ('swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505',
+                 'Wrong format: Supported types are %s' % (
+                     ', '.join(PERSISTENT_IDENTIFIER_TYPES))),
+                ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;'
+                 'malformed',
+                 'Contextual data is badly formatted, form key=val expected'),
+                ('swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d',
+                 'Wrong format: Identifier should be a valid hash'),
+                ('swh:1:snp:foo',
+                 'Wrong format: Identifier should be a valid hash')
+        ]:
+            with self.assertRaisesRegex(
+                    ValidationError, _error):
+                identifiers.parse_persistent_identifier(pid)
