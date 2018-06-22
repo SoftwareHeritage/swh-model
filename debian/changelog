@@ -1,3 +1,16 @@
+swh-model (0.0.24-1~swh1) unstable-swh; urgency=medium
+
+  * v0.0.24
+  * swh.model.cli: Catch specific exception during identifiers check
+  * identifiers: Validate input
+  * identifiers: Raise when error during parsing persistent identifiers
+  * Update blake2 support to be less Debian-specific
+  * add swh-identify CLI tool to compute persistent identifiers
+  * docs: Update high-level documentation (Merkle DAG description,
+  * contextual information for persistent IDs, etc...)
+
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Fri, 22 Jun 2018 15:38:32 +0200
+
 swh-model (0.0.23-1~swh1) unstable-swh; urgency=medium
 
   * version 0.0.23
