@@ -5,6 +5,8 @@
 
 import binascii
 import datetime
+
+from collections import namedtuple
 from functools import lru_cache
 
 from .exceptions import ValidationError
@@ -64,7 +66,7 @@ def identifier_to_str(identifier):
         The length 40 string corresponding to the given identifier, hex encoded
 
     Raises:
-        ValueError if the identifier is of an unexpected type or length.
+        ValueError: if the identifier is of an unexpected type or length.
     """
 
     if isinstance(identifier, str):
@@ -596,64 +598,28 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
     return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
 
 
-def persistent_identifier(type, object, version=1):
-    """Compute persistent identifier (stable over time) as per
-       documentation.
-
-    Documentation:
-        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
-
-    Args:
-        type (str): Object's type
-        object (dict/bytes/str): Object's dict representation or object
-                                 identifier
-        version (int): persistent identifier version (default to 1)
-
-    Raises:
-        ValidationError (class) in case of:
-
-            invalid type
-            invalid hash object
-
-    Returns:
-        Persistent identifier as string.
-
-    """
-    _map = {
-        SNAPSHOT: {
-            'short_name': 'snp',
-            'key_id': 'id'
-        },
-        RELEASE: {
-            'short_name': 'rel',
-            'key_id': 'id'
-        },
-        REVISION: {
-            'short_name': 'rev',
-            'key_id': 'id'
-        },
-        DIRECTORY: {
-            'short_name': 'dir',
-            'key_id': 'id'
-        },
-        CONTENT: {
-            'short_name': 'cnt',
-            'key_id': 'sha1_git'
-        },
+_object_type_map = {
+    SNAPSHOT: {
+        'short_name': 'snp',
+        'key_id': 'id'
+    },
+    RELEASE: {
+        'short_name': 'rel',
+        'key_id': 'id'
+    },
+    REVISION: {
+        'short_name': 'rev',
+        'key_id': 'id'
+    },
+    DIRECTORY: {
+        'short_name': 'dir',
+        'key_id': 'id'
+    },
+    CONTENT: {
+        'short_name': 'cnt',
+        'key_id': 'sha1_git'
     }
-    o = _map.get(type)
-    if not o:
-        raise ValidationError('Wrong input: Supported types are %s' % (
-            list(_map.keys())))
-
-    if isinstance(object, dict):  # internal swh representation resolution
-        _hash = object[o['key_id']]
-    else:  # client passed direct identifier (bytes/str)
-        _hash = object
-    validate_sha1(_hash)  # can raise if invalid hash
-    _hash = hash_to_hex(_hash)
-    return 'swh:%s:%s:%s' % (version, o['short_name'], _hash)
-
+}
 
 PERSISTENT_IDENTIFIER_TYPES = ['snp', 'rel', 'rev', 'dir', 'cnt']
 
@@ -663,6 +629,92 @@ PERSISTENT_IDENTIFIER_KEYS = [
 PERSISTENT_IDENTIFIER_PARTS_SEP = ';'
 
 
+class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
+    """
+    Named tuple holding the relevant info associated to a Software Heritage
+    persistent identifier.
+
+    Args:
+        namespace (str): the namespace of the identifier, defaults to 'swh'
+        scheme_version (int): the scheme version of the identifier,
+            defaults to 1
+        object_type (str): the type of object the identifier points to,
+            either 'content', 'directory', 'release', 'revision' or 'snapshot'
+        object_id (dict/bytes/str): object's dict representation or
+            object identifier
+        metadata (dict): optional dict filled with metadata related to
+            pointed object
+
+    Raises:
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
+
+    Once created, it contains the following attributes:
+
+    Attributes:
+        namespace (str): the namespace of the identifier
+        scheme_version (int): the scheme version of the identifier
+        object_type (str): the type of object the identifier points to
+        object_id (str): hexadecimal representation of the object hash
+        metadata (dict): metadata related to the pointed object
+
+    To get the raw persistent identifier string from an instance of
+    this named tuple, use the :func:`str` function::
+
+        pid = PersistentId(object_type='content', object_id='8ff44f081d43176474b267de5451f2c2e88089d0')
+        pid_str = str(pid) # 'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
+    """ # noqa
+    __slots__ = ()
+
+    def __new__(cls, namespace='swh', scheme_version=1,
+                object_type='', object_id='', metadata={}):
+        o = _object_type_map.get(object_type)
+        if not o:
+            raise ValidationError('Wrong input: Supported types are %s' % (
+                list(_object_type_map.keys())))
+        # internal swh representation resolution
+        if isinstance(object_id, dict):
+            object_id = object_id[o['key_id']]
+        validate_sha1(object_id)  # can raise if invalid hash
+        object_id = hash_to_hex(object_id)
+        return super(cls, PersistentId).__new__(
+            cls, namespace, scheme_version, object_type, object_id, metadata)
+
+    def __str__(self):
+        o = _object_type_map.get(self.object_type)
+        pid = '%s:%s:%s:%s' % (self.namespace, self.scheme_version,
+                               o['short_name'], self.object_id)
+        if self.metadata:
+            for k, v in self.metadata.items():
+                pid += '%s%s=%s' % (PERSISTENT_IDENTIFIER_PARTS_SEP, k, v)
+        return pid
+
+
+def persistent_identifier(object_type, object_id, scheme_version=1):
+    """Compute persistent identifier (stable over time) as per
+       documentation.
+
+    Documentation:
+        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html
+
+    Args:
+        object_type (str): object's type, either 'content', 'directory', 'release',
+            'revision' or 'snapshot'
+        object_id (dict/bytes/str): object's dict representation or object
+            identifier
+        scheme_version (int): persistent identifier scheme version, defaults to 1
+
+    Raises:
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
+
+    Returns:
+        str: the persistent identifier
+
+    """ # noqa
+    pid = PersistentId(scheme_version=scheme_version, object_type=object_type,
+                       object_id=object_id)
+    return str(pid)
+
+
 def parse_persistent_identifier(persistent_id):
     """Parse swh's :ref:`persistent-identifiers` scheme.
 
@@ -670,23 +722,17 @@ def parse_persistent_identifier(persistent_id):
         persistent_id (str): A persistent identifier
 
     Raises:
-        ValidationError (class) in case of:
+        swh.model.exceptions.ValidationError: in case of:
 
-            missing mandatory values (4)
-            invalid namespace supplied
-            invalid version supplied
-            invalid type supplied
-            missing hash
-            invalid hash identifier supplied
+            * missing mandatory values (4)
+            * invalid namespace supplied
+            * invalid version supplied
+            * invalid type supplied
+            * missing hash
+            * invalid hash identifier supplied
 
     Returns:
-        dict: dict with keys :
-
-            * namespace, holding str value
-            * scheme_version, holding str value
-            * object_type, holding str value
-            * object_id, holding str value
-            * metadata, holding dict value
+        PersistentId: a named tuple holding the parsing result
 
     """
     # <pid>;<contextual-information>
@@ -695,7 +741,7 @@ def parse_persistent_identifier(persistent_id):
 
     if len(pid_data) != 4:
         raise ValidationError(
-            'Wrong format: There should be 4 mandatory parameters')
+            'Wrong format: There should be 4 mandatory values')
 
     # Checking for parsing errors
     _ns, _version, _type, _id = pid_data
@@ -707,11 +753,18 @@ def parse_persistent_identifier(persistent_id):
         raise ValidationError(
             'Wrong format: Supported version is 1')
 
+    pid_data[1] = int(pid_data[1])
+
     expected_types = PERSISTENT_IDENTIFIER_TYPES
     if _type not in expected_types:
         raise ValidationError(
             'Wrong format: Supported types are %s' % (
                 ', '.join(expected_types)))
+
+    for otype, data in _object_type_map.items():
+        if _type == data['short_name']:
+            pid_data[2] = otype
+            break
 
     if not _id:
         raise ValidationError(
@@ -732,4 +785,4 @@ def parse_persistent_identifier(persistent_id):
             msg = 'Contextual data is badly formatted, form key=val expected'
             raise ValidationError(msg)
     pid_data.append(persistent_id_metadata)
-    return dict(zip(PERSISTENT_IDENTIFIER_KEYS, pid_data))
+    return PersistentId._make(pid_data)

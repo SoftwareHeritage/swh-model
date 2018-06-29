@@ -14,6 +14,7 @@ from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError
 from swh.model.identifiers import SNAPSHOT, RELEASE, REVISION, DIRECTORY
 from swh.model.identifiers import CONTENT, PERSISTENT_IDENTIFIER_TYPES
+from swh.model.identifiers import PersistentId
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -831,58 +832,58 @@ class SnapshotIdentifier(unittest.TestCase):
 
     def test_parse_persistent_identifier(self):
         for pid, _type, _version, _hash in [
-                ('swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 'cnt',
-                 '1', '94a9ed024d3859793618152ea559a168bbcbb5e2'),
-                ('swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', 'dir',
-                 '1', 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
-                ('swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', 'rev',
-                 '1', '309cf2674ee7a0749978cf8265ab91a60aea0f7d'),
-                ('swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 'rel',
-                 '1', '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'),
-                ('swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', 'snp',
-                 '1', 'c7c108084bc0bf3d81436bf980b46e98bd338453'),
+                ('swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2',
+                 CONTENT, 1, '94a9ed024d3859793618152ea559a168bbcbb5e2'),
+                ('swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505',
+                 DIRECTORY, 1, 'd198bc9d7a6bcf6db04f476d29314f157507d505'),
+                ('swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d',
+                 REVISION, 1, '309cf2674ee7a0749978cf8265ab91a60aea0f7d'),
+                ('swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
+                 RELEASE, 1, '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'),
+                ('swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453',
+                 SNAPSHOT, 1, 'c7c108084bc0bf3d81436bf980b46e98bd338453'),
         ]:
-            expected_result = {
-                'namespace': 'swh',
-                'scheme_version': _version,
-                'object_type': _type,
-                'object_id': _hash,
-                'metadata': {}
-            }
+            expected_result = PersistentId(
+                namespace='swh',
+                scheme_version=_version,
+                object_type=_type,
+                object_id=_hash,
+                metadata={}
+            )
             actual_result = identifiers.parse_persistent_identifier(pid)
             self.assertEquals(actual_result, expected_result)
 
         for pid, _type, _version, _hash, _metadata in [
                 ('swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython', # noqa
-                 'cnt', '1', '9c95815d9e9d91b8dae8e05d8bbc696fe19f796b',
+                 CONTENT, 1, '9c95815d9e9d91b8dae8e05d8bbc696fe19f796b',
                  {
                      'lines': '1-18',
                      'origin': 'https://github.com/python/cpython'
                  }),
                  ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=deb://Debian/packages/linuxdoc-tools', # noqa
-                  'dir', '1', '0b6959356d30f1a4e9b7f6bca59b9a336464c03d',
+                  DIRECTORY, 1, '0b6959356d30f1a4e9b7f6bca59b9a336464c03d',
                  {
                      'origin': 'deb://Debian/packages/linuxdoc-tools'
                  })
         ]:
-            expected_result = {
-                'namespace': 'swh',
-                'scheme_version': _version,
-                'object_type': _type,
-                'object_id': _hash,
-                'metadata': _metadata
-            }
+            expected_result = PersistentId(
+                namespace='swh',
+                scheme_version=_version,
+                object_type=_type,
+                object_id=_hash,
+                metadata=_metadata
+            )
             actual_result = identifiers.parse_persistent_identifier(pid)
             self.assertEquals(actual_result, expected_result)
 
     def test_parse_persistent_identifier_parsing_error(self):
         for pid, _error in [
                 ('swh:1:cnt',
-                 'Wrong format: There should be 4 mandatory parameters'),
+                 'Wrong format: There should be 4 mandatory values'),
                 ('swh:1:',
-                 'Wrong format: There should be 4 mandatory parameters'),
+                 'Wrong format: There should be 4 mandatory values'),
                 ('swh:',
-                 'Wrong format: There should be 4 mandatory parameters'),
+                 'Wrong format: There should be 4 mandatory values'),
                 ('swh:1:cnt:',
                  'Wrong format: Identifier should be present'),
                 ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505',
