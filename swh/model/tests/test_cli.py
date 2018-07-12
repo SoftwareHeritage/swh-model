@@ -23,6 +23,30 @@ class TestIdentify(DataMixin, unittest.TestCase):
         self.runner = CliRunner()
 
     def test_content_id(self):
+        """identify file content"""
+        self.make_contents(self.tmpdir_name)
+        for filename, content in self.contents.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            result = self.runner.invoke(cli.identify,
+                                        ['--type', 'content', path])
+
+            self.assertEqual(result.exit_code, 0)
+            self.assertEqual(result.output.split()[0],
+                             'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
+
+    def test_directory_id(self):
+        """identify an entire directory"""
+        self.make_from_tarball(self.tmpdir_name)
+        path = os.path.join(self.tmpdir_name, b'sample-folder')
+        result = self.runner.invoke(cli.identify,
+                                    ['--type', 'directory', path])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.output.split()[0],
+                         'swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759')
+
+    def test_show_filename(self):
+        """filename is shown by default"""
         self.make_contents(self.tmpdir_name)
         for filename, content in self.contents.items():
             path = os.path.join(self.tmpdir_name, filename)
@@ -31,19 +55,24 @@ class TestIdentify(DataMixin, unittest.TestCase):
 
             self.assertEqual(result.exit_code, 0)
             self.assertEqual(result.output.rstrip(),
+                             'swh:1:cnt:%s\t%s' %
+                             (hash_to_hex(content['sha1_git']), path.decode()))
+
+    def test_hide_filename(self):
+        """filename is hidden upon request"""
+        self.make_contents(self.tmpdir_name)
+        for filename, content in self.contents.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            result = self.runner.invoke(cli.identify,
+                                        ['--type', 'content', '--no-filename',
+                                         path])
+
+            self.assertEqual(result.exit_code, 0)
+            self.assertEqual(result.output.rstrip(),
                              'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
 
-    def test_directory_id(self):
-        self.make_from_tarball(self.tmpdir_name)
-        path = os.path.join(self.tmpdir_name, b'sample-folder')
-        result = self.runner.invoke(cli.identify,
-                                    ['--type', 'directory', path])
-
-        self.assertEqual(result.exit_code, 0)
-        self.assertEqual(result.output.rstrip(),
-                         'swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759')
-
     def test_auto_id(self):
+        """automatic object type: file or directory, depending on argument"""
         with tempfile.NamedTemporaryFile(prefix='swh.model.cli') as f:
             result = self.runner.invoke(cli.identify, [f.name])
             self.assertEqual(result.exit_code, 0)
@@ -55,6 +84,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
             self.assertRegex(result.output, r'^swh:\d+:dir:')
 
     def test_verify_content(self):
+        """identifier verification"""
         self.make_contents(self.tmpdir_name)
         for filename, content in self.contents.items():
             expected_id = 'swh:1:cnt:' + hash_to_hex(content['sha1_git'])

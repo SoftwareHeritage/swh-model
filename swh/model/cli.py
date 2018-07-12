@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 import click
+import locale
 import os
 import sys
 
@@ -39,10 +40,12 @@ def pid_of_dir(path):
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
+@click.option('--filename/--no-filename', 'show_filename', default=True,
+              help='show/hide file name (default: show)')
 @click.argument('object',
                 type=click.Path(exists=True, readable=True,
                                 allow_dash=True, path_type=bytes))
-def identify(type, verify, object):
+def identify(type, verify, show_filename, object):
     """Compute the Software Heritage persistent identifier (PID) for a given
     source code object.
 
@@ -88,7 +91,11 @@ def identify(type, verify, object):
             click.echo('PID mismatch: %s != %s' % (verify, pid))
             sys.exit(1)
     else:
-        click.echo(pid)
+        msg = pid
+        if show_filename:
+            encoding = locale.getpreferredencoding(do_setlocale=False)
+            msg = '%s\t%s' % (pid, object.decode(encoding))
+        click.echo(msg)
 
 
 if __name__ == '__main__':
