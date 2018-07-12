@@ -35,7 +35,7 @@ def pid_of_dir(path):
     return pids.persistent_identifier(pids.DIRECTORY, object)
 
 
-def identify_object(obj_type, obj):
+def identify_object(obj_type, follow_symlinks, obj):
     if obj_type == 'auto':
         if os.path.isfile(obj):
             obj_type = 'content'
@@ -44,29 +44,40 @@ def identify_object(obj_type, obj):
         else:  # shouldn't happen, due to path validation
             raise click.BadParameter('%s is neither a file nor a directory' %
                                      obj)
+
+    path = obj
+    if follow_symlinks and os.path.islink(obj):
+        path = os.path.realpath(obj)
+
     pid = None
     if obj_type == 'content':
-        pid = pid_of_file(obj)
+        pid = pid_of_file(path)
     elif obj_type == 'directory':
-        pid = pid_of_dir(obj)
+        pid = pid_of_dir(path)
     else:  # shouldn't happen, due to option validation
         raise click.BadParameter('invalid object type: ' + obj_type)
 
+    # note: we return original obj instead of path here, to preserve user-given
+    # file name in output
     return (obj, pid)
 
 
 @click.command()
+@click.option('--dereference/--no-dereference', 'follow_symlinks',
+              default=True,
+              help='follow (or not) symlinks for OBJECTS passed as arguments '
+              + '(default: follow)')
+@click.option('--filename/--no-filename', 'show_filename', default=True,
+              help='show/hide file name (default: show)')
 @click.option('--type', '-t', 'obj_type', default='auto',
               type=click.Choice(['auto', 'content', 'directory']),
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
-@click.option('--filename/--no-filename', 'show_filename', default=True,
-              help='show/hide file name (default: show)')
 @click.argument('objects', nargs=-1,
                 type=click.Path(exists=True, readable=True,
                                 allow_dash=True, path_type=bytes))
-def identify(obj_type, verify, show_filename, objects):
+def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     """Compute the Software Heritage persistent identifier (PID) for the given
     source code object(s).
 
@@ -92,7 +103,7 @@ def identify(obj_type, verify, show_filename, objects):
     if verify and len(objects) != 1:
         raise click.BadParameter('verification requires a single object')
 
-    results = map(partial(identify_object, obj_type), objects)
+    results = map(partial(identify_object, obj_type, follow_symlinks), objects)
 
     if verify:
         pid = next(results)[1]

@@ -22,6 +22,10 @@ class TestIdentify(DataMixin, unittest.TestCase):
         super().setUp()
         self.runner = CliRunner()
 
+    def assertPidOK(self, result, pid):
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.output.split()[0], pid)
+
     def test_content_id(self):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
@@ -44,6 +48,21 @@ class TestIdentify(DataMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output.split()[0],
                          'swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759')
+
+    def test_symlink(self):
+        """identify symlink --- both itself and target"""
+        regular = os.path.join(self.tmpdir_name, b'foo.txt')
+        link = os.path.join(self.tmpdir_name, b'bar.txt')
+        open(regular, 'w').write('foo\n')
+        os.symlink(os.path.basename(regular), link)
+
+        result = self.runner.invoke(cli.identify, [link])
+        self.assertPidOK(result,
+                         'swh:1:cnt:257cc5642cb1a054f08cc83f2d943e56fd3ebe99')
+
+        result = self.runner.invoke(cli.identify, ['--no-dereference', link])
+        self.assertPidOK(result,
+                         'swh:1:cnt:996f1789ff67c0e3f69ef5933a55d54c5d0e9954')
 
     def test_show_filename(self):
         """filename is shown by default"""
