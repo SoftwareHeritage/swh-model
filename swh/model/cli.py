@@ -4,7 +4,6 @@
 # See top-level LICENSE file for more information
 
 import click
-import locale
 import os
 import sys
 
@@ -107,8 +106,7 @@ def identify(obj_type, verify, show_filename, objects):
         for (obj, pid) in results:
             msg = pid
             if show_filename:
-                encoding = locale.getpreferredencoding(do_setlocale=False)
-                msg = '%s\t%s' % (pid, obj.decode(encoding))
+                msg = '%s\t%s' % (pid, os.fsdecode(obj))
             click.echo(msg)
 
 
