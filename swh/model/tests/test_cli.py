@@ -33,9 +33,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
             path = os.path.join(self.tmpdir_name, filename)
             result = self.runner.invoke(cli.identify,
                                         ['--type', 'content', path])
-
-            self.assertEqual(result.exit_code, 0)
-            self.assertEqual(result.output.split()[0],
+            self.assertPidOK(result,
                              'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
 
     def test_directory_id(self):
@@ -44,9 +42,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         path = os.path.join(self.tmpdir_name, b'sample-folder')
         result = self.runner.invoke(cli.identify,
                                     ['--type', 'directory', path])
-
-        self.assertEqual(result.exit_code, 0)
-        self.assertEqual(result.output.split()[0],
+        self.assertPidOK(result,
                          'swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759')
 
     def test_symlink(self):
@@ -85,9 +81,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
             result = self.runner.invoke(cli.identify,
                                         ['--type', 'content', '--no-filename',
                                          path])
-
-            self.assertEqual(result.exit_code, 0)
-            self.assertEqual(result.output.rstrip(),
+            self.assertPidOK(result,
                              'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
 
     def test_auto_id(self):
