@@ -1,8 +1,14 @@
-swh-model (0.0.25-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.26-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.26
+  * swh.model.identifiers: Open metadata in persistent_identifier method
+  * refactor CLI tests to avoid duplicate assertion pairs
+  * swh-identify: follow symlinks for CLI arguments (by default)
+  * cli.py: prefer os.fsdecode() over manual fiddling with
+    locale.getpref...
+  * swh-identify: add support for passing multiple CLI arguments
 
- -- Antoine Lambert <antoine.lambert@inria.fr>  Fri, 29 Jun 2018 11:49:25 +0200
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Mon, 23 Jul 2018 14:29:54 +0200
 
 swh-model (0.0.25-1~swh1) unstable-swh; urgency=medium
 

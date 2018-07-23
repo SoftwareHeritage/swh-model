@@ -787,34 +787,47 @@ class SnapshotIdentifier(unittest.TestCase):
         _directory = {'id': _directory_id}
         _content = {'sha1_git': _content_id}
 
-        for full_type, _hash, expected_persistent_id, version in [
+        for full_type, _hash, expected_persistent_id, version, _meta in [
                 (SNAPSHOT, _snapshot_id,
-                 'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', None),
+                 'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453',
+                 None, {}),
                 (RELEASE, _release_id,
-                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 2),
+                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
+                 2, {}),
                 (REVISION, _revision_id,
-                 'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', None),
+                 'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d',
+                 None, {}),
                 (DIRECTORY, _directory_id,
-                 'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', None),
+                 'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505',
+                 None, {}),
                 (CONTENT, _content_id,
-                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 1),
+                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2',
+                 1, {}),
                 (SNAPSHOT, _snapshot,
-                 'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453', None),
+                 'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453',
+                 None, {}),
                 (RELEASE, _release,
-                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f', 2),
+                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
+                 2, {}),
                 (REVISION, _revision,
-                 'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d', None),
+                 'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d',
+                 None, {}),
                 (DIRECTORY, _directory,
-                 'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505', None),
+                 'swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505',
+                 None, {}),
                 (CONTENT, _content,
-                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2', 1),
+                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2',
+                 1, {}),
+                (CONTENT, _content,
+                 'swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2;origin=1',
+                 1, {'origin': '1'}),
         ]:
             if version:
                 actual_value = identifiers.persistent_identifier(
-                    full_type, _hash, version)
+                    full_type, _hash, version, metadata=_meta)
             else:
                 actual_value = identifiers.persistent_identifier(
-                    full_type, _hash)
+                    full_type, _hash, metadata=_meta)
 
             self.assertEquals(actual_value, expected_persistent_id)
 

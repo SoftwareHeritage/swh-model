@@ -689,29 +689,33 @@ class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
         return pid
 
 
-def persistent_identifier(object_type, object_id, scheme_version=1):
+def persistent_identifier(object_type, object_id, scheme_version=1,
+                          metadata={}):
     """Compute persistent identifier (stable over time) as per
        documentation.
 
     Documentation:
-        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html
+        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
 
     Args:
-        object_type (str): object's type, either 'content', 'directory', 'release',
-            'revision' or 'snapshot'
+        object_type (str): object's type, either 'content', 'directory',
+            'release', 'revision' or 'snapshot'
         object_id (dict/bytes/str): object's dict representation or object
             identifier
-        scheme_version (int): persistent identifier scheme version, defaults to 1
+        scheme_version (int): persistent identifier scheme version,
+            defaults to 1
+        metadata (dict): metadata related to the pointed object
 
     Raises:
-        swh.model.exceptions.ValidationError: In case of invalid object type or id
+        swh.model.exceptions.ValidationError: In case of invalid object type
+        or id
 
     Returns:
         str: the persistent identifier
 
-    """ # noqa
+    """
     pid = PersistentId(scheme_version=scheme_version, object_type=object_type,
-                       object_id=object_id)
+                       object_id=object_id, metadata=metadata)
     return str(pid)
 
 
