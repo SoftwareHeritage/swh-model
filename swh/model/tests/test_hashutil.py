@@ -96,6 +96,13 @@ class Hashutil(unittest.TestCase):
         self.assertEqual(checksums, self.checksums)
 
     @istest
+    def hash_file_hexdigest(self):
+        fobj = io.BytesIO(self.data)
+        checksums = hashutil.hash_file(fobj, length=len(self.data),
+                                       hexdigest=True)
+        self.assertEqual(checksums, self.hex_checksums)
+
+    @istest
     def hash_file_missing_length(self):
         fobj = io.BytesIO(self.data)
 

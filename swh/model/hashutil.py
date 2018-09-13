@@ -162,7 +162,8 @@ def _new_hash(algo, length=None):
     return _new_hashlib_hash(algo)
 
 
-def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
+def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,
+              hexdigest=False):
     """Hash the contents of the given file object with the given algorithms.
 
     Args:
@@ -171,11 +172,14 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
           git-specific algorithms)
         algorithms: the hashing algorithms to be used, as an iterable over
           strings
+        hexdigest (bool): False returns the hash as binary, otherwise
+                          returns as hex
 
-    Returns: a dict mapping each algorithm to a bytes digest.
+    Returns: a dict mapping each algorithm to a digest (bytes by default).
 
     Raises:
         ValueError if algorithms contains an unknown hash algorithm.
+
     """
     hashes = {algo: _new_hash(algo, length) for algo in algorithms}
 
@@ -188,6 +192,8 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
         if chunk_cb:
             chunk_cb(chunk)
 
+    if hexdigest:
+        return {algo: hash.hexdigest() for algo, hash in hashes.items()}
     return {algo: hash.digest() for algo, hash in hashes.items()}
 
 
@@ -209,7 +215,7 @@ def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
     """
     length = os.path.getsize(path)
     with open(path, 'rb') as fobj:
-        hash = hash_file(fobj, length, algorithms, chunk_cb)
+        hash = hash_file(fobj, length, algorithms, chunk_cb=chunk_cb)
     hash['length'] = length
     return hash
 
