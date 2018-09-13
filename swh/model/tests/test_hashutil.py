@@ -103,6 +103,20 @@ class Hashutil(unittest.TestCase):
         self.assertEqual(checksums, self.hex_checksums)
 
     @istest
+    def hash_stream(self):
+        class StreamStub:
+            def __init__(self, data):
+                self.data = data
+
+            def iter_content(self):
+                yield from io.BytesIO(self.data)
+
+        s = StreamStub(self.data)
+        checksums = hashutil.hash_stream(s, length=len(self.data),
+                                         hexdigest=True)
+        self.assertEqual(checksums, self.hex_checksums)
+
+    @istest
     def hash_file_missing_length(self):
         fobj = io.BytesIO(self.data)
 
