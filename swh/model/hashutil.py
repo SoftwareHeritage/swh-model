@@ -49,6 +49,10 @@ HASH_FORMATS = set(['bytes', 'bytehex', 'hex'])
 """Supported output hash formats
 """
 
+EXTRA_LENGTH = set(['length'])
+"""Extra information to compute
+"""
+
 
 class MultiHash:
     """Hashutil class to support multiple hashes computation.
@@ -78,6 +82,31 @@ class MultiHash:
         ret = cls([])
         ret.state = state
         ret.track_length = track_length
+
+    @classmethod
+    def from_file(cls, file, hash_names=DEFAULT_ALGORITHMS, length=None):
+        ret = cls(length=length, hash_names=hash_names)
+        for chunk in file:
+            ret.update(chunk)
+        return ret
+
+    @classmethod
+    def from_path(cls, path, hash_names=DEFAULT_ALGORITHMS, length=None,
+                  track_length=True):
+        if not length:
+            length = os.path.getsize(path)
+        # For compatibility reason with `hash_path`
+        if track_length:
+            hash_names = hash_names.union(EXTRA_LENGTH)
+        with open(path, 'rb') as f:
+            return cls.from_file(f, hash_names=hash_names, length=length)
+
+    @classmethod
+    def from_data(cls, data, hash_names=DEFAULT_ALGORITHMS, length=None):
+        if not length:
+            length = len(data)
+        fobj = BytesIO(data)
+        return cls.from_file(fobj, hash_names=hash_names, length=length)
 
     def update(self, chunk):
         for name, h in self.state.items():
