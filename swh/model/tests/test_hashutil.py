@@ -148,16 +148,6 @@ class Hashutil(BaseHashutil):
         self.assertIn('unknown-hash', cm.exception.args[0])
 
     @istest
-    def hash_data_unknown_hash_format(self):
-        with self.assertRaises(ValueError) as cm:
-            hashutil.hash_data(
-                self.data, hashutil.DEFAULT_ALGORITHMS,
-                hash_format='unknown-format')
-
-        self.assertIn('Unexpected hash format', cm.exception.args[0])
-        self.assertIn('unknown-format', cm.exception.args[0])
-
-    @istest
     def hash_git_data(self):
         checksums = {
             git_type: hashutil.hash_git_data(self.data, git_type)
@@ -180,20 +170,6 @@ class Hashutil(BaseHashutil):
 
         checksums = hashutil.hash_file(fobj, length=len(self.data))
         self.assertEqual(checksums, self.checksums)
-
-    @istest
-    def hash_file_hexdigest(self):
-        fobj = io.BytesIO(self.data)
-        checksums = hashutil.hash_file(
-            fobj, length=len(self.data), hash_format='hex')
-        self.assertEqual(checksums, self.hex_checksums)
-
-    @istest
-    def hash_file_bytehexdigest(self):
-        fobj = io.BytesIO(self.data)
-        checksums = hashutil.hash_file(
-            fobj, length=len(self.data), hash_format='bytehex')
-        self.assertEqual(checksums, self.bytehex_checksums)
 
     @istest
     def hash_file_missing_length(self):

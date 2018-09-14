@@ -259,8 +259,10 @@ def _new_hash(algo, length=None):
 
 
 def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
-              chunk_cb=None, hash_format='bytes'):
-    """Hash the contents of the given file object with the given algorithms.
+              chunk_cb=None):
+    """(Deprecated) cf. MultiHash.from_file
+
+    Hash the contents of the given file object with the given algorithms.
 
     Args:
         fobj: a file-like object
@@ -280,10 +282,6 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
             hash_format is an unknown hash format
 
     """
-    if hash_format not in HASH_FORMATS:
-        raise ValueError('Unexpected hash format %s, expected one of %s' % (
-            hash_format, HASH_FORMATS))
-
     h = MultiHash(algorithms, length)
     while True:
         chunk = fobj.read(HASH_BLOCK_SIZE)
@@ -293,17 +291,15 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
         if chunk_cb:
             chunk_cb(chunk)
 
-    if hash_format == 'bytes':
-        return h.digest()
-    if hash_format == 'bytehex':
-        return h.bytehexdigest()
-    return h.hexdigest()
+    return h.digest()
 
 
 def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,
-              hash_format='bytes', track_length=True):
-    """Hash the contents of the file at the given path with the given
-       algorithms.
+              track_length=True):
+    """(deprecated) cf. MultiHash.from_path
+
+    Hash the contents of the file at the given path with the given
+    algorithms.
 
     Args:
         path (str): the path of the file to hash
@@ -327,12 +323,13 @@ def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,
         algorithms = set(['length']).union(algorithms)
     length = os.path.getsize(path)
     with open(path, 'rb') as fobj:
-        return hash_file(fobj, length, algorithms, chunk_cb=chunk_cb,
-                         hash_format=hash_format)
+        return hash_file(fobj, length, algorithms, chunk_cb=chunk_cb)
 
 
-def hash_data(data, algorithms=DEFAULT_ALGORITHMS, hash_format='bytes'):
-    """Hash the given binary blob with the given algorithms.
+def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
+    """(deprecated) cf. MultiHash.from_data
+
+    Hash the given binary blob with the given algorithms.
 
     Args:
         data (bytes): raw content to hash
@@ -350,9 +347,7 @@ def hash_data(data, algorithms=DEFAULT_ALGORITHMS, hash_format='bytes'):
             hash_format is an unknown hash format
 
     """
-    fobj = BytesIO(data)
-    length = len(data)
-    return hash_file(fobj, length, algorithms, hash_format=hash_format)
+    return MultiHash.from_data(data, hash_names=algorithms).digest()
 
 
 def hash_git_data(data, git_type, base_algo='sha1'):
