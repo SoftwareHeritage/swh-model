@@ -12,10 +12,6 @@ in a ValueError explaining the error.
 
 This modules defines the following hashing functions:
 
-- hash_stream: Hash the contents of something iterable (file, stream,
-  ...) with the given algorithms (defaulting to DEFAULT_ALGORITHMS if
-  none provided).
-
 - hash_file: Hash the contents of the given file object with the given
   algorithms (defaulting to DEFAULT_ALGORITHMS if none provided).
 
@@ -233,56 +229,6 @@ def _new_hash(algo, length=None):
     return _new_hashlib_hash(algo)
 
 
-def _read(fobj):
-    """Wrapper function around reading a chunk from fobj.
-
-    """
-    return fobj.read(HASH_BLOCK_SIZE)
-
-
-def hash_stream(s, readfn=_read, length=None, algorithms=DEFAULT_ALGORITHMS,
-                chunk_cb=None, hash_format='bytes'):
-    """Hash the contents of a stream
-
-    Args:
-        s: stream or object we can consume by successive call using `readfn`
-        readfn (fn): Function to read chunk data from s
-        length (int): the length of the contents of the object (for the
-                      git-specific algorithms)
-        algorithms (set): the hashing algorithms to be used, as an
-                          iterable over strings
-        hash_format (str): Format required for the output of the
-                           computed hashes (cf. HASH_FORMATS)
-
-    Returns: a dict mapping each algorithm to a digest (bytes by default).
-
-    Raises:
-        ValueError if:
-
-            algorithms contains an unknown hash algorithm.
-            hash_format is an unknown hash format
-
-    """
-    if hash_format not in HASH_FORMATS:
-        raise ValueError('Unexpected hash format %s, expected one of %s' % (
-            hash_format, HASH_FORMATS))
-
-    h = MultiHash(algorithms, length)
-    while True:
-        chunk = readfn(s)
-        if not chunk:
-            break
-        h.update(chunk)
-        if chunk_cb:
-            chunk_cb(chunk)
-
-    if hash_format == 'bytes':
-        return h.digest()
-    if hash_format == 'bytehex':
-        return h.bytehexdigest()
-    return h.hexdigest()
-
-
 def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
               chunk_cb=None, hash_format='bytes'):
     """Hash the contents of the given file object with the given algorithms.
@@ -305,8 +251,24 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
             hash_format is an unknown hash format
 
     """
-    return hash_stream(fobj, length=length, algorithms=algorithms,
-                       chunk_cb=chunk_cb, hash_format=hash_format)
+    if hash_format not in HASH_FORMATS:
+        raise ValueError('Unexpected hash format %s, expected one of %s' % (
+            hash_format, HASH_FORMATS))
+
+    h = MultiHash(algorithms, length)
+    while True:
+        chunk = fobj.read(HASH_BLOCK_SIZE)
+        if not chunk:
+            break
+        h.update(chunk)
+        if chunk_cb:
+            chunk_cb(chunk)
+
+    if hash_format == 'bytes':
+        return h.digest()
+    if hash_format == 'bytehex':
+        return h.bytehexdigest()
+    return h.hexdigest()
 
 
 def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,

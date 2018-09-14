@@ -126,27 +126,6 @@ class Hashutil(unittest.TestCase):
         self.assertEqual(checksums, self.bytehex_checksums)
 
     @istest
-    def hash_stream(self):
-        class StreamStub:
-            def __init__(self, data):
-                self.data = data
-
-            def iter_content(self):
-                yield from io.BytesIO(self.data)
-
-        s = StreamStub(self.data).iter_content()
-
-        def _readfn(s):
-            try:
-                return next(s)
-            except StopIteration:
-                return None
-
-        checksums = hashutil.hash_stream(
-            s, readfn=_readfn, length=len(self.data), hash_format='hex')
-        self.assertEqual(checksums, self.hex_checksums)
-
-    @istest
     def hash_file_missing_length(self):
         fobj = io.BytesIO(self.data)
 
