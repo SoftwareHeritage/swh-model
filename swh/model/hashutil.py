@@ -67,7 +67,7 @@ class MultiHash:
     computed and returned.
 
     """
-    def __init__(self, hash_names, length=None):
+    def __init__(self, hash_names=DEFAULT_ALGORITHMS, length=None):
         self.state = {}
         self.track_length = False
         for name in hash_names:
