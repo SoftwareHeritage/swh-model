@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017  The Software Heritage developers
+# Copyright (C) 2015-2018  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -35,6 +35,11 @@ class Hashutil(unittest.TestCase):
             for type, cksum in self.hex_checksums.items()
         }
 
+        self.bytehex_checksums = {
+            type: hashutil.hash_to_bytehex(cksum)
+            for type, cksum in self.checksums.items()
+        }
+
         self.git_hex_checksums = {
             'blob': self.hex_checksums['sha1_git'],
             'tree': '5b2e883aa33d2efab98442693ea4dd5f1b8871b0',
@@ -58,7 +63,8 @@ class Hashutil(unittest.TestCase):
         expected_checksums = self.checksums.copy()
         expected_checksums['length'] = len(self.data)
 
-        checksums = hashutil.hash_data(self.data, with_length=True)
+        algos = set(['length']).union(hashutil.DEFAULT_ALGORITHMS)
+        checksums = hashutil.hash_data(self.data, algorithms=algos)
 
         self.assertEqual(checksums, expected_checksums)
         self.assertTrue('length' in checksums)
@@ -70,6 +76,16 @@ class Hashutil(unittest.TestCase):
 
         self.assertIn('Unexpected hashing algorithm', cm.exception.args[0])
         self.assertIn('unknown-hash', cm.exception.args[0])
+
+    @istest
+    def hash_data_unknown_hash_format(self):
+        with self.assertRaises(ValueError) as cm:
+            hashutil.hash_data(
+                self.data, hashutil.DEFAULT_ALGORITHMS,
+                hash_format='unknown-format')
+
+        self.assertIn('Unexpected hash format', cm.exception.args[0])
+        self.assertIn('unknown-format', cm.exception.args[0])
 
     @istest
     def hash_git_data(self):
@@ -98,9 +114,16 @@ class Hashutil(unittest.TestCase):
     @istest
     def hash_file_hexdigest(self):
         fobj = io.BytesIO(self.data)
-        checksums = hashutil.hash_file(fobj, length=len(self.data),
-                                       hexdigest=True)
+        checksums = hashutil.hash_file(
+            fobj, length=len(self.data), hash_format='hex')
         self.assertEqual(checksums, self.hex_checksums)
+
+    @istest
+    def hash_file_bytehexdigest(self):
+        fobj = io.BytesIO(self.data)
+        checksums = hashutil.hash_file(
+            fobj, length=len(self.data), hash_format='bytehex')
+        self.assertEqual(checksums, self.bytehex_checksums)
 
     @istest
     def hash_stream(self):
@@ -111,9 +134,16 @@ class Hashutil(unittest.TestCase):
             def iter_content(self):
                 yield from io.BytesIO(self.data)
 
-        s = StreamStub(self.data)
-        checksums = hashutil.hash_stream(s, length=len(self.data),
-                                         hexdigest=True)
+        s = StreamStub(self.data).iter_content()
+
+        def _readfn(s):
+            try:
+                return next(s)
+            except StopIteration:
+                return None
+
+        checksums = hashutil.hash_stream(
+            s, readfn=_readfn, length=len(self.data), hash_format='hex')
         self.assertEqual(checksums, self.hex_checksums)
 
     @istest

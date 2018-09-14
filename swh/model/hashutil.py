@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017  The Software Heritage developers
+# Copyright (C) 2015-2018  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -11,6 +11,10 @@ ALGORITHMS set. Any provided algorithms not in that list will result
 in a ValueError explaining the error.
 
 This modules defines the following hashing functions:
+
+- hash_stream: Hash the contents of something iterable (file, stream,
+  ...) with the given algorithms (defaulting to DEFAULT_ALGORITHMS if
+  none provided).
 
 - hash_file: Hash the contents of the given file object with the given
   algorithms (defaulting to DEFAULT_ALGORITHMS if none provided).
@@ -44,6 +48,73 @@ HASH_BLOCK_SIZE = 32768
 """Block size for streaming hash computations made in this module"""
 
 _blake2_hash_cache = {}
+
+HASH_FORMATS = set(['bytes', 'bytehex', 'hex'])
+"""Supported output hash formats
+"""
+
+
+class MultiHash:
+    """Hashutil class to support multiple hashes computation.
+
+    Args:
+
+        hash_names (set): Set of hash algorithms (+ length) to compute
+                          hashes (cf. DEFAULT_ALGORITHMS)
+        length (int): Length of the total sum of chunks to read
+
+    If the length is provided as algorithm, the length is also
+    computed and returned.
+
+    """
+    def __init__(self, hash_names, length=None):
+        self.state = {}
+        self.track_length = False
+        for name in hash_names:
+            if name == 'length':
+                self.state['length'] = 0
+                self.track_length = True
+            else:
+                self.state[name] = _new_hash(name, length)
+
+    @classmethod
+    def from_state(cls, state, track_length):
+        ret = cls([])
+        ret.state = state
+        ret.track_length = track_length
+
+    def update(self, chunk):
+        for name, h in self.state.items():
+            if name == 'length':
+                continue
+            h.update(chunk)
+        if self.track_length:
+            self.state['length'] += len(chunk)
+
+    def digest(self):
+        return {
+            name: h.digest() if name != 'length' else h
+            for name, h in self.state.items()
+        }
+
+    def hexdigest(self):
+        return {
+            name: h.hexdigest() if name != 'length' else h
+            for name, h in self.state.items()
+        }
+
+    def bytehexdigest(self):
+        return {
+            name: hash_to_bytehex(h.digest()) if name != 'length' else h
+            for name, h in self.state.items()
+        }
+
+    def copy(self):
+        copied_state = {
+            name: h.copy() if name != 'length' else h
+            for name, h in self.state.items()
+        }
+        return self.from_state(copied_state, self.track_length)
 
 
 def _new_blake2_hash(algo):
@@ -162,8 +233,58 @@ def _new_hash(algo, length=None):
     return _new_hashlib_hash(algo)
 
 
+def _read(fobj):
+    """Wrapper function around reading a chunk from fobj.
+
+    """
+    return fobj.read(HASH_BLOCK_SIZE)
+
+
+def hash_stream(s, readfn=_read, length=None, algorithms=DEFAULT_ALGORITHMS,
+                chunk_cb=None, hash_format='bytes'):
+    """Hash the contents of a stream
+
+    Args:
+        s: stream or object we can consume by successive call using `readfn`
+        readfn (fn): Function to read chunk data from s
+        length (int): the length of the contents of the object (for the
+                      git-specific algorithms)
+        algorithms (set): the hashing algorithms to be used, as an
+                          iterable over strings
+        hash_format (str): Format required for the output of the
+                           computed hashes (cf. HASH_FORMATS)
+
+    Returns: a dict mapping each algorithm to a digest (bytes by default).
+
+    Raises:
+        ValueError if:
+
+            algorithms contains an unknown hash algorithm.
+            hash_format is an unknown hash format
+
+    """
+    if hash_format not in HASH_FORMATS:
+        raise ValueError('Unexpected hash format %s, expected one of %s' % (
+            hash_format, HASH_FORMATS))
+
+    h = MultiHash(algorithms, length)
+    while True:
+        chunk = readfn(s)
+        if not chunk:
+            break
+        h.update(chunk)
+        if chunk_cb:
+            chunk_cb(chunk)
+
+    if hash_format == 'bytes':
+        return h.digest()
+    if hash_format == 'bytehex':
+        return h.bytehexdigest()
+    return h.hexdigest()
+
+
 def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
-              chunk_cb=None, with_length=False, hexdigest=False):
+              chunk_cb=None, hash_format='bytes'):
     """Hash the contents of the given file object with the given algorithms.
 
     Args:
@@ -172,118 +293,75 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
           git-specific algorithms)
         algorithms: the hashing algorithms to be used, as an iterable over
           strings
-        with_length (bool): Include length in the dict result
-        hexdigest (bool): False returns the hash as binary, otherwise
-                          returns as hex
+        hash_format (str): Format required for the output of the
+                           computed hashes (cf. HASH_FORMATS)
 
     Returns: a dict mapping each algorithm to a digest (bytes by default).
 
     Raises:
-        ValueError if algorithms contains an unknown hash algorithm.
+        ValueError if:
+
+            algorithms contains an unknown hash algorithm.
+            hash_format is an unknown hash format
 
     """
-    hashes = {algo: _new_hash(algo, length) for algo in algorithms}
-
-    while True:
-        chunk = fobj.read(HASH_BLOCK_SIZE)
-        if not chunk:
-            break
-        for hash in hashes.values():
-            hash.update(chunk)
-        if chunk_cb:
-            chunk_cb(chunk)
-
-    if hexdigest:
-        h = {algo: hash.hexdigest() for algo, hash in hashes.items()}
-    else:
-        h = {algo: hash.digest() for algo, hash in hashes.items()}
-    if with_length:
-        h['length'] = length
-    return h
-
-
-def hash_stream(s, length=None, algorithms=DEFAULT_ALGORITHMS,
-                chunk_cb=None, with_length=False, hexdigest=False):
-    """Hash the contents of the given stream with the given algorithms.
-
-    Args:
-        s (stream): a stream object (e.g requests.get(stream=True))
-        length (int): the length of the contents of the stream (for the
-                      git-specific algorithms)
-        algorithms (dict): the hashing algorithms to be used, as an
-                           iterable over strings
-        with_length (bool): Include length in the dict result
-        hexdigest (bool): False returns the hash as binary, otherwise
-                          returns as hex
-
-    Returns: a dict mapping each algorithm to a digest (bytes by default).
-
-    Raises:
-        ValueError if algorithms contains an unknown hash algorithm.
-
-    """
-    hashes = {algo: _new_hash(algo, length) for algo in algorithms}
-
-    for chunk in s.iter_content():
-        if not chunk:
-            break
-        for hash in hashes.values():
-            hash.update(chunk)
-        if chunk_cb:
-            chunk_cb(chunk)
-
-    if hexdigest:
-        h = {algo: hash.hexdigest() for algo, hash in hashes.items()}
-    else:
-        h = {algo: hash.digest() for algo, hash in hashes.items()}
-    if with_length:
-        h['length'] = length
-    return h
+    return hash_stream(fobj, length=length, algorithms=algorithms,
+                       chunk_cb=chunk_cb, hash_format=hash_format)
 
 
 def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,
-              with_length=True, hexdigest=False):
+              hash_format='bytes', track_length=True):
     """Hash the contents of the file at the given path with the given
        algorithms.
 
     Args:
-        path: the path of the file to hash
-        algorithms: the hashing algorithms used
-        chunk_cb: a callback
-        with_length (bool): Include length in the dict result
-        hexdigest (bool): False returns the hash as binary, otherwise
-                          returns as hex
+        path (str): the path of the file to hash
+        algorithms (set): the hashing algorithms used
+        chunk_cb (def): a callback
+        hash_format (str): Format required for the output of the
+                           computed hashes (cf. HASH_FORMATS)
 
     Returns: a dict mapping each algorithm to a bytes digest.
 
     Raises:
-        ValueError if algorithms contains an unknown hash algorithm.
+        ValueError if:
+
+            algorithms contains an unknown hash algorithm.
+            hash_format is an unknown hash format
+
         OSError on file access error
 
     """
+    if track_length:
+        algorithms = set(['length']).union(algorithms)
     length = os.path.getsize(path)
     with open(path, 'rb') as fobj:
         return hash_file(fobj, length, algorithms, chunk_cb=chunk_cb,
-                         with_length=with_length, hexdigest=hexdigest)
+                         hash_format=hash_format)
 
 
-def hash_data(data, algorithms=DEFAULT_ALGORITHMS, with_length=False):
+def hash_data(data, algorithms=DEFAULT_ALGORITHMS, hash_format='bytes'):
     """Hash the given binary blob with the given algorithms.
 
     Args:
         data (bytes): raw content to hash
         algorithms (list): the hashing algorithms used
-        with_length (bool): add the length key in the resulting dict
+        hash_format (str): Format required for the output of the
+                           computed hashes (cf. HASH_FORMATS)
 
     Returns: a dict mapping each algorithm to a bytes digest
 
     Raises:
         TypeError if data does not support the buffer interface.
-        ValueError if algorithms contains an unknown hash algorithm.
+        ValueError if:
+
+            algorithms contains an unknown hash algorithm.
+            hash_format is an unknown hash format
+
     """
     fobj = BytesIO(data)
     length = len(data)
-    return hash_file(fobj, length, algorithms, with_length=with_length)
+    return hash_file(fobj, length, algorithms, hash_format=hash_format)
 
 
 def hash_git_data(data, git_type, base_algo='sha1'):
