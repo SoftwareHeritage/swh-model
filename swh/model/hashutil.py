@@ -10,7 +10,35 @@ Only a subset of hashing algorithms is supported as defined in the
 ALGORITHMS set. Any provided algorithms not in that list will result
 in a ValueError explaining the error.
 
-This modules defines the following hashing functions:
+This module defines MultiHash class to ease the softwareheritage
+hashing algorithm. This allows as before (with hash_* function) to
+compute hashes from file object, path, data.
+
+Basic usage examples:
+
+- file object: MultiHash.from_file(file_object).digest()
+
+- path (filepath): MultiHash.from_path(b'foo').hexdigest()
+
+- data (bytes): MultiHash.from_data(b'foo').bytehexdigest()
+
+Complex usage (old use was through callback):
+
+- To compute length, integrate the length to the set of algorithms to
+  compute, for example:
+
+  h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
+
+- Write alongside computing hashing algorithms (from a stream), example:
+
+    h = MultiHash(length=length)
+    with open(filepath, 'wb') as f:
+        for chunk in r.iter_content():  # r a stream of sort
+            h.update(chunk)
+            f.write(chunk)
+
+
+This module also defines the following (deprecated) hashing functions:
 
 - hash_file: Hash the contents of the given file object with the given
   algorithms (defaulting to DEFAULT_ALGORITHMS if none provided).
@@ -51,8 +79,8 @@ class MultiHash:
 
     Args:
 
-        hash_names (set): Set of hash algorithms (+ length) to compute
-                          hashes (cf. DEFAULT_ALGORITHMS)
+        hash_names (set): Set of hash algorithms (+ optionally length)
+                          to compute hashes (cf. DEFAULT_ALGORITHMS)
         length (int): Length of the total sum of chunks to read
 
     If the length is provided as algorithm, the length is also
@@ -259,20 +287,18 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
 
     Args:
         fobj: a file-like object
-        length: the length of the contents of the file-like object (for the
-          git-specific algorithms)
-        algorithms: the hashing algorithms to be used, as an iterable over
-          strings
-        hash_format (str): Format required for the output of the
-                           computed hashes (cf. HASH_FORMATS)
+        length (int): the length of the contents of the file-like
+                      object (for the git-specific algorithms)
+        algorithms (set): the hashing algorithms to be used, as an
+                          iterable over strings
+        chunk_cb (fun): a callback function taking a chunk of data as
+                        parameter
 
-    Returns: a dict mapping each algorithm to a digest (bytes by default).
+    Returns:
+        a dict mapping each algorithm to a digest (bytes by default).
 
     Raises:
-        ValueError if:
-
-            algorithms contains an unknown hash algorithm.
-            hash_format is an unknown hash format
+        ValueError if algorithms contains an unknown hash algorithm.
 
     """
     h = MultiHash(algorithms, length)
@@ -296,18 +322,12 @@ def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
     Args:
         path (str): the path of the file to hash
         algorithms (set): the hashing algorithms used
-        chunk_cb (def): a callback
-        hash_format (str): Format required for the output of the
-                           computed hashes (cf. HASH_FORMATS)
+        chunk_cb (fun): a callback function taking a chunk of data as parameter
 
     Returns: a dict mapping each algorithm to a bytes digest.
 
     Raises:
-        ValueError if:
-
-            algorithms contains an unknown hash algorithm.
-            hash_format is an unknown hash format
-
+        ValueError if algorithms contains an unknown hash algorithm.
         OSError on file access error
 
     """
@@ -325,18 +345,13 @@ def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
 
     Args:
         data (bytes): raw content to hash
-        algorithms (list): the hashing algorithms used
-        hash_format (str): Format required for the output of the
-                           computed hashes (cf. HASH_FORMATS)
+        algorithms (set): the hashing algorithms used
 
     Returns: a dict mapping each algorithm to a bytes digest
 
     Raises:
         TypeError if data does not support the buffer interface.
-        ValueError if:
-
-            algorithms contains an unknown hash algorithm.
-            hash_format is an unknown hash format
+        ValueError if algorithms contains an unknown hash algorithm.
 
     """
     return MultiHash.from_data(data, hash_names=algorithms).digest()
