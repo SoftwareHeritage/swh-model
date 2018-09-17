@@ -294,8 +294,7 @@ def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
     return h.digest()
 
 
-def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,
-              track_length=True):
+def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
     """(deprecated) cf. MultiHash.from_path
 
     Hash the contents of the file at the given path with the given
@@ -319,11 +318,11 @@ def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None,
         OSError on file access error
 
     """
-    if track_length:
-        algorithms = set(['length']).union(algorithms)
     length = os.path.getsize(path)
     with open(path, 'rb') as fobj:
-        return hash_file(fobj, length, algorithms, chunk_cb=chunk_cb)
+        hashes = hash_file(fobj, length, algorithms, chunk_cb=chunk_cb)
+    hashes['length'] = length
+    return hashes
 
 
 def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
