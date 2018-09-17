@@ -45,14 +45,6 @@ HASH_BLOCK_SIZE = 32768
 
 _blake2_hash_cache = {}
 
-HASH_FORMATS = set(['bytes', 'bytehex', 'hex'])
-"""Supported output hash formats
-"""
-
-EXTRA_LENGTH = set(['length'])
-"""Extra information to compute
-"""
-
 
 class MultiHash:
     """Hashutil class to support multiple hashes computation.
