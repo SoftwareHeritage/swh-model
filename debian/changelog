@@ -1,3 +1,12 @@
+swh-model (0.0.27-1~swh1) unstable-swh; urgency=medium
+
+  * v0.0.27
+  * Refactor: Add MultiHash class to improve hash computations
+  * swh.model.hashutil: Improve and clarify docstrings
+  * swh.model.hashutil: Mark hash_* function as deprecated
+
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Mon, 17 Sep 2018 12:07:59 +0200
+
 swh-model (0.0.26-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.26
