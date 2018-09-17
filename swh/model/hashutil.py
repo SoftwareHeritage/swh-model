@@ -95,11 +95,12 @@ class MultiHash:
                   track_length=True):
         if not length:
             length = os.path.getsize(path)
+        with open(path, 'rb') as f:
+            ret = cls.from_file(f, hash_names=hash_names, length=length)
         # For compatibility reason with `hash_path`
         if track_length:
-            hash_names = hash_names.union(EXTRA_LENGTH)
-        with open(path, 'rb') as f:
-            return cls.from_file(f, hash_names=hash_names, length=length)
+            ret.state['length'] = length
+        return ret
 
     @classmethod
     def from_data(cls, data, hash_names=DEFAULT_ALGORITHMS, length=None):
