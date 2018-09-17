@@ -10,24 +10,33 @@ Only a subset of hashing algorithms is supported as defined in the
 ALGORITHMS set. Any provided algorithms not in that list will result
 in a ValueError explaining the error.
 
-This module defines MultiHash class to ease the softwareheritage
-hashing algorithm. This allows as before (with hash_* function) to
-compute hashes from file object, path, data.
+This module defines a MultiHash class to ease the softwareheritage
+hashing algorithms computation. This allows to compute hashes from
+file object, path, data using a similar interface as what the standard
+hashlib module provides.
 
 Basic usage examples:
 
-- file object: MultiHash.from_file(file_object).digest()
+- file object: MultiHash.from_file(
+                 file_object, hash_names=DEFAULT_ALGORITHMS).digest()
 
 - path (filepath): MultiHash.from_path(b'foo').hexdigest()
 
 - data (bytes): MultiHash.from_data(b'foo').bytehexdigest()
 
-Complex usage (old use was through callback):
+
+"Complex" usage, defining a swh hashlib instance first:
 
 - To compute length, integrate the length to the set of algorithms to
   compute, for example:
 
-  h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
+    h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
+    with open(filepath, 'rb') as f:
+        h.update(f.read(HASH_BLOCK_SIZE))
+    hashes = h.digest()  # returns a dict of {hash_algo_name: hash_in_bytes}
+
+    for chunk in
+  # then use h as you would
 
 - Write alongside computing hashing algorithms (from a stream), example:
 
@@ -36,6 +45,10 @@ Complex usage (old use was through callback):
         for chunk in r.iter_content():  # r a stream of sort
             h.update(chunk)
             f.write(chunk)
+    hashes = h.hexdigest()  # returns a dict of {hash_algo_name: hash_in_hex}
+
+    Note: Prior to this, we would have to use chunk_cb (cf. hash_file,
+          hash_path)
 
 
 This module also defines the following (deprecated) hashing functions:
