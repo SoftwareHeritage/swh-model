@@ -1,10 +1,11 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2018  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 from .exceptions import ValidationError, NON_FIELD_ERRORS
-from . import fields, hashutil
+from . import fields
+from .hashutil import MultiHash, hash_to_bytes
 
 
 def validate_content(content):
@@ -44,11 +45,11 @@ def validate_content(content):
     def validate_hashes(content):
         errors = []
         if 'data' in content:
-            hashes = hashutil.hash_data(content['data'])
+            hashes = MultiHash.from_data(content['data']).digest()
             for hash_type, computed_hash in hashes.items():
                 if hash_type not in content:
                     continue
-                content_hash = hashutil.hash_to_bytes(content[hash_type])
+                content_hash = hash_to_bytes(content[hash_type])
                 if content_hash != computed_hash:
                     errors.append(ValidationError(
                         'hash mismatch in content for hash %(hash)s',
