@@ -117,9 +117,12 @@ class MultiHash:
         ret.track_length = track_length
 
     @classmethod
-    def from_file(cls, file, hash_names=DEFAULT_ALGORITHMS, length=None):
+    def from_file(cls, fobj, hash_names=DEFAULT_ALGORITHMS, length=None):
         ret = cls(length=length, hash_names=hash_names)
-        for chunk in file:
+        while True:
+            chunk = fobj.read(HASH_BLOCK_SIZE)
+            if not chunk:
+                break
             ret.update(chunk)
         return ret
 

@@ -124,7 +124,10 @@ class Content(MerkleLeaf):
             h = MultiHash(length=length)
             chunks = []
             with open(path, 'rb') as fobj:
-                for chunk in fobj:
+                while True:
+                    chunk = fobj.read(HASH_BLOCK_SIZE)
+                    if not chunk:
+                        break
                     h.update(chunk)
                     chunks.append(chunk)
 
