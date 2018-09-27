@@ -127,21 +127,15 @@ class MultiHash:
         return ret
 
     @classmethod
-    def from_path(cls, path, hash_names=DEFAULT_ALGORITHMS, length=None,
-                  track_length=True):
-        if not length:
-            length = os.path.getsize(path)
+    def from_path(cls, path, hash_names=DEFAULT_ALGORITHMS):
+        length = os.path.getsize(path)
         with open(path, 'rb') as f:
             ret = cls.from_file(f, hash_names=hash_names, length=length)
-        # For compatibility reason with `hash_path`
-        if track_length:
-            ret.state['length'] = length
         return ret
 
     @classmethod
-    def from_data(cls, data, hash_names=DEFAULT_ALGORITHMS, length=None):
-        if not length:
-            length = len(data)
+    def from_data(cls, data, hash_names=DEFAULT_ALGORITHMS):
+        length = len(data)
         fobj = BytesIO(data)
         return cls.from_file(fobj, hash_names=hash_names, length=length)
 

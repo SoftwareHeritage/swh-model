@@ -117,7 +117,6 @@ class MultiHashTest(BaseHashutil):
         hashes = MultiHash.from_path(f.name).digest()
         os.remove(f.name)
 
-        self.checksums['length'] = len(self.data)
         self.assertEquals(self.checksums, hashes)
 
 

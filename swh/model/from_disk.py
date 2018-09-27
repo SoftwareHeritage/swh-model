@@ -77,9 +77,8 @@ class Content(MerkleLeaf):
           mode (int): a file mode (passed to :func:`mode_to_perms`)
           data (bytes): raw contents of the file
         """
-        length = len(data)
-        ret = MultiHash.from_data(data, length=length).digest()
-        ret['length'] = length
+        ret = MultiHash.from_data(data).digest()
+        ret['length'] = len(data)
         ret['perms'] = mode_to_perms(mode)
         ret['data'] = data
 
