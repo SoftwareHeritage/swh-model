@@ -36,7 +36,7 @@ def parse_requirements(name=None):
     return requirements
 
 
-extra_requirements = []
+blake2_requirements = []
 
 pyblake2_hash_sets = [
     # Built-in implementation in Python 3.6+
@@ -53,7 +53,7 @@ for pyblake2_hashes in pyblake2_hash_sets:
 else:
     # None of the possible sets of blake2 hashes are available.
     # use pyblake2 instead
-    extra_requirements.append('pyblake2')
+    blake2_requirements.append('pyblake2')
 
 setup(
     name='swh.model',
@@ -66,7 +66,7 @@ setup(
     packages=find_packages(),
     setup_requires=['vcversioner'],
     install_requires=(parse_requirements() + parse_requirements('swh') +
-                      extra_requirements),
+                      blake2_requirements),
     extras_require={'testing': parse_requirements('test')},
     vcversioner={},
     include_package_data=True,
