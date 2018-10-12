@@ -6,9 +6,7 @@
 import datetime
 import unittest
 
-from nose.tools import istest
-
-from swh.model import validators, hashutil, exceptions
+from swh.model import exceptions, hashutil, validators
 
 
 class TestValidators(unittest.TestCase):
@@ -38,16 +36,14 @@ class TestValidators(unittest.TestCase):
         self.invalid_content_hash_mismatch.update(
             hashutil.hash_data(b"this is not the data you're looking for"))
 
-    @istest
-    def validate_content(self):
+    def test_validate_content(self):
         self.assertTrue(
             validators.validate_content(self.valid_visible_content))
 
         self.assertTrue(
             validators.validate_content(self.valid_absent_content))
 
-    @istest
-    def validate_content_hash_mismatch(self):
+    def test_validate_content_hash_mismatch(self):
         with self.assertRaises(exceptions.ValidationError) as cm:
             validators.validate_content(self.invalid_content_hash_mismatch)
 

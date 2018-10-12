@@ -11,9 +11,8 @@ import unittest
 from nose.plugins.attrib import attr
 
 from swh.model import from_disk
-from swh.model.from_disk import Content, Directory, DentryPerms
+from swh.model.from_disk import Content, DentryPerms, Directory
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
-
 
 TEST_DATA = os.path.join(os.path.dirname(__file__), 'data')
 

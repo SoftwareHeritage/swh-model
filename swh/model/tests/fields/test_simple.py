@@ -6,8 +6,6 @@
 import datetime
 import unittest
 
-from nose.tools import istest
-
 from swh.model.exceptions import ValidationError
 from swh.model.fields import simple
 
@@ -29,12 +27,10 @@ class ValidateSimple(unittest.TestCase):
                                                 tzinfo=datetime.timezone.utc)
         self.invalid_datetime_notz = datetime.datetime(1999, 1, 1, 12, 0, 0)
 
-    @istest
-    def validate_int(self):
+    def test_validate_int(self):
         self.assertTrue(simple.validate_int(self.valid_int))
 
-    @istest
-    def validate_int_invalid_type(self):
+    def test_validate_int_invalid_type(self):
         with self.assertRaises(ValidationError) as cm:
             simple.validate_int(self.valid_str)
 
@@ -44,12 +40,10 @@ class ValidateSimple(unittest.TestCase):
         self.assertEqual(exc.params['expected_type'], 'Integral')
         self.assertEqual(exc.params['type'], 'str')
 
-    @istest
-    def validate_str(self):
+    def test_validate_str(self):
         self.assertTrue(simple.validate_str(self.valid_str))
 
-    @istest
-    def validate_str_invalid_type(self):
+    def test_validate_str_invalid_type(self):
         with self.assertRaises(ValidationError) as cm:
             simple.validate_str(self.valid_int)
 
@@ -68,12 +62,10 @@ class ValidateSimple(unittest.TestCase):
         self.assertEqual(exc.params['expected_type'], 'str')
         self.assertEqual(exc.params['type'], 'bytes')
 
-    @istest
-    def validate_bytes(self):
+    def test_validate_bytes(self):
         self.assertTrue(simple.validate_bytes(self.valid_bytes))
 
-    @istest
-    def validate_bytes_invalid_type(self):
+    def test_validate_bytes_invalid_type(self):
         with self.assertRaises(ValidationError) as cm:
             simple.validate_bytes(self.valid_int)
 
@@ -92,14 +84,12 @@ class ValidateSimple(unittest.TestCase):
         self.assertEqual(exc.params['expected_type'], 'bytes')
         self.assertEqual(exc.params['type'], 'str')
 
-    @istest
-    def validate_datetime(self):
+    def test_validate_datetime(self):
         self.assertTrue(simple.validate_datetime(self.valid_datetime))
         self.assertTrue(simple.validate_datetime(self.valid_int))
         self.assertTrue(simple.validate_datetime(self.valid_real))
 
-    @istest
-    def validate_datetime_invalid_type(self):
+    def test_validate_datetime_invalid_type(self):
         with self.assertRaises(ValidationError) as cm:
             simple.validate_datetime(self.valid_str)
 
@@ -109,8 +99,7 @@ class ValidateSimple(unittest.TestCase):
         self.assertEqual(exc.params['expected_type'], 'one of datetime, Real')
         self.assertEqual(exc.params['type'], 'str')
 
-    @istest
-    def validate_datetime_invalide_tz(self):
+    def test_validate_datetime_invalide_tz(self):
         with self.assertRaises(ValidationError) as cm:
             simple.validate_datetime(self.invalid_datetime_notz)
 
@@ -118,13 +107,11 @@ class ValidateSimple(unittest.TestCase):
         self.assertIsInstance(str(exc), str)
         self.assertEqual(exc.code, 'datetime-without-tzinfo')
 
-    @istest
-    def validate_enum(self):
+    def test_validate_enum(self):
         for value in self.enum_values:
             self.assertTrue(simple.validate_enum(value, self.enum_values))
 
-    @istest
-    def validate_enum_invalid_value(self):
+    def test_validate_enum_invalid_value(self):
         with self.assertRaises(ValidationError) as cm:
             simple.validate_enum(self.invalid_enum_value, self.enum_values)
 

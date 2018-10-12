@@ -7,14 +7,11 @@ import binascii
 import datetime
 import unittest
 
-from nose.tools import istest
-
 from swh.model import hashutil, identifiers
-
 from swh.model.exceptions import ValidationError
-from swh.model.identifiers import SNAPSHOT, RELEASE, REVISION, DIRECTORY
-from swh.model.identifiers import CONTENT, PERSISTENT_IDENTIFIER_TYPES
-from swh.model.identifiers import PersistentId
+from swh.model.identifiers import (CONTENT, DIRECTORY,
+                                   PERSISTENT_IDENTIFIER_TYPES, RELEASE,
+                                   REVISION, SNAPSHOT, PersistentId)
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -23,8 +20,7 @@ class UtilityFunctionsIdentifier(unittest.TestCase):
         self.bytes_id = binascii.unhexlify(self.str_id)
         self.bad_type_id = object()
 
-    @istest
-    def identifier_to_bytes(self):
+    def test_identifier_to_bytes(self):
         for id in [self.str_id, self.bytes_id]:
             self.assertEqual(identifiers.identifier_to_bytes(id),
                              self.bytes_id)
@@ -40,8 +36,7 @@ class UtilityFunctionsIdentifier(unittest.TestCase):
 
         self.assertIn('type', str(cm.exception))
 
-    @istest
-    def identifier_to_str(self):
+    def test_identifier_to_str(self):
         for id in [self.str_id, self.bytes_id]:
             self.assertEqual(identifiers.identifier_to_str(id),
                              self.str_id)
@@ -84,19 +79,16 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
             800: b'+1320',
         }
 
-    @istest
-    def format_date(self):
+    def test_format_date(self):
         for date_repr, date in self.dates.items():
             self.assertEqual(identifiers.format_date(date), date_repr)
 
-    @istest
-    def format_date_fail(self):
+    def test_format_date_fail(self):
         for date in self.broken_dates:
             with self.assertRaises(ValueError):
                 identifiers.format_date(date)
 
-    @istest
-    def format_offset(self):
+    def test_format_offset(self):
         for offset, res in self.offsets.items():
             self.assertEqual(identifiers.format_offset(offset), res)
 
@@ -113,8 +105,7 @@ class ContentIdentifier(unittest.TestCase):
 
         self.content_id = hashutil.hash_data(self.content['data'])
 
-    @istest
-    def content_identifier(self):
+    def test_content_identifier(self):
         self.assertEqual(identifiers.content_identifier(self.content),
                          self.content_id)
 
@@ -216,14 +207,12 @@ class DirectoryIdentifier(unittest.TestCase):
             'entries': [],
         }
 
-    @istest
-    def dir_identifier(self):
+    def test_dir_identifier(self):
         self.assertEqual(
             identifiers.directory_identifier(self.directory),
             self.directory['id'])
 
-    @istest
-    def dir_identifier_empty_directory(self):
+    def test_dir_identifier_empty_directory(self):
         self.assertEqual(
             identifiers.directory_identifier(self.empty_directory),
             self.empty_directory['id'])
@@ -460,29 +449,25 @@ dg1KdHOa34shrKDaOVzW
             }
         }
 
-    @istest
-    def revision_identifier(self):
+    def test_revision_identifier(self):
         self.assertEqual(
             identifiers.revision_identifier(self.revision),
             identifiers.identifier_to_str(self.revision['id']),
         )
 
-    @istest
-    def revision_identifier_none_metadata(self):
+    def test_revision_identifier_none_metadata(self):
         self.assertEqual(
             identifiers.revision_identifier(self.revision_none_metadata),
             identifiers.identifier_to_str(self.revision_none_metadata['id']),
         )
 
-    @istest
-    def revision_identifier_synthetic(self):
+    def test_revision_identifier_synthetic(self):
         self.assertEqual(
             identifiers.revision_identifier(self.synthetic_revision),
             identifiers.identifier_to_str(self.synthetic_revision['id']),
         )
 
-    @istest
-    def revision_identifier_with_extra_headers(self):
+    def test_revision_identifier_with_extra_headers(self):
         self.assertEqual(
             identifiers.revision_identifier(
                 self.revision_with_extra_headers),
@@ -490,8 +475,7 @@ dg1KdHOa34shrKDaOVzW
                 self.revision_with_extra_headers['id']),
         )
 
-    @istest
-    def revision_identifier_with_gpgsig(self):
+    def test_revision_identifier_with_gpgsig(self):
         self.assertEqual(
             identifiers.revision_identifier(
                 self.revision_with_gpgsig),
@@ -499,8 +483,7 @@ dg1KdHOa34shrKDaOVzW
                 self.revision_with_gpgsig['id']),
         )
 
-    @istest
-    def revision_identifier_no_message(self):
+    def test_revision_identifier_no_message(self):
         self.assertEqual(
             identifiers.revision_identifier(
                 self.revision_no_message),
@@ -508,8 +491,7 @@ dg1KdHOa34shrKDaOVzW
                 self.revision_no_message['id']),
         )
 
-    @istest
-    def revision_identifier_empty_message(self):
+    def test_revision_identifier_empty_message(self):
         self.assertEqual(
             identifiers.revision_identifier(
                 self.revision_empty_message),
@@ -517,8 +499,7 @@ dg1KdHOa34shrKDaOVzW
                 self.revision_empty_message['id']),
         )
 
-    @istest
-    def revision_identifier_only_fullname(self):
+    def test_revision_identifier_only_fullname(self):
         self.assertEqual(
             identifiers.revision_identifier(
                 self.revision_only_fullname),
@@ -643,43 +624,37 @@ o6X/3T+vm8K3bf3driRr34c=
             'target_type': 'revision',
         }
 
-    @istest
-    def release_identifier(self):
+    def test_release_identifier(self):
         self.assertEqual(
             identifiers.release_identifier(self.release),
             identifiers.identifier_to_str(self.release['id'])
         )
 
-    @istest
-    def release_identifier_no_author(self):
+    def test_release_identifier_no_author(self):
         self.assertEqual(
             identifiers.release_identifier(self.release_no_author),
             identifiers.identifier_to_str(self.release_no_author['id'])
         )
 
-    @istest
-    def release_identifier_no_message(self):
+    def test_release_identifier_no_message(self):
         self.assertEqual(
             identifiers.release_identifier(self.release_no_message),
             identifiers.identifier_to_str(self.release_no_message['id'])
         )
 
-    @istest
-    def release_identifier_empty_message(self):
+    def test_release_identifier_empty_message(self):
         self.assertEqual(
             identifiers.release_identifier(self.release_empty_message),
             identifiers.identifier_to_str(self.release_empty_message['id'])
         )
 
-    @istest
-    def release_identifier_negative_utc(self):
+    def test_release_identifier_negative_utc(self):
         self.assertEqual(
             identifiers.release_identifier(self.release_negative_utc),
             identifiers.identifier_to_str(self.release_negative_utc['id'])
         )
 
-    @istest
-    def release_identifier_newline_in_author(self):
+    def test_release_identifier_newline_in_author(self):
         self.assertEqual(
             identifiers.release_identifier(self.release_newline_in_author),
             identifiers.identifier_to_str(self.release_newline_in_author['id'])

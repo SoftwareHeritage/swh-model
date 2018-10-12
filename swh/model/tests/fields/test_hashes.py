@@ -5,8 +5,6 @@
 
 import unittest
 
-from nose.tools import istest
-
 from swh.model.exceptions import ValidationError
 from swh.model.fields import hashes
 
@@ -32,18 +30,15 @@ class ValidateHashes(unittest.TestCase):
 
         self.bad_hash = object()
 
-    @istest
-    def valid_bytes_hash(self):
+    def test_valid_bytes_hash(self):
         for hash_type, value in self.valid_byte_hashes.items():
             self.assertTrue(hashes.validate_hash(value, hash_type))
 
-    @istest
-    def valid_str_hash(self):
+    def test_valid_str_hash(self):
         for hash_type, value in self.valid_str_hashes.items():
             self.assertTrue(hashes.validate_hash(value, hash_type))
 
-    @istest
-    def invalid_hash_type(self):
+    def test_invalid_hash_type(self):
         hash_type = 'unknown_hash_type'
         with self.assertRaises(ValidationError) as cm:
             hashes.validate_hash(self.valid_str_hashes['sha1'], hash_type)
@@ -56,8 +51,7 @@ class ValidateHashes(unittest.TestCase):
         self.assertIn('Unexpected hash type', str(exc))
         self.assertIn(hash_type, str(exc))
 
-    @istest
-    def invalid_bytes_len(self):
+    def test_invalid_bytes_len(self):
         for hash_type, value in self.valid_byte_hashes.items():
             value = value + b'\x00\x01'
             with self.assertRaises(ValidationError) as cm:
@@ -72,8 +66,7 @@ class ValidateHashes(unittest.TestCase):
             self.assertIn('Unexpected length', str(exc))
             self.assertIn(str(len(value)), str(exc))
 
-    @istest
-    def invalid_str_len(self):
+    def test_invalid_str_len(self):
         for hash_type, value in self.valid_str_hashes.items():
             value = value + '0001'
             with self.assertRaises(ValidationError) as cm:
@@ -88,8 +81,7 @@ class ValidateHashes(unittest.TestCase):
             self.assertIn('Unexpected length', str(exc))
             self.assertIn(str(len(value)), str(exc))
 
-    @istest
-    def invalid_str_contents(self):
+    def test_invalid_str_contents(self):
         for hash_type, value in self.valid_str_hashes.items():
             value = '\xa2' + value[1:-1] + '\xc3'
             with self.assertRaises(ValidationError) as cm:
@@ -105,8 +97,7 @@ class ValidateHashes(unittest.TestCase):
             self.assertIn('\xc3', str(exc))
             self.assertIn('\xa2', str(exc))
 
-    @istest
-    def invalid_value_type(self):
+    def test_invalid_value_type(self):
         with self.assertRaises(ValidationError) as cm:
             hashes.validate_hash(self.bad_hash, 'sha1')
 
@@ -118,8 +109,7 @@ class ValidateHashes(unittest.TestCase):
         self.assertIn('Unexpected type', str(exc))
         self.assertIn(self.bad_hash.__class__.__name__, str(exc))
 
-    @istest
-    def validate_sha1(self):
+    def test_validate_sha1(self):
         self.assertTrue(hashes.validate_sha1(self.valid_byte_hashes['sha1']))
         self.assertTrue(hashes.validate_sha1(self.valid_str_hashes['sha1']))
 
@@ -131,8 +121,7 @@ class ValidateHashes(unittest.TestCase):
         self.assertEqual(exc.code, 'unexpected-hash-value-type')
         self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
 
-    @istest
-    def validate_sha1_git(self):
+    def test_validate_sha1_git(self):
         self.assertTrue(
             hashes.validate_sha1_git(self.valid_byte_hashes['sha1_git']))
         self.assertTrue(
@@ -146,8 +135,7 @@ class ValidateHashes(unittest.TestCase):
         self.assertEqual(exc.code, 'unexpected-hash-value-type')
         self.assertEqual(exc.params['type'], self.bad_hash.__class__.__name__)
 
-    @istest
-    def validate_sha256(self):
+    def test_validate_sha256(self):
         self.assertTrue(
             hashes.validate_sha256(self.valid_byte_hashes['sha256']))
         self.assertTrue(

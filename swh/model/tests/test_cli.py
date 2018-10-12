@@ -11,8 +11,8 @@ from click.testing import CliRunner
 from nose.plugins.attrib import attr
 
 from swh.model import cli
-from swh.model.tests.test_from_disk import DataMixin
 from swh.model.hashutil import hash_to_hex
+from swh.model.tests.test_from_disk import DataMixin
 
 
 @attr('fs')
@@ -22,7 +22,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         super().setUp()
         self.runner = CliRunner()
 
-    def assertPidOK(self, result, pid):
+    def assertPidOK(self, result, pid):  # noqa: N802
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output.split()[0], pid)
 

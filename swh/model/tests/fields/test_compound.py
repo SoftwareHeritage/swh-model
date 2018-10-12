@@ -6,9 +6,7 @@
 import datetime
 import unittest
 
-from nose.tools import istest
-
-from swh.model.exceptions import ValidationError, NON_FIELD_ERRORS
+from swh.model.exceptions import NON_FIELD_ERRORS, ValidationError
 from swh.model.fields import compound, simple
 
 
@@ -63,8 +61,7 @@ class ValidateCompound(unittest.TestCase):
         self.present_keys = set(self.test_value)
         self.missing_keys = {'missingkey1', 'missingkey2'}
 
-    @istest
-    def validate_any_key(self):
+    def test_validate_any_key(self):
         self.assertTrue(
             compound.validate_any_key(self.test_value, self.present_keys))
 
@@ -72,8 +69,7 @@ class ValidateCompound(unittest.TestCase):
             compound.validate_any_key(self.test_value,
                                       self.present_keys | self.missing_keys))
 
-    @istest
-    def validate_any_key_missing(self):
+    def test_validate_any_key_missing(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_any_key(self.test_value, self.missing_keys)
 
@@ -83,13 +79,11 @@ class ValidateCompound(unittest.TestCase):
         self.assertEqual(exc.params['missing_fields'],
                          ', '.join(sorted(self.missing_keys)))
 
-    @istest
-    def validate_all_keys(self):
+    def test_validate_all_keys(self):
         self.assertTrue(
             compound.validate_all_keys(self.test_value, self.present_keys))
 
-    @istest
-    def validate_all_keys_missing(self):
+    def test_validate_all_keys_missing(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_all_keys(self.test_value, self.missing_keys)
 
@@ -109,14 +103,12 @@ class ValidateCompound(unittest.TestCase):
         self.assertEqual(exc.params['missing_fields'],
                          ', '.join(sorted(self.missing_keys)))
 
-    @istest
-    def validate_against_schema(self):
+    def test_validate_against_schema(self):
         self.assertTrue(
             compound.validate_against_schema(self.test_model, self.test_schema,
                                              self.test_value))
 
-    @istest
-    def validate_against_schema_wrong_type(self):
+    def test_validate_against_schema_wrong_type(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(self.test_model, self.test_schema,
                                              self.test_value_wrong_type)
@@ -128,8 +120,7 @@ class ValidateCompound(unittest.TestCase):
         self.assertEqual(exc.params['type'],
                          self.test_value_wrong_type.__class__.__name__)
 
-    @istest
-    def validate_against_schema_mandatory_keys(self):
+    def test_validate_against_schema_mandatory_keys(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(self.test_model, self.test_schema,
                                              self.test_value_missing)
@@ -150,8 +141,7 @@ class ValidateCompound(unittest.TestCase):
             self.assertEqual(nested.code, 'model-field-mandatory')
             self.assertEqual(nested.params['field'], key)
 
-    @istest
-    def validate_against_schema_whole_schema_shortcut_previous_error(self):
+    def test_validate_whole_schema_shortcut_previous_error(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(
                 self.test_model,
@@ -163,8 +153,7 @@ class ValidateCompound(unittest.TestCase):
         self.assertIsInstance(str(exc), str)
         self.assertNotIn(NON_FIELD_ERRORS, exc.error_dict)
 
-    @istest
-    def validate_against_schema_whole_schema(self):
+    def test_validate_whole_schema(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(
                 self.test_model,
@@ -191,8 +180,7 @@ class ValidateCompound(unittest.TestCase):
         self.assertEquals(nested.params['model'], self.test_model)
         self.assertEquals(nested.params['validator'], 'validate_never')
 
-    @istest
-    def validate_against_schema_field_error(self):
+    def test_validate_against_schema_field_error(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(self.test_model, self.test_schema,
                                              self.test_value_str_error)
@@ -214,8 +202,7 @@ class ValidateCompound(unittest.TestCase):
         self.assertIsInstance(nested, ValidationError)
         self.assertEquals(nested.code, 'unexpected-type')
 
-    @istest
-    def validate_against_schema_field_failed(self):
+    def test_validate_against_schema_field_failed(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(self.test_model,
                                              self.test_schema_field_failed,
