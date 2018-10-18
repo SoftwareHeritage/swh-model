@@ -107,7 +107,7 @@ class MultiHashTest(BaseHashutil):
         hashes = MultiHash.from_path(f.name).digest()
         os.remove(f.name)
 
-        self.assertEquals(self.checksums, hashes)
+        self.assertEqual(self.checksums, hashes)
 
 
 class Hashutil(BaseHashutil):
@@ -170,21 +170,21 @@ class Hashutil(BaseHashutil):
         os.remove(f.name)
 
         self.checksums['length'] = len(self.data)
-        self.assertEquals(self.checksums, hashes)
+        self.assertEqual(self.checksums, hashes)
 
     def test_hash_to_hex(self):
         for type in self.checksums:
             hex = self.hex_checksums[type]
             hash = self.checksums[type]
-            self.assertEquals(hashutil.hash_to_hex(hex), hex)
-            self.assertEquals(hashutil.hash_to_hex(hash), hex)
+            self.assertEqual(hashutil.hash_to_hex(hex), hex)
+            self.assertEqual(hashutil.hash_to_hex(hash), hex)
 
     def test_hash_to_bytes(self):
         for type in self.checksums:
             hex = self.hex_checksums[type]
             hash = self.checksums[type]
-            self.assertEquals(hashutil.hash_to_bytes(hex), hash)
-            self.assertEquals(hashutil.hash_to_bytes(hash), hash)
+            self.assertEqual(hashutil.hash_to_bytes(hex), hash)
+            self.assertEqual(hashutil.hash_to_bytes(hash), hash)
 
     def test_hash_to_bytehex(self):
         for algo in self.checksums:
@@ -201,10 +201,10 @@ class Hashutil(BaseHashutil):
         try:
             hashutil._new_hash('blake2:10')
         except ValueError as e:
-            self.assertEquals(str(e),
-                              'Unexpected hashing algorithm blake2:10, '
-                              'expected one of blake2b512, blake2s256, '
-                              'sha1, sha1_git, sha256')
+            self.assertEqual(str(e),
+                             'Unexpected hashing algorithm blake2:10, '
+                             'expected one of blake2b512, blake2s256, '
+                             'sha1, sha1_git, sha256')
 
     @patch('hashlib.new')
     def test_new_hash_blake2b_blake2b512_builtin(self, mock_hashlib_new):

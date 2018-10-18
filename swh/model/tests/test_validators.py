@@ -58,8 +58,8 @@ class TestValidators(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEquals(set(exc.error_dict.keys()),
-                          {exceptions.NON_FIELD_ERRORS})
+        self.assertEqual(set(exc.error_dict.keys()),
+                         {exceptions.NON_FIELD_ERRORS})
 
         hash_mismatches = exc.error_dict[exceptions.NON_FIELD_ERRORS]
         self.assertIsInstance(hash_mismatches, list)

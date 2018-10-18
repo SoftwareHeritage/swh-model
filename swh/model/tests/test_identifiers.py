@@ -804,7 +804,7 @@ class SnapshotIdentifier(unittest.TestCase):
                 actual_value = identifiers.persistent_identifier(
                     full_type, _hash, metadata=_meta)
 
-            self.assertEquals(actual_value, expected_persistent_id)
+            self.assertEqual(actual_value, expected_persistent_id)
 
     def test_persistent_identifier_wrong_input(self):
         _snapshot_id = 'notahash4bc0bf3d81436bf980b46e98bd338453'
@@ -839,7 +839,7 @@ class SnapshotIdentifier(unittest.TestCase):
                 metadata={}
             )
             actual_result = identifiers.parse_persistent_identifier(pid)
-            self.assertEquals(actual_result, expected_result)
+            self.assertEqual(actual_result, expected_result)
 
         for pid, _type, _version, _hash, _metadata in [
                 ('swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython', # noqa
@@ -862,7 +862,7 @@ class SnapshotIdentifier(unittest.TestCase):
                 metadata=_metadata
             )
             actual_result = identifiers.parse_persistent_identifier(pid)
-            self.assertEquals(actual_result, expected_result)
+            self.assertEqual(actual_result, expected_result)
 
     def test_parse_persistent_identifier_parsing_error(self):
         for pid, _error in [

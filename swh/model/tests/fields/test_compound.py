@@ -168,17 +168,17 @@ class ValidateCompound(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEquals(set(exc.error_dict.keys()), {NON_FIELD_ERRORS})
+        self.assertEqual(set(exc.error_dict.keys()), {NON_FIELD_ERRORS})
 
         non_field_errors = exc.error_dict[NON_FIELD_ERRORS]
         self.assertIsInstance(non_field_errors, list)
-        self.assertEquals(len(non_field_errors), 1)
+        self.assertEqual(len(non_field_errors), 1)
 
         nested = non_field_errors[0]
         self.assertIsInstance(nested, ValidationError)
-        self.assertEquals(nested.code, 'model-validation-failed')
-        self.assertEquals(nested.params['model'], self.test_model)
-        self.assertEquals(nested.params['validator'], 'validate_never')
+        self.assertEqual(nested.code, 'model-validation-failed')
+        self.assertEqual(nested.params['model'], self.test_model)
+        self.assertEqual(nested.params['validator'], 'validate_never')
 
     def test_validate_against_schema_field_error(self):
         with self.assertRaises(ValidationError) as cm:
@@ -192,15 +192,15 @@ class ValidateCompound(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEquals(set(exc.error_dict.keys()), {'str'})
+        self.assertEqual(set(exc.error_dict.keys()), {'str'})
 
         str_errors = exc.error_dict['str']
         self.assertIsInstance(str_errors, list)
-        self.assertEquals(len(str_errors), 1)
+        self.assertEqual(len(str_errors), 1)
 
         nested = str_errors[0]
         self.assertIsInstance(nested, ValidationError)
-        self.assertEquals(nested.code, 'unexpected-type')
+        self.assertEqual(nested.code, 'unexpected-type')
 
     def test_validate_against_schema_field_failed(self):
         with self.assertRaises(ValidationError) as cm:
@@ -215,14 +215,14 @@ class ValidateCompound(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEquals(set(exc.error_dict.keys()), {'int'})
+        self.assertEqual(set(exc.error_dict.keys()), {'int'})
 
         int_errors = exc.error_dict['int']
         self.assertIsInstance(int_errors, list)
-        self.assertEquals(len(int_errors), 1)
+        self.assertEqual(len(int_errors), 1)
 
         nested = int_errors[0]
         self.assertIsInstance(nested, ValidationError)
-        self.assertEquals(nested.code, 'field-validation-failed')
-        self.assertEquals(nested.params['validator'], 'validate_never')
-        self.assertEquals(nested.params['field'], 'int')
+        self.assertEqual(nested.code, 'field-validation-failed')
+        self.assertEqual(nested.params['validator'], 'validate_never')
+        self.assertEqual(nested.params['field'], 'int')
