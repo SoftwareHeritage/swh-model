@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from swh.model import from_disk
 from swh.model.from_disk import Content, DentryPerms, Directory
@@ -685,7 +685,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                          + 1)
 
 
-@attr('fs')
+@pytest.mark.fs
 class TarballTest(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()

@@ -8,14 +8,14 @@ import tempfile
 import unittest
 
 from click.testing import CliRunner
-from nose.plugins.attrib import attr
+import pytest
 
 from swh.model import cli
 from swh.model.hashutil import hash_to_hex
 from swh.model.tests.test_from_disk import DataMixin
 
 
-@attr('fs')
+@pytest.mark.fr
 class TestIdentify(DataMixin, unittest.TestCase):
 
     def setUp(self):
