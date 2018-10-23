@@ -15,7 +15,7 @@ from swh.model.hashutil import hash_to_hex
 from swh.model.tests.test_from_disk import DataMixin
 
 
-@pytest.mark.fr
+@pytest.mark.fs
 class TestIdentify(DataMixin, unittest.TestCase):
 
     def setUp(self):
