@@ -30,25 +30,26 @@ Basic usage examples:
 - To compute length, integrate the length to the set of algorithms to
   compute, for example:
 
-    h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
-    with open(filepath, 'rb') as f:
-        h.update(f.read(HASH_BLOCK_SIZE))
-    hashes = h.digest()  # returns a dict of {hash_algo_name: hash_in_bytes}
+  .. code-block:: python
 
-    for chunk in
-  # then use h as you would
+     h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
+     with open(filepath, 'rb') as f:
+         h.update(f.read(HASH_BLOCK_SIZE))
+     hashes = h.digest()  # returns a dict of {hash_algo_name: hash_in_bytes}
 
 - Write alongside computing hashing algorithms (from a stream), example:
 
-    h = MultiHash(length=length)
-    with open(filepath, 'wb') as f:
-        for chunk in r.iter_content():  # r a stream of sort
-            h.update(chunk)
-            f.write(chunk)
-    hashes = h.hexdigest()  # returns a dict of {hash_algo_name: hash_in_hex}
+  .. code-block:: python
 
-    Note: Prior to this, we would have to use chunk_cb (cf. hash_file,
-          hash_path)
+     h = MultiHash(length=length)
+     with open(filepath, 'wb') as f:
+         for chunk in r.iter_content():  # r a stream of sort
+             h.update(chunk)
+             f.write(chunk)
+     hashes = h.hexdigest()  # returns a dict of {hash_algo_name: hash_in_hex}
+
+  Note: Prior to this, we would have to use chunk_cb (cf. hash_file,
+        hash_path)
 
 
 This module also defines the following (deprecated) hashing functions:
@@ -117,28 +118,25 @@ class MultiHash:
         ret.track_length = track_length
 
     @classmethod
-    def from_file(cls, file, hash_names=DEFAULT_ALGORITHMS, length=None):
+    def from_file(cls, fobj, hash_names=DEFAULT_ALGORITHMS, length=None):
         ret = cls(length=length, hash_names=hash_names)
-        for chunk in file:
+        while True:
+            chunk = fobj.read(HASH_BLOCK_SIZE)
+            if not chunk:
+                break
             ret.update(chunk)
         return ret
 
     @classmethod
-    def from_path(cls, path, hash_names=DEFAULT_ALGORITHMS, length=None,
-                  track_length=True):
-        if not length:
-            length = os.path.getsize(path)
+    def from_path(cls, path, hash_names=DEFAULT_ALGORITHMS):
+        length = os.path.getsize(path)
         with open(path, 'rb') as f:
             ret = cls.from_file(f, hash_names=hash_names, length=length)
-        # For compatibility reason with `hash_path`
-        if track_length:
-            ret.state['length'] = length
         return ret
 
     @classmethod
-    def from_data(cls, data, hash_names=DEFAULT_ALGORITHMS, length=None):
-        if not length:
-            length = len(data)
+    def from_data(cls, data, hash_names=DEFAULT_ALGORITHMS):
+        length = len(data)
         fobj = BytesIO(data)
         return cls.from_file(fobj, hash_names=hash_names, length=length)
 

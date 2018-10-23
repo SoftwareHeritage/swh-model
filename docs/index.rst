@@ -1,7 +1,10 @@
 .. _swh-model:
 
-Software Heritage - Development Documentation
-=============================================
+Software Heritage - Data model
+==============================
+
+Implementation of the :ref:`data-model` to archive source code artifacts.
+
 
 .. toctree::
    :maxdepth: 2

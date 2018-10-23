@@ -8,8 +8,6 @@ import io
 import os
 import tempfile
 import unittest
-
-from nose.tools import istest
 from unittest.mock import patch
 
 from swh.model import hashutil
@@ -55,14 +53,12 @@ class BaseHashutil(unittest.TestCase):
 
 
 class MultiHashTest(BaseHashutil):
-    @istest
-    def multi_hash_data(self):
+    def test_multi_hash_data(self):
         checksums = MultiHash.from_data(self.data).digest()
         self.assertEqual(checksums, self.checksums)
         self.assertFalse('length' in checksums)
 
-    @istest
-    def multi_hash_data_with_length(self):
+    def test_multi_hash_data_with_length(self):
         expected_checksums = self.checksums.copy()
         expected_checksums['length'] = len(self.data)
 
@@ -72,64 +68,55 @@ class MultiHashTest(BaseHashutil):
         self.assertEqual(checksums, expected_checksums)
         self.assertTrue('length' in checksums)
 
-    @istest
-    def multi_hash_data_unknown_hash(self):
+    def test_multi_hash_data_unknown_hash(self):
         with self.assertRaises(ValueError) as cm:
             MultiHash.from_data(self.data, ['unknown-hash'])
 
         self.assertIn('Unexpected hashing algorithm', cm.exception.args[0])
         self.assertIn('unknown-hash', cm.exception.args[0])
 
-    @istest
-    def multi_hash_file(self):
+    def test_multi_hash_file(self):
         fobj = io.BytesIO(self.data)
 
         checksums = MultiHash.from_file(fobj, length=len(self.data)).digest()
         self.assertEqual(checksums, self.checksums)
 
-    @istest
-    def multi_hash_file_hexdigest(self):
+    def test_multi_hash_file_hexdigest(self):
         fobj = io.BytesIO(self.data)
         length = len(self.data)
         checksums = MultiHash.from_file(fobj, length=length).hexdigest()
         self.assertEqual(checksums, self.hex_checksums)
 
-    @istest
-    def multi_hash_file_bytehexdigest(self):
+    def test_multi_hash_file_bytehexdigest(self):
         fobj = io.BytesIO(self.data)
         length = len(self.data)
         checksums = MultiHash.from_file(fobj, length=length).bytehexdigest()
         self.assertEqual(checksums, self.bytehex_checksums)
 
-    @istest
-    def multi_hash_file_missing_length(self):
+    def test_multi_hash_file_missing_length(self):
         fobj = io.BytesIO(self.data)
         with self.assertRaises(ValueError) as cm:
             MultiHash.from_file(fobj, hash_names=['sha1_git'])
 
         self.assertIn('Missing length', cm.exception.args[0])
 
-    @istest
-    def multi_hash_path(self):
+    def test_multi_hash_path(self):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(self.data)
 
         hashes = MultiHash.from_path(f.name).digest()
         os.remove(f.name)
 
-        self.checksums['length'] = len(self.data)
-        self.assertEquals(self.checksums, hashes)
+        self.assertEqual(self.checksums, hashes)
 
 
 class Hashutil(BaseHashutil):
-    @istest
-    def hash_data(self):
+    def test_hash_data(self):
         checksums = hashutil.hash_data(self.data)
         self.assertEqual(checksums, self.checksums)
         self.assertFalse('length' in checksums)
 
-    @istest
-    def hash_data_with_length(self):
+    def test_hash_data_with_length(self):
         expected_checksums = self.checksums.copy()
         expected_checksums['length'] = len(self.data)
 
@@ -139,16 +126,14 @@ class Hashutil(BaseHashutil):
         self.assertEqual(checksums, expected_checksums)
         self.assertTrue('length' in checksums)
 
-    @istest
-    def hash_data_unknown_hash(self):
+    def test_hash_data_unknown_hash(self):
         with self.assertRaises(ValueError) as cm:
             hashutil.hash_data(self.data, ['unknown-hash'])
 
         self.assertIn('Unexpected hashing algorithm', cm.exception.args[0])
         self.assertIn('unknown-hash', cm.exception.args[0])
 
-    @istest
-    def hash_git_data(self):
+    def test_hash_git_data(self):
         checksums = {
             git_type: hashutil.hash_git_data(self.data, git_type)
             for git_type in self.git_checksums
@@ -156,23 +141,20 @@ class Hashutil(BaseHashutil):
 
         self.assertEqual(checksums, self.git_checksums)
 
-    @istest
-    def hash_git_data_unknown_git_type(self):
+    def test_hash_git_data_unknown_git_type(self):
         with self.assertRaises(ValueError) as cm:
             hashutil.hash_git_data(self.data, 'unknown-git-type')
 
         self.assertIn('Unexpected git object type', cm.exception.args[0])
         self.assertIn('unknown-git-type', cm.exception.args[0])
 
-    @istest
-    def hash_file(self):
+    def test_hash_file(self):
         fobj = io.BytesIO(self.data)
 
         checksums = hashutil.hash_file(fobj, length=len(self.data))
         self.assertEqual(checksums, self.checksums)
 
-    @istest
-    def hash_file_missing_length(self):
+    def test_hash_file_missing_length(self):
         fobj = io.BytesIO(self.data)
 
         with self.assertRaises(ValueError) as cm:
@@ -180,8 +162,7 @@ class Hashutil(BaseHashutil):
 
         self.assertIn('Missing length', cm.exception.args[0])
 
-    @istest
-    def hash_path(self):
+    def test_hash_path(self):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(self.data)
 
@@ -189,50 +170,44 @@ class Hashutil(BaseHashutil):
         os.remove(f.name)
 
         self.checksums['length'] = len(self.data)
-        self.assertEquals(self.checksums, hashes)
+        self.assertEqual(self.checksums, hashes)
 
-    @istest
-    def hash_to_hex(self):
+    def test_hash_to_hex(self):
         for type in self.checksums:
             hex = self.hex_checksums[type]
             hash = self.checksums[type]
-            self.assertEquals(hashutil.hash_to_hex(hex), hex)
-            self.assertEquals(hashutil.hash_to_hex(hash), hex)
+            self.assertEqual(hashutil.hash_to_hex(hex), hex)
+            self.assertEqual(hashutil.hash_to_hex(hash), hex)
 
-    @istest
-    def hash_to_bytes(self):
+    def test_hash_to_bytes(self):
         for type in self.checksums:
             hex = self.hex_checksums[type]
             hash = self.checksums[type]
-            self.assertEquals(hashutil.hash_to_bytes(hex), hash)
-            self.assertEquals(hashutil.hash_to_bytes(hash), hash)
+            self.assertEqual(hashutil.hash_to_bytes(hex), hash)
+            self.assertEqual(hashutil.hash_to_bytes(hash), hash)
 
-    @istest
-    def hash_to_bytehex(self):
+    def test_hash_to_bytehex(self):
         for algo in self.checksums:
             self.assertEqual(self.hex_checksums[algo].encode('ascii'),
                              hashutil.hash_to_bytehex(self.checksums[algo]))
 
-    @istest
-    def bytehex_to_hash(self):
+    def test_bytehex_to_hash(self):
         for algo in self.checksums:
             self.assertEqual(self.checksums[algo],
                              hashutil.bytehex_to_hash(
                                  self.hex_checksums[algo].encode()))
 
-    @istest
-    def new_hash_unsupported_hashing_algorithm(self):
+    def test_new_hash_unsupported_hashing_algorithm(self):
         try:
             hashutil._new_hash('blake2:10')
         except ValueError as e:
-            self.assertEquals(str(e),
-                              'Unexpected hashing algorithm blake2:10, '
-                              'expected one of blake2b512, blake2s256, '
-                              'sha1, sha1_git, sha256')
+            self.assertEqual(str(e),
+                             'Unexpected hashing algorithm blake2:10, '
+                             'expected one of blake2b512, blake2s256, '
+                             'sha1, sha1_git, sha256')
 
     @patch('hashlib.new')
-    @istest
-    def new_hash_blake2b_blake2b512_builtin(self, mock_hashlib_new):
+    def test_new_hash_blake2b_blake2b512_builtin(self, mock_hashlib_new):
         if 'blake2b512' not in hashlib.algorithms_available:
             self.skipTest('blake2b512 not built-in')
         mock_hashlib_new.return_value = sentinel = object()
@@ -243,8 +218,7 @@ class Hashutil(BaseHashutil):
         mock_hashlib_new.assert_called_with('blake2b512')
 
     @patch('hashlib.new')
-    @istest
-    def new_hash_blake2s_blake2s256_builtin(self, mock_hashlib_new):
+    def test_new_hash_blake2s_blake2s256_builtin(self, mock_hashlib_new):
         if 'blake2s256' not in hashlib.algorithms_available:
             self.skipTest('blake2s256 not built-in')
         mock_hashlib_new.return_value = sentinel = object()
@@ -254,8 +228,7 @@ class Hashutil(BaseHashutil):
         self.assertIs(h, sentinel)
         mock_hashlib_new.assert_called_with('blake2s256')
 
-    @istest
-    def new_hash_blake2b_builtin(self):
+    def test_new_hash_blake2b_builtin(self):
         removed_hash = False
 
         try:
@@ -276,8 +249,7 @@ class Hashutil(BaseHashutil):
             if removed_hash:
                 hashlib.algorithms_available.add('blake2b512')
 
-    @istest
-    def new_hash_blake2s_builtin(self):
+    def test_new_hash_blake2s_builtin(self):
         removed_hash = False
 
         try:
@@ -298,8 +270,7 @@ class Hashutil(BaseHashutil):
             if removed_hash:
                 hashlib.algorithms_available.add('blake2s256')
 
-    @istest
-    def new_hash_blake2b_pyblake2(self):
+    def test_new_hash_blake2b_pyblake2(self):
         if 'blake2b512' in hashlib.algorithms_available:
             self.skipTest('blake2b512 built in')
         if 'blake2b' in hashlib.algorithms_available:
@@ -313,8 +284,7 @@ class Hashutil(BaseHashutil):
             self.assertIs(h, sentinel)
             mock_blake2b.assert_called_with(digest_size=512//8)
 
-    @istest
-    def new_hash_blake2s_pyblake2(self):
+    def test_new_hash_blake2s_pyblake2(self):
         if 'blake2s256' in hashlib.algorithms_available:
             self.skipTest('blake2s256 built in')
         if 'blake2s' in hashlib.algorithms_available:
@@ -369,15 +339,13 @@ blah
                                           'e9e959f120'),
         }
 
-    @istest
-    def unknown_header_type(self):
+    def test_unknown_header_type(self):
         with self.assertRaises(ValueError) as cm:
             hashutil.hash_git_data(b'any-data', 'some-unknown-type')
 
         self.assertIn('Unexpected git object type', cm.exception.args[0])
 
-    @istest
-    def hashdata_content(self):
+    def test_hashdata_content(self):
         # when
         actual_hash = hashutil.hash_git_data(self.blob_data, git_type='blob')
 
@@ -385,8 +353,7 @@ blah
         self.assertEqual(actual_hash,
                          self.checksums['blob_sha1_git'])
 
-    @istest
-    def hashdata_tree(self):
+    def test_hashdata_tree(self):
         # when
         actual_hash = hashutil.hash_git_data(self.tree_data, git_type='tree')
 
@@ -394,8 +361,7 @@ blah
         self.assertEqual(actual_hash,
                          self.checksums['tree_sha1_git'])
 
-    @istest
-    def hashdata_revision(self):
+    def test_hashdata_revision(self):
         # when
         actual_hash = hashutil.hash_git_data(self.commit_data,
                                              git_type='commit')
@@ -404,8 +370,7 @@ blah
         self.assertEqual(actual_hash,
                          self.checksums['commit_sha1_git'])
 
-    @istest
-    def hashdata_tag(self):
+    def test_hashdata_tag(self):
         # when
         actual_hash = hashutil.hash_git_data(self.tag_data, git_type='tag')
 

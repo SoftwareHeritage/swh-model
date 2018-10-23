@@ -8,11 +8,13 @@ import tarfile
 import tempfile
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from swh.model import from_disk
-from swh.model.from_disk import Content, Directory, DentryPerms
+from swh.model.from_disk import Content, DentryPerms, Directory
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
+
+TEST_DATA = os.path.join(os.path.dirname(__file__), 'data')
 
 
 class ModeToPerms(unittest.TestCase):
@@ -466,11 +468,7 @@ class DataMixin:
             fn(path)
 
     def make_from_tarball(self, directory):
-        tarball = os.path.join(os.path.dirname(__file__),
-                               '../../../..',
-                               'swh-storage-testdata',
-                               'dir-folders',
-                               'sample-folder.tgz')
+        tarball = os.path.join(TEST_DATA, 'dir-folders', 'sample-folder.tgz')
 
         with tarfile.open(tarball, 'r:gz') as f:
             f.extractall(os.fsdecode(directory))
@@ -687,7 +685,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                          + 1)
 
 
-@attr('fs')
+@pytest.mark.fs
 class TarballTest(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
