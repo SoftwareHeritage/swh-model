@@ -8,7 +8,7 @@ import unittest
 from swh.model import merkle
 
 
-class TestedMerkleNode(merkle.MerkleNode):
+class MerkleTestNode(merkle.MerkleNode):
     type = 'tested_merkle_node_type'
 
     def __init__(self, data):
@@ -29,7 +29,7 @@ class TestedMerkleNode(merkle.MerkleNode):
         )
 
 
-class TestedMerkleLeaf(merkle.MerkleLeaf):
+class MerkleTestLeaf(merkle.MerkleLeaf):
     type = 'tested_merkle_leaf_type'
 
     def __init__(self, data):
@@ -44,7 +44,7 @@ class TestedMerkleLeaf(merkle.MerkleLeaf):
 class TestMerkleLeaf(unittest.TestCase):
     def setUp(self):
         self.data = {'value': b'value'}
-        self.instance = TestedMerkleLeaf(self.data)
+        self.instance = MerkleTestLeaf(self.data)
 
     def test_hash(self):
         self.assertEqual(self.instance.compute_hash_called, 0)
@@ -90,25 +90,25 @@ class TestMerkleNode(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        self.root = TestedMerkleNode({'value': b'root'})
+        self.root = MerkleTestNode({'value': b'root'})
         self.nodes = {b'root': self.root}
         for i in (b'a', b'b', b'c'):
             value = b'root/' + i
-            node = TestedMerkleNode({
+            node = MerkleTestNode({
                 'value': value,
             })
             self.root[i] = node
             self.nodes[value] = node
             for j in (b'a', b'b', b'c'):
                 value2 = value + b'/' + j
-                node2 = TestedMerkleNode({
+                node2 = MerkleTestNode({
                     'value': value2,
                 })
                 node[j] = node2
                 self.nodes[value2] = node2
                 for k in (b'a', b'b', b'c'):
                     value3 = value2 + b'/' + j
-                    node3 = TestedMerkleNode({
+                    node3 = MerkleTestNode({
                         'value': value3,
                     })
                     node2[j] = node3
@@ -188,8 +188,8 @@ class TestMerkleNode(unittest.TestCase):
         hash_root = self.root.hash
         hash_b = self.root[b'b'].hash
         new_children = {
-            b'c': TestedMerkleNode({'value': b'root/b/new_c'}),
-            b'd': TestedMerkleNode({'value': b'root/b/d'}),
+            b'c': MerkleTestNode({'value': b'root/b/new_c'}),
+            b'd': MerkleTestNode({'value': b'root/b/d'}),
         }
 
         # collect all nodes
@@ -219,7 +219,7 @@ class TestMerkleNode(unittest.TestCase):
         # Ensure we collected root, root/b, and both new children
         collected_after_update = self.root.collect()
         self.assertCountEqual(
-            collected_after_update[TestedMerkleNode.type],
+            collected_after_update[MerkleTestNode.type],
             [self.nodes[b'root'].hash, self.nodes[b'root/b'].hash,
              new_children[b'c'].hash, new_children[b'd'].hash],
         )

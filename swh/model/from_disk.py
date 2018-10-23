@@ -1,4 +1,4 @@
-# Copyright (C) 2017 The Software Heritage developers
+# Copyright (C) 2017-2018 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -7,7 +7,7 @@ import enum
 import os
 import stat
 
-from . import hashutil
+from .hashutil import MultiHash, HASH_BLOCK_SIZE
 from .merkle import MerkleLeaf, MerkleNode
 from .identifiers import (
     directory_identifier,
@@ -77,7 +77,7 @@ class Content(MerkleLeaf):
           mode (int): a file mode (passed to :func:`mode_to_perms`)
           data (bytes): raw contents of the file
         """
-        ret = hashutil.hash_data(data)
+        ret = MultiHash.from_data(data).digest()
         ret['length'] = len(data)
         ret['perms'] = mode_to_perms(mode)
         ret['data'] = data
@@ -91,8 +91,8 @@ class Content(MerkleLeaf):
 
     @classmethod
     def from_file(cls, *, path, data=False, save_path=False):
-        """Compute the Software Heritage content entry corresponding to an on-disk
-        file.
+        """Compute the Software Heritage content entry corresponding to an
+        on-disk file.
 
         The returned dictionary contains keys useful for both:
         - loading the content in the archive (hashes, `length`)
@@ -103,6 +103,7 @@ class Content(MerkleLeaf):
             content entry
           data (bool): add the file data to the entry
           save_path (bool): add the file path to the entry
+
         """
         file_stat = os.lstat(path)
         mode = file_stat.st_mode
@@ -117,17 +118,19 @@ class Content(MerkleLeaf):
         length = file_stat.st_size
 
         if not data:
-            ret = hashutil.hash_path(path)
+            ret = MultiHash.from_path(path).digest()
         else:
+            h = MultiHash(length=length)
             chunks = []
-
-            def append_chunk(x, chunks=chunks):
-                chunks.append(x)
-
             with open(path, 'rb') as fobj:
-                ret = hashutil.hash_file(fobj, length=length,
-                                         chunk_cb=append_chunk)
+                while True:
+                    chunk = fobj.read(HASH_BLOCK_SIZE)
+                    if not chunk:
+                        break
+                    h.update(chunk)
+                    chunks.append(chunk)
 
+            ret = h.digest()
             ret['data'] = b''.join(chunks)
 
         if save_path:
