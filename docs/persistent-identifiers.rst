@@ -128,23 +128,6 @@ Examples
   of the entire Darktable Git repository taken on 4 May 2017 from GitHub
 
 
-Resolution
-----------
-
-Persistent identifiers can be resolved using the Software Heritage Web
-application (see :py:mod:`swh.web`).
-
-In particular, the root endpoint ``/`` can be given a persistent identifier and
-will lead to the browsing page of the corresponding object, like this:
-``https://archive.softwareheritage.org/<identifier>``. For example:
-
-* `<https://archive.softwareheritage.org/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
-* `<https://archive.softwareheritage.org/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
-* `<https://archive.softwareheritage.org/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
-* `<https://archive.softwareheritage.org/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
-* `<https://archive.softwareheritage.org/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
-
-
 Contextual information
 ======================
 
@@ -191,3 +174,54 @@ The following piece of contextual information are supported:
 * software origin: where a given object has been found or observed in the wild,
   as the URI that was used by Software Heritage to ingest the object into the
   archive
+
+
+Resolution
+==========
+
+
+Dedicated resolvers
+-------------------
+
+Persistent identifiers can be resolved using the Software Heritage Web
+application (see :py:mod:`swh.web`).  In particular, the **root endpoint**
+``/`` can be given a persistent identifier and will lead to the browsing page
+of the corresponding object, like this:
+``https://archive.softwareheritage.org/<identifier>``.
+
+A **dedicated** ``/resolve`` **endpoint** of the HTTP API is also available to
+explicitly request persistent identifier resolution; see:
+:http:get:`/api/1/resolve/(swh_id)/`.
+
+Examples:
+
+* `<https://archive.softwareheritage.org/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
+* `<https://archive.softwareheritage.org/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
+* `<https://archive.softwareheritage.org/api/1/resolve/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
+* `<https://archive.softwareheritage.org/api/1/resolve/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
+* `<https://archive.softwareheritage.org/api/1/resolve/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
+
+
+External resolvers
+------------------
+
+The following **independent resolvers** support resolution of Software
+Heritage persistent identifiers:
+
+* `Identifiers.org <https://identifiers.org>`_; see:
+  `<http://identifiers.org/swh/>`_ (registry identifier `MIR:00000655
+  <https://www.ebi.ac.uk/miriam/main/datatypes/MIR:00000655>`_).
+
+* `Name-to-Thing (N2T) <https://n2t.net/>`_
+
+Examples:
+
+* `<https://identifiers.org/swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`_
+* `<https://identifiers.org/swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`_
+* `<https://identifiers.org/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
+* `<https://n2t.net/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
+* `<https://n2t.net/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
+
+Note that resolution via Identifiers.org does not support contextual
+information, due to `syntactic incompatibilities
+<http://identifiers.org/documentation#custom_requests>`_.

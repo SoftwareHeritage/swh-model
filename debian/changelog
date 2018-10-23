@@ -1,8 +1,14 @@
-swh-model (0.0.27-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.28-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * v0.0.28
+  * setup: prepare for pypi upload
+  * tests: Initialize tox use
+  * tests: Migrate to pytest
+  * docs: Improve basic repository information
+  * docs: document PID resolution possibilities other than Web UI /
+  * hashutil: Migrate towards MultiHash api
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Mon, 17 Sep 2018 12:07:59 +0200
+ -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Tue, 23 Oct 2018 16:24:21 +0200
 
 swh-model (0.0.27-1~swh1) unstable-swh; urgency=medium
 

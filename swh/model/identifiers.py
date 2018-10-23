@@ -11,8 +11,7 @@ from functools import lru_cache
 
 from .exceptions import ValidationError
 from .fields.hashes import validate_sha1
-from .hashutil import hash_data, hash_git_data, DEFAULT_ALGORITHMS
-from .hashutil import hash_to_hex
+from .hashutil import hash_git_data, hash_to_hex, MultiHash
 
 
 SNAPSHOT = 'snapshot'
@@ -104,7 +103,7 @@ def content_identifier(content):
 
     """
 
-    return hash_data(content['data'], DEFAULT_ALGORITHMS)
+    return MultiHash.from_data(content['data']).digest()
 
 
 def _sort_key(entry):
