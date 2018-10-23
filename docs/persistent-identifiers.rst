@@ -189,7 +189,7 @@ application (see :py:mod:`swh.web`).  In particular, the **root endpoint**
 of the corresponding object, like this:
 ``https://archive.softwareheritage.org/<identifier>``.
 
-A **dedicated ``/resolve`` endpoint** of the HTTP API is also available to
+A **dedicated** ``/resolve`` **endpoint** of the HTTP API is also available to
 explicitly request persistent identifier resolution; see:
 :http:get:`/api/1/resolve/(swh_id)/`.
 
