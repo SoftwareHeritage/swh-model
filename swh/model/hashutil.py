@@ -30,25 +30,26 @@ Basic usage examples:
 - To compute length, integrate the length to the set of algorithms to
   compute, for example:
 
-    h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
-    with open(filepath, 'rb') as f:
-        h.update(f.read(HASH_BLOCK_SIZE))
-    hashes = h.digest()  # returns a dict of {hash_algo_name: hash_in_bytes}
+  .. code-block:: python
 
-    for chunk in
-  # then use h as you would
+     h = MultiHash(hash_names=set({'length'}).union(DEFAULT_ALGORITHMS))
+     with open(filepath, 'rb') as f:
+         h.update(f.read(HASH_BLOCK_SIZE))
+     hashes = h.digest()  # returns a dict of {hash_algo_name: hash_in_bytes}
 
 - Write alongside computing hashing algorithms (from a stream), example:
 
-    h = MultiHash(length=length)
-    with open(filepath, 'wb') as f:
-        for chunk in r.iter_content():  # r a stream of sort
-            h.update(chunk)
-            f.write(chunk)
-    hashes = h.hexdigest()  # returns a dict of {hash_algo_name: hash_in_hex}
+  .. code-block:: python
 
-    Note: Prior to this, we would have to use chunk_cb (cf. hash_file,
-          hash_path)
+     h = MultiHash(length=length)
+     with open(filepath, 'wb') as f:
+         for chunk in r.iter_content():  # r a stream of sort
+             h.update(chunk)
+             f.write(chunk)
+     hashes = h.hexdigest()  # returns a dict of {hash_algo_name: hash_in_hex}
+
+  Note: Prior to this, we would have to use chunk_cb (cf. hash_file,
+        hash_path)
 
 
 This module also defines the following (deprecated) hashing functions:
