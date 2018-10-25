@@ -111,27 +111,6 @@ class MultiHashTest(BaseHashutil):
 
 
 class Hashutil(BaseHashutil):
-    def test_hash_data(self):
-        checksums = hashutil.hash_data(self.data)
-        self.assertEqual(checksums, self.checksums)
-        self.assertFalse('length' in checksums)
-
-    def test_hash_data_with_length(self):
-        expected_checksums = self.checksums.copy()
-        expected_checksums['length'] = len(self.data)
-
-        algos = set(['length']).union(hashutil.DEFAULT_ALGORITHMS)
-        checksums = hashutil.hash_data(self.data, algorithms=algos)
-
-        self.assertEqual(checksums, expected_checksums)
-        self.assertTrue('length' in checksums)
-
-    def test_hash_data_unknown_hash(self):
-        with self.assertRaises(ValueError) as cm:
-            hashutil.hash_data(self.data, ['unknown-hash'])
-
-        self.assertIn('Unexpected hashing algorithm', cm.exception.args[0])
-        self.assertIn('unknown-hash', cm.exception.args[0])
 
     def test_hash_git_data(self):
         checksums = {
@@ -147,30 +126,6 @@ class Hashutil(BaseHashutil):
 
         self.assertIn('Unexpected git object type', cm.exception.args[0])
         self.assertIn('unknown-git-type', cm.exception.args[0])
-
-    def test_hash_file(self):
-        fobj = io.BytesIO(self.data)
-
-        checksums = hashutil.hash_file(fobj, length=len(self.data))
-        self.assertEqual(checksums, self.checksums)
-
-    def test_hash_file_missing_length(self):
-        fobj = io.BytesIO(self.data)
-
-        with self.assertRaises(ValueError) as cm:
-            hashutil.hash_file(fobj, algorithms=['sha1_git'])
-
-        self.assertIn('Missing length', cm.exception.args[0])
-
-    def test_hash_path(self):
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            f.write(self.data)
-
-        hashes = hashutil.hash_path(f.name)
-        os.remove(f.name)
-
-        self.checksums['length'] = len(self.data)
-        self.assertEqual(self.checksums, hashes)
 
     def test_hash_to_hex(self):
         for type in self.checksums:
