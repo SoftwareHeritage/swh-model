@@ -48,21 +48,6 @@ Basic usage examples:
              f.write(chunk)
      hashes = h.hexdigest()  # returns a dict of {hash_algo_name: hash_in_hex}
 
-  Note: Prior to this, we would have to use chunk_cb (cf. hash_file,
-        hash_path)
-
-
-This module also defines the following (deprecated) hashing functions:
-
-- hash_file: Hash the contents of the given file object with the given
-  algorithms (defaulting to DEFAULT_ALGORITHMS if none provided).
-
-- hash_data: Hash the given binary blob with the given algorithms
-  (defaulting to DEFAULT_ALGORITHMS if none provided).
-
-- hash_path: Hash the contents of the file at the given path with the
-  given algorithms (defaulting to DEFAULT_ALGORITHMS if none
-  provided).
 
 """
 
@@ -288,84 +273,6 @@ def _new_hash(algo, length=None):
         return _new_git_hash(base_algo, 'blob', length)
 
     return _new_hashlib_hash(algo)
-
-
-def hash_file(fobj, length=None, algorithms=DEFAULT_ALGORITHMS,
-              chunk_cb=None):
-    """(Deprecated) cf. MultiHash.from_file
-
-    Hash the contents of the given file object with the given algorithms.
-
-    Args:
-        fobj: a file-like object
-        length (int): the length of the contents of the file-like
-                      object (for the git-specific algorithms)
-        algorithms (set): the hashing algorithms to be used, as an
-                          iterable over strings
-        chunk_cb (fun): a callback function taking a chunk of data as
-                        parameter
-
-    Returns:
-        a dict mapping each algorithm to a digest (bytes by default).
-
-    Raises:
-        ValueError if algorithms contains an unknown hash algorithm.
-
-    """
-    h = MultiHash(algorithms, length)
-    while True:
-        chunk = fobj.read(HASH_BLOCK_SIZE)
-        if not chunk:
-            break
-        h.update(chunk)
-        if chunk_cb:
-            chunk_cb(chunk)
-
-    return h.digest()
-
-
-def hash_path(path, algorithms=DEFAULT_ALGORITHMS, chunk_cb=None):
-    """(deprecated) cf. MultiHash.from_path
-
-    Hash the contents of the file at the given path with the given
-    algorithms.
-
-    Args:
-        path (str): the path of the file to hash
-        algorithms (set): the hashing algorithms used
-        chunk_cb (fun): a callback function taking a chunk of data as parameter
-
-    Returns: a dict mapping each algorithm to a bytes digest.
-
-    Raises:
-        ValueError if algorithms contains an unknown hash algorithm.
-        OSError on file access error
-
-    """
-    length = os.path.getsize(path)
-    with open(path, 'rb') as fobj:
-        hashes = hash_file(fobj, length, algorithms, chunk_cb=chunk_cb)
-    hashes['length'] = length
-    return hashes
-
-
-def hash_data(data, algorithms=DEFAULT_ALGORITHMS):
-    """(deprecated) cf. MultiHash.from_data
-
-    Hash the given binary blob with the given algorithms.
-
-    Args:
-        data (bytes): raw content to hash
-        algorithms (set): the hashing algorithms used
-
-    Returns: a dict mapping each algorithm to a bytes digest
-
-    Raises:
-        TypeError if data does not support the buffer interface.
-        ValueError if algorithms contains an unknown hash algorithm.
-
-    """
-    return MultiHash.from_data(data, hash_names=algorithms).digest()
 
 
 def hash_git_data(data, git_type, base_algo='sha1'):

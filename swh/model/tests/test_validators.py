@@ -9,6 +9,10 @@ import unittest
 from swh.model import exceptions, hashutil, validators
 
 
+def hash_data(raw_content):
+    return hashutil.MultiHash.from_data(raw_content).digest()
+
+
 class TestValidators(unittest.TestCase):
     def setUp(self):
         self.valid_visible_content = {
@@ -20,7 +24,7 @@ class TestValidators(unittest.TestCase):
         }
 
         self.valid_visible_content.update(
-            hashutil.hash_data(self.valid_visible_content['data']))
+            hash_data(self.valid_visible_content['data']))
 
         self.valid_absent_content = {
             'status': 'absent',
@@ -34,7 +38,7 @@ class TestValidators(unittest.TestCase):
 
         self.invalid_content_hash_mismatch = self.valid_visible_content.copy()
         self.invalid_content_hash_mismatch.update(
-            hashutil.hash_data(b"this is not the data you're looking for"))
+            hash_data(b"this is not the data you're looking for"))
 
     def test_validate_content(self):
         self.assertTrue(
