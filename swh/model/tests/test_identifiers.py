@@ -103,7 +103,8 @@ class ContentIdentifier(unittest.TestCase):
                                        tzinfo=datetime.timezone.utc),
         }
 
-        self.content_id = hashutil.hash_data(self.content['data'])
+        self.content_id = hashutil.MultiHash.from_data(
+            self.content['data']).digest()
 
     def test_content_identifier(self):
         self.assertEqual(identifiers.content_identifier(self.content),

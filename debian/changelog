@@ -1,5 +1,0 @@
-swh-model (0.0.1-1) unstable; urgency=low
-
-  * Create swh-model package
-
- -- Nicolas Dandrimont <olasd@debian.org>  Mon, 07 Dec 2015 15:41:28 +0100
