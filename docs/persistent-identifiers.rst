@@ -225,3 +225,15 @@ Examples:
 Note that resolution via Identifiers.org does not support contextual
 information, due to `syntactic incompatibilities
 <http://identifiers.org/documentation#custom_requests>`_.
+
+
+References
+==========
+
+* Roberto Di Cosmo, Morane Gruenpeter, Stefano Zacchiroli. `Identifiers for
+  Digital Objects: the Case of Software Source Code Preservation
+  <https://hal.archives-ouvertes.fr/hal-01865790v4>`_. In Proceedings of `iPRES
+  2018 <https://ipres2018.org/>`_: 15th International Conference on Digital
+  Preservation, Boston, MA, USA, September 2018, 9 pages.
+
+

@@ -1,8 +1,11 @@
-swh-model (0.0.28-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.29-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-backports.
+  * Release swh.model v0.0.29
+  * Reference iPRES paper in PID documentation
+  * Remove deprecated swh.model.hashutil.hash_* functions
+  * Split debian packaging to separate branch
 
- -- Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com>  Tue, 23 Oct 2018 16:24:20 +0200
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Wed, 31 Oct 2018 18:26:32 +0100
 
 swh-model (0.0.28-1~swh1) unstable-swh; urgency=medium
 
