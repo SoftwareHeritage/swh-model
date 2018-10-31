@@ -1,3 +1,12 @@
+swh-model (0.0.29-1~swh1) unstable-swh; urgency=medium
+
+  * Release swh.model v0.0.29
+  * Reference iPRES paper in PID documentation
+  * Remove deprecated swh.model.hashutil.hash_* functions
+  * Split debian packaging to separate branch
+
+ -- Nicolas Dandrimont <nicolas@dandrimont.eu>  Wed, 31 Oct 2018 18:26:32 +0100
+
 swh-model (0.0.28-1~swh1) unstable-swh; urgency=medium
 
   * v0.0.28
