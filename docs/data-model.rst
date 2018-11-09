@@ -1,3 +1,5 @@
+:orphan:
+
 .. _data-model:
 
 Data model
