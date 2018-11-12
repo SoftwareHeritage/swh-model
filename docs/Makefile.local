@@ -1,5 +1,6 @@
 sphinx/html: images
 sphinx/clean: clean-images
+assets: images
 
 images:
 	make -C images/
