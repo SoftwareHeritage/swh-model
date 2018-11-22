@@ -6,11 +6,6 @@ Software Heritage - Data model
 Implementation of the :ref:`data-model` to archive source code artifacts.
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
 Overview
 --------
 
@@ -18,9 +13,10 @@ Overview
 * :ref:`persistent-identifiers`
 
 
-Indices and tables
-==================
+Reference Documentation
+-----------------------
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 2
+
+   /apidoc/swh.model
