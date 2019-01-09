@@ -1,5 +1,5 @@
-Click
 vcversioner
+Click
 
 [testing]
 pytest
