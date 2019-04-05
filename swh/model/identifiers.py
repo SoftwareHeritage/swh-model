@@ -591,8 +591,8 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
 
     if unresolved and not ignore_unresolved:
         raise ValueError('Branch aliases unresolved: %s' %
-                         ', '.join('%s -> %s' % (name, target)
-                                   for name, target in unresolved))
+                         ', '.join('%s -> %s' % x for x in unresolved),
+                         unresolved)
 
     return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
 
