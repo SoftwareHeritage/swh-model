@@ -1,3 +1,12 @@
+swh-model (0.0.32-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.32     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-05 19:15:16 +0200)
+  * Upstream changes:     - Add a model based using 'attrs' and
+    Hypothesis strategies to generate it.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 08 Apr 2019 12:57:45 +0000
+
 swh-model (0.0.31-1~swh2) unstable-swh; urgency=medium
 
   * Add new dependencies on python3-attr and python3-hypothesis
