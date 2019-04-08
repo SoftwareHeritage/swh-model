@@ -1,8 +1,17 @@
-swh-model (0.0.31-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.32-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * New upstream release 0.0.32     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-05 19:15:16 +0200)
+  * Upstream changes:     - Add a model based using 'attrs' and
+    Hypothesis strategies to generate it.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 05 Apr 2019 09:08:52 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 08 Apr 2019 12:57:45 +0000
+
+swh-model (0.0.31-1~swh2) unstable-swh; urgency=medium
+
+  * Add new dependencies on python3-attr and python3-hypothesis
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Mon, 08 Apr 2019 14:55:50 +0200
 
 swh-model (0.0.31-1~swh1) unstable-swh; urgency=medium
 
