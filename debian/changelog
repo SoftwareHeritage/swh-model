@@ -1,3 +1,9 @@
+swh-model (0.0.31-1~swh2) unstable-swh; urgency=medium
+
+  * Add new dependencies on python3-attr and python3-hypothesis
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Mon, 08 Apr 2019 14:55:50 +0200
+
 swh-model (0.0.31-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.31     - (tagged by Valentin Lorentz
