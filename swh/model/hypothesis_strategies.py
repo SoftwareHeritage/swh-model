@@ -165,7 +165,6 @@ def snapshots(draw, *, min_size=0, max_size=100, only_objects=False):
                     name: branch.to_dict()
                     for (name, branch) in branches.items()}})
         except ValueError as e:
-            print(e.args)
             for (source, target) in e.args[1]:
                 branches[source] = draw(branch_targets(only_objects=True))
         else:
