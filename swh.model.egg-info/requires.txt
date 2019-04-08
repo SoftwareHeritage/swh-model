@@ -1,5 +1,7 @@
 vcversioner
 Click
+attrs
+hypothesis
 
 [testing]
 pytest
