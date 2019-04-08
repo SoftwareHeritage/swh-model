@@ -44,9 +44,14 @@ def test_dicts_generation(obj_type_and_obj):
         if object_['status'] == 'visible':
             assert set(object_) == \
                 set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
-        else:
+        elif object_['status'] == 'absent':
+            assert set(object_) == \
+                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'reason'}
+        elif object_['status'] == 'hidden':
             assert set(object_) == \
                 set(DEFAULT_ALGORITHMS) | {'length', 'status'}
+        else:
+            assert False, object_
     elif obj_type == 'release':
         assert object_['target_type'] in target_types
     elif obj_type == 'snapshot':

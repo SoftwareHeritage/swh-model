@@ -3,9 +3,11 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import datetime
+
 from hypothesis.strategies import (
-    lists, one_of, composite, builds, integers, sampled_from, binary,
-    dictionaries, none, from_regex, just
+    binary, builds, characters, composite, dictionaries, from_regex,
+    integers, just, lists, none, one_of, sampled_from, text, tuples,
 )
 
 
@@ -22,6 +24,10 @@ def sha1_git():
     return binary(min_size=20, max_size=20)
 
 
+def sha1():
+    return binary(min_size=20, max_size=20)
+
+
 @composite
 def urls(draw):
     protocol = draw(sampled_from(['git', 'http', 'https', 'deb']))
@@ -35,9 +41,11 @@ def persons():
 
 
 def timestamps():
+    max_seconds = datetime.datetime.max.timestamp()
+    min_seconds = datetime.datetime.min.timestamp()
     return builds(
         Timestamp,
-        seconds=integers(-2**63, 2**63-1),
+        seconds=integers(min_seconds, max_seconds),
         microseconds=integers(0, 1000000))
 
 
@@ -45,7 +53,7 @@ def timestamps_with_timezone():
     return builds(
         TimestampWithTimezone,
         timestamp=timestamps(),
-        offset=integers(-2**16, 2**16-1))
+        offset=integers(min_value=-14*60, max_value=14*60))
 
 
 def origins():
@@ -62,13 +70,27 @@ def origin_visits():
         origin=origins())
 
 
-def releases():
-    return builds(
+@composite
+def releases(draw):
+    (date, author) = draw(one_of(
+        tuples(none(), none()),
+        tuples(timestamps_with_timezone(), persons())))
+    rel = draw(builds(
         Release,
         id=sha1_git(),
-        date=timestamps_with_timezone(),
-        author=one_of(none(), persons()),
-        target=one_of(none(), sha1_git()))
+        author=none(),
+        date=none(),
+        target=sha1_git()))
+    rel.date = date
+    rel.author = author
+    return rel
+
+
+def revision_metadata():
+    alphabet = characters(
+        blacklist_categories=('Cs', ),
+        blacklist_characters=['\u0000'])  # postgresql does not like these
+    return dictionaries(text(alphabet=alphabet), text(alphabet=alphabet))
 
 
 def revisions():
@@ -77,9 +99,10 @@ def revisions():
         id=sha1_git(),
         date=timestamps_with_timezone(),
         committer_date=timestamps_with_timezone(),
-        parents=lists(binary()),
-        directory=binary(),
-        metadata=one_of(none(), dictionaries(binary(), binary())))
+        parents=lists(sha1_git()),
+        directory=sha1_git(),
+        metadata=one_of(none(), revision_metadata()))
+    # TODO: metadata['extra_headers'] can have binary keys and values
 
 
 def directory_entries():
@@ -96,18 +119,25 @@ def directories():
         entries=lists(directory_entries()))
 
 
-def contents():
-    def filter_data(content):
-        if content.status != 'visible':
-            content.data = None
-        return content
+@composite
+def contents(draw):
+    (status, data, reason) = draw(one_of(
+        tuples(just('visible'), binary(), none()),
+        tuples(just('absent'), none(), text()),
+        tuples(just('hidden'), none(), none()),
+    ))
 
-    return builds(
+    return draw(builds(
         Content,
         length=integers(0),
-        data=binary(),
+        sha1=sha1(),
         sha1_git=sha1_git(),
-    ).map(filter_data)
+        sha256=binary(min_size=32, max_size=32),
+        blake2s256=binary(min_size=32, max_size=32),
+        status=just(status),
+        data=just(data),
+        reason=just(reason),
+    ))
 
 
 def branch_names():
