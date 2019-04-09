@@ -129,7 +129,7 @@ def contents(draw):
 
     return draw(builds(
         Content,
-        length=integers(0),
+        length=integers(min_value=0, max_value=2**63-1),
         sha1=sha1(),
         sha1_git=sha1_git(),
         sha256=binary(min_size=32, max_size=32),
