@@ -48,6 +48,13 @@ class TimestampWithTimezone:
     def to_dict(self):
         return attr.asdict(self)
 
+    @offset.validator
+    def check_offset(self, attribute, value):
+        if not (-2**15 <= value < 2**15):
+            # max 14 hours offset in theory, but you never know what
+            # you'll find in the wild...
+            raise ValueError('offset too large: %d minutes' % value)
+
 
 @attr.s
 class Origin:
@@ -81,6 +88,14 @@ class TargetType(Enum):
     RELEASE = 'release'
     SNAPSHOT = 'snapshot'
     ALIAS = 'alias'
+
+
+class ObjectType(Enum):
+    CONTENT = 'content'
+    DIRECTORY = 'directory'
+    REVISION = 'revision'
+    RELEASE = 'release'
+    SNAPSHOT = 'snapshot'
 
 
 @attr.s
@@ -121,17 +136,30 @@ class Release:
     id = attr.ib(type=Sha1Git)
     name = attr.ib(type=bytes)
     message = attr.ib(type=bytes)
-    date = attr.ib(type=TimestampWithTimezone)
+    date = attr.ib(type=Optional[TimestampWithTimezone])
     author = attr.ib(type=Optional[Person])
     target = attr.ib(type=Optional[Sha1Git])
-    target_type = attr.ib(type=TargetType)
+    target_type = attr.ib(type=ObjectType)
     synthetic = attr.ib(type=bool)
 
     def to_dict(self):
         rel = attr.asdict(self)
-        rel['date'] = self.date.to_dict()
+        rel['date'] = self.date.to_dict() if self.date is not None else None
         rel['target_type'] = rel['target_type'].value
         return rel
+
+    @author.validator
+    def check_author(self, attribute, value):
+        if self.author is None and self.date is not None:
+            raise ValueError('release date must be None if date is None.')
+
+
+class RevisionType(Enum):
+    GIT = 'git'
+    TAR = 'tar'
+    DSC = 'dsc'
+    SUBVERSION = 'svn'
+    MERCURIAL = 'hg'
 
 
 @attr.s
@@ -143,15 +171,16 @@ class Revision:
     date = attr.ib(type=TimestampWithTimezone)
     committer_date = attr.ib(type=TimestampWithTimezone)
     parents = attr.ib(type=List[Sha1Git])
-    type = attr.ib(type=str)
+    type = attr.ib(type=RevisionType)
     directory = attr.ib(type=Sha1Git)
-    metadata = attr.ib(type=Optional[dict])
+    metadata = attr.ib(type=Optional[Dict[str, object]])
     synthetic = attr.ib(type=bool)
 
     def to_dict(self):
         rev = attr.asdict(self)
         rev['date'] = self.date.to_dict()
         rev['committer_date'] = self.committer_date.to_dict()
+        rev['type'] = rev['type'].value
         return rev
 
 
@@ -191,6 +220,7 @@ class Content:
     status = attr.ib(
         type=str,
         validator=attr.validators.in_(['visible', 'absent', 'hidden']))
+    reason = attr.ib(type=Optional[str])
 
     @length.validator
     def check_length(self, attribute, value):
@@ -198,8 +228,20 @@ class Content:
         if value < 0:
             raise ValueError('Length must be positive.')
 
+    @reason.validator
+    def check_reason(self, attribute, value):
+        """Checks the reason is full iff status != absent."""
+        assert self.reason == value
+        if self.status == 'absent' and value is None:
+            raise ValueError('Must provide a reason if content is absent.')
+        elif self.status != 'absent' and value is not None:
+            raise ValueError(
+                'Must not provide a reason if content is not absent.')
+
     def to_dict(self):
         content = attr.asdict(self)
         if content['data'] is None:
             del content['data']
+        if content['reason'] is None:
+            del content['reason']
         return content
