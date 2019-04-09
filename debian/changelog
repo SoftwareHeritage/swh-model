@@ -1,3 +1,12 @@
+swh-model (0.0.33-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.33     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-08 21:46:28 +0200)
+  * Upstream changes:     - Tune the model generation to work with the
+    pgsql storage.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 09 Apr 2019 15:11:51 +0000
+
 swh-model (0.0.32-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.32     - (tagged by Valentin Lorentz
