@@ -1,3 +1,12 @@
+swh-model (0.0.34-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.34     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-09 18:30:50 +0200)
+  * Upstream changes:     - Limit Content.length to what the pgsql
+    storage supports.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 10 Apr 2019 07:45:31 +0000
+
 swh-model (0.0.33-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.33     - (tagged by Valentin Lorentz
