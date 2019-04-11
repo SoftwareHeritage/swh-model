@@ -1,8 +1,29 @@
-swh-model (0.0.32-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.35-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * New upstream release 0.0.35     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2019-04-11 12:05:11 +0200)
+  * Upstream changes:     - Release swh.model v0.0.35     - Fix
+    hypothesis strategies to work in non-UTC timezones
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 08 Apr 2019 12:59:05 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 11 Apr 2019 10:08:14 +0000
+
+swh-model (0.0.34-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.34     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-09 18:30:50 +0200)
+  * Upstream changes:     - Limit Content.length to what the pgsql
+    storage supports.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 10 Apr 2019 07:45:31 +0000
+
+swh-model (0.0.33-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.33     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-08 21:46:28 +0200)
+  * Upstream changes:     - Tune the model generation to work with the
+    pgsql storage.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 09 Apr 2019 15:11:51 +0000
 
 swh-model (0.0.32-1~swh1) unstable-swh; urgency=medium
 

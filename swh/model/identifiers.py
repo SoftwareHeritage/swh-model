@@ -581,8 +581,6 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
             if target_id not in snapshot['branches'] or target_id == name:
                 unresolved.append((name, target_id))
         else:
-            print(name)
-            print(target)
             target_type = target['target_type'].encode()
             target_id = identifier_to_bytes(target['target'])
 
