@@ -41,8 +41,10 @@ def persons():
 
 
 def timestamps():
-    max_seconds = datetime.datetime.max.timestamp()
-    min_seconds = datetime.datetime.min.timestamp()
+    max_seconds = datetime.datetime.max.replace(
+        tzinfo=datetime.timezone.utc).timestamp()
+    min_seconds = datetime.datetime.min.replace(
+        tzinfo=datetime.timezone.utc).timestamp()
     return builds(
         Timestamp,
         seconds=integers(min_seconds, max_seconds),
