@@ -1,4 +1,4 @@
-swh-model (0.0.35-1~swh2) UNRELEASED; urgency=medium
+swh-model (0.0.35-1~swh2) unstable-swh; urgency=medium
 
   * Remove hypothesis directory
 
