@@ -35,6 +35,7 @@ swh/model/tests/test_hashutil.py
 swh/model/tests/test_hypothesis_strategies.py
 swh/model/tests/test_identifiers.py
 swh/model/tests/test_merkle.py
+swh/model/tests/test_model.py
 swh/model/tests/test_toposort.py
 swh/model/tests/test_validators.py
 swh/model/tests/data/dir-folders/sample-folder.tgz
