@@ -48,6 +48,7 @@ class BaseModel:
         if not isinstance(d, dict):
             raise TypeError(
                 '%s.from_dict expects a dict, not %r' % (cls.__name__, d))
+        kwargs = {}
         for (name, attribute) in attr.fields_dict(cls).items():
             type_ = attribute.type
 
@@ -56,20 +57,19 @@ class BaseModel:
                 if name not in d:
                     continue
                 if d[name] is None:
-                    del d[name]
                     continue
                 else:
                     type_ = type_.__args__[0]
 
             # Construct an object of the expected type
             if issubclass(type_, BaseModel):
-                d[name] = type_.from_dict(d[name])
+                kwargs[name] = type_.from_dict(d[name])
             elif issubclass(type_, Enum):
-                d[name] = type_(d[name])
+                kwargs[name] = type_(d[name])
             else:
-                pass
+                kwargs[name] = d[name]
 
-        return cls(**d)
+        return cls(**kwargs)
 
 
 @attr.s
@@ -215,9 +215,12 @@ class Snapshot(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
-        d['branches'] = {
-            name: SnapshotBranch.from_dict(branch)
-            for (name, branch) in d['branches'].items()
+        d = {
+            **d,
+            'branches': {
+                name: SnapshotBranch.from_dict(branch)
+                for (name, branch) in d['branches'].items()
+            }
         }
         return cls(**d)
 
@@ -306,7 +309,10 @@ class Directory(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
-        d['entries'] = list(map(DirectoryEntry.from_dict, d['entries']))
+        d = {
+            **d,
+            'entries': list(map(DirectoryEntry.from_dict, d['entries']))
+        }
         return super().from_dict(d)
 
 
