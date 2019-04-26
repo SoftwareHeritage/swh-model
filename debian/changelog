@@ -1,3 +1,12 @@
+swh-model (0.0.36-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.36     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-04-26 13:33:29 +0200)
+  * Upstream changes:     - Prevent from_dict() from changing its input
+    dict.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 26 Apr 2019 11:57:45 +0000
+
 swh-model (0.0.35-1~swh2) unstable-swh; urgency=medium
 
   * Remove hypothesis directory
