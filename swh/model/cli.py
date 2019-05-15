@@ -9,6 +9,8 @@ import sys
 
 from functools import partial
 
+from swh.core.cli import CONTEXT_SETTINGS
+
 from swh.model import identifiers as pids
 from swh.model.exceptions import ValidationError
 from swh.model.from_disk import Content, Directory
@@ -62,7 +64,7 @@ def identify_object(obj_type, follow_symlinks, obj):
     return (obj, pid)
 
 
-@click.command()
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--dereference/--no-dereference', 'follow_symlinks',
               default=True,
               help='follow (or not) symlinks for OBJECTS passed as arguments '
