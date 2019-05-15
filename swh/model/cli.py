@@ -74,7 +74,7 @@ def identify_object(obj_type, follow_symlinks, obj):
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
-@click.argument('objects', nargs=-1,
+@click.argument('objects', nargs=-1, required=True,
                 type=click.Path(exists=True, readable=True,
                                 allow_dash=True, path_type=bytes))
 def identify(obj_type, verify, show_filename, follow_symlinks, objects):
