@@ -5,6 +5,7 @@
 
 import binascii
 import datetime
+import hashlib
 
 from collections import namedtuple
 from functools import lru_cache
@@ -14,6 +15,7 @@ from .fields.hashes import validate_sha1
 from .hashutil import hash_git_data, hash_to_hex, MultiHash
 
 
+ORIGIN = 'origin'
 SNAPSHOT = 'snapshot'
 REVISION = 'revision'
 RELEASE = 'release'
@@ -597,7 +599,16 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
     return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
 
 
+def origin_identifier(origin):
+    """Return the intrinsic identifier for an origin."""
+    return hashlib.sha1(origin['url'].encode('ascii')).hexdigest()
+
+
 _object_type_map = {
+    ORIGIN: {
+        'short_name': 'ori',
+        'key_id': 'id'
+    },
     SNAPSHOT: {
         'short_name': 'snp',
         'key_id': 'id'
@@ -620,7 +631,7 @@ _object_type_map = {
     }
 }
 
-PERSISTENT_IDENTIFIER_TYPES = ['snp', 'rel', 'rev', 'dir', 'cnt']
+PERSISTENT_IDENTIFIER_TYPES = ['ori', 'snp', 'rel', 'rev', 'dir', 'cnt']
 
 PERSISTENT_IDENTIFIER_KEYS = [
     'namespace', 'scheme_version', 'object_type', 'object_id', 'metadata']
