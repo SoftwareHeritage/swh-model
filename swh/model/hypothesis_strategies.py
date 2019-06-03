@@ -143,7 +143,7 @@ def contents(draw):
 
 
 def branch_names():
-    return binary()
+    return binary(min_size=1)
 
 
 def branch_targets_object():
