@@ -16,20 +16,6 @@ from .identifiers import normalize_timestamp
 Sha1Git = bytes
 
 
-def contains_optional_validator(validator):
-    """Inspects an attribute's validator to find its type.
-    Inspired by `hypothesis/searchstrategy/attrs.py`."""
-    if isinstance(validator, attr.validators._OptionalValidator):
-        return True
-    elif isinstance(validator, attr.validators._AndValidator):
-        for validator in validator._validators:
-            res = contains_optional_validator(validator)
-            if res:
-                return True
-    else:
-        return False
-
-
 class BaseModel:
     """Base class for SWH model classes.
 
@@ -45,31 +31,7 @@ class BaseModel:
     def from_dict(cls, d):
         """Takes a dictionary representing a tree of SWH objects, and
         recursively builds the corresponding objects."""
-        if not isinstance(d, dict):
-            raise TypeError(
-                '%s.from_dict expects a dict, not %r' % (cls.__name__, d))
-        kwargs = {}
-        for (name, attribute) in attr.fields_dict(cls).items():
-            type_ = attribute.type
-
-            # Heuristic to detect `Optional[X]` and unwrap it to `X`.
-            if contains_optional_validator(attribute.validator):
-                if name not in d:
-                    continue
-                if d[name] is None:
-                    continue
-                else:
-                    type_ = type_.__args__[0]
-
-            # Construct an object of the expected type
-            if issubclass(type_, BaseModel):
-                kwargs[name] = type_.from_dict(d[name])
-            elif issubclass(type_, Enum):
-                kwargs[name] = type_(d[name])
-            else:
-                kwargs[name] = d[name]
-
-        return cls(**kwargs)
+        return cls(**d)
 
 
 @attr.s
@@ -119,7 +81,11 @@ class TimestampWithTimezone(BaseModel):
     def from_dict(cls, d):
         """Builds a TimestampWithTimezone from any of the formats
         accepted by :py:`swh.model.normalize_timestamp`."""
-        return super().from_dict(normalize_timestamp(d))
+        d = normalize_timestamp(d)
+        return cls(
+            timestamp=Timestamp.from_dict(d['timestamp']),
+            offset=d['offset'],
+            negative_utc=d['negative_utc'])
 
 
 @attr.s
@@ -197,6 +163,12 @@ class SnapshotBranch(BaseModel):
         branch['target_type'] = branch['target_type'].value
         return branch
 
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            target=d['target'],
+            target_type=TargetType(d['target_type']))
+
 
 @attr.s
 class Snapshot(BaseModel):
@@ -215,14 +187,12 @@ class Snapshot(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
-        d = {
-            **d,
-            'branches': {
+        return cls(
+            id=d['id'],
+            branches={
                 name: SnapshotBranch.from_dict(branch)
                 for (name, branch) in d['branches'].items()
-            }
-        }
-        return cls(**d)
+            })
 
 
 @attr.s
@@ -252,6 +222,17 @@ class Release(BaseModel):
         rel['date'] = self.date.to_dict() if self.date is not None else None
         rel['target_type'] = rel['target_type'].value
         return rel
+
+    @classmethod
+    def from_dict(cls, d):
+        d = d.copy()
+        if d.get('author'):
+            d['author'] = Person.from_dict(d['author'])
+        if d.get('date'):
+            d['date'] = TimestampWithTimezone.from_dict(d['date'])
+        return cls(
+            target_type=ObjectType(d.pop('target_type')),
+            **d)
 
 
 class RevisionType(Enum):
@@ -286,6 +267,22 @@ class Revision(BaseModel):
         rev['type'] = rev['type'].value
         return rev
 
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            id=d['id'],
+            message=d['message'],
+            author=Person.from_dict(d['author']),
+            committer=Person.from_dict(d['committer']),
+            date=TimestampWithTimezone.from_dict(d['date']),
+            committer_date=TimestampWithTimezone.from_dict(
+                d['committer_date']),
+            type=RevisionType(d['type']),
+            directory=d['directory'],
+            synthetic=d['synthetic'],
+            metadata=d['metadata'],
+            parents=d['parents'])
+
 
 @attr.s
 class DirectoryEntry(BaseModel):
@@ -309,11 +306,10 @@ class Directory(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
-        d = {
-            **d,
-            'entries': list(map(DirectoryEntry.from_dict, d['entries']))
-        }
-        return super().from_dict(d)
+        return cls(
+            id=d['id'],
+            entries=[DirectoryEntry.from_dict(entry)
+                     for entry in d['entries']])
 
 
 @attr.s
