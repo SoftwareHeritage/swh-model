@@ -1,3 +1,12 @@
+swh-model (0.0.37-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.37     - (tagged by David Douard
+    <david.douard@sdfa3.org> on 2019-05-15 15:44:21 +0200)
+  * Upstream changes:     - cli: add support for --help on the
+    'identify' cli tool
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 13 Jun 2019 14:40:16 +0000
+
 swh-model (0.0.36-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.36     - (tagged by Valentin Lorentz
