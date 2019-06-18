@@ -1,3 +1,15 @@
+swh-model (0.0.38-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.38     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-06-18 13:40:20 +0200)
+  * Upstream changes:     - Remove dependency on swh-core.     - This is
+    a fix to workaround pip's inability to correctly solve     - extra
+    requirements (swh-model depends on swh-core[], but if other     -
+    packages depend on swh-model and swh-core[http], the 'http' extra
+    - does not always get installed).
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 18 Jun 2019 11:50:14 +0000
+
 swh-model (0.0.37-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.37     - (tagged by David Douard
