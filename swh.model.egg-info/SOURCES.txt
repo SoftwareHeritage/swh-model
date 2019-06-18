@@ -1,7 +1,6 @@
 MANIFEST.in
 Makefile
 README.md
-requirements-swh.txt
 requirements.txt
 setup.py
 version.txt
