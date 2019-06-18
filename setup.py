@@ -5,7 +5,6 @@
 # See top-level LICENSE file for more information
 
 from setuptools import setup, find_packages
-import hashlib
 
 from os import path
 from io import open
@@ -36,24 +35,7 @@ def parse_requirements(name=None):
     return requirements
 
 
-blake2_requirements = []
-
-pyblake2_hash_sets = [
-    # Built-in implementation in Python 3.6+
-    {'blake2s', 'blake2b'},
-    # Potentially shipped by OpenSSL 1.1 (e.g. Python 3.5 in Debian stretch
-    # has these)
-    {'blake2s256', 'blake2b512'},
-]
-
-for pyblake2_hashes in pyblake2_hash_sets:
-    if not pyblake2_hashes - set(hashlib.algorithms_available):
-        # The required blake2 hashes have been found
-        break
-else:
-    # None of the possible sets of blake2 hashes are available.
-    # use pyblake2 instead
-    blake2_requirements.append('pyblake2')
+blake2_requirements = ['pyblake2;python_version<"3.6"']
 
 setup(
     name='swh.model',
