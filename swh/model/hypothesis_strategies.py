@@ -20,6 +20,15 @@ from .model import (
 from .identifiers import snapshot_identifier, identifier_to_bytes
 
 
+pgsql_alphabet = characters(
+    blacklist_categories=('Cs', ),
+    blacklist_characters=['\u0000'])  # postgresql does not like these
+
+
+def pgsql_text():
+    return text(alphabet=pgsql_alphabet)
+
+
 def sha1_git():
     return binary(min_size=20, max_size=20)
 
@@ -89,10 +98,7 @@ def releases(draw):
 
 
 def revision_metadata():
-    alphabet = characters(
-        blacklist_categories=('Cs', ),
-        blacklist_characters=['\u0000'])  # postgresql does not like these
-    return dictionaries(text(alphabet=alphabet), text(alphabet=alphabet))
+    return dictionaries(pgsql_text(), pgsql_text())
 
 
 def revisions():
@@ -125,7 +131,7 @@ def directories():
 def contents(draw):
     (status, data, reason) = draw(one_of(
         tuples(just('visible'), binary(), none()),
-        tuples(just('absent'), none(), text()),
+        tuples(just('absent'), none(), pgsql_text()),
         tuples(just('hidden'), none(), none()),
     ))
 
@@ -143,7 +149,7 @@ def contents(draw):
 
 
 def branch_names():
-    return binary()
+    return binary(min_size=1)
 
 
 def branch_targets_object():

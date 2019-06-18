@@ -73,6 +73,8 @@ setup(
     entry_points='''
         [console_scripts]
         swh-identify=swh.model.cli:identify
+        [swh.cli.subcommands]
+        identify=swh.model.cli:identify
     ''',
     classifiers=[
         "Programming Language :: Python :: 3",

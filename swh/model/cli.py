@@ -14,6 +14,9 @@ from swh.model.exceptions import ValidationError
 from swh.model.from_disk import Content, Directory
 
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
 class PidParamType(click.ParamType):
     name = 'persistent identifier'
 
@@ -62,7 +65,7 @@ def identify_object(obj_type, follow_symlinks, obj):
     return (obj, pid)
 
 
-@click.command()
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.option('--dereference/--no-dereference', 'follow_symlinks',
               default=True,
               help='follow (or not) symlinks for OBJECTS passed as arguments '
@@ -74,7 +77,7 @@ def identify_object(obj_type, follow_symlinks, obj):
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
-@click.argument('objects', nargs=-1,
+@click.argument('objects', nargs=-1, required=True,
                 type=click.Path(exists=True, readable=True,
                                 allow_dash=True, path_type=bytes))
 def identify(obj_type, verify, show_filename, follow_symlinks, objects):
@@ -90,13 +93,13 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     Examples:
 
     \b
-      $ swh-identify fork.c kmod.c sched/deadline.c
+      $ swh identify fork.c kmod.c sched/deadline.c
       swh:1:cnt:2e391c754ae730bd2d8520c2ab497c403220c6e3    fork.c
       swh:1:cnt:0277d1216f80ae1adeed84a686ed34c9b2931fc2    kmod.c
       swh:1:cnt:57b939c81bce5d06fa587df8915f05affbe22b82    sched/deadline.c
 
     \b
-      $ swh-identify --no-filename /usr/src/linux/kernel/
+      $ swh identify --no-filename /usr/src/linux/kernel/
       swh:1:dir:f9f858a48d663b3809c9e2f336412717496202ab
 
     """
