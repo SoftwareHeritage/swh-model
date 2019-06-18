@@ -9,11 +9,12 @@ import sys
 
 from functools import partial
 
-from swh.core.cli import CONTEXT_SETTINGS
-
 from swh.model import identifiers as pids
 from swh.model.exceptions import ValidationError
 from swh.model.from_disk import Content, Directory
+
+
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 class PidParamType(click.ParamType):
