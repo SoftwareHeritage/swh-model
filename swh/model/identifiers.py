@@ -645,7 +645,8 @@ class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
             pointed object
 
     Raises:
-        swh.model.exceptions.ValidationError: In case of invalid object type or id
+        swh.model.exceptions.ValidationError: In case of invalid object type
+            or id
 
     Once created, it contains the following attributes:
 
@@ -659,9 +660,13 @@ class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
     To get the raw persistent identifier string from an instance of
     this named tuple, use the :func:`str` function::
 
-        pid = PersistentId(object_type='content', object_id='8ff44f081d43176474b267de5451f2c2e88089d0')
-        pid_str = str(pid) # 'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
-    """ # noqa
+        pid = PersistentId(
+            object_type='content',
+            object_id='8ff44f081d43176474b267de5451f2c2e88089d0'
+        )
+        pid_str = str(pid)
+        # 'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
+    """
     __slots__ = ()
 
     def __new__(cls, namespace='swh', scheme_version=1,
