@@ -893,3 +893,14 @@ class SnapshotIdentifier(unittest.TestCase):
             with self.assertRaisesRegex(
                     ValidationError, _error):
                 identifiers.parse_persistent_identifier(pid)
+
+
+class OriginIdentifier(unittest.TestCase):
+    def setUp(self):
+        self.origin = {
+            'url': 'https://github.com/torvalds/linux',
+        }
+
+    def test_content_identifier(self):
+        self.assertEqual(identifiers.origin_identifier(self.origin),
+                         'b63a575fe3faab7692c9f38fb09d4bb45651bb0f')
