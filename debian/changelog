@@ -1,3 +1,9 @@
+swh-model (0.0.39-1~swh1~bpo9+3) stretch-swh; urgency=medium
+
+  * Properly set dependency on pyblake2... 
+
+ -- David Douard <david.douard@sdfa3.org>  Thu, 18 Jul 2019 16:48:29 +0200
+
 swh-model (0.0.39-1~swh1~bpo9+2) stretch-swh; urgency=medium
 
   * Add dependency on python3-pyblake2. 

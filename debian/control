@@ -4,7 +4,7 @@ Section: python
 Priority: optional
 Build-Depends: debhelper (>= 9),
                dh-python (>= 2),
-               python3 (>= 3.5) | python3-pyblake2,
+               python3 (>= 3.5),
                python3-all,
                python3-attr,
                python3-click,
@@ -18,7 +18,8 @@ Homepage: https://forge.softwareheritage.org/diffusion/DMOD/
 
 Package: python3-swh.model
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}
+Depends: ${misc:Depends}, ${python3:Depends},
+         python3-pyblake2,
 Breaks: python3-swh.loader.core (<< 0.0.16~),
         python3-swh.loader.dir (<< 0.0.28~),
         python3-swh.loader.svn (<< 0.0.28~)
