@@ -210,6 +210,9 @@ class Release(BaseModel):
     date = attr.ib(type=Optional[TimestampWithTimezone],
                    default=None,
                    validator=attr.validators.optional([]))
+    metadata = attr.ib(type=Optional[Dict[str, object]],
+                       default=None,
+                       validator=attr.validators.optional([]))
 
     @author.validator
     def check_author(self, attribute, value):
