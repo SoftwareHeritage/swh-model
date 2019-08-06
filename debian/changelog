@@ -1,8 +1,10 @@
-swh-model (0.0.39-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.40-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.40     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-08-06 14:36:37 +0200)
+  * Upstream changes:     - Add SHA1_SIZE constant.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 18 Jul 2019 10:32:14 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 06 Aug 2019 12:38:36 +0000
 
 swh-model (0.0.39-1~swh1) unstable-swh; urgency=medium
 
