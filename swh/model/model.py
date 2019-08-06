@@ -12,6 +12,8 @@ import dateutil.parser
 
 from .identifiers import normalize_timestamp
 
+SHA1_SIZE = 20
+
 # TODO: Limit this to 20 bytes
 Sha1Git = bytes
 
