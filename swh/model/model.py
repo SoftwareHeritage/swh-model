@@ -341,8 +341,10 @@ class Content(BaseModel):
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive."""
-        if value < 0:
-            raise ValueError('Length must be positive.')
+        if self.status == 'absent' and value < -1:
+            raise ValueError('Length must be positive or -1.')
+        elif self.status != 'absent' and value < 0:
+            raise ValueError('Length must be positive, unless status=absent.')
 
     @reason.validator
     def check_reason(self, attribute, value):
