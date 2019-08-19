@@ -335,6 +335,9 @@ class Content(BaseModel):
                    default=None,
                    validator=attr.validators.optional([]))
 
+    ctime = attr.ib(type=Optional[datetime.datetime],
+                    default=None)
+
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive."""
@@ -353,8 +356,7 @@ class Content(BaseModel):
 
     def to_dict(self):
         content = attr.asdict(self)
-        if content['data'] is None:
-            del content['data']
-        if content['reason'] is None:
-            del content['reason']
+        for field in ('data', 'reason', 'ctime'):
+            if content[field] is None:
+                del content[field]
         return content
