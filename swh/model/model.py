@@ -11,6 +11,7 @@ import attr
 import dateutil.parser
 
 from .identifiers import normalize_timestamp
+from .hashutil import DEFAULT_ALGORITHMS
 
 SHA1_SIZE = 20
 
@@ -362,3 +363,8 @@ class Content(BaseModel):
             if content[field] is None:
                 del content[field]
         return content
+
+    def get_hash(self, hash_name):
+        if hash_name not in DEFAULT_ALGORITHMS:
+            raise ValueError('{} is not a valid hash name.'.format(hash_name))
+        return getattr(self, hash_name)

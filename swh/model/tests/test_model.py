@@ -7,6 +7,7 @@ import copy
 
 from hypothesis import given
 
+from swh.model.model import Content
 from swh.model.hypothesis_strategies import objects
 
 
@@ -24,3 +25,11 @@ def test_todict_inverse_fromdict(objtype_and_obj):
 
     # Check the composition of from_dict and to_dict is the identity
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
+
+
+def test_content_get_hash():
+    hashes = dict(
+        sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+    c = Content(length=42, status='visible', **hashes)
+    for (hash_name, hash_) in hashes.items():
+        assert c.get_hash(hash_name) == hash_
