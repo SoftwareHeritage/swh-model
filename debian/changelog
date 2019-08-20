@@ -1,8 +1,14 @@
-swh-model (0.0.40-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.41-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.41     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-08-20 11:46:13 +0200)
+  * Upstream changes:     - tweaks to swh.model.model to support more
+    valid inputs     - * Allow -1 as Content length.     - * Add
+    optional 'ctime' field to Content.     - * Generated content with
+    status=hidden should have a data field.     - * Add a get_hash
+    helper method to Content.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 06 Aug 2019 12:39:51 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 20 Aug 2019 09:50:09 +0000
 
 swh-model (0.0.40-1~swh1) unstable-swh; urgency=medium
 
