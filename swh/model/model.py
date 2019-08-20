@@ -11,6 +11,7 @@ import attr
 import dateutil.parser
 
 from .identifiers import normalize_timestamp
+from .hashutil import DEFAULT_ALGORITHMS
 
 SHA1_SIZE = 20
 
@@ -335,11 +336,16 @@ class Content(BaseModel):
                    default=None,
                    validator=attr.validators.optional([]))
 
+    ctime = attr.ib(type=Optional[datetime.datetime],
+                    default=None)
+
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive."""
-        if value < 0:
-            raise ValueError('Length must be positive.')
+        if self.status == 'absent' and value < -1:
+            raise ValueError('Length must be positive or -1.')
+        elif self.status != 'absent' and value < 0:
+            raise ValueError('Length must be positive, unless status=absent.')
 
     @reason.validator
     def check_reason(self, attribute, value):
@@ -353,8 +359,12 @@ class Content(BaseModel):
 
     def to_dict(self):
         content = attr.asdict(self)
-        if content['data'] is None:
-            del content['data']
-        if content['reason'] is None:
-            del content['reason']
+        for field in ('data', 'reason', 'ctime'):
+            if content[field] is None:
+                del content[field]
         return content
+
+    def get_hash(self, hash_name):
+        if hash_name not in DEFAULT_ALGORITHMS:
+            raise ValueError('{} is not a valid hash name.'.format(hash_name))
+        return getattr(self, hash_name)

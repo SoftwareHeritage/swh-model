@@ -132,7 +132,7 @@ def contents(draw):
     (status, data, reason) = draw(one_of(
         tuples(just('visible'), binary(), none()),
         tuples(just('absent'), none(), pgsql_text()),
-        tuples(just('hidden'), none(), none()),
+        tuples(just('hidden'), binary(), none()),
     ))
 
     return draw(builds(
