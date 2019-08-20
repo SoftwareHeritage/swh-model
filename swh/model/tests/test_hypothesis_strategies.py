@@ -49,7 +49,7 @@ def test_dicts_generation(obj_type_and_obj):
                 set(DEFAULT_ALGORITHMS) | {'length', 'status', 'reason'}
         elif object_['status'] == 'hidden':
             assert set(object_) == \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status'}
+                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
         else:
             assert False, object_
     elif obj_type == 'release':
