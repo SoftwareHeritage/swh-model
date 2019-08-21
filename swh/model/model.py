@@ -238,6 +238,8 @@ class Release(BaseModel):
         rel = attr.asdict(self)
         rel['date'] = self.date.to_dict() if self.date is not None else None
         rel['target_type'] = rel['target_type'].value
+        if rel['metadata'] is None:
+            del rel['metadata']
         return rel
 
     @classmethod
