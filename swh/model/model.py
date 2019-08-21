@@ -112,7 +112,6 @@ class OriginVisit(BaseModel):
         """Serializes the date as a string and omits the visit id if it is
         `None`."""
         ov = super().to_dict()
-        ov['date'] = str(self.date)
         if ov['visit'] is None:
             del ov['visit']
         return ov
@@ -120,9 +119,13 @@ class OriginVisit(BaseModel):
     @classmethod
     def from_dict(cls, d):
         """Parses the date from a string, and accepts missing visit ids."""
+        d = d.copy()
+        date = d.pop('date')
         return cls(
-            origin=Origin.from_dict(d['origin']),
-            date=dateutil.parser.parse(d['date']),
+            origin=Origin.from_dict(d.pop('origin')),
+            date=(date
+                  if isinstance(date, datetime.datetime)
+                  else dateutil.parser.parse(date)),
             visit=d.get('visit'))
 
 

@@ -3,6 +3,8 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import datetime
+
 import attr
 from hypothesis import given
 
@@ -30,7 +32,8 @@ def assert_nested_dict(obj):
     elif isinstance(obj, list):
         for value in obj:
             assert_nested_dict(value)
-    elif isinstance(obj, (int, float, str, bytes, bool, type(None))):
+    elif isinstance(obj, (int, float, str, bytes, bool, type(None),
+                          datetime.datetime)):
         pass
     else:
         assert False, obj
