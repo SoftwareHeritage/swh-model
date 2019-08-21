@@ -104,8 +104,16 @@ class OriginVisit(BaseModel):
     SWH loader."""
     origin = attr.ib(type=Origin)
     date = attr.ib(type=datetime.datetime)
+    status = attr.ib(
+        type=str,
+        validator=attr.validators.in_(['ongoing', 'full', 'partial']))
+    type = attr.ib(type=str)
+    snapshot = attr.ib(type=Sha1Git)
+    metadata = attr.ib(type=Optional[Dict[str, object]],
+                       default=None)
+
     visit = attr.ib(type=Optional[int],
-                    validator=attr.validators.optional([]))
+                    default=None)
     """Should not be set before calling 'origin_visit_add()'."""
 
     def to_dict(self):
@@ -126,7 +134,7 @@ class OriginVisit(BaseModel):
             date=(date
                   if isinstance(date, datetime.datetime)
                   else dateutil.parser.parse(date)),
-            visit=d.get('visit'))
+            **d)
 
 
 class TargetType(Enum):
