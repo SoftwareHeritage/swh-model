@@ -194,7 +194,7 @@ class Snapshot(BaseModel):
         return {
             'id': self.id,
             'branches': {
-                name: branch.to_dict()
+                name: branch.to_dict() if branch else None
                 for (name, branch) in self.branches.items()
             }
         }
@@ -204,7 +204,7 @@ class Snapshot(BaseModel):
         return cls(
             id=d['id'],
             branches={
-                name: SnapshotBranch.from_dict(branch)
+                name: SnapshotBranch.from_dict(branch) if branch else None
                 for (name, branch) in d['branches'].items()
             })
 

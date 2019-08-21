@@ -59,4 +59,4 @@ def test_dicts_generation(obj_type_and_obj):
         assert object_['target_type'] in target_types
     elif obj_type == 'snapshot':
         for branch in object_['branches'].values():
-            assert branch['target_type'] in target_types
+            assert branch is None or branch['target_type'] in target_types
