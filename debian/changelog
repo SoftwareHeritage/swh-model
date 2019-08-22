@@ -1,3 +1,13 @@
+swh-model (0.0.42-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.42     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-08-22 14:04:03 +0200)
+  * Upstream changes:     - v0.0.42     - Tweak swh.model.model to be
+    closer to what swh-storage     - accepts for releases and origin
+    visits.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 22 Aug 2019 12:12:22 +0000
+
 swh-model (0.0.41-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.41     - (tagged by Valentin Lorentz
