@@ -78,7 +78,9 @@ def origin_visits():
     return builds(
         OriginVisit,
         visit=integers(0, 1000),
-        origin=origins())
+        origin=origins(),
+        status=sampled_from(['ongoing', 'full', 'partial']),
+        type=pgsql_text())
 
 
 @composite
@@ -178,7 +180,10 @@ def branch_targets(*, only_objects=False):
 def snapshots(draw, *, min_size=0, max_size=100, only_objects=False):
     branches = draw(dictionaries(
         keys=branch_names(),
-        values=branch_targets(only_objects=only_objects),
+        values=one_of(
+            none(),
+            branch_targets(only_objects=only_objects)
+        ),
         min_size=min_size,
         max_size=max_size,
     ))
@@ -200,7 +205,7 @@ def snapshots(draw, *, min_size=0, max_size=100, only_objects=False):
         try:
             id_ = snapshot_identifier({
                 'branches': {
-                    name: branch.to_dict()
+                    name: branch.to_dict() if branch else None
                     for (name, branch) in branches.items()}})
         except ValueError as e:
             for (source, target) in e.args[1]:
