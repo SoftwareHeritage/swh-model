@@ -104,15 +104,22 @@ class OriginVisit(BaseModel):
     SWH loader."""
     origin = attr.ib(type=Origin)
     date = attr.ib(type=datetime.datetime)
+    status = attr.ib(
+        type=str,
+        validator=attr.validators.in_(['ongoing', 'full', 'partial']))
+    type = attr.ib(type=str)
+    snapshot = attr.ib(type=Sha1Git)
+    metadata = attr.ib(type=Optional[Dict[str, object]],
+                       default=None)
+
     visit = attr.ib(type=Optional[int],
-                    validator=attr.validators.optional([]))
+                    default=None)
     """Should not be set before calling 'origin_visit_add()'."""
 
     def to_dict(self):
         """Serializes the date as a string and omits the visit id if it is
         `None`."""
         ov = super().to_dict()
-        ov['date'] = str(self.date)
         if ov['visit'] is None:
             del ov['visit']
         return ov
@@ -120,10 +127,14 @@ class OriginVisit(BaseModel):
     @classmethod
     def from_dict(cls, d):
         """Parses the date from a string, and accepts missing visit ids."""
+        d = d.copy()
+        date = d.pop('date')
         return cls(
-            origin=Origin.from_dict(d['origin']),
-            date=dateutil.parser.parse(d['date']),
-            visit=d.get('visit'))
+            origin=Origin.from_dict(d.pop('origin')),
+            date=(date
+                  if isinstance(date, datetime.datetime)
+                  else dateutil.parser.parse(date)),
+            **d)
 
 
 class TargetType(Enum):
@@ -183,7 +194,7 @@ class Snapshot(BaseModel):
         return {
             'id': self.id,
             'branches': {
-                name: branch.to_dict()
+                name: branch.to_dict() if branch else None
                 for (name, branch) in self.branches.items()
             }
         }
@@ -193,7 +204,7 @@ class Snapshot(BaseModel):
         return cls(
             id=d['id'],
             branches={
-                name: SnapshotBranch.from_dict(branch)
+                name: SnapshotBranch.from_dict(branch) if branch else None
                 for (name, branch) in d['branches'].items()
             })
 
@@ -227,6 +238,8 @@ class Release(BaseModel):
         rel = attr.asdict(self)
         rel['date'] = self.date.to_dict() if self.date is not None else None
         rel['target_type'] = rel['target_type'].value
+        if rel['metadata'] is None:
+            del rel['metadata']
         return rel
 
     @classmethod
