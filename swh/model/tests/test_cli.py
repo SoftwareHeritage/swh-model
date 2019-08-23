@@ -45,6 +45,13 @@ class TestIdentify(DataMixin, unittest.TestCase):
         self.assertPidOK(result,
                          'swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759')
 
+    def test_origin_id(self):
+        """identify an origin URL"""
+        url = 'https://github.com/torvalds/linux'
+        result = self.runner.invoke(cli.identify, ['--type', 'origin', url])
+        self.assertPidOK(result,
+                         'swh:1:ori:b63a575fe3faab7692c9f38fb09d4bb45651bb0f')
+
     def test_symlink(self):
         """identify symlink --- both itself and target"""
         regular = os.path.join(self.tmpdir_name, b'foo.txt')
@@ -84,17 +91,26 @@ class TestIdentify(DataMixin, unittest.TestCase):
             self.assertPidOK(result,
                              'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
 
-    def test_auto_id(self):
-        """automatic object type: file or directory, depending on argument"""
+    def test_auto_content(self):
+        """automatic object type detection: content"""
         with tempfile.NamedTemporaryFile(prefix='swh.model.cli') as f:
             result = self.runner.invoke(cli.identify, [f.name])
             self.assertEqual(result.exit_code, 0)
             self.assertRegex(result.output, r'^swh:\d+:cnt:')
 
+    def test_auto_directory(self):
+        """automatic object type detection: directory"""
         with tempfile.TemporaryDirectory(prefix='swh.model.cli') as dirname:
             result = self.runner.invoke(cli.identify, [dirname])
             self.assertEqual(result.exit_code, 0)
             self.assertRegex(result.output, r'^swh:\d+:dir:')
+
+    def test_auto_origin(self):
+        """automatic object type detection: origin"""
+        result = self.runner.invoke(cli.identify,
+                                    ['https://github.com/torvalds/linux'])
+        self.assertEqual(result.exit_code, 0)
+        self.assertRegex(result.output, r'^swh:\d+:ori:')
 
     def test_verify_content(self):
         """identifier verification"""
