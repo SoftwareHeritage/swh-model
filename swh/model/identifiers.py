@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018  The Software Heritage developers
+# Copyright (C) 2015-2019  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -21,6 +21,14 @@ REVISION = 'revision'
 RELEASE = 'release'
 DIRECTORY = 'directory'
 CONTENT = 'content'
+
+PID_NAMESPACE = 'swh'
+PID_VERSION = 1
+PID_TYPES = ['ori', 'snp', 'rel', 'rev', 'dir', 'cnt']
+PID_KEYS = ['namespace', 'scheme_version', 'object_type', 'object_id',
+            'metadata']
+PID_SEP = ':'
+PID_CTXT_SEP = ';'
 
 
 @lru_cache()
@@ -631,15 +639,8 @@ _object_type_map = {
     }
 }
 
-PERSISTENT_IDENTIFIER_TYPES = ['ori', 'snp', 'rel', 'rev', 'dir', 'cnt']
 
-PERSISTENT_IDENTIFIER_KEYS = [
-    'namespace', 'scheme_version', 'object_type', 'object_id', 'metadata']
-
-PERSISTENT_IDENTIFIER_PARTS_SEP = ';'
-
-
-class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
+class PersistentId(namedtuple('PersistentId', PID_KEYS)):
     """
     Named tuple holding the relevant info associated to a Software Heritage
     persistent identifier.
@@ -680,7 +681,7 @@ class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
     """
     __slots__ = ()
 
-    def __new__(cls, namespace='swh', scheme_version=1,
+    def __new__(cls, namespace=PID_NAMESPACE, scheme_version=PID_VERSION,
                 object_type='', object_id='', metadata={}):
         o = _object_type_map.get(object_type)
         if not o:
@@ -696,11 +697,11 @@ class PersistentId(namedtuple('PersistentId', PERSISTENT_IDENTIFIER_KEYS)):
 
     def __str__(self):
         o = _object_type_map.get(self.object_type)
-        pid = '%s:%s:%s:%s' % (self.namespace, self.scheme_version,
-                               o['short_name'], self.object_id)
+        pid = PID_SEP.join([self.namespace, str(self.scheme_version),
+                            o['short_name'], self.object_id])
         if self.metadata:
             for k, v in self.metadata.items():
-                pid += '%s%s=%s' % (PERSISTENT_IDENTIFIER_PARTS_SEP, k, v)
+                pid += '%s%s=%s' % (PID_CTXT_SEP, k, v)
         return pid
 
 
@@ -755,7 +756,7 @@ def parse_persistent_identifier(persistent_id):
 
     """
     # <pid>;<contextual-information>
-    persistent_id_parts = persistent_id.split(PERSISTENT_IDENTIFIER_PARTS_SEP)
+    persistent_id_parts = persistent_id.split(PID_CTXT_SEP)
     pid_data = persistent_id_parts.pop(0).split(':')
 
     if len(pid_data) != 4:
@@ -764,17 +765,17 @@ def parse_persistent_identifier(persistent_id):
 
     # Checking for parsing errors
     _ns, _version, _type, _id = pid_data
-    if _ns != 'swh':
+    if _ns != PID_NAMESPACE:
         raise ValidationError(
-            'Wrong format: Supported namespace is \'swh\'')
+            "Wrong format: only supported namespace is '%s'" % PID_NAMESPACE)
 
-    if _version != '1':
+    if _version != str(PID_VERSION):
         raise ValidationError(
-            'Wrong format: Supported version is 1')
+            'Wrong format: only supported version is %d' % PID_VERSION)
 
     pid_data[1] = int(pid_data[1])
 
-    expected_types = PERSISTENT_IDENTIFIER_TYPES
+    expected_types = PID_TYPES
     if _type not in expected_types:
         raise ValidationError(
             'Wrong format: Supported types are %s' % (

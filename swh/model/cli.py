@@ -1,4 +1,4 @@
-# Copyright (C) 2018  The Software Heritage developers
+# Copyright (C) 2018-2019  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -8,6 +8,7 @@ import os
 import sys
 
 from functools import partial
+from urllib.parse import urlparse
 
 from swh.model import identifiers as pids
 from swh.model.exceptions import ValidationError
@@ -38,25 +39,40 @@ def pid_of_dir(path):
     return pids.persistent_identifier(pids.DIRECTORY, object)
 
 
+def pid_of_origin(url):
+    pid = pids.PersistentId(object_type='origin',
+                            object_id=pids.origin_identifier({'url': url}))
+    return str(pid)
+
+
 def identify_object(obj_type, follow_symlinks, obj):
     if obj_type == 'auto':
         if os.path.isfile(obj):
             obj_type = 'content'
         elif os.path.isdir(obj):
             obj_type = 'directory'
-        else:  # shouldn't happen, due to path validation
-            raise click.BadParameter('%s is neither a file nor a directory' %
-                                     obj)
-
-    path = obj
-    if follow_symlinks and os.path.islink(obj):
-        path = os.path.realpath(obj)
+        else:
+            try:  # URL parsing
+                if urlparse(obj).scheme:
+                    obj_type = 'origin'
+                else:
+                    raise ValueError
+            except ValueError:
+                raise click.BadParameter('cannot detect object type for %s' %
+                                         obj)
 
     pid = None
-    if obj_type == 'content':
-        pid = pid_of_file(path)
-    elif obj_type == 'directory':
-        pid = pid_of_dir(path)
+
+    if obj_type in ['content', 'directory']:
+        path = obj.encode(sys.getfilesystemencoding())
+        if follow_symlinks and os.path.islink(obj):
+            path = os.path.realpath(obj)
+        if obj_type == 'content':
+            pid = pid_of_file(path)
+        elif obj_type == 'directory':
+            pid = pid_of_dir(path)
+    elif obj_type == 'origin':
+        pid = pid_of_origin(obj)
     else:  # shouldn't happen, due to option validation
         raise click.BadParameter('invalid object type: ' + obj_type)
 
@@ -73,13 +89,11 @@ def identify_object(obj_type, follow_symlinks, obj):
 @click.option('--filename/--no-filename', 'show_filename', default=True,
               help='show/hide file name (default: show)')
 @click.option('--type', '-t', 'obj_type', default='auto',
-              type=click.Choice(['auto', 'content', 'directory']),
+              type=click.Choice(['auto', 'content', 'directory', 'origin']),
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
-@click.argument('objects', nargs=-1, required=True,
-                type=click.Path(exists=True, readable=True,
-                                allow_dash=True, path_type=bytes))
+@click.argument('objects', nargs=-1, required=True)
 def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     """Compute the Software Heritage persistent identifier (PID) for the given
     source code object(s).

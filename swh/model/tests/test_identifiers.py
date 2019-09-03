@@ -10,7 +10,7 @@ import unittest
 from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError
 from swh.model.identifiers import (CONTENT, DIRECTORY,
-                                   PERSISTENT_IDENTIFIER_TYPES, RELEASE,
+                                   PID_TYPES, RELEASE,
                                    REVISION, SNAPSHOT, PersistentId)
 
 
@@ -876,12 +876,12 @@ class SnapshotIdentifier(unittest.TestCase):
                 ('swh:1:cnt:',
                  'Wrong format: Identifier should be present'),
                 ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505',
-                 'Wrong format: Supported namespace is \'swh\''),
+                 'Wrong format: only supported namespace is \'swh\''),
                 ('swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505',
-                 'Wrong format: Supported version is 1'),
+                 'Wrong format: only supported version is 1'),
                 ('swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505',
                  'Wrong format: Supported types are %s' % (
-                     ', '.join(PERSISTENT_IDENTIFIER_TYPES))),
+                     ', '.join(PID_TYPES))),
                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;'
                  'malformed',
                  'Contextual data is badly formatted, form key=val expected'),
