@@ -1,9 +1,11 @@
-:orphan:
-
 .. _persistent-identifiers:
 
+======================
 Persistent identifiers
 ======================
+
+Description
+===========
 
 You can point to objects present in the Software Heritage archive by the means
 of **persistent identifiers** that are guaranteed to remain stable (persistent)
