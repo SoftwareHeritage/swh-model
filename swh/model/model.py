@@ -214,19 +214,15 @@ class Release(BaseModel):
     id = attr.ib(type=Sha1Git)
     name = attr.ib(type=bytes)
     message = attr.ib(type=bytes)
-    target = attr.ib(type=Optional[Sha1Git],
-                     validator=attr.validators.optional([]))
+    target = attr.ib(type=Optional[Sha1Git])
     target_type = attr.ib(type=ObjectType)
     synthetic = attr.ib(type=bool)
     author = attr.ib(type=Optional[Person],
-                     default=None,
-                     validator=attr.validators.optional([]))
+                     default=None)
     date = attr.ib(type=Optional[TimestampWithTimezone],
-                   default=None,
-                   validator=attr.validators.optional([]))
+                   default=None)
     metadata = attr.ib(type=Optional[Dict[str, object]],
-                       default=None,
-                       validator=attr.validators.optional([]))
+                       default=None)
 
     @author.validator
     def check_author(self, attribute, value):
@@ -274,8 +270,7 @@ class Revision(BaseModel):
     directory = attr.ib(type=Sha1Git)
     synthetic = attr.ib(type=bool)
     metadata = attr.ib(type=Optional[Dict[str, object]],
-                       default=None,
-                       validator=attr.validators.optional([]))
+                       default=None)
     parents = attr.ib(type=List[Sha1Git],
                       default=attr.Factory(list))
 
@@ -343,11 +338,9 @@ class Content(BaseModel):
         type=str,
         validator=attr.validators.in_(['visible', 'absent', 'hidden']))
     reason = attr.ib(type=Optional[str],
-                     default=None,
-                     validator=attr.validators.optional([]))
+                     default=None)
     data = attr.ib(type=Optional[bytes],
-                   default=None,
-                   validator=attr.validators.optional([]))
+                   default=None)
 
     ctime = attr.ib(type=Optional[datetime.datetime],
                     default=None)
