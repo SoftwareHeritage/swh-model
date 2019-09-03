@@ -1,8 +1,13 @@
-swh-model (0.0.42-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.43-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * New upstream release 0.0.43     - (tagged by Antoine R. Dumont
+    (@ardumont) <antoine.romain.dumont@gmail.com> on 2019-09-03 14:04:44
+    +0200)
+  * Upstream changes:     - v0.0.43     - swh identify: add support for
+    origin PIDs     - identifiers.py: add constants for 'swh:1' and
+    sanitize namespace
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 22 Aug 2019 12:13:40 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 03 Sep 2019 12:09:04 +0000
 
 swh-model (0.0.42-1~swh1) unstable-swh; urgency=medium
 
