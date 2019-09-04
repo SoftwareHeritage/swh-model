@@ -94,8 +94,8 @@ class TimestampWithTimezone(BaseModel):
 @attr.s
 class Origin(BaseModel):
     """Represents a software source: a VCS and an URL."""
-    type = attr.ib(type=str)
     url = attr.ib(type=str)
+    type = attr.ib(type=Optional[str], default=None)
 
 
 @attr.s
