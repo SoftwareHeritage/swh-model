@@ -1,8 +1,11 @@
-swh-model (0.0.43-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.44-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * New upstream release 0.0.44     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-09-04 14:36:01 +0200)
+  * Upstream changes:     - Fix Revision.from_dict to allow optional
+    fields.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 03 Sep 2019 12:10:12 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 04 Sep 2019 13:07:59 +0000
 
 swh-model (0.0.43-1~swh1) unstable-swh; urgency=medium
 
