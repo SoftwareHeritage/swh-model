@@ -94,8 +94,8 @@ class TimestampWithTimezone(BaseModel):
 @attr.s
 class Origin(BaseModel):
     """Represents a software source: a VCS and an URL."""
-    type = attr.ib(type=str)
     url = attr.ib(type=str)
+    type = attr.ib(type=Optional[str], default=None)
 
 
 @attr.s
@@ -283,19 +283,16 @@ class Revision(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
+        d = d.copy()
         return cls(
-            id=d['id'],
-            message=d['message'],
-            author=Person.from_dict(d['author']),
-            committer=Person.from_dict(d['committer']),
-            date=TimestampWithTimezone.from_dict(d['date']),
+            id=d.pop('id'),
+            author=Person.from_dict(d.pop('author')),
+            committer=Person.from_dict(d.pop('committer')),
+            date=TimestampWithTimezone.from_dict(d.pop('date')),
             committer_date=TimestampWithTimezone.from_dict(
-                d['committer_date']),
-            type=RevisionType(d['type']),
-            directory=d['directory'],
-            synthetic=d['synthetic'],
-            metadata=d['metadata'],
-            parents=d['parents'])
+                d.pop('committer_date')),
+            type=RevisionType(d.pop('type')),
+            **d)
 
 
 @attr.s
