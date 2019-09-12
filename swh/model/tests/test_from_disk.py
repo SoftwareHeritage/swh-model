@@ -4,11 +4,12 @@
 # See top-level LICENSE file for more information
 
 import os
+import pytest
 import tarfile
 import tempfile
 import unittest
 
-import pytest
+from typing import ClassVar, Optional
 
 from swh.model import from_disk
 from swh.model.from_disk import Content, DentryPerms, Directory
@@ -48,7 +49,7 @@ class ModeToPerms(unittest.TestCase):
 
 
 class DataMixin:
-    maxDiff = None
+    maxDiff = None  # type: ClassVar[Optional[int]]
 
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory(

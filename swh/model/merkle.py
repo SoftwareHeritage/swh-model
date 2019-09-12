@@ -8,6 +8,8 @@
 import abc
 import collections
 
+from typing import List, Optional
+
 
 def deep_update(left, right):
     """Recursively update the left mapping with deeply nested values from the right
@@ -108,7 +110,7 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
     """
     __slots__ = ['parents', 'data', '__hash', 'collected']
 
-    type = None
+    type = None  # type: Optional[str]
     """Type of the current node (used as a classifier for :func:`collect`)"""
 
     def __init__(self, data=None):
@@ -270,7 +272,7 @@ class MerkleLeaf(MerkleNode):
 
     A Merkle leaf is simply a Merkle node with children disabled.
     """
-    __slots__ = []
+    __slots__ = []  # type: List[str]
 
     def __setitem__(self, name, child):
         raise ValueError('%s is a leaf' % self.__class__.__name__)
