@@ -638,14 +638,17 @@ _object_type_map = {
 }
 
 
-class PersistentId(NamedTuple(
-        'PersistentId', [
-            ('namespace', str),
-            ('scheme_version', int),
-            ('object_type', str),
-            ('object_id', str),
-            ('metadata', Dict[str, Any]),
-        ])):
+_PersistentId = NamedTuple(
+    'PersistentId', [
+        ('namespace', str),
+        ('scheme_version', int),
+        ('object_type', str),
+        ('object_id', str),
+        ('metadata', Dict[str, Any]),
+    ])
+
+
+class PersistentId(_PersistentId):
     """
     Named tuple holding the relevant info associated to a Software Heritage
     persistent identifier.

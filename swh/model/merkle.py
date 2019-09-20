@@ -110,7 +110,7 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
     """
     __slots__ = ['parents', 'data', '__hash', 'collected']
 
-    type = None  # type: Optional[str]
+    type = None  # type: Optional[str]  # TODO: make this an enum
     """Type of the current node (used as a classifier for :func:`collect`)"""
 
     def __init__(self, data=None):
