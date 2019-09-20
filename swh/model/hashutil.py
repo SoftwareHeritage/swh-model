@@ -57,6 +57,7 @@ import hashlib
 import os
 
 from io import BytesIO
+from typing import Callable, Dict
 
 ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256', 'blake2b512'])
 """Hashing algorithms supported by this module"""
@@ -70,7 +71,7 @@ Subset of :const:`ALGORITHMS`.
 HASH_BLOCK_SIZE = 32768
 """Block size for streaming hash computations made in this module"""
 
-_blake2_hash_cache = {}
+_blake2_hash_cache = {}  # type: Dict[str, Callable]
 
 
 class MultiHash:
