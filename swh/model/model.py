@@ -26,7 +26,7 @@ class BaseModel:
     that are suitable for JSON/msgpack-like formats."""
 
     def to_dict(self):
-        """Wrapper of `attr.asdict` that can be overriden by subclasses
+        """Wrapper of `attr.asdict` that can be overridden by subclasses
         that have special handling of some of the fields."""
         return attr.asdict(self)
 
@@ -352,7 +352,7 @@ class Content(BaseModel):
 
     @reason.validator
     def check_reason(self, attribute, value):
-        """Checks the reason is full iff status != absent."""
+        """Checks the reason is full if status != absent."""
         assert self.reason == value
         if self.status == 'absent' and value is None:
             raise ValueError('Must provide a reason if content is absent.')
