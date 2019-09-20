@@ -7,8 +7,8 @@ import binascii
 import datetime
 import hashlib
 
-from collections import namedtuple
 from functools import lru_cache
+from typing import Any, Dict, NamedTuple
 
 from .exceptions import ValidationError
 from .fields.hashes import validate_sha1
@@ -25,8 +25,6 @@ CONTENT = 'content'
 PID_NAMESPACE = 'swh'
 PID_VERSION = 1
 PID_TYPES = ['ori', 'snp', 'rel', 'rev', 'dir', 'cnt']
-PID_KEYS = ['namespace', 'scheme_version', 'object_type', 'object_id',
-            'metadata']
 PID_SEP = ':'
 PID_CTXT_SEP = ';'
 
@@ -640,7 +638,17 @@ _object_type_map = {
 }
 
 
-class PersistentId(namedtuple('PersistentId', PID_KEYS)):
+_PersistentId = NamedTuple(
+    'PersistentId', [
+        ('namespace', str),
+        ('scheme_version', int),
+        ('object_type', str),
+        ('object_id', str),
+        ('metadata', Dict[str, Any]),
+    ])
+
+
+class PersistentId(_PersistentId):
     """
     Named tuple holding the relevant info associated to a Software Heritage
     persistent identifier.

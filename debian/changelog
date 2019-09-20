@@ -1,8 +1,15 @@
-swh-model (0.0.44-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.45-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * New upstream release 0.0.45     - (tagged by Stefano Zacchiroli
+    <zack@upsilon.cc> on 2019-09-20 15:09:47 +0200)
+  * Upstream changes:     - v0.0.45     - * identifiers.py: do not
+    inherit from on-the-fly namedtuple     - * mypy: ignore django-
+    stubs, needed only by hypothesis     - * mypy.ini: remove left-over
+    sample section     - * typing: minimal changes to make a no-op mypy
+    run pass     - * fix indentation and spelling: make "make check"
+    happy
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 04 Sep 2019 13:09:06 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 20 Sep 2019 13:12:10 +0000
 
 swh-model (0.0.44-1~swh1) unstable-swh; urgency=medium
 
