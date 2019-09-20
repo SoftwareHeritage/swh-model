@@ -20,6 +20,7 @@ swh/model/hypothesis_strategies.py
 swh/model/identifiers.py
 swh/model/merkle.py
 swh/model/model.py
+swh/model/py.typed
 swh/model/toposort.py
 swh/model/validators.py
 swh/model/fields/__init__.py
