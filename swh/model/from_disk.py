@@ -7,6 +7,8 @@ import enum
 import os
 import stat
 
+from typing import List
+
 from .hashutil import MultiHash, HASH_BLOCK_SIZE
 from .merkle import MerkleLeaf, MerkleNode
 from .identifiers import (
@@ -66,7 +68,7 @@ class Content(MerkleLeaf):
     computation.
 
     """
-    __slots__ = []
+    __slots__ = []  # type: List[str]
     type = 'content'
 
     @classmethod
