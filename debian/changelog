@@ -1,8 +1,11 @@
-swh-model (0.0.46-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.47-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * New upstream release 0.0.47     - (tagged by Stefano Zacchiroli
+    <zack@upsilon.cc> on 2019-09-27 10:20:40 +0200)
+  * Upstream changes:     - v0.0.47     - init.py: switch to documented
+    way of extending path
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 20 Sep 2019 13:54:58 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 27 Sep 2019 08:22:54 +0000
 
 swh-model (0.0.46-1~swh1) unstable-swh; urgency=medium
 
