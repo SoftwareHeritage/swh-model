@@ -6,3 +6,4 @@ Click
 attrs
 hypothesis
 python-dateutil
+dulwich
