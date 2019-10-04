@@ -10,8 +10,8 @@ import unittest
 from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError
 from swh.model.identifiers import (CONTENT, DIRECTORY,
-                                   PID_TYPES, RELEASE,
-                                   REVISION, SNAPSHOT, PersistentId)
+                                   RELEASE, REVISION,
+                                   SNAPSHOT, PersistentId)
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -768,8 +768,8 @@ class SnapshotIdentifier(unittest.TestCase):
                  'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453',
                  None, {}),
                 (RELEASE, _release_id,
-                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
-                 2, {}),
+                 'swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
+                 1, {}),
                 (REVISION, _revision_id,
                  'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d',
                  None, {}),
@@ -783,8 +783,8 @@ class SnapshotIdentifier(unittest.TestCase):
                  'swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453',
                  None, {}),
                 (RELEASE, _release,
-                 'swh:2:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
-                 2, {}),
+                 'swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f',
+                 1, {}),
                 (REVISION, _revision,
                  'swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d',
                  None, {}),
@@ -811,12 +811,12 @@ class SnapshotIdentifier(unittest.TestCase):
         _snapshot_id = 'notahash4bc0bf3d81436bf980b46e98bd338453'
         _snapshot = {'id': _snapshot_id}
 
-        for _type, _hash, _error in [
-                (SNAPSHOT, _snapshot_id, 'Unexpected characters'),
-                (SNAPSHOT, _snapshot, 'Unexpected characters'),
-                ('foo', '', 'Wrong input: Supported types are'),
+        for _type, _hash in [
+                (SNAPSHOT, _snapshot_id),
+                (SNAPSHOT, _snapshot),
+                ('foo', ''),
         ]:
-            with self.assertRaisesRegex(ValidationError, _error):
+            with self.assertRaises(ValidationError):
                 identifiers.persistent_identifier(_type, _hash)
 
     def test_parse_persistent_identifier(self):
@@ -866,33 +866,36 @@ class SnapshotIdentifier(unittest.TestCase):
             self.assertEqual(actual_result, expected_result)
 
     def test_parse_persistent_identifier_parsing_error(self):
-        for pid, _error in [
-                ('swh:1:cnt',
-                 'Wrong format: There should be 4 mandatory values'),
-                ('swh:1:',
-                 'Wrong format: There should be 4 mandatory values'),
-                ('swh:',
-                 'Wrong format: There should be 4 mandatory values'),
-                ('swh:1:cnt:',
-                 'Wrong format: Identifier should be present'),
-                ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505',
-                 'Wrong format: only supported namespace is \'swh\''),
-                ('swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505',
-                 'Wrong format: only supported version is 1'),
-                ('swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505',
-                 'Wrong format: Supported types are %s' % (
-                     ', '.join(PID_TYPES))),
+        for pid in [
+                ('swh:1:cnt'),
+                ('swh:1:'),
+                ('swh:'),
+                ('swh:1:cnt:'),
+                ('foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505'),
+                ('swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505'),
+                ('swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505'),
                 ('swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;'
-                 'malformed',
-                 'Contextual data is badly formatted, form key=val expected'),
-                ('swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d',
-                 'Wrong format: Identifier should be a valid hash'),
-                ('swh:1:snp:foo',
-                 'Wrong format: Identifier should be a valid hash')
+                 'malformed'),
+                ('swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d'),
+                ('swh:1:snp:foo'),
         ]:
-            with self.assertRaisesRegex(
-                    ValidationError, _error):
+            with self.assertRaises(ValidationError):
                 identifiers.parse_persistent_identifier(pid)
+
+    def test_persistentid_class_validation_error(self):
+        for _ns, _version, _type, _id in [
+            ('foo', 1, CONTENT, 'abc8bc9d7a6bcf6db04f476d29314f157507d505'),
+            ('swh', 2, DIRECTORY, 'def8bc9d7a6bcf6db04f476d29314f157507d505'),
+            ('swh', 1, 'foo', 'fed8bc9d7a6bcf6db04f476d29314f157507d505'),
+            ('swh', 1, SNAPSHOT, 'gh6959356d30f1a4e9b7f6bca59b9a336464c03d'),
+        ]:
+            with self.assertRaises(ValidationError):
+                PersistentId(
+                    namespace=_ns,
+                    scheme_version=_version,
+                    object_type=_type,
+                    object_id=_id
+                )
 
 
 class OriginIdentifier(unittest.TestCase):
