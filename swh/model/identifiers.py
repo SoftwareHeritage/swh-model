@@ -695,6 +695,13 @@ class PersistentId(_PersistentId):
         if not o:
             raise ValidationError('Wrong input: Supported types are %s' % (
                 list(_object_type_map.keys())))
+        if namespace != PID_NAMESPACE:
+            raise ValidationError(
+                "Wrong format: only supported namespace is '%s'"
+                % PID_NAMESPACE)
+        if scheme_version != PID_VERSION:
+            raise ValidationError(
+                'Wrong format: only supported version is %d' % PID_VERSION)
         # internal swh representation resolution
         if isinstance(object_id, dict):
             object_id = object_id[o['key_id']]
@@ -773,21 +780,7 @@ def parse_persistent_identifier(persistent_id):
 
     # Checking for parsing errors
     _ns, _version, _type, _id = pid_data
-    if _ns != PID_NAMESPACE:
-        raise ValidationError(
-            "Wrong format: only supported namespace is '%s'" % PID_NAMESPACE)
-
-    if _version != str(PID_VERSION):
-        raise ValidationError(
-            'Wrong format: only supported version is %d' % PID_VERSION)
-
     pid_data[1] = int(pid_data[1])
-
-    expected_types = PID_TYPES
-    if _type not in expected_types:
-        raise ValidationError(
-            'Wrong format: Supported types are %s' % (
-                ', '.join(expected_types)))
 
     for otype, data in _object_type_map.items():
         if _type == data['short_name']:
@@ -798,12 +791,6 @@ def parse_persistent_identifier(persistent_id):
         raise ValidationError(
             'Wrong format: Identifier should be present')
 
-    try:
-        validate_sha1(_id)
-    except ValidationError:
-        raise ValidationError(
-           'Wrong format: Identifier should be a valid hash')
-
     persistent_id_metadata = {}
     for part in persistent_id_parts:
         try:
@@ -813,4 +800,4 @@ def parse_persistent_identifier(persistent_id):
             msg = 'Contextual data is badly formatted, form key=val expected'
             raise ValidationError(msg)
     pid_data.append(persistent_id_metadata)
-    return PersistentId._make(pid_data)
+    return PersistentId(*pid_data)
