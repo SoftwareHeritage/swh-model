@@ -606,7 +606,11 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
 
 
 def origin_identifier(origin):
-    """Return the intrinsic identifier for an origin."""
+    """Return the intrinsic identifier for an origin.
+
+    An origin's identifier is the sha1 checksum of the entire origin URL
+
+    """
     return hashlib.sha1(origin['url'].encode('ascii')).hexdigest()
 
 
