@@ -127,6 +127,7 @@ class OriginVisit(BaseModel):
         ov = super().to_dict()
         if ov['visit'] is None:
             del ov['visit']
+        ov['origin'] = self.origin.to_dict()
         return ov
 
     @classmethod
