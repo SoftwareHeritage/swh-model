@@ -97,6 +97,11 @@ class Origin(BaseModel):
     url = attr.ib(type=str)
     type = attr.ib(type=Optional[str], default=None)
 
+    def to_dict(self):
+        r = super().to_dict()
+        r.pop('type', None)
+        return r
+
 
 @attr.s
 class OriginVisit(BaseModel):

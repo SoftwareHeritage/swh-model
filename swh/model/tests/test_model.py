@@ -8,12 +8,16 @@ import copy
 from hypothesis import given
 
 from swh.model.model import Content
-from swh.model.hypothesis_strategies import objects
+from swh.model.hypothesis_strategies import objects, origins
 
 
 @given(objects())
 def test_todict_inverse_fromdict(objtype_and_obj):
     (obj_type, obj) = objtype_and_obj
+
+    if obj_type == 'origin':
+        return
+
     obj_as_dict = obj.to_dict()
     obj_as_dict_copy = copy.deepcopy(obj_as_dict)
 
@@ -25,6 +29,14 @@ def test_todict_inverse_fromdict(objtype_and_obj):
 
     # Check the composition of from_dict and to_dict is the identity
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
+
+
+@given(origins())
+def test_todict_origins(origin):
+    obj = origin.to_dict()
+
+    assert 'type' not in obj
+    assert type(origin)(url=origin.url) == type(origin).from_dict(obj)
 
 
 def test_content_get_hash():
