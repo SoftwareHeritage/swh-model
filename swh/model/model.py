@@ -97,6 +97,11 @@ class Origin(BaseModel):
     url = attr.ib(type=str)
     type = attr.ib(type=Optional[str], default=None)
 
+    def to_dict(self):
+        r = super().to_dict()
+        r.pop('type', None)
+        return r
+
 
 @attr.s
 class OriginVisit(BaseModel):
@@ -122,6 +127,7 @@ class OriginVisit(BaseModel):
         ov = super().to_dict()
         if ov['visit'] is None:
             del ov['visit']
+        ov['origin'] = self.origin.to_dict()
         return ov
 
     @classmethod

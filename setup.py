@@ -49,7 +49,10 @@ setup(
     setup_requires=['vcversioner'],
     install_requires=(parse_requirements() + parse_requirements('swh') +
                       blake2_requirements),
-    extras_require={'testing': parse_requirements('test')},
+    extras_require={
+        'cli': parse_requirements('cli'),
+        'testing': parse_requirements('test'),
+    },
     vcversioner={},
     include_package_data=True,
     entry_points='''

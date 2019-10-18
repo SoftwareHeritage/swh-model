@@ -1,5 +1,4 @@
 vcversioner
-Click
 attrs
 hypothesis
 python-dateutil
@@ -7,5 +6,11 @@ python-dateutil
 [:python_version < "3.6"]
 pyblake2
 
+[cli]
+Click
+dulwich
+
 [testing]
+Click
+dulwich
 pytest
