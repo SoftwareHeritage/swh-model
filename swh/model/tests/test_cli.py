@@ -1,9 +1,10 @@
-# Copyright (C) 2018 The Software Heritage developers
+# Copyright (C) 2018-2019 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 import os
+import tarfile
 import tempfile
 import unittest
 
@@ -44,6 +45,19 @@ class TestIdentify(DataMixin, unittest.TestCase):
                                     ['--type', 'directory', path])
         self.assertPidOK(result,
                          'swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759')
+
+    def test_snapshot_id(self):
+        """identify a snapshot"""
+        tarball = os.path.join(os.path.dirname(__file__), 'data', 'repos',
+                               'sample-repo.tgz')
+        with tempfile.TemporaryDirectory(prefix='swh.model.cli') as d:
+            with tarfile.open(tarball, 'r:gz') as t:
+                t.extractall(d)
+                repo_dir = os.path.join(d, 'sample-repo')
+                result = self.runner.invoke(cli.identify,
+                                            ['--type', 'snapshot', repo_dir])
+                self.assertPidOK(result,
+                                 'swh:1:snp:9dc0fc035aabe293f5faf6c362a59513454a170d')  # NoQA
 
     def test_origin_id(self):
         """identify an origin URL"""
