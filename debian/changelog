@@ -1,3 +1,13 @@
+swh-model (0.0.48-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.48     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2019-10-18 17:06:59 +0200)
+  * Upstream changes:     - Release swh.model 0.0.48     - Split CLI
+    dependencies to another subpackage     - Stop exporting origin.type
+    in models     - Document origin PIDs
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 18 Oct 2019 15:11:01 +0000
+
 swh-model (0.0.47-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.47     - (tagged by Stefano Zacchiroli
