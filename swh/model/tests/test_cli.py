@@ -56,8 +56,9 @@ class TestIdentify(DataMixin, unittest.TestCase):
                 repo_dir = os.path.join(d, 'sample-repo')
                 result = self.runner.invoke(cli.identify,
                                             ['--type', 'snapshot', repo_dir])
-                self.assertPidOK(result,
-                                 'swh:1:snp:9dc0fc035aabe293f5faf6c362a59513454a170d')  # NoQA
+                self.assertPidOK(
+                    result,
+                    'swh:1:snp:abc888898124270905a0ef3c67e872ce08e7e0c1')
 
     def test_origin_id(self):
         """identify an origin URL"""
