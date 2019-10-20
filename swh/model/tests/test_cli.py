@@ -23,7 +23,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         super().setUp()
         self.runner = CliRunner()
 
-    def assertPidOK(self, result, pid):  # noqa: N802
+    def assertPidOK(self, result, pid):
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output.split()[0], pid)
 
