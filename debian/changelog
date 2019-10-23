@@ -1,8 +1,28 @@
-swh-model (0.0.47-1~swh1~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.49-1~swh2) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * Add missing dependency on dulwich for tests
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 27 Sep 2019 08:24:21 +0000
+ -- Nicolas Dandrimont <olasd@debian.org>  Wed, 23 Oct 2019 14:37:45 +0200
+
+swh-model (0.0.49-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.49     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2019-10-23 14:28:01 +0200)
+  * Upstream changes:     - Release swh.model v0.0.49     - Add symbolic
+    refs to swh identify -t snapshot     - Cleanup
+    model.BaseModel.to_dict() recursion
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 23 Oct 2019 12:30:41 +0000
+
+swh-model (0.0.48-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.48     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2019-10-18 17:06:59 +0200)
+  * Upstream changes:     - Release swh.model 0.0.48     - Split CLI
+    dependencies to another subpackage     - Stop exporting origin.type
+    in models     - Document origin PIDs
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 18 Oct 2019 15:11:01 +0000
 
 swh-model (0.0.47-1~swh1) unstable-swh; urgency=medium
 
