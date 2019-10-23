@@ -4,18 +4,29 @@
 # See top-level LICENSE file for more information
 
 import click
+import dulwich.repo
 import os
 import sys
 
 from functools import partial
 from urllib.parse import urlparse
 
+from swh.model import hashutil
 from swh.model import identifiers as pids
 from swh.model.exceptions import ValidationError
 from swh.model.from_disk import Content, Directory
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+# Mapping between dulwich types and Software Heritage ones. Used by snapshot ID
+# computation.
+_DULWICH_TYPES = {
+    b'blob': 'content',
+    b'tree': 'directory',
+    b'commit': 'revision',
+    b'tag': 'release',
+}
 
 
 class PidParamType(click.ParamType):
@@ -42,6 +53,33 @@ def pid_of_dir(path):
 def pid_of_origin(url):
     pid = pids.PersistentId(object_type='origin',
                             object_id=pids.origin_identifier({'url': url}))
+    return str(pid)
+
+
+def pid_of_git_repo(path):
+    repo = dulwich.repo.Repo(path)
+
+    branches = {}
+    for ref, target in repo.refs.as_dict().items():
+        obj = repo[target]
+        if obj:
+            branches[ref] = {
+                'target': hashutil.bytehex_to_hash(target),
+                'target_type': _DULWICH_TYPES[obj.type_name],
+            }
+        else:
+            branches[ref] = None
+
+    for ref, target in repo.refs.get_symrefs().items():
+        branches[ref] = {
+            'target': target,
+            'target_type': 'alias',
+        }
+
+    snapshot = {'branches': branches}
+
+    pid = pids.PersistentId(object_type='snapshot',
+                            object_id=pids.snapshot_identifier(snapshot))
     return str(pid)
 
 
@@ -73,6 +111,8 @@ def identify_object(obj_type, follow_symlinks, obj):
             pid = pid_of_dir(path)
     elif obj_type == 'origin':
         pid = pid_of_origin(obj)
+    elif obj_type == 'snapshot':
+        pid = pid_of_git_repo(obj)
     else:  # shouldn't happen, due to option validation
         raise click.BadParameter('invalid object type: ' + obj_type)
 
@@ -89,7 +129,8 @@ def identify_object(obj_type, follow_symlinks, obj):
 @click.option('--filename/--no-filename', 'show_filename', default=True,
               help='show/hide file name (default: show)')
 @click.option('--type', '-t', 'obj_type', default='auto',
-              type=click.Choice(['auto', 'content', 'directory', 'origin']),
+              type=click.Choice(['auto', 'content', 'directory', 'origin',
+                                 'snapshot']),
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
@@ -116,7 +157,12 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
       $ swh identify --no-filename /usr/src/linux/kernel/
       swh:1:dir:f9f858a48d663b3809c9e2f336412717496202ab
 
-    """
+    \b
+      $ git clone --mirror https://forge.softwareheritage.org/source/helloworld.git
+      $ swh identify --type snapshot helloworld.git/
+      swh:1:snp:510aa88bdc517345d258c1fc2babcd0e1f905e93	helloworld.git
+
+    """  # NoQA  # overlong lines in shell examples are fine
     if verify and len(objects) != 1:
         raise click.BadParameter('verification requires a single object')
 

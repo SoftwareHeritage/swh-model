@@ -28,7 +28,21 @@ class BaseModel:
     def to_dict(self):
         """Wrapper of `attr.asdict` that can be overridden by subclasses
         that have special handling of some of the fields."""
-        return attr.asdict(self)
+
+        def dictify(value):
+            if isinstance(value, BaseModel):
+                return value.to_dict()
+            elif isinstance(value, Enum):
+                return value.value
+            elif isinstance(value, dict):
+                return {k: dictify(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [dictify(v) for v in value]
+            else:
+                return value
+
+        ret = attr.asdict(self, recurse=False)
+        return dictify(ret)
 
     @classmethod
     def from_dict(cls, d):
@@ -96,6 +110,11 @@ class Origin(BaseModel):
     """Represents a software source: a VCS and an URL."""
     url = attr.ib(type=str)
     type = attr.ib(type=Optional[str], default=None)
+
+    def to_dict(self):
+        r = super().to_dict()
+        r.pop('type', None)
+        return r
 
 
 @attr.s
@@ -172,11 +191,6 @@ class SnapshotBranch(BaseModel):
                 raise ValueError('Wrong length for bytes identifier: %d' %
                                  len(value))
 
-    def to_dict(self):
-        branch = attr.asdict(self)
-        branch['target_type'] = branch['target_type'].value
-        return branch
-
     @classmethod
     def from_dict(cls, d):
         return cls(
@@ -189,15 +203,6 @@ class Snapshot(BaseModel):
     """Represents the full state of an origin at a given point in time."""
     id = attr.ib(type=Sha1Git)
     branches = attr.ib(type=Dict[bytes, Optional[SnapshotBranch]])
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'branches': {
-                name: branch.to_dict() if branch else None
-                for (name, branch) in self.branches.items()
-            }
-        }
 
     @classmethod
     def from_dict(cls, d):
@@ -231,9 +236,7 @@ class Release(BaseModel):
             raise ValueError('release date must be None if author is None.')
 
     def to_dict(self):
-        rel = attr.asdict(self)
-        rel['date'] = self.date.to_dict() if self.date is not None else None
-        rel['target_type'] = rel['target_type'].value
+        rel = super().to_dict()
         if rel['metadata'] is None:
             del rel['metadata']
         return rel
@@ -274,13 +277,6 @@ class Revision(BaseModel):
     parents = attr.ib(type=List[Sha1Git],
                       default=attr.Factory(list))
 
-    def to_dict(self):
-        rev = attr.asdict(self)
-        rev['date'] = self.date.to_dict()
-        rev['committer_date'] = self.committer_date.to_dict()
-        rev['type'] = rev['type'].value
-        return rev
-
     @classmethod
     def from_dict(cls, d):
         d = d.copy()
@@ -309,11 +305,6 @@ class DirectoryEntry(BaseModel):
 class Directory(BaseModel):
     id = attr.ib(type=Sha1Git)
     entries = attr.ib(type=List[DirectoryEntry])
-
-    def to_dict(self):
-        dir_ = attr.asdict(self)
-        dir_['entries'] = [entry.to_dict() for entry in self.entries]
-        return dir_
 
     @classmethod
     def from_dict(cls, d):
@@ -361,7 +352,7 @@ class Content(BaseModel):
                 'Must not provide a reason if content is not absent.')
 
     def to_dict(self):
-        content = attr.asdict(self)
+        content = super().to_dict()
         for field in ('data', 'reason', 'ctime'):
             if content[field] is None:
                 del content[field]

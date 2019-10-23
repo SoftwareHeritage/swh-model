@@ -39,6 +39,7 @@ swh/model/tests/test_model.py
 swh/model/tests/test_toposort.py
 swh/model/tests/test_validators.py
 swh/model/tests/data/dir-folders/sample-folder.tgz
+swh/model/tests/data/repos/sample-repo.tgz
 swh/model/tests/fields/__init__.py
 swh/model/tests/fields/test_compound.py
 swh/model/tests/fields/test_hashes.py
