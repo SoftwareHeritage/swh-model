@@ -69,6 +69,13 @@ def pid_of_git_repo(path):
             }
         else:
             branches[ref] = None
+
+    for ref, target in repo.refs.get_symrefs().items():
+        branches[ref] = {
+            'target': target,
+            'target_type': 'alias',
+        }
+
     snapshot = {'branches': branches}
 
     pid = pids.PersistentId(object_type='snapshot',
