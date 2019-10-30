@@ -43,8 +43,6 @@ def test_todict_origins(origin):
 def test_todict_origin_visits(origin_visit):
     obj = origin_visit.to_dict()
 
-    assert 'type' not in obj['origin']
-    origin_visit.origin.type = None
     assert origin_visit == type(origin_visit).from_dict(obj)
 
 

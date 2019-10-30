@@ -1,8 +1,25 @@
-swh-model (0.0.49-1~swh2~bpo9+1) stretch-swh; urgency=medium
+swh-model (0.0.51-1~swh2) unstable-swh; urgency=medium
 
-  * Rebuild for stretch-swh
+  * Add missing build-dependency on pytz
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 23 Oct 2019 12:42:24 +0000
+ -- Nicolas Dandrimont <olasd@debian.org>  Wed, 30 Oct 2019 17:25:55 +0100
+
+swh-model (0.0.51-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.51     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2019-10-30 15:03:19 +0100)
+  * Upstream changes:     - v0.0.51     - Make OriginVisit.origin a
+    string instead of a dict.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 30 Oct 2019 14:05:55 +0000
+
+swh-model (0.0.50-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.50     - (tagged by David Douard
+    <david.douard@sdfa3.org> on 2019-10-30 09:30:17 +0100)
+  * Upstream changes:     - v0.0.50
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 30 Oct 2019 08:32:50 +0000
 
 swh-model (0.0.49-1~swh2) unstable-swh; urgency=medium
 
