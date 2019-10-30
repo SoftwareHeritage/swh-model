@@ -51,7 +51,7 @@ class BaseModel:
         return cls(**d)
 
 
-@attr.s
+@attr.s(frozen=True)
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
     name = attr.ib(type=bytes)
@@ -59,7 +59,7 @@ class Person(BaseModel):
     fullname = attr.ib(type=bytes)
 
 
-@attr.s
+@attr.s(frozen=True)
 class Timestamp(BaseModel):
     """Represents a naive timestamp from a VCS."""
     seconds = attr.ib(type=int)
@@ -78,7 +78,7 @@ class Timestamp(BaseModel):
             raise ValueError('Microseconds must be in [0, 1000000[.')
 
 
-@attr.s
+@attr.s(frozen=True)
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
     timestamp = attr.ib(type=Timestamp)
@@ -105,7 +105,7 @@ class TimestampWithTimezone(BaseModel):
             negative_utc=d['negative_utc'])
 
 
-@attr.s
+@attr.s(frozen=True)
 class Origin(BaseModel):
     """Represents a software source: a VCS and an URL."""
     url = attr.ib(type=str)
@@ -117,11 +117,11 @@ class Origin(BaseModel):
         return r
 
 
-@attr.s
+@attr.s(frozen=True)
 class OriginVisit(BaseModel):
     """Represents a visit of an origin at a given point in time, by a
     SWH loader."""
-    origin = attr.ib(type=Origin)
+    origin = attr.ib(type=str)
     date = attr.ib(type=datetime.datetime)
     status = attr.ib(
         type=str,
@@ -149,7 +149,6 @@ class OriginVisit(BaseModel):
         d = d.copy()
         date = d.pop('date')
         return cls(
-            origin=Origin.from_dict(d.pop('origin')),
             date=(date
                   if isinstance(date, datetime.datetime)
                   else dateutil.parser.parse(date)),
@@ -176,7 +175,7 @@ class ObjectType(Enum):
     SNAPSHOT = 'snapshot'
 
 
-@attr.s
+@attr.s(frozen=True)
 class SnapshotBranch(BaseModel):
     """Represents one of the branches of a snapshot."""
     target = attr.ib(type=bytes)
@@ -198,7 +197,7 @@ class SnapshotBranch(BaseModel):
             target_type=TargetType(d['target_type']))
 
 
-@attr.s
+@attr.s(frozen=True)
 class Snapshot(BaseModel):
     """Represents the full state of an origin at a given point in time."""
     id = attr.ib(type=Sha1Git)
@@ -214,7 +213,7 @@ class Snapshot(BaseModel):
             })
 
 
-@attr.s
+@attr.s(frozen=True)
 class Release(BaseModel):
     id = attr.ib(type=Sha1Git)
     name = attr.ib(type=bytes)
@@ -261,7 +260,7 @@ class RevisionType(Enum):
     MERCURIAL = 'hg'
 
 
-@attr.s
+@attr.s(frozen=True)
 class Revision(BaseModel):
     id = attr.ib(type=Sha1Git)
     message = attr.ib(type=bytes)
@@ -291,7 +290,7 @@ class Revision(BaseModel):
             **d)
 
 
-@attr.s
+@attr.s(frozen=True)
 class DirectoryEntry(BaseModel):
     name = attr.ib(type=bytes)
     type = attr.ib(type=str,
@@ -301,7 +300,7 @@ class DirectoryEntry(BaseModel):
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
 
 
-@attr.s
+@attr.s(frozen=True)
 class Directory(BaseModel):
     id = attr.ib(type=Sha1Git)
     entries = attr.ib(type=List[DirectoryEntry])
@@ -314,7 +313,7 @@ class Directory(BaseModel):
                      for entry in d['entries']])
 
 
-@attr.s
+@attr.s(frozen=True)
 class Content(BaseModel):
     sha1 = attr.ib(type=bytes)
     sha1_git = attr.ib(type=Sha1Git)
