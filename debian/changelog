@@ -1,3 +1,9 @@
+swh-model (0.0.51-1~swh2) unstable-swh; urgency=medium
+
+  * Add missing build-dependency on pytz
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Wed, 30 Oct 2019 17:25:55 +0100
+
 swh-model (0.0.51-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.51     - (tagged by Valentin Lorentz
