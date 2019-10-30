@@ -1,3 +1,9 @@
+swh-model (0.0.51-1~swh3~bpo10+1) buster-swh; urgency=medium
+
+  * Rebuild for buster-swh
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 30 Oct 2019 16:58:54 +0000
+
 swh-model (0.0.51-1~swh3) unstable-swh; urgency=medium
 
   * Add manual pytz dependency
