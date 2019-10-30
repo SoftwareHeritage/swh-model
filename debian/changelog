@@ -1,3 +1,9 @@
+swh-model (0.0.51-1~swh3~bpo9+2) stretch-swh; urgency=medium
+
+  * fix syntax for debian/control
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Wed, 30 Oct 2019 18:08:55 +0100
+
 swh-model (0.0.51-1~swh3~bpo9+1) stretch-swh; urgency=medium
 
   * Rebuild for stretch-swh
