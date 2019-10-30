@@ -1,3 +1,9 @@
+swh-model (0.0.51-1~swh3~bpo9+1) stretch-swh; urgency=medium
+
+  * Rebuild for stretch-swh
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Wed, 30 Oct 2019 18:05:18 +0100
+
 swh-model (0.0.51-1~swh3) unstable-swh; urgency=medium
 
   * Add manual pytz dependency
