@@ -14,3 +14,4 @@ dulwich
 Click
 dulwich
 pytest
+pytz

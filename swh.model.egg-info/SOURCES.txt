@@ -28,9 +28,11 @@ swh/model/fields/compound.py
 swh/model/fields/hashes.py
 swh/model/fields/simple.py
 swh/model/tests/__init__.py
+swh/model/tests/generate_testdata.py
 swh/model/tests/generate_testdata_from_disk.py
 swh/model/tests/test_cli.py
 swh/model/tests/test_from_disk.py
+swh/model/tests/test_generate_testdata.py
 swh/model/tests/test_hashutil.py
 swh/model/tests/test_hypothesis_strategies.py
 swh/model/tests/test_identifiers.py

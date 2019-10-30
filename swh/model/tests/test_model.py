@@ -3,6 +3,7 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import attr
 import copy
 
 from hypothesis import given
@@ -44,8 +45,9 @@ def test_todict_origin_visits(origin_visit):
     obj = origin_visit.to_dict()
 
     assert 'type' not in obj['origin']
-    origin_visit.origin.type = None
-    assert origin_visit == type(origin_visit).from_dict(obj)
+    origin2 = attr.evolve(origin_visit.origin, type=None)
+    origin_visit2 = attr.evolve(origin_visit, origin=origin2)
+    assert origin_visit2 == type(origin_visit).from_dict(obj)
 
 
 def test_content_get_hash():

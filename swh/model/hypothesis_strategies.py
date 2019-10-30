@@ -3,6 +3,7 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import attr
 import datetime
 
 from hypothesis.strategies import (
@@ -94,9 +95,10 @@ def releases(draw):
         author=none(),
         date=none(),
         target=sha1_git()))
-    rel.date = date
-    rel.author = author
-    return rel
+    return attr.evolve(
+        rel,
+        date=date,
+        author=author)
 
 
 def revision_metadata():
