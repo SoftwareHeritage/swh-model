@@ -79,7 +79,7 @@ def origin_visits():
     return builds(
         OriginVisit,
         visit=integers(0, 1000),
-        origin=origins(),
+        origin=urls(),
         status=sampled_from(['ongoing', 'full', 'partial']),
         type=pgsql_text())
 
