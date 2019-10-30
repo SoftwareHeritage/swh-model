@@ -1,3 +1,9 @@
+swh-model (0.0.51-1~swh3) unstable-swh; urgency=medium
+
+  * Add manual pytz dependency
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Wed, 30 Oct 2019 17:52:33 +0100
+
 swh-model (0.0.51-1~swh2) unstable-swh; urgency=medium
 
   * Add missing build-dependency on pytz
