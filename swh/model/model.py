@@ -121,7 +121,7 @@ class Origin(BaseModel):
 class OriginVisit(BaseModel):
     """Represents a visit of an origin at a given point in time, by a
     SWH loader."""
-    origin = attr.ib(type=Origin)
+    origin = attr.ib(type=str)
     date = attr.ib(type=datetime.datetime)
     status = attr.ib(
         type=str,
@@ -149,7 +149,6 @@ class OriginVisit(BaseModel):
         d = d.copy()
         date = d.pop('date')
         return cls(
-            origin=Origin.from_dict(d.pop('origin')),
             date=(date
                   if isinstance(date, datetime.datetime)
                   else dateutil.parser.parse(date)),
