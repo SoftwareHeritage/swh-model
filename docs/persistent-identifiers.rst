@@ -44,8 +44,7 @@ entry point of the grammar:
   <identifier> ::= "swh" ":" <scheme_version> ":" <object_type> ":" <object_id> ;
   <scheme_version> ::= "1" ;
   <object_type> ::=
-      "ori"  (* origin *)
-    | "snp"  (* snapshot *)
+      "snp"  (* snapshot *)
     | "rel"  (* release *)
     | "rev"  (* revision *)
     | "dir"  (* directory *)
@@ -69,7 +68,6 @@ identifiers that conform to previous versions of the scheme).
 A persistent identifier points to a single object, whose type is explicitly
 captured by ``<object_type>``:
 
-* ``ori`` identifiers point to **origins**
 * ``snp`` to **snapshots**,
 * ``rel`` to **releases**,
 * ``rev`` to **revisions**,
@@ -79,9 +77,6 @@ captured by ``<object_type>``:
 The actual object pointed to is identified by the intrinsic identifier
 ``<object_id>``, which is a hex-encoded (using lowercase ASCII characters) SHA1
 computed on the content and metadata of the object itself, as follows:
-
-* for **origins**, intrinsic identifiers are computed as per
-  :py:func:`swh.model.identifiers.origin_identifier`
 
 * for **snapshots**, intrinsic identifiers are computed as per
   :py:func:`swh.model.identifiers.snapshot_identifier`
@@ -135,8 +130,6 @@ Examples
   release 2.3.0, dated 24 December 2016
 * ``swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453`` points to a snapshot
   of the entire Darktable Git repository taken on 4 May 2017 from GitHub
-* ``swh:1:ori:b63a575fe3faab7692c9f38fb09d4bb45651bb0f`` points to the
-  repository https://github.com/torvalds/linux .
 
 
 Contextual information
