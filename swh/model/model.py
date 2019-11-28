@@ -4,14 +4,19 @@
 # See top-level LICENSE file for more information
 
 import datetime
+
+from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import List, Optional, Dict
 
 import attr
 import dateutil.parser
 
-from .identifiers import normalize_timestamp
-from .hashutil import DEFAULT_ALGORITHMS
+from .identifiers import (
+    normalize_timestamp, directory_identifier, revision_identifier,
+    release_identifier, snapshot_identifier
+)
+from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes
 
 SHA1_SIZE = 20
 
@@ -49,6 +54,23 @@ class BaseModel:
         """Takes a dictionary representing a tree of SWH objects, and
         recursively builds the corresponding objects."""
         return cls(**d)
+
+
+class HashableObject(metaclass=ABCMeta):
+    """Mixin to automatically compute object identifier hash when
+    the associated model is instantiated."""
+
+    @staticmethod
+    @abstractmethod
+    def compute_hash(object_dict):
+        """Derived model classes must implement this to compute
+        the object hash from its dict representation."""
+        pass
+
+    def __attrs_post_init__(self):
+        if not self.id:
+            obj_id = hash_to_bytes(self.compute_hash(self.to_dict()))
+            object.__setattr__(self, 'id', obj_id)
 
 
 @attr.s(frozen=True)
@@ -185,7 +207,7 @@ class SnapshotBranch(BaseModel):
     def check_target(self, attribute, value):
         """Checks the target type is not an alias, checks the target is a
         valid sha1_git."""
-        if self.target_type != TargetType.ALIAS:
+        if self.target_type != TargetType.ALIAS and self.target is not None:
             if len(value) != 20:
                 raise ValueError('Wrong length for bytes identifier: %d' %
                                  len(value))
@@ -198,24 +220,28 @@ class SnapshotBranch(BaseModel):
 
 
 @attr.s(frozen=True)
-class Snapshot(BaseModel):
+class Snapshot(BaseModel, HashableObject):
     """Represents the full state of an origin at a given point in time."""
-    id = attr.ib(type=Sha1Git)
     branches = attr.ib(type=Dict[bytes, Optional[SnapshotBranch]])
+    id = attr.ib(type=Sha1Git, default=b'')
+
+    @staticmethod
+    def compute_hash(object_dict):
+        return snapshot_identifier(object_dict)
 
     @classmethod
     def from_dict(cls, d):
+        d = d.copy()
         return cls(
-            id=d['id'],
             branches={
                 name: SnapshotBranch.from_dict(branch) if branch else None
-                for (name, branch) in d['branches'].items()
-            })
+                for (name, branch) in d.pop('branches').items()
+            },
+            **d)
 
 
 @attr.s(frozen=True)
-class Release(BaseModel):
-    id = attr.ib(type=Sha1Git)
+class Release(BaseModel, HashableObject):
     name = attr.ib(type=bytes)
     message = attr.ib(type=bytes)
     target = attr.ib(type=Optional[Sha1Git])
@@ -227,6 +253,11 @@ class Release(BaseModel):
                    default=None)
     metadata = attr.ib(type=Optional[Dict[str, object]],
                        default=None)
+    id = attr.ib(type=Sha1Git, default=b'')
+
+    @staticmethod
+    def compute_hash(object_dict):
+        return release_identifier(object_dict)
 
     @author.validator
     def check_author(self, attribute, value):
@@ -261,8 +292,7 @@ class RevisionType(Enum):
 
 
 @attr.s(frozen=True)
-class Revision(BaseModel):
-    id = attr.ib(type=Sha1Git)
+class Revision(BaseModel, HashableObject):
     message = attr.ib(type=bytes)
     author = attr.ib(type=Person)
     committer = attr.ib(type=Person)
@@ -275,12 +305,16 @@ class Revision(BaseModel):
                        default=None)
     parents = attr.ib(type=List[Sha1Git],
                       default=attr.Factory(list))
+    id = attr.ib(type=Sha1Git, default=b'')
+
+    @staticmethod
+    def compute_hash(object_dict):
+        return revision_identifier(object_dict)
 
     @classmethod
     def from_dict(cls, d):
         d = d.copy()
         return cls(
-            id=d.pop('id'),
             author=Person.from_dict(d.pop('author')),
             committer=Person.from_dict(d.pop('committer')),
             date=TimestampWithTimezone.from_dict(d.pop('date')),
@@ -301,16 +335,21 @@ class DirectoryEntry(BaseModel):
 
 
 @attr.s(frozen=True)
-class Directory(BaseModel):
-    id = attr.ib(type=Sha1Git)
+class Directory(BaseModel, HashableObject):
     entries = attr.ib(type=List[DirectoryEntry])
+    id = attr.ib(type=Sha1Git, default=b'')
+
+    @staticmethod
+    def compute_hash(object_dict):
+        return directory_identifier(object_dict)
 
     @classmethod
     def from_dict(cls, d):
+        d = d.copy()
         return cls(
-            id=d['id'],
             entries=[DirectoryEntry.from_dict(entry)
-                     for entry in d['entries']])
+                     for entry in d.pop('entries')],
+            **d)
 
 
 @attr.s(frozen=True)
