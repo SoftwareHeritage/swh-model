@@ -625,6 +625,11 @@ o6X/3T+vm8K3bf3driRr34c=
             'target_type': 'revision',
         }
 
+        self.release_snapshot_target = dict(self.release)
+        self.release_snapshot_target['target_type'] = 'snapshot'
+        self.release_snapshot_target['id'] = (
+            'c29c3ddcc6769a04e54dd69d63a6fdcbc566f850')
+
     def test_release_identifier(self):
         self.assertEqual(
             identifiers.release_identifier(self.release),
@@ -659,6 +664,12 @@ o6X/3T+vm8K3bf3driRr34c=
         self.assertEqual(
             identifiers.release_identifier(self.release_newline_in_author),
             identifiers.identifier_to_str(self.release_newline_in_author['id'])
+        )
+
+    def test_release_identifier_snapshot_target(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_snapshot_target),
+            identifiers.identifier_to_str(self.release_snapshot_target['id'])
         )
 
 
