@@ -9,6 +9,7 @@ import unittest
 
 from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError
+from swh.model.hashutil import hash_to_bytes
 from swh.model.identifiers import (CONTENT, DIRECTORY,
                                    RELEASE, REVISION,
                                    SNAPSHOT, PersistentId)
@@ -111,97 +112,100 @@ class ContentIdentifier(unittest.TestCase):
                          self.content_id)
 
 
+directory_example = {
+    'id': 'c2e41aae41ac17bd4a650770d6ee77f62e52235b',
+    'entries': [
+        {
+            'type': 'file',
+            'perms': 33188,
+            'name': b'README',
+            'target': '37ec8ea2110c0b7a32fbb0e872f6e7debbf95e21'
+        },
+        {
+            'type': 'file',
+            'perms': 33188,
+            'name': b'Rakefile',
+            'target': '3bb0e8592a41ae3185ee32266c860714980dbed7'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'app',
+            'target': '61e6e867f5d7ba3b40540869bc050b0c4fed9e95'
+        },
+        {
+            'type': 'file',
+            'perms': 33188,
+            'name': b'1.megabyte',
+            'target': '7c2b2fbdd57d6765cdc9d84c2d7d333f11be7fb3'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'config',
+            'target': '591dfe784a2e9ccc63aaba1cb68a765734310d98'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'public',
+            'target': '9588bf4522c2b4648bfd1c61d175d1f88c1ad4a5'
+        },
+        {
+            'type': 'file',
+            'perms': 33188,
+            'name': b'development.sqlite3',
+            'target': 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'doc',
+            'target': '154705c6aa1c8ead8c99c7915373e3c44012057f'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'db',
+            'target': '85f157bdc39356b7bc7de9d0099b4ced8b3b382c'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'log',
+            'target': '5e3d3941c51cce73352dff89c805a304ba96fffe'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'script',
+            'target': '1b278423caf176da3f3533592012502aa10f566c'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'test',
+            'target': '035f0437c080bfd8711670b3e8677e686c69c763'
+        },
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'vendor',
+            'target': '7c0dc9ad978c1af3f9a4ce061e50f5918bd27138'
+        },
+        {
+            'type': 'rev',
+            'perms': 57344,
+            'name': b'will_paginate',
+            'target': '3d531e169db92a16a9a8974f0ae6edf52e52659e'
+        }
+    ],
+}
+
+
 class DirectoryIdentifier(unittest.TestCase):
     def setUp(self):
-        self.directory = {
-            'id': 'c2e41aae41ac17bd4a650770d6ee77f62e52235b',
-            'entries': [
-                {
-                    'type': 'file',
-                    'perms': 33188,
-                    'name': b'README',
-                    'target': '37ec8ea2110c0b7a32fbb0e872f6e7debbf95e21'
-                },
-                {
-                    'type': 'file',
-                    'perms': 33188,
-                    'name': b'Rakefile',
-                    'target': '3bb0e8592a41ae3185ee32266c860714980dbed7'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'app',
-                    'target': '61e6e867f5d7ba3b40540869bc050b0c4fed9e95'
-                },
-                {
-                    'type': 'file',
-                    'perms': 33188,
-                    'name': b'1.megabyte',
-                    'target': '7c2b2fbdd57d6765cdc9d84c2d7d333f11be7fb3'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'config',
-                    'target': '591dfe784a2e9ccc63aaba1cb68a765734310d98'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'public',
-                    'target': '9588bf4522c2b4648bfd1c61d175d1f88c1ad4a5'
-                },
-                {
-                    'type': 'file',
-                    'perms': 33188,
-                    'name': b'development.sqlite3',
-                    'target': 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'doc',
-                    'target': '154705c6aa1c8ead8c99c7915373e3c44012057f'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'db',
-                    'target': '85f157bdc39356b7bc7de9d0099b4ced8b3b382c'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'log',
-                    'target': '5e3d3941c51cce73352dff89c805a304ba96fffe'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'script',
-                    'target': '1b278423caf176da3f3533592012502aa10f566c'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'test',
-                    'target': '035f0437c080bfd8711670b3e8677e686c69c763'
-                },
-                {
-                    'type': 'dir',
-                    'perms': 16384,
-                    'name': b'vendor',
-                    'target': '7c0dc9ad978c1af3f9a4ce061e50f5918bd27138'
-                },
-                {
-                    'type': 'rev',
-                    'perms': 57344,
-                    'name': b'will_paginate',
-                    'target': '3d531e169db92a16a9a8974f0ae6edf52e52659e'
-                }
-            ],
-        }
+        self.directory = directory_example
 
         self.empty_directory = {
             'id': '4b825dc642cb6eb9a060e54bf8d69288fbee4904',
@@ -219,11 +223,34 @@ class DirectoryIdentifier(unittest.TestCase):
             self.empty_directory['id'])
 
 
+linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
+
+revision_example = {
+    'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
+    'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
+    'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+    'author': {
+        'name': b'Linus Torvalds',
+        'email': b'torvalds@linux-foundation.org',
+        'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>'
+    },
+    'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                              tzinfo=linus_tz),
+    'committer': {
+        'name': b'Linus Torvalds',
+        'email': b'torvalds@linux-foundation.org',
+        'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>'
+    },
+    'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
+                                        tzinfo=linus_tz),
+    'message': b'Linux 4.2-rc2\n',
+    'type': 'git',
+    'synthetic': False
+}
+
+
 class RevisionIdentifier(unittest.TestCase):
     def setUp(self):
-
-        linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
-
         gpgsig = b'''\
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.13 (Darwin)
@@ -243,24 +270,7 @@ dg1KdHOa34shrKDaOVzW
 =od6m
 -----END PGP SIGNATURE-----'''
 
-        self.revision = {
-            'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
-            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
-            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
-            'author': {
-                'name': b'Linus Torvalds',
-                'email': b'torvalds@linux-foundation.org',
-            },
-            'date': datetime.datetime(2015, 7, 12, 15, 10, 30,
-                                      tzinfo=linus_tz),
-            'committer': {
-                'name': b'Linus Torvalds',
-                'email': b'torvalds@linux-foundation.org',
-            },
-            'committer_date': datetime.datetime(2015, 7, 12, 15, 10, 30,
-                                                tzinfo=linus_tz),
-            'message': b'Linux 4.2-rc2\n',
-        }
+        self.revision = revision_example
 
         self.revision_none_metadata = {
             'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
@@ -509,22 +519,19 @@ dg1KdHOa34shrKDaOVzW
         )
 
 
-class ReleaseIdentifier(unittest.TestCase):
-    def setUp(self):
-        linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
-
-        self.release = {
-            'id': '2b10839e32c4c476e9d94492756bb1a3e1ec4aa8',
-            'target': b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
-            'target_type': 'revision',
-            'name': b'v2.6.14',
-            'author': {
-                'name': b'Linus Torvalds',
-                'email': b'torvalds@g5.osdl.org',
-            },
-            'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
-                                      tzinfo=linus_tz),
-            'message': b'''\
+release_example = {
+    'id': '2b10839e32c4c476e9d94492756bb1a3e1ec4aa8',
+    'target': b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
+    'target_type': 'revision',
+    'name': b'v2.6.14',
+    'author': {
+        'name': b'Linus Torvalds',
+        'email': b'torvalds@g5.osdl.org',
+        'fullname': b'Linus Torvalds <torvalds@g5.osdl.org>'
+    },
+    'date': datetime.datetime(2005, 10, 27, 17, 2, 33,
+                              tzinfo=linus_tz),
+    'message': b'''\
 Linux 2.6.14 release
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
@@ -534,8 +541,15 @@ wdLOnvj91G4wxYqrvThthbE=
 =7VeT
 -----END PGP SIGNATURE-----
 ''',
-            'synthetic': False,
-        }
+    'synthetic': False,
+}
+
+
+class ReleaseIdentifier(unittest.TestCase):
+    def setUp(self):
+        linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
+
+        self.release = release_example
 
         self.release_no_author = {
             'id': b'&y\x1a\x8b\xcf\x0em3\xf4:\xefv\x82\xbd\xb5U#mV\xde',
@@ -625,6 +639,11 @@ o6X/3T+vm8K3bf3driRr34c=
             'target_type': 'revision',
         }
 
+        self.release_snapshot_target = dict(self.release)
+        self.release_snapshot_target['target_type'] = 'snapshot'
+        self.release_snapshot_target['id'] = (
+            'c29c3ddcc6769a04e54dd69d63a6fdcbc566f850')
+
     def test_release_identifier(self):
         self.assertEqual(
             identifiers.release_identifier(self.release),
@@ -661,6 +680,50 @@ o6X/3T+vm8K3bf3driRr34c=
             identifiers.identifier_to_str(self.release_newline_in_author['id'])
         )
 
+    def test_release_identifier_snapshot_target(self):
+        self.assertEqual(
+            identifiers.release_identifier(self.release_snapshot_target),
+            identifiers.identifier_to_str(self.release_snapshot_target['id'])
+        )
+
+
+snapshot_example = {
+    'id': hash_to_bytes('6e65b86363953b780d92b0a928f3e8fcdd10db36'),
+    'branches': {
+        b'directory': {
+            'target': hash_to_bytes(
+                '1bd0e65f7d2ff14ae994de17a1e7fe65111dcad8'),
+            'target_type': 'directory',
+        },
+        b'content': {
+            'target': hash_to_bytes(
+                'fe95a46679d128ff167b7c55df5d02356c5a1ae1'),
+            'target_type': 'content',
+        },
+        b'alias': {
+            'target': b'revision',
+            'target_type': 'alias',
+        },
+        b'revision': {
+            'target': hash_to_bytes(
+                'aafb16d69fd30ff58afdd69036a26047f3aebdc6'),
+            'target_type': 'revision',
+        },
+        b'release': {
+            'target': hash_to_bytes(
+                '7045404f3d1c54e6473c71bbb716529fbad4be24'),
+            'target_type': 'release',
+        },
+        b'snapshot': {
+            'target': hash_to_bytes(
+                '1a8893e6a86f444e8be8e7bda6cb34fb1735a00e'
+            ),
+            'target_type': 'snapshot',
+        },
+        b'dangling': None,
+    }
+}
+
 
 class SnapshotIdentifier(unittest.TestCase):
     def setUp(self):
@@ -688,36 +751,7 @@ class SnapshotIdentifier(unittest.TestCase):
             },
         }
 
-        self.all_types = {
-            'id': '6e65b86363953b780d92b0a928f3e8fcdd10db36',
-            'branches': {
-                b'directory': {
-                    'target': '1bd0e65f7d2ff14ae994de17a1e7fe65111dcad8',
-                    'target_type': 'directory',
-                },
-                b'content': {
-                    'target': 'fe95a46679d128ff167b7c55df5d02356c5a1ae1',
-                    'target_type': 'content',
-                },
-                b'alias': {
-                    'target': b'revision',
-                    'target_type': 'alias',
-                },
-                b'revision': {
-                    'target': 'aafb16d69fd30ff58afdd69036a26047f3aebdc6',
-                    'target_type': 'revision',
-                },
-                b'release': {
-                    'target': '7045404f3d1c54e6473c71bbb716529fbad4be24',
-                    'target_type': 'release',
-                },
-                b'snapshot': {
-                    'target': '1a8893e6a86f444e8be8e7bda6cb34fb1735a00e',
-                    'target_type': 'snapshot',
-                },
-                b'dangling': None,
-            }
-        }
+        self.all_types = snapshot_example
 
     def test_empty_snapshot(self):
         self.assertEqual(
