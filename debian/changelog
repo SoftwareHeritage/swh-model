@@ -1,8 +1,10 @@
-swh-model (0.0.51-1~swh3~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.52-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.52     - (tagged by Antoine Lambert
+    <antoine.lambert@inria.fr> on 2019-11-29 16:27:24 +0100)
+  * Upstream changes:     - version 0.0.52
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 30 Oct 2019 16:58:54 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 29 Nov 2019 15:30:57 +0000
 
 swh-model (0.0.51-1~swh3) unstable-swh; urgency=medium
 

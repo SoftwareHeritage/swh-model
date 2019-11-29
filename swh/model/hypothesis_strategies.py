@@ -91,7 +91,6 @@ def releases(draw):
         tuples(timestamps_with_timezone(), persons())))
     rel = draw(builds(
         Release,
-        id=sha1_git(),
         author=none(),
         date=none(),
         target=sha1_git()))
@@ -108,7 +107,6 @@ def revision_metadata():
 def revisions():
     return builds(
         Revision,
-        id=sha1_git(),
         date=timestamps_with_timezone(),
         committer_date=timestamps_with_timezone(),
         parents=lists(sha1_git()),
@@ -127,7 +125,6 @@ def directory_entries():
 def directories():
     return builds(
         Directory,
-        id=sha1_git(),
         entries=lists(directory_entries()))
 
 

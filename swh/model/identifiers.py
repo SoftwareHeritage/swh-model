@@ -498,6 +498,7 @@ def target_type_to_git(target_type):
         'directory': b'tree',
         'revision': b'commit',
         'release': b'tag',
+        'snapshot': b'refs'
     }[target_type]
 
 

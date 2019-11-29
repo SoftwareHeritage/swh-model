@@ -1,6 +1,8 @@
 MANIFEST.in
 Makefile
 README.md
+requirements-cli.txt
+requirements-test.txt
 requirements.txt
 setup.py
 version.txt
