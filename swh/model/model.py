@@ -119,7 +119,7 @@ class TimestampWithTimezone(BaseModel):
     @classmethod
     def from_dict(cls, d):
         """Builds a TimestampWithTimezone from any of the formats
-        accepted by :py:`swh.model.normalize_timestamp`."""
+        accepted by :func:`swh.model.normalize_timestamp`."""
         d = normalize_timestamp(d)
         return cls(
             timestamp=Timestamp.from_dict(d['timestamp']),
