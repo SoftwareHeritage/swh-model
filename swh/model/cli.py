@@ -45,6 +45,11 @@ def pid_of_file(path):
     return pids.persistent_identifier(pids.CONTENT, object)
 
 
+def pid_of_file_content(data):
+    object = Content.from_bytes(mode=644, data=data).get_data()
+    return pids.persistent_identifier(pids.CONTENT, object)
+
+
 def pid_of_dir(path):
     object = Directory.from_disk(path=path).get_data()
     return pids.persistent_identifier(pids.DIRECTORY, object)
@@ -85,7 +90,7 @@ def pid_of_git_repo(path):
 
 def identify_object(obj_type, follow_symlinks, obj):
     if obj_type == 'auto':
-        if os.path.isfile(obj):
+        if obj == '-' or os.path.isfile(obj):
             obj_type = 'content'
         elif os.path.isdir(obj):
             obj_type = 'directory'
@@ -101,7 +106,10 @@ def identify_object(obj_type, follow_symlinks, obj):
 
     pid = None
 
-    if obj_type in ['content', 'directory']:
+    if obj == '-':
+        content = sys.stdin.buffer.read()
+        pid = pid_of_file_content(content)
+    elif obj_type in ['content', 'directory']:
         path = obj.encode(sys.getfilesystemencoding())
         if follow_symlinks and os.path.islink(obj):
             path = os.path.realpath(obj)
@@ -134,7 +142,7 @@ def identify_object(obj_type, follow_symlinks, obj):
               help='type of object to identify (default: auto)')
 @click.option('--verify', '-v', metavar='PID', type=PidParamType(),
               help='reference identifier to be compared with computed one')
-@click.argument('objects', nargs=-1, required=True)
+@click.argument('objects', nargs=-1)
 def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     """Compute the Software Heritage persistent identifier (PID) for the given
     source code object(s).
@@ -163,6 +171,9 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
       swh:1:snp:510aa88bdc517345d258c1fc2babcd0e1f905e93	helloworld.git
 
     """  # NoQA  # overlong lines in shell examples are fine
+    if not objects:
+        objects = ['-']
+
     if verify and len(objects) != 1:
         raise click.BadParameter('verification requires a single object')
 
