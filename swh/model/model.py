@@ -296,8 +296,8 @@ class Revision(BaseModel, HashableObject):
     message = attr.ib(type=bytes)
     author = attr.ib(type=Person)
     committer = attr.ib(type=Person)
-    date = attr.ib(type=TimestampWithTimezone)
-    committer_date = attr.ib(type=TimestampWithTimezone)
+    date = attr.ib(type=Optional[TimestampWithTimezone])
+    committer_date = attr.ib(type=Optional[TimestampWithTimezone])
     type = attr.ib(type=RevisionType)
     directory = attr.ib(type=Sha1Git)
     synthetic = attr.ib(type=bool)
@@ -314,12 +314,20 @@ class Revision(BaseModel, HashableObject):
     @classmethod
     def from_dict(cls, d):
         d = d.copy()
+        date = d.pop('date')
+        if date:
+            date = TimestampWithTimezone.from_dict(date)
+
+        committer_date = d.pop('committer_date')
+        if committer_date:
+            committer_date = TimestampWithTimezone.from_dict(
+                committer_date)
+
         return cls(
             author=Person.from_dict(d.pop('author')),
             committer=Person.from_dict(d.pop('committer')),
-            date=TimestampWithTimezone.from_dict(d.pop('date')),
-            committer_date=TimestampWithTimezone.from_dict(
-                d.pop('committer_date')),
+            date=date,
+            committer_date=committer_date,
             type=RevisionType(d.pop('type')),
             **d)
 

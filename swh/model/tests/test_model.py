@@ -88,6 +88,22 @@ def test_revision_model_id_computation():
     assert rev_model.id == hash_to_bytes(revision_identifier(rev_dict))
 
 
+def test_revision_model_id_computation_with_no_date():
+    """We can have revision with date to None
+
+    """
+    rev_dict = dict(revision_example)
+    rev_dict['date'] = None
+    rev_dict['committer_date'] = None
+    del rev_dict['id']
+
+    rev_id = hash_to_bytes(revision_identifier(rev_dict))
+    for rev_model in [Revision(**rev_dict), Revision.from_dict(rev_dict)]:
+        assert rev_model.date is None
+        assert rev_model.committer_date is None
+        assert rev_model.id == rev_id
+
+
 def test_release_model_id_computation():
     rel_dict = dict(release_example)
     del rel_dict['id']
