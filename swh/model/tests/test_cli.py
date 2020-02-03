@@ -37,6 +37,15 @@ class TestIdentify(DataMixin, unittest.TestCase):
             self.assertPidOK(result,
                              'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
 
+    def test_content_id_from_stdin(self):
+        """identify file content"""
+        self.make_contents(self.tmpdir_name)
+        for _, content in self.contents.items():
+            result = self.runner.invoke(cli.identify,
+                                        input=content['data'])
+            self.assertPidOK(result,
+                             'swh:1:cnt:' + hash_to_hex(content['sha1_git']))
+
     def test_directory_id(self):
         """identify an entire directory"""
         self.make_from_tarball(self.tmpdir_name)
