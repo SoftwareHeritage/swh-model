@@ -200,6 +200,7 @@ def snapshots(draw, *, min_size=0, max_size=100, only_objects=False):
         for alias in unresolved_aliases:
             branches[alias] = draw(branch_targets(only_objects=True))
 
+    # Ensure no cycles between aliases
     while True:
         try:
             id_ = snapshot_identifier({
