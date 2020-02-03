@@ -1,3 +1,15 @@
+swh-model (0.0.53-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.53     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-02-03 15:58:31 +0100)
+  * Upstream changes:     - v0.0.53     - *
+    hypothesis_strategies/snapshots: Explain last post-processing step
+    - * cli: add support for reading a file content from stdin in 'swh
+    identify' command     - * model: Update revision date types to be
+    optional
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 03 Feb 2020 15:01:26 +0000
+
 swh-model (0.0.52-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.52     - (tagged by Antoine Lambert
