@@ -5,7 +5,7 @@
 
 from .generate_testdata import gen_contents, gen_origins, ORIGINS
 
-from swh.model.model import Origin, Content
+from swh.model.model import Origin, BaseContent
 
 
 def test_gen_origins_empty():
@@ -43,12 +43,12 @@ def test_gen_contents_empty():
 def test_gen_contents_one():
     contents = gen_contents(1)
     assert len(contents) == 1
-    assert [Content.from_dict(d) for d in contents]
+    assert [BaseContent.from_dict(d) for d in contents]
 
 
 def test_gen_contents_default():
     contents = gen_contents()
     assert len(contents) == 20
-    models = {Content.from_dict(d) for d in contents}
+    models = {BaseContent.from_dict(d) for d in contents}
     # ensure we did not generate the same content twice
     assert len(contents) == len(models)
