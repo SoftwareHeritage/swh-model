@@ -55,7 +55,7 @@ def gen_content():
                **h.digest()}
     if status == 'absent':
         content['reason'] = 'why not'
-        content['data'] = b''
+        content['data'] = None
     return content
 
 
