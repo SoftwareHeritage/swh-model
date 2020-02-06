@@ -16,7 +16,7 @@ from .from_disk import DentryPerms
 from .model import (
     Person, Timestamp, TimestampWithTimezone, Origin, OriginVisit,
     Snapshot, SnapshotBranch, TargetType, Release, Revision,
-    Directory, DirectoryEntry, Content
+    Directory, DirectoryEntry, Content, SkippedContent
 )
 from .identifiers import snapshot_identifier, identifier_to_bytes
 
@@ -128,14 +128,12 @@ def directories():
         entries=lists(directory_entries()))
 
 
-@composite
-def contents(draw):
-    (status, data, reason) = draw(one_of(
-        tuples(just('visible'), binary(), none()),
-        tuples(just('absent'), none(), pgsql_text()),
-        tuples(just('hidden'), binary(), none()),
-    ))
+def contents():
+    return one_of(present_contents(), skipped_contents())
 
+
+@composite
+def present_contents(draw):
     return draw(builds(
         Content,
         length=integers(min_value=0, max_value=2**63-1),
@@ -143,9 +141,25 @@ def contents(draw):
         sha1_git=sha1_git(),
         sha256=binary(min_size=32, max_size=32),
         blake2s256=binary(min_size=32, max_size=32),
-        status=just(status),
-        data=just(data),
-        reason=just(reason),
+        status=one_of(just('visible'), just('hidden')),
+        data=binary(),
+    ))
+
+
+@composite
+def skipped_contents(draw):
+    def optional(strategy):
+        return one_of(none(), strategy)
+
+    return draw(builds(
+        SkippedContent,
+        length=optional(integers(min_value=0, max_value=2**63-1)),
+        sha1=optional(sha1()),
+        sha1_git=optional(sha1_git()),
+        sha256=optional(binary(min_size=32, max_size=32)),
+        blake2s256=optional(binary(min_size=32, max_size=32)),
+        status=just('absent'),
+        reason=pgsql_text(),
     ))
 
 

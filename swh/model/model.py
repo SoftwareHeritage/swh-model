@@ -361,18 +361,42 @@ class Directory(BaseModel, HashableObject):
 
 
 @attr.s(frozen=True)
-class Content(BaseModel):
+class BaseContent(BaseModel):
+    def to_dict(self):
+        content = super().to_dict()
+        if content['ctime'] is None:
+            del content['ctime']
+        return content
+
+    @classmethod
+    def from_dict(cls, d, use_subclass=True):
+        if use_subclass:
+            # Chooses a subclass to instantiate instead.
+            if d['status'] == 'absent':
+                return SkippedContent.from_dict(d)
+            else:
+                return Content.from_dict(d)
+        else:
+            return super().from_dict(d)
+
+    def get_hash(self, hash_name):
+        if hash_name not in DEFAULT_ALGORITHMS:
+            raise ValueError('{} is not a valid hash name.'.format(hash_name))
+        return getattr(self, hash_name)
+
+
+@attr.s(frozen=True)
+class Content(BaseContent):
     sha1 = attr.ib(type=bytes)
     sha1_git = attr.ib(type=Sha1Git)
     sha256 = attr.ib(type=bytes)
     blake2s256 = attr.ib(type=bytes)
 
     length = attr.ib(type=int)
+
     status = attr.ib(
         type=str,
-        validator=attr.validators.in_(['visible', 'absent', 'hidden']))
-    reason = attr.ib(type=Optional[str],
-                     default=None)
+        validator=attr.validators.in_(['visible', 'hidden']))
     data = attr.ib(type=Optional[bytes],
                    default=None)
 
@@ -382,29 +406,64 @@ class Content(BaseModel):
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive."""
-        if self.status == 'absent' and value < -1:
-            raise ValueError('Length must be positive or -1.')
-        elif self.status != 'absent' and value < 0:
-            raise ValueError('Length must be positive, unless status=absent.')
+        if self.status != 'absent' and value < 0:
+            raise ValueError('Length must be positive.')
+
+    def to_dict(self):
+        content = super().to_dict()
+        if content['data'] is None:
+            del content['data']
+        return content
+
+    @classmethod
+    def from_dict(cls, d):
+        return super().from_dict(d, use_subclass=False)
+
+
+@attr.s(frozen=True)
+class SkippedContent(BaseContent):
+    sha1 = attr.ib(type=Optional[bytes])
+    sha1_git = attr.ib(type=Optional[Sha1Git])
+    sha256 = attr.ib(type=Optional[bytes])
+    blake2s256 = attr.ib(type=Optional[bytes])
+
+    length = attr.ib(type=Optional[int])
+
+    status = attr.ib(
+        type=str,
+        validator=attr.validators.in_(['absent']))
+    reason = attr.ib(type=Optional[str],
+                     default=None)
+
+    origin = attr.ib(type=Optional[Origin],
+                     default=None)
+
+    ctime = attr.ib(type=Optional[datetime.datetime],
+                    default=None)
 
     @reason.validator
     def check_reason(self, attribute, value):
         """Checks the reason is full if status != absent."""
         assert self.reason == value
-        if self.status == 'absent' and value is None:
+        if value is None:
             raise ValueError('Must provide a reason if content is absent.')
-        elif self.status != 'absent' and value is not None:
-            raise ValueError(
-                'Must not provide a reason if content is not absent.')
+
+    @length.validator
+    def check_length(self, attribute, value):
+        """Checks the length is positive or -1."""
+        if value is not None and value < -1:
+            raise ValueError('Length must be positive or -1.')
 
     def to_dict(self):
         content = super().to_dict()
-        for field in ('data', 'reason', 'ctime'):
-            if content[field] is None:
-                del content[field]
+        if content['origin'] is None:
+            del content['origin']
         return content
 
-    def get_hash(self, hash_name):
-        if hash_name not in DEFAULT_ALGORITHMS:
-            raise ValueError('{} is not a valid hash name.'.format(hash_name))
-        return getattr(self, hash_name)
+    @classmethod
+    def from_dict(cls, d):
+        d2 = d
+        d = d.copy()
+        if d.pop('data', None) is not None:
+            raise ValueError('SkippedContent has no "data" attribute %r' % d2)
+        return super().from_dict(d, use_subclass=False)
