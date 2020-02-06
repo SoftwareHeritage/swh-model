@@ -1,8 +1,11 @@
-swh-model (0.0.53-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.54-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.54     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-02-06 13:15:45 +0100)
+  * Upstream changes:     - v0.0.54     - * Split Content class into two
+    classes, for missing and non-missing contents.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 03 Feb 2020 15:02:43 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 06 Feb 2020 12:18:04 +0000
 
 swh-model (0.0.53-1~swh1) unstable-swh; urgency=medium
 
