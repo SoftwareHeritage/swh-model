@@ -1,3 +1,13 @@
+swh-model (0.0.55-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.55     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-02-07 16:13:23 +0100)
+  * Upstream changes:     - v0.0.55     - * Make content length
+    mandatory.     - * Make 'visible' the default status for present
+    Contents.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 07 Feb 2020 15:16:58 +0000
+
 swh-model (0.0.54-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.54     - (tagged by Valentin Lorentz
