@@ -153,7 +153,7 @@ def skipped_contents(draw):
 
     return draw(builds(
         SkippedContent,
-        length=optional(integers(min_value=0, max_value=2**63-1)),
+        length=integers(min_value=-1, max_value=2**63-1),
         sha1=optional(sha1()),
         sha1_git=optional(sha1_git()),
         sha256=optional(binary(min_size=32, max_size=32)),
