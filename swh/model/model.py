@@ -396,6 +396,7 @@ class Content(BaseContent):
 
     status = attr.ib(
         type=str,
+        default='visible',
         validator=attr.validators.in_(['visible', 'hidden']))
     data = attr.ib(type=Optional[bytes],
                    default=None)
