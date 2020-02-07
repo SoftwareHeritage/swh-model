@@ -406,7 +406,7 @@ class Content(BaseContent):
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive."""
-        if self.status != 'absent' and value < 0:
+        if value < 0:
             raise ValueError('Length must be positive.')
 
     def to_dict(self):
@@ -427,7 +427,7 @@ class SkippedContent(BaseContent):
     sha256 = attr.ib(type=Optional[bytes])
     blake2s256 = attr.ib(type=Optional[bytes])
 
-    length = attr.ib(type=Optional[int])
+    length = attr.ib(type=int)
 
     status = attr.ib(
         type=str,
@@ -451,7 +451,7 @@ class SkippedContent(BaseContent):
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive or -1."""
-        if value is not None and value < -1:
+        if value < -1:
             raise ValueError('Length must be positive or -1.')
 
     def to_dict(self):
