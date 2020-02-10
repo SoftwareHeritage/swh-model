@@ -1,8 +1,11 @@
-swh-model (0.0.55-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.56-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.56     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-02-10 11:46:35 +0100)
+  * Upstream changes:     - v0.0.56     - Make OriginVisit.snapshot
+    optional.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 07 Feb 2020 15:18:10 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 10 Feb 2020 10:48:55 +0000
 
 swh-model (0.0.55-1~swh1) unstable-swh; urgency=medium
 
