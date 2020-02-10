@@ -26,6 +26,10 @@ pgsql_alphabet = characters(
     blacklist_characters=['\u0000'])  # postgresql does not like these
 
 
+def optional(strategy):
+    return one_of(none(), strategy)
+
+
 def pgsql_text():
     return text(alphabet=pgsql_alphabet)
 
@@ -81,7 +85,8 @@ def origin_visits():
         visit=integers(0, 1000),
         origin=urls(),
         status=sampled_from(['ongoing', 'full', 'partial']),
-        type=pgsql_text())
+        type=pgsql_text(),
+        snapshot=optional(sha1_git()))
 
 
 @composite
@@ -148,9 +153,6 @@ def present_contents(draw):
 
 @composite
 def skipped_contents(draw):
-    def optional(strategy):
-        return one_of(none(), strategy)
-
     return draw(builds(
         SkippedContent,
         length=integers(min_value=-1, max_value=2**63-1),

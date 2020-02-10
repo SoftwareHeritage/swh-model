@@ -149,7 +149,7 @@ class OriginVisit(BaseModel):
         type=str,
         validator=attr.validators.in_(['ongoing', 'full', 'partial']))
     type = attr.ib(type=str)
-    snapshot = attr.ib(type=Sha1Git)
+    snapshot = attr.ib(type=Optional[Sha1Git])
     metadata = attr.ib(type=Optional[Dict[str, object]],
                        default=None)
 
