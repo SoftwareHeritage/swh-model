@@ -62,6 +62,13 @@ def test_content_get_hash():
         assert c.get_hash(hash_name) == hash_
 
 
+def test_content_hashes():
+    hashes = dict(
+        sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+    c = Content(length=42, status='visible', **hashes)
+    assert c.hashes() == hashes
+
+
 def test_directory_model_id_computation():
     dir_dict = dict(directory_example)
     del dir_dict['id']

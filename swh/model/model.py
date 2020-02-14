@@ -384,6 +384,10 @@ class BaseContent(BaseModel):
             raise ValueError('{} is not a valid hash name.'.format(hash_name))
         return getattr(self, hash_name)
 
+    def hashes(self) -> Dict[str, bytes]:
+        """Returns a dictionary {hash_name: hash_value}"""
+        return {algo: getattr(self, algo) for algo in DEFAULT_ALGORITHMS}
+
 
 @attr.s(frozen=True)
 class Content(BaseContent):
