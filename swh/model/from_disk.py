@@ -12,7 +12,7 @@ from typing import List
 from .hashutil import MultiHash, HASH_BLOCK_SIZE
 from .merkle import MerkleLeaf, MerkleNode
 from .identifiers import (
-    directory_identifier,
+    directory_entry_sort_key, directory_identifier,
     identifier_to_bytes as id_to_bytes,
     identifier_to_str as id_to_str,
 )
@@ -325,11 +325,13 @@ class Directory(MerkleNode):
 
     @property
     def entries(self):
+        """Child nodes, sorted by name in the same way `directory_identifier`
+        does."""
         if self.__entries is None:
-            self.__entries = [
+            self.__entries = sorted((
                 self.child_to_directory_entry(name, child)
                 for name, child in self.items()
-            ]
+            ), key=directory_entry_sort_key)
 
         return self.__entries
 

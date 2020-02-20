@@ -449,7 +449,7 @@ class DataMixin:
         if isinstance(right, Directory):
             right = right.get_data()
 
-        return self.assertCountEqual(left.entries, right['entries'])
+        assert left.entries == right['entries']
 
     def make_contents(self, directory):
         for filename, content in self.contents.items():
@@ -579,6 +579,7 @@ class FileToContent(DataMixin, unittest.TestCase):
                                     check_path=True)
 
 
+@pytest.mark.fs
 class DirectoryToObjects(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -728,6 +729,18 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         self.assertEqual(len(objs['content']),
                          len(self.contents)
                          + 1)
+
+    def test_directory_entry_order(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            dirname = os.fsencode(dirname)
+            open(os.path.join(dirname, b'foo.'), 'a')
+            open(os.path.join(dirname, b'foo0'), 'a')
+            os.mkdir(os.path.join(dirname, b'foo'))
+
+            directory = Directory.from_disk(path=dirname)
+
+        assert [entry['name'] for entry in directory.entries] \
+            == [b'foo.', b'foo', b'foo0']
 
 
 @pytest.mark.fs
