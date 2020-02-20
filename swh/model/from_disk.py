@@ -83,6 +83,7 @@ class Content(MerkleLeaf):
         ret['length'] = len(data)
         ret['perms'] = mode_to_perms(mode)
         ret['data'] = data
+        ret['status'] = 'visible'
 
         return cls(ret)
 
@@ -92,7 +93,9 @@ class Content(MerkleLeaf):
         return cls.from_bytes(mode=mode, data=os.readlink(path))
 
     @classmethod
-    def from_file(cls, *, path, data=False, save_path=False):
+    def from_file(
+            cls, *, path, data=False, save_path=False,
+            max_content_length=None):
         """Compute the Software Heritage content entry corresponding to an
         on-disk file.
 
@@ -105,22 +108,46 @@ class Content(MerkleLeaf):
             content entry
           data (bool): add the file data to the entry
           save_path (bool): add the file path to the entry
+          max_content_length (Optional[int]): if given, all contents larger
+            than this will be skipped.
 
         """
         file_stat = os.lstat(path)
         mode = file_stat.st_mode
+        length = file_stat.st_size
+        too_large = max_content_length is not None \
+            and length > max_content_length
 
         if stat.S_ISLNK(mode):
             # Symbolic link: return a file whose contents are the link target
+
+            if too_large:
+                # Unlike large contents, we can't stream symlinks to
+                # MultiHash, and we don't want to fit them in memory if
+                # they exceed max_content_length either.
+                # Thankfully, this should not happen for reasonable values of
+                # max_content_length because of OS/filesystem limitations,
+                # so let's just raise an error.
+                raise Exception(f'Symlink too large ({length} bytes)')
+
             return cls.from_symlink(path=path, mode=mode)
         elif not stat.S_ISREG(mode):
             # not a regular file: return the empty file instead
             return cls.from_bytes(mode=mode, data=b'')
 
-        length = file_stat.st_size
+        if too_large:
+            skip_reason = 'Content too large'
+        elif not data:
+            skip_reason = 'Skipping file content'
+        else:
+            skip_reason = None
 
-        if not data:
-            ret = MultiHash.from_path(path).digest()
+        if skip_reason:
+            ret = {
+                **MultiHash.from_path(path).digest(),
+                'status': 'absent',
+                'reason': skip_reason,
+            }
         else:
             h = MultiHash(length=length)
             chunks = []
@@ -132,8 +159,11 @@ class Content(MerkleLeaf):
                     h.update(chunk)
                     chunks.append(chunk)
 
-            ret = h.digest()
-            ret['data'] = b''.join(chunks)
+            ret = {
+                **h.digest(),
+                'status': 'visible',
+                'data': b''.join(chunks),
+            }
 
         if save_path:
             ret['path'] = path
@@ -221,7 +251,8 @@ class Directory(MerkleNode):
 
     @classmethod
     def from_disk(cls, *, path, data=False, save_path=False,
-                  dir_filter=accept_all_directories):
+                  dir_filter=accept_all_directories,
+                  max_content_length=None):
         """Compute the Software Heritage objects for a given directory tree
 
         Args:
@@ -232,6 +263,8 @@ class Directory(MerkleNode):
             name or contents. Takes two arguments: dirname and entries, and
             returns True if the directory should be added, False if the
             directory should be ignored.
+          max_content_length (Optional[int]): if given, all contents larger
+            than this will be skipped.
         """
 
         top_path = path
@@ -244,8 +277,9 @@ class Directory(MerkleNode):
             for name in fentries + dentries:
                 path = os.path.join(root, name)
                 if not os.path.isdir(path) or os.path.islink(path):
-                    content = Content.from_file(path=path, data=data,
-                                                save_path=save_path)
+                    content = Content.from_file(
+                        path=path, data=data, save_path=save_path,
+                        max_content_length=max_content_length)
                     entries[name] = content
                 else:
                     if dir_filter(name, dirs[path].entries):

@@ -525,6 +525,50 @@ class FileToContent(DataMixin, unittest.TestCase):
                 conv_content = Content.from_file(path=path, data=data)
                 self.assertContentEqual(conv_content, self.empty_content)
 
+    def test_symlink_max_length(self):
+        for max_content_length in [4, 10]:
+            for filename, symlink in self.symlinks.items():
+                path = os.path.join(self.tmpdir_name, filename)
+                content = Content.from_file(path=path, data=True)
+                if content.data['length'] > max_content_length:
+                    with pytest.raises(Exception, match='too large'):
+                        Content.from_file(
+                            path=path, data=True,
+                            max_content_length=max_content_length)
+                else:
+                    limited_content = Content.from_file(
+                        path=path, data=True,
+                        max_content_length=max_content_length)
+                    assert content == limited_content
+
+    def test_file_max_length(self):
+        for max_content_length in [2, 4]:
+            for filename, content in self.contents.items():
+                path = os.path.join(self.tmpdir_name, filename)
+                content = Content.from_file(path=path, data=True)
+                limited_content = Content.from_file(
+                    path=path, data=True,
+                    max_content_length=max_content_length)
+                assert content.data['length'] == limited_content.data['length']
+                assert content.data['status'] == 'visible'
+                if content.data['length'] > max_content_length:
+                    assert limited_content.data['status'] == 'absent'
+                    assert limited_content.data['reason'] \
+                        == 'Content too large'
+                else:
+                    assert limited_content.data['status'] == 'visible'
+                    assert limited_content.data['data'] == content.data['data']
+
+    def test_special_file_max_length(self):
+        for max_content_length in [None, 0, 1]:
+            for filename in self.specials:
+                path = os.path.join(self.tmpdir_name, filename)
+                content = Content.from_file(path=path, data=True)
+                limited_content = Content.from_file(
+                    path=path, data=True,
+                    max_content_length=max_content_length)
+                assert limited_content == content
+
     def test_file_to_content_with_path(self):
         for filename, content in self.contents.items():
             content_w_path = content.copy()
