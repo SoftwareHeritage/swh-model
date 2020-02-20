@@ -7,15 +7,36 @@ import enum
 import os
 import stat
 
-from typing import List
+import attr
+from typing import List, Optional
 
-from .hashutil import MultiHash, HASH_BLOCK_SIZE
+from .hashutil import MultiHash
 from .merkle import MerkleLeaf, MerkleNode
 from .identifiers import (
     directory_entry_sort_key, directory_identifier,
     identifier_to_bytes as id_to_bytes,
     identifier_to_str as id_to_str,
 )
+from . import model
+
+
+@attr.s
+class DiskBackedContent(model.Content):
+    """Subclass of Content, which allows lazy-loading data from the disk."""
+    path = attr.ib(type=Optional[bytes], default=None)
+
+    def __attrs_post_init__(self):
+        if self.path is None:
+            raise TypeError('path must not be None.')
+
+    def with_data(self) -> model.Content:
+        args = self.to_dict()
+        del args['path']
+        assert self.path is not None
+        with open(self.path, 'rb') as fd:
+            return model.Content.from_dict({
+                **args,
+                'data': fd.read()})
 
 
 class DentryPerms(enum.IntEnum):
@@ -94,8 +115,7 @@ class Content(MerkleLeaf):
 
     @classmethod
     def from_file(
-            cls, *, path, data=False, save_path=False,
-            max_content_length=None):
+            cls, *, path, max_content_length=None):
         """Compute the Software Heritage content entry corresponding to an
         on-disk file.
 
@@ -104,9 +124,6 @@ class Content(MerkleLeaf):
         - using the content as a directory entry in a directory
 
         Args:
-          path (bytes): path to the file for which we're computing the
-            content entry
-          data (bool): add the file data to the entry
           save_path (bool): add the file path to the entry
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
@@ -137,36 +154,23 @@ class Content(MerkleLeaf):
 
         if too_large:
             skip_reason = 'Content too large'
-        elif not data:
-            skip_reason = 'Skipping file content'
         else:
             skip_reason = None
 
+        hashes = MultiHash.from_path(path).digest()
         if skip_reason:
             ret = {
-                **MultiHash.from_path(path).digest(),
+                **hashes,
                 'status': 'absent',
                 'reason': skip_reason,
             }
         else:
-            h = MultiHash(length=length)
-            chunks = []
-            with open(path, 'rb') as fobj:
-                while True:
-                    chunk = fobj.read(HASH_BLOCK_SIZE)
-                    if not chunk:
-                        break
-                    h.update(chunk)
-                    chunks.append(chunk)
-
             ret = {
-                **h.digest(),
+                **hashes,
                 'status': 'visible',
-                'data': b''.join(chunks),
             }
 
-        if save_path:
-            ret['path'] = path
+        ret['path'] = path
         ret['perms'] = mode_to_perms(mode)
         ret['length'] = length
 
@@ -178,6 +182,18 @@ class Content(MerkleLeaf):
 
     def compute_hash(self):
         return self.data['sha1_git']
+
+    def to_model(self) -> model.BaseContent:
+        """Builds a `model.BaseContent` object based on this leaf."""
+        data = self.get_data().copy()
+        data.pop('perms', None)
+        if data['status'] == 'absent':
+            data.pop('path', None)
+            return model.SkippedContent.from_dict(data)
+        elif 'data' in data:
+            return model.Content.from_dict(data)
+        else:
+            return DiskBackedContent.from_dict(data)
 
 
 def accept_all_directories(dirname, entries):
@@ -250,7 +266,7 @@ class Directory(MerkleNode):
     type = 'directory'
 
     @classmethod
-    def from_disk(cls, *, path, data=False, save_path=False,
+    def from_disk(cls, *, path,
                   dir_filter=accept_all_directories,
                   max_content_length=None):
         """Compute the Software Heritage objects for a given directory tree
@@ -278,8 +294,7 @@ class Directory(MerkleNode):
                 path = os.path.join(root, name)
                 if not os.path.isdir(path) or os.path.islink(path):
                     content = Content.from_file(
-                        path=path, data=data, save_path=save_path,
-                        max_content_length=max_content_length)
+                        path=path, max_content_length=max_content_length)
                     entries[name] = content
                 else:
                     if dir_filter(name, dirs[path].entries):
@@ -337,6 +352,11 @@ class Directory(MerkleNode):
 
     def compute_hash(self):
         return id_to_bytes(directory_identifier({'entries': self.entries}))
+
+    def to_model(self) -> model.Directory:
+        """Builds a `model.Directory` object based on this node;
+        ignoring its children."""
+        return model.Directory.from_dict(self.get_data())
 
     def __getitem__(self, key):
         if not isinstance(key, bytes):

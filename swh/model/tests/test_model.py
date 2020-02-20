@@ -6,8 +6,10 @@
 import copy
 
 from hypothesis import given
+import pytest
 
 from swh.model.model import Content, Directory, Revision, Release, Snapshot
+from swh.model.model import MissingData
 from swh.model.hashutil import hash_to_bytes
 from swh.model.hypothesis_strategies import objects, origins, origin_visits
 from swh.model.identifiers import (
@@ -67,6 +69,21 @@ def test_content_hashes():
         sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
     c = Content(length=42, status='visible', **hashes)
     assert c.hashes() == hashes
+
+
+def test_content_data():
+    c = Content(
+        length=42, status='visible', data=b'foo',
+        sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+    assert c.with_data() == c
+
+
+def test_content_data_missing():
+    c = Content(
+        length=42, status='visible',
+        sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+    with pytest.raises(MissingData):
+        c.with_data()
 
 
 def test_directory_model_id_computation():
