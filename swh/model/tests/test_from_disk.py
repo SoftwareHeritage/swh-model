@@ -102,7 +102,6 @@ class DataMixin:
 
         self.specials = {
             b'fifo': os.mkfifo,
-            b'devnull': lambda path: os.mknod(path, device=os.makedev(1, 3)),
         }
 
         self.empty_content = {
@@ -507,7 +506,7 @@ class FileToContent(DataMixin, unittest.TestCase):
         self.make_symlinks(self.tmpdir_name)
         self.make_specials(self.tmpdir_name)
 
-    def test_file_to_content(self):
+    def test_symlink_to_content(self):
         # Check whether loading the data works
         for data in [True, False]:
             for filename, symlink in self.symlinks.items():
@@ -515,12 +514,21 @@ class FileToContent(DataMixin, unittest.TestCase):
                 conv_content = Content.from_file(path=path, data=data)
                 self.assertContentEqual(conv_content, symlink, check_data=data)
 
+    def test_file_to_content(self):
+        for data in [True, False]:
             for filename, content in self.contents.items():
                 path = os.path.join(self.tmpdir_name, filename)
                 conv_content = Content.from_file(path=path, data=data)
                 self.assertContentEqual(conv_content, content, check_data=data)
 
+    def test_special_to_content(self):
+        for data in [True, False]:
             for filename in self.specials:
+                path = os.path.join(self.tmpdir_name, filename)
+                conv_content = Content.from_file(path=path, data=data)
+                self.assertContentEqual(conv_content, self.empty_content)
+
+            for path in ['/dev/null', '/dev/zero']:
                 path = os.path.join(self.tmpdir_name, filename)
                 conv_content = Content.from_file(path=path, data=data)
                 self.assertContentEqual(conv_content, self.empty_content)
