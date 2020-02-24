@@ -120,6 +120,13 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         self.__hash = None
         self.collected = False
 
+    def __eq__(self, other):
+        return isinstance(other, MerkleNode) \
+            and super().__eq__(other) and self.data == other.data
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def invalidate_hash(self):
         """Invalidate the cached hash of the current node."""
         if not self.__hash:
