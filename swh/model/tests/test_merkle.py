@@ -184,6 +184,10 @@ class TestMerkleNode(unittest.TestCase):
         collected2 = self.root.collect()
         self.assertEqual(collected2, {})
 
+    def test_iter_tree(self):
+        nodes = list(self.root.iter_tree())
+        self.assertCountEqual(nodes, self.nodes.values())
+
     def test_get(self):
         for key in (b'a', b'b', b'c'):
             self.assertEqual(self.root[key], self.nodes[b'root/' + key])

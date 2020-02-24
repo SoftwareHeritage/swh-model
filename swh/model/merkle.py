@@ -8,7 +8,7 @@
 import abc
 import collections
 
-from typing import List, Optional
+from typing import Iterator, List, Optional, Set
 
 
 def deep_update(left, right):
@@ -272,6 +272,20 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
 
         for child in self.values():
             child.reset_collect()
+
+    def iter_tree(self) -> Iterator['MerkleNode']:
+        """Yields all children nodes, recursively. Common nodes are
+        deduplicated.
+        """
+        yield from self._iter_tree(set())
+
+    def _iter_tree(
+            self, seen: Set[bytes]) -> Iterator['MerkleNode']:
+        if self.hash not in seen:
+            seen.add(self.hash)
+            yield self
+            for child in self.values():
+                yield from child._iter_tree(seen=seen)
 
 
 class MerkleLeaf(MerkleNode):
