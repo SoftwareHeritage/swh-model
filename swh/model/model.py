@@ -84,9 +84,9 @@ class HashableObject(metaclass=ABCMeta):
 @attr.s(frozen=True)
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
-    name = attr.ib(type=bytes)
-    email = attr.ib(type=bytes)
     fullname = attr.ib(type=bytes)
+    name = attr.ib(type=Optional[bytes])
+    email = attr.ib(type=Optional[bytes])
 
 
 @attr.s(frozen=True)
