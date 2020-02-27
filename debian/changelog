@@ -1,3 +1,12 @@
+swh-model (0.0.59-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.59     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2020-02-27 18:03:53 +0100)
+  * Upstream changes:     - Release swh.model v0.0.59     - Use proper
+    hypothesis strategy to generate Person objects
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 27 Feb 2020 17:07:16 +0000
+
 swh-model (0.0.57-1~swh2) unstable-swh; urgency=medium
 
   * Bump dependency release
