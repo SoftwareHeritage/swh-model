@@ -2,11 +2,13 @@ vcversioner
 attrs
 hypothesis
 python-dateutil
+iso8601
 
 [:python_version < "3.6"]
 pyblake2
 
 [cli]
+swh.core
 Click
 dulwich
 

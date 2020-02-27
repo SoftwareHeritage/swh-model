@@ -1,2 +1,3 @@
+swh.core
 Click
 dulwich
