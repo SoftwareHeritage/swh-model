@@ -51,7 +51,7 @@ def urls(draw):
 
 
 def persons():
-    return builds(Person)
+    return builds(Person, email=optional(binary()), name=optional(binary()))
 
 
 def timestamps():
@@ -112,6 +112,8 @@ def revision_metadata():
 def revisions():
     return builds(
         Revision,
+        author=persons(),
+        committer=persons(),
         date=timestamps_with_timezone(),
         committer_date=timestamps_with_timezone(),
         parents=lists(sha1_git()),
