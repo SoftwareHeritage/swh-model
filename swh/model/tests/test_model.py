@@ -4,12 +4,16 @@
 # See top-level LICENSE file for more information
 
 import copy
+import datetime
 
 from hypothesis import given
 import pytest
 
-from swh.model.model import Content, Directory, Revision, Release, Snapshot
-from swh.model.model import MissingData
+from swh.model.model import (
+    Content, Directory, Revision, Release, Snapshot,
+    Timestamp, TimestampWithTimezone,
+    MissingData,
+)
 from swh.model.hashutil import hash_to_bytes
 from swh.model.hypothesis_strategies import objects, origins, origin_visits
 from swh.model.identifiers import (
@@ -54,6 +58,53 @@ def test_todict_origin_visits(origin_visit):
     obj = origin_visit.to_dict()
 
     assert origin_visit == type(origin_visit).from_dict(obj)
+
+
+def test_timestampwithtimezone_from_datetime():
+    tz = datetime.timezone(datetime.timedelta(minutes=+60))
+    date = datetime.datetime(
+        2020, 2, 27, 14, 39, 19, tzinfo=tz)
+
+    tstz = TimestampWithTimezone.from_datetime(date)
+
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(
+            seconds=1582810759,
+            microseconds=0,
+        ),
+        offset=60,
+        negative_utc=False,
+    )
+
+
+def test_timestampwithtimezone_from_iso8601():
+    date = '2020-02-27 14:39:19.123456+0100'
+
+    tstz = TimestampWithTimezone.from_iso8601(date)
+
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(
+            seconds=1582810759,
+            microseconds=123456,
+        ),
+        offset=60,
+        negative_utc=False,
+    )
+
+
+def test_timestampwithtimezone_from_iso8601_negative_utc():
+    date = '2020-02-27 13:39:19-0000'
+
+    tstz = TimestampWithTimezone.from_iso8601(date)
+
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(
+            seconds=1582810759,
+            microseconds=0,
+        ),
+        offset=0,
+        negative_utc=True,
+    )
 
 
 def test_content_get_hash():

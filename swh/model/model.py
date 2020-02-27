@@ -7,10 +7,11 @@ import datetime
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 import attr
 import dateutil.parser
+import iso8601
 
 from .identifiers import (
     normalize_timestamp, directory_identifier, revision_identifier,
@@ -124,14 +125,30 @@ class TimestampWithTimezone(BaseModel):
             raise ValueError('offset too large: %d minutes' % value)
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, obj: Union[Dict, datetime.datetime, int]):
         """Builds a TimestampWithTimezone from any of the formats
         accepted by :func:`swh.model.normalize_timestamp`."""
-        d = normalize_timestamp(d)
+        # TODO: this accept way more types than just dicts; find a better
+        # name
+        d = normalize_timestamp(obj)
         return cls(
             timestamp=Timestamp.from_dict(d['timestamp']),
             offset=d['offset'],
             negative_utc=d['negative_utc'])
+
+    @classmethod
+    def from_datetime(cls, dt: datetime.datetime):
+        return cls.from_dict(dt)
+
+    @classmethod
+    def from_iso8601(cls, s):
+        """Builds a TimestampWithTimezone from an ISO8601-formatted string.
+        """
+        dt = iso8601.parse_date(s)
+        tstz = cls.from_datetime(dt)
+        if dt.tzname() == '-00:00':
+            tstz = attr.evolve(tstz, negative_utc=True)
+        return tstz
 
 
 @attr.s(frozen=True)
