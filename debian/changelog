@@ -1,3 +1,20 @@
+swh-model (0.0.57-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.57     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-02-27 15:17:04 +0100)
+  * Upstream changes:     - v0.0.57     - * Add method
+    BaseModel.hashes().     - * Re-introduce the swh.core dependency in
+    swh.model[cli]     - * Add support for skipping large contents in
+    from_disk.     - * Add to_model() method to
+    from_disk.{Content,Directory}, to convert to canonical model
+    objects.     - * Take the value of MerkleNode.data into account to
+    compute equality.     - * Add method MerkleNode.iter_tree, to visit
+    all nodes in the subtree of a node.     - * Add from_datetime and
+    from_iso8601 constructors for TimestampWithTimezone.     - * Make
+    attributes name and email of Person optional.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 27 Feb 2020 14:20:21 +0000
+
 swh-model (0.0.56-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.56     - (tagged by Valentin Lorentz
