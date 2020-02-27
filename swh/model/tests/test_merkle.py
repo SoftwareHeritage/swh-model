@@ -46,6 +46,14 @@ class TestMerkleLeaf(unittest.TestCase):
         self.data = {'value': b'value'}
         self.instance = MerkleTestLeaf(self.data)
 
+    def test_equality(self):
+        leaf1 = MerkleTestLeaf(self.data)
+        leaf2 = MerkleTestLeaf(self.data)
+        leaf3 = MerkleTestLeaf({})
+
+        self.assertEqual(leaf1, leaf2)
+        self.assertNotEqual(leaf1, leaf3)
+
     def test_hash(self):
         self.assertEqual(self.instance.compute_hash_called, 0)
         instance_hash = self.instance.hash
@@ -114,6 +122,20 @@ class TestMerkleNode(unittest.TestCase):
                     node2[j] = node3
                     self.nodes[value3] = node3
 
+    def test_equality(self):
+        node1 = merkle.MerkleNode({'foo': b'bar'})
+        node2 = merkle.MerkleNode({'foo': b'bar'})
+        node3 = merkle.MerkleNode({})
+
+        self.assertEqual(node1, node2)
+        self.assertNotEqual(node1, node3, node1 == node3)
+
+        node1['foo'] = node3
+        self.assertNotEqual(node1, node2)
+
+        node2['foo'] = node3
+        self.assertEqual(node1, node2)
+
     def test_hash(self):
         for node in self.nodes.values():
             self.assertEqual(node.compute_hash_called, 0)
@@ -161,6 +183,10 @@ class TestMerkleNode(unittest.TestCase):
             self.assertTrue(node.collected)
         collected2 = self.root.collect()
         self.assertEqual(collected2, {})
+
+    def test_iter_tree(self):
+        nodes = list(self.root.iter_tree())
+        self.assertCountEqual(nodes, self.nodes.values())
 
     def test_get(self):
         for key in (b'a', b'b', b'c'):

@@ -5,3 +5,4 @@ vcversioner
 attrs
 hypothesis
 python-dateutil
+iso8601

@@ -114,7 +114,7 @@ def content_identifier(content):
     return MultiHash.from_data(content['data']).digest()
 
 
-def _sort_key(entry):
+def directory_entry_sort_key(entry):
     """The sorting key for tree entries"""
     if entry['type'] == 'dir':
         return entry['name'] + b'/'
@@ -182,7 +182,7 @@ def directory_identifier(directory):
 
     components = []
 
-    for entry in sorted(directory['entries'], key=_sort_key):
+    for entry in sorted(directory['entries'], key=directory_entry_sort_key):
         components.extend([
             _perms_to_bytes(entry['perms']),
             b'\x20',

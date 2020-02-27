@@ -7,16 +7,24 @@ import datetime
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 import attr
 import dateutil.parser
+import iso8601
 
 from .identifiers import (
     normalize_timestamp, directory_identifier, revision_identifier,
     release_identifier, snapshot_identifier
 )
 from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes
+
+
+class MissingData(Exception):
+    """Raised by `Content.with_data` when it has no way of fetching the
+    data (but not when fetching the data fails)."""
+    pass
+
 
 SHA1_SIZE = 20
 
@@ -76,9 +84,9 @@ class HashableObject(metaclass=ABCMeta):
 @attr.s(frozen=True)
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
-    name = attr.ib(type=bytes)
-    email = attr.ib(type=bytes)
     fullname = attr.ib(type=bytes)
+    name = attr.ib(type=Optional[bytes])
+    email = attr.ib(type=Optional[bytes])
 
 
 @attr.s(frozen=True)
@@ -117,14 +125,30 @@ class TimestampWithTimezone(BaseModel):
             raise ValueError('offset too large: %d minutes' % value)
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, obj: Union[Dict, datetime.datetime, int]):
         """Builds a TimestampWithTimezone from any of the formats
         accepted by :func:`swh.model.normalize_timestamp`."""
-        d = normalize_timestamp(d)
+        # TODO: this accept way more types than just dicts; find a better
+        # name
+        d = normalize_timestamp(obj)
         return cls(
             timestamp=Timestamp.from_dict(d['timestamp']),
             offset=d['offset'],
             negative_utc=d['negative_utc'])
+
+    @classmethod
+    def from_datetime(cls, dt: datetime.datetime):
+        return cls.from_dict(dt)
+
+    @classmethod
+    def from_iso8601(cls, s):
+        """Builds a TimestampWithTimezone from an ISO8601-formatted string.
+        """
+        dt = iso8601.parse_date(s)
+        tstz = cls.from_datetime(dt)
+        if dt.tzname() == '-00:00':
+            tstz = attr.evolve(tstz, negative_utc=True)
+        return tstz
 
 
 @attr.s(frozen=True)
@@ -362,6 +386,10 @@ class Directory(BaseModel, HashableObject):
 
 @attr.s(frozen=True)
 class BaseContent(BaseModel):
+    status = attr.ib(
+        type=str,
+        validator=attr.validators.in_(['visible', 'hidden', 'absent']))
+
     def to_dict(self):
         content = super().to_dict()
         if content['ctime'] is None:
@@ -384,6 +412,10 @@ class BaseContent(BaseModel):
             raise ValueError('{} is not a valid hash name.'.format(hash_name))
         return getattr(self, hash_name)
 
+    def hashes(self) -> Dict[str, bytes]:
+        """Returns a dictionary {hash_name: hash_value}"""
+        return {algo: getattr(self, algo) for algo in DEFAULT_ALGORITHMS}
+
 
 @attr.s(frozen=True)
 class Content(BaseContent):
@@ -398,8 +430,8 @@ class Content(BaseContent):
         type=str,
         default='visible',
         validator=attr.validators.in_(['visible', 'hidden']))
-    data = attr.ib(type=Optional[bytes],
-                   default=None)
+
+    data = attr.ib(type=Optional[bytes], default=None)
 
     ctime = attr.ib(type=Optional[datetime.datetime],
                     default=None)
@@ -420,6 +452,16 @@ class Content(BaseContent):
     def from_dict(cls, d):
         return super().from_dict(d, use_subclass=False)
 
+    def with_data(self) -> 'Content':
+        """Loads the `data` attribute; meaning that it is guaranteed not to
+        be None after this call.
+
+        This call is almost a no-op, but subclasses may overload this method
+        to lazy-load data (eg. from disk or objstorage)."""
+        if self.data is None:
+            raise MissingData('Content data is None.')
+        return self
+
 
 @attr.s(frozen=True)
 class SkippedContent(BaseContent):
@@ -428,7 +470,7 @@ class SkippedContent(BaseContent):
     sha256 = attr.ib(type=Optional[bytes])
     blake2s256 = attr.ib(type=Optional[bytes])
 
-    length = attr.ib(type=int)
+    length = attr.ib(type=Optional[int])
 
     status = attr.ib(
         type=str,
