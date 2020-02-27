@@ -12,8 +12,11 @@ import unittest
 from typing import ClassVar, Optional
 
 from swh.model import from_disk
-from swh.model.from_disk import Content, DentryPerms, Directory
+from swh.model.from_disk import (
+    Content, DentryPerms, Directory, DiskBackedContent
+)
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
+from swh.model import model
 
 TEST_DATA = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -46,6 +49,57 @@ class ModeToPerms(unittest.TestCase):
     def test_exhaustive_mode_to_perms(self):
         for fmode, perm in self.perms_map.items():
             self.assertEqual(perm, from_disk.mode_to_perms(fmode))
+
+
+class TestDiskBackedContent(unittest.TestCase):
+    def test_with_data(self):
+        expected_content = model.Content(
+            length=42, status='visible', data=b'foo bar',
+            sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+        with tempfile.NamedTemporaryFile(mode='w+b') as fd:
+            content = DiskBackedContent(
+                length=42, status='visible', path=fd.name,
+                sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+            fd.write(b'foo bar')
+            fd.seek(0)
+            content_with_data = content.with_data()
+
+        assert expected_content == content_with_data
+
+    def test_lazy_data(self):
+        with tempfile.NamedTemporaryFile(mode='w+b') as fd:
+            fd.write(b'foo')
+            fd.seek(0)
+            content = DiskBackedContent(
+                length=42, status='visible', path=fd.name,
+                sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+            fd.write(b'bar')
+            fd.seek(0)
+            content_with_data = content.with_data()
+            fd.write(b'baz')
+            fd.seek(0)
+
+        assert content_with_data.data == b'bar'
+
+    def test_with_data_cannot_read(self):
+        with tempfile.NamedTemporaryFile(mode='w+b') as fd:
+            content = DiskBackedContent(
+                length=42, status='visible', path=fd.name,
+                sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+
+        with pytest.raises(OSError):
+            content.with_data()
+
+    def test_missing_path(self):
+        with pytest.raises(TypeError):
+            DiskBackedContent(
+                length=42, status='visible',
+                sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
+
+        with pytest.raises(TypeError):
+            DiskBackedContent(
+                length=42, status='visible', path=None,
+                sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
 
 
 class DataMixin:
@@ -102,7 +156,6 @@ class DataMixin:
 
         self.specials = {
             b'fifo': os.mkfifo,
-            b'devnull': lambda path: os.mknod(path, device=os.makedev(1, 3)),
         }
 
         self.empty_content = {
@@ -402,19 +455,19 @@ class DataMixin:
     def tearDown(self):
         self.tmpdir.cleanup()
 
-    def assertContentEqual(self, left, right, *, check_data=False,  # noqa
+    def assertContentEqual(self, left, right, *,  # noqa
                            check_path=False):
         if not isinstance(left, Content):
             raise ValueError('%s is not a Content' % left)
         if isinstance(right, Content):
             right = right.get_data()
 
+        # Compare dictionaries
+
         keys = DEFAULT_ALGORITHMS | {
             'length',
             'perms',
         }
-        if check_data:
-            keys |= {'data'}
         if check_path:
             keys |= {'path'}
 
@@ -449,7 +502,10 @@ class DataMixin:
         if isinstance(right, Directory):
             right = right.get_data()
 
-        return self.assertCountEqual(left.entries, right['entries'])
+        assert left.entries == right['entries']
+        assert left.hash == right['id']
+
+        assert left.to_model() == model.Directory.from_dict(right)
 
     def make_contents(self, directory):
         for filename, content in self.contents.items():
@@ -499,6 +555,19 @@ class SymlinkToContent(DataMixin, unittest.TestCase):
             conv_content = Content.from_symlink(path=path, mode=perms)
             self.assertContentEqual(conv_content, symlink)
 
+    def test_symlink_to_base_model(self):
+        for filename, symlink in self.symlinks.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            perms = 0o120000
+            model_content = \
+                Content.from_symlink(path=path, mode=perms).to_model()
+
+            right = symlink.copy()
+            for key in ('perms', 'path', 'mode'):
+                right.pop(key, None)
+            right['status'] = 'visible'
+            assert model_content == model.Content.from_dict(right)
+
 
 class FileToContent(DataMixin, unittest.TestCase):
     def setUp(self):
@@ -507,34 +576,128 @@ class FileToContent(DataMixin, unittest.TestCase):
         self.make_symlinks(self.tmpdir_name)
         self.make_specials(self.tmpdir_name)
 
+    def test_symlink_to_content(self):
+        for filename, symlink in self.symlinks.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            conv_content = Content.from_file(path=path)
+            self.assertContentEqual(conv_content, symlink)
+
     def test_file_to_content(self):
-        # Check whether loading the data works
-        for data in [True, False]:
+        for filename, content in self.contents.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            conv_content = Content.from_file(path=path)
+            self.assertContentEqual(conv_content, content)
+
+    def test_special_to_content(self):
+        for filename in self.specials:
+            path = os.path.join(self.tmpdir_name, filename)
+            conv_content = Content.from_file(path=path)
+            self.assertContentEqual(conv_content, self.empty_content)
+
+        for path in ['/dev/null', '/dev/zero']:
+            path = os.path.join(self.tmpdir_name, filename)
+            conv_content = Content.from_file(path=path)
+            self.assertContentEqual(conv_content, self.empty_content)
+
+    def test_symlink_to_content_model(self):
+        for filename, symlink in self.symlinks.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            model_content = Content.from_file(path=path).to_model()
+
+            right = symlink.copy()
+            for key in ('perms', 'path', 'mode'):
+                right.pop(key, None)
+            right['status'] = 'visible'
+            assert model_content == model.Content.from_dict(right)
+
+    def test_file_to_content_model(self):
+        for filename, content in self.contents.items():
+            path = os.path.join(self.tmpdir_name, filename)
+            model_content = Content.from_file(path=path).to_model()
+
+            right = content.copy()
+            for key in ('perms', 'mode'):
+                right.pop(key, None)
+            assert model_content.with_data() == model.Content.from_dict(right)
+
+            right['path'] = path
+            del right['data']
+            assert model_content == DiskBackedContent.from_dict(right)
+
+    def test_special_to_content_model(self):
+        for filename in self.specials:
+            path = os.path.join(self.tmpdir_name, filename)
+            model_content = Content.from_file(path=path).to_model()
+
+            right = self.empty_content.copy()
+            for key in ('perms', 'path', 'mode'):
+                right.pop(key, None)
+            right['status'] = 'visible'
+            assert model_content == model.Content.from_dict(right)
+
+        for path in ['/dev/null', '/dev/zero']:
+            model_content = Content.from_file(path=path).to_model()
+
+            right = self.empty_content.copy()
+            for key in ('perms', 'path', 'mode'):
+                right.pop(key, None)
+            right['status'] = 'visible'
+            assert model_content == model.Content.from_dict(right)
+
+    def test_symlink_max_length(self):
+        for max_content_length in [4, 10]:
             for filename, symlink in self.symlinks.items():
                 path = os.path.join(self.tmpdir_name, filename)
-                conv_content = Content.from_file(path=path, data=data)
-                self.assertContentEqual(conv_content, symlink, check_data=data)
+                content = Content.from_file(path=path)
+                if content.data['length'] > max_content_length:
+                    with pytest.raises(Exception, match='too large'):
+                        Content.from_file(
+                            path=path,
+                            max_content_length=max_content_length)
+                else:
+                    limited_content = Content.from_file(
+                        path=path,
+                        max_content_length=max_content_length)
+                    assert content == limited_content
 
+    def test_file_max_length(self):
+        for max_content_length in [2, 4]:
             for filename, content in self.contents.items():
                 path = os.path.join(self.tmpdir_name, filename)
-                conv_content = Content.from_file(path=path, data=data)
-                self.assertContentEqual(conv_content, content, check_data=data)
+                content = Content.from_file(path=path)
+                limited_content = Content.from_file(
+                    path=path,
+                    max_content_length=max_content_length)
+                assert content.data['length'] == limited_content.data['length']
+                assert content.data['status'] == 'visible'
+                if content.data['length'] > max_content_length:
+                    assert limited_content.data['status'] == 'absent'
+                    assert limited_content.data['reason'] \
+                        == 'Content too large'
+                else:
+                    assert limited_content.data['status'] == 'visible'
 
+    def test_special_file_max_length(self):
+        for max_content_length in [None, 0, 1]:
             for filename in self.specials:
                 path = os.path.join(self.tmpdir_name, filename)
-                conv_content = Content.from_file(path=path, data=data)
-                self.assertContentEqual(conv_content, self.empty_content)
+                content = Content.from_file(path=path)
+                limited_content = Content.from_file(
+                    path=path,
+                    max_content_length=max_content_length)
+                assert limited_content == content
 
     def test_file_to_content_with_path(self):
         for filename, content in self.contents.items():
             content_w_path = content.copy()
             path = os.path.join(self.tmpdir_name, filename)
             content_w_path['path'] = path
-            conv_content = Content.from_file(path=path, save_path=True)
+            conv_content = Content.from_file(path=path)
             self.assertContentEqual(conv_content, content_w_path,
                                     check_path=True)
 
 
+@pytest.mark.fs
 class DirectoryToObjects(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -685,6 +848,18 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                          len(self.contents)
                          + 1)
 
+    def test_directory_entry_order(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            dirname = os.fsencode(dirname)
+            open(os.path.join(dirname, b'foo.'), 'a')
+            open(os.path.join(dirname, b'foo0'), 'a')
+            os.mkdir(os.path.join(dirname, b'foo'))
+
+            directory = Directory.from_disk(path=dirname)
+
+        assert [entry['name'] for entry in directory.entries] \
+            == [b'foo.', b'foo', b'foo0']
+
 
 @pytest.mark.fs
 class TarballTest(DataMixin, unittest.TestCase):
@@ -697,12 +872,12 @@ class TarballTest(DataMixin, unittest.TestCase):
             path=os.path.join(self.tmpdir_name, b'sample-folder')
         )
 
-        for name, data in self.tarball_contents.items():
+        for name, expected in self.tarball_contents.items():
             obj = directory[name]
             if isinstance(obj, Content):
-                self.assertContentEqual(obj, data)
+                self.assertContentEqual(obj, expected)
             elif isinstance(obj, Directory):
-                self.assertDirectoryEqual(obj, data)
+                self.assertDirectoryEqual(obj, expected)
             else:
                 raise self.failureException('Unknown type for %s' % obj)
 

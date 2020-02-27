@@ -113,7 +113,7 @@ class ContentIdentifier(unittest.TestCase):
 
 
 directory_example = {
-    'id': 'c2e41aae41ac17bd4a650770d6ee77f62e52235b',
+    'id': 'd7ed3d2c31d608823be58b1cbe57605310615231',
     'entries': [
         {
             'type': 'file',
@@ -198,7 +198,28 @@ directory_example = {
             'perms': 57344,
             'name': b'will_paginate',
             'target': '3d531e169db92a16a9a8974f0ae6edf52e52659e'
-        }
+        },
+
+        # in git order, the dir named "order" should be between the files
+        # named "order." and "order0"
+        {
+            'type': 'dir',
+            'perms': 16384,
+            'name': b'order',
+            'target': '62cdb7020ff920e5aa642c3d4066950dd1f01f4d'
+        },
+        {
+            'type': 'file',
+            'perms': 16384,
+            'name': b'order.',
+            'target': '0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33'
+        },
+        {
+            'type': 'file',
+            'perms': 16384,
+            'name': b'order0',
+            'target': 'bbe960a25ea311d21d40669e93df2003ba9b90a2'
+        },
     ],
 }
 
@@ -215,6 +236,13 @@ class DirectoryIdentifier(unittest.TestCase):
     def test_dir_identifier(self):
         self.assertEqual(
             identifiers.directory_identifier(self.directory),
+            self.directory['id'])
+
+    def test_dir_identifier_entry_order(self):
+        # Reverse order of entries, check the id is still the same.
+        directory = {'entries': reversed(self.directory['entries'])}
+        self.assertEqual(
+            identifiers.directory_identifier(directory),
             self.directory['id'])
 
     def test_dir_identifier_empty_directory(self):
