@@ -51,7 +51,7 @@ def urls(draw):
 
 
 def persons():
-    return builds(Person, email=optional(bytes), name=optional(bytes))
+    return builds(Person, email=optional(binary()), name=optional(binary()))
 
 
 def timestamps():
