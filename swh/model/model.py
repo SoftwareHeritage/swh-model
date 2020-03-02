@@ -88,6 +88,45 @@ class Person(BaseModel):
     name = attr.ib(type=Optional[bytes])
     email = attr.ib(type=Optional[bytes])
 
+    @classmethod
+    def from_fullname(cls, fullname: bytes):
+        """Returns a Person object, by guessing the name and email from the
+        fullname, in the `name <email>` format.
+
+        The fullname is left unchanged."""
+        if fullname is None:
+            raise TypeError('fullname is None.')
+
+        name: Optional[bytes]
+        email: Optional[bytes]
+
+        try:
+            open_bracket = fullname.index(b'<')
+        except ValueError:
+            name = fullname
+            email = None
+        else:
+            raw_name = fullname[:open_bracket]
+            raw_email = fullname[open_bracket+1:]
+
+            if not raw_name:
+                name = None
+            else:
+                name = raw_name.strip()
+
+            try:
+                close_bracket = raw_email.rindex(b'>')
+            except ValueError:
+                email = raw_email
+            else:
+                email = raw_email[:close_bracket]
+
+        return Person(
+            name=name or None,
+            email=email or None,
+            fullname=fullname,
+        )
+
 
 @attr.s(frozen=True)
 class Timestamp(BaseModel):

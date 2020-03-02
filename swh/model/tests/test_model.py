@@ -13,7 +13,7 @@ import pytest
 from swh.model.model import (
     Content, SkippedContent, Directory, Revision, Release, Snapshot,
     Timestamp, TimestampWithTimezone,
-    MissingData,
+    MissingData, Person
 )
 from swh.model.hashutil import hash_to_bytes, MultiHash
 from swh.model.hypothesis_strategies import objects, origins, origin_visits
@@ -106,6 +106,96 @@ def test_timestampwithtimezone_from_iso8601_negative_utc():
         offset=0,
         negative_utc=True,
     )
+
+
+def test_person_from_fullname():
+    """The author should have name, email and fullname filled.
+
+    """
+    actual_person = Person.from_fullname(b'tony <ynot@dagobah>')
+    assert actual_person == Person(
+        fullname=b'tony <ynot@dagobah>',
+        name=b'tony',
+        email=b'ynot@dagobah',
+    )
+
+
+def test_person_from_fullname_no_email():
+    """The author and fullname should be the same as the input (author).
+
+    """
+    actual_person = Person.from_fullname(b'tony')
+    assert actual_person == Person(
+        fullname=b'tony',
+        name=b'tony',
+        email=None,
+    )
+
+
+def test_person_from_fullname_empty_person():
+    """Empty person has only its fullname filled with the empty
+    byte-string.
+
+    """
+    actual_person = Person.from_fullname(b'')
+    assert actual_person == Person(
+        fullname=b'',
+        name=None,
+        email=None,
+    )
+
+
+def test_git_author_line_to_author():
+    # edge case out of the way
+    with pytest.raises(TypeError):
+        Person.from_fullname(None)
+
+    tests = {
+        b'a <b@c.com>': Person(
+            name=b'a',
+            email=b'b@c.com',
+            fullname=b'a <b@c.com>',
+        ),
+        b'<foo@bar.com>': Person(
+            name=None,
+            email=b'foo@bar.com',
+            fullname=b'<foo@bar.com>',
+        ),
+        b'malformed <email': Person(
+            name=b'malformed',
+            email=b'email',
+            fullname=b'malformed <email'
+        ),
+        b'malformed <"<br"@ckets>': Person(
+            name=b'malformed',
+            email=b'"<br"@ckets',
+            fullname=b'malformed <"<br"@ckets>',
+        ),
+        b'trailing <sp@c.e> ': Person(
+            name=b'trailing',
+            email=b'sp@c.e',
+            fullname=b'trailing <sp@c.e> ',
+        ),
+        b'no<sp@c.e>': Person(
+            name=b'no',
+            email=b'sp@c.e',
+            fullname=b'no<sp@c.e>',
+        ),
+        b' more   <sp@c.es>': Person(
+            name=b'more',
+            email=b'sp@c.es',
+            fullname=b' more   <sp@c.es>',
+        ),
+        b' <>': Person(
+            name=None,
+            email=None,
+            fullname=b' <>',
+        ),
+    }
+
+    for person in sorted(tests):
+        expected_person = tests[person]
+        assert expected_person == Person.from_fullname(person)
 
 
 def test_content_get_hash():
