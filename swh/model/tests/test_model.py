@@ -7,14 +7,15 @@ import copy
 import datetime
 
 from hypothesis import given
+from hypothesis.strategies import binary
 import pytest
 
 from swh.model.model import (
-    Content, Directory, Revision, Release, Snapshot,
+    Content, SkippedContent, Directory, Revision, Release, Snapshot,
     Timestamp, TimestampWithTimezone,
     MissingData,
 )
-from swh.model.hashutil import hash_to_bytes
+from swh.model.hashutil import hash_to_bytes, MultiHash
 from swh.model.hypothesis_strategies import objects, origins, origin_visits
 from swh.model.identifiers import (
     directory_identifier, revision_identifier, release_identifier,
@@ -135,6 +136,36 @@ def test_content_data_missing():
         sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
     with pytest.raises(MissingData):
         c.with_data()
+
+
+@given(binary(max_size=4096))
+def test_content_from_data(data):
+    c = Content.from_data(data)
+    assert c.data == data
+    assert c.length == len(data)
+    assert c.status == 'visible'
+    for key, value in MultiHash.from_data(data).digest().items():
+        assert getattr(c, key) == value
+
+
+@given(binary(max_size=4096))
+def test_hidden_content_from_data(data):
+    c = Content.from_data(data, status='hidden')
+    assert c.data == data
+    assert c.length == len(data)
+    assert c.status == 'hidden'
+    for key, value in MultiHash.from_data(data).digest().items():
+        assert getattr(c, key) == value
+
+
+@given(binary(max_size=4096))
+def test_skipped_content_from_data(data):
+    c = SkippedContent.from_data(data, reason='reason')
+    assert c.reason == 'reason'
+    assert c.length == len(data)
+    assert c.status == 'absent'
+    for key, value in MultiHash.from_data(data).digest().items():
+        assert getattr(c, key) == value
 
 
 def test_directory_model_id_computation():
