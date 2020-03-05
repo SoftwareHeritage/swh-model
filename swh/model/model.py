@@ -17,7 +17,7 @@ from .identifiers import (
     normalize_timestamp, directory_identifier, revision_identifier,
     release_identifier, snapshot_identifier
 )
-from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes
+from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
 
 
 class MissingData(Exception):
@@ -87,6 +87,45 @@ class Person(BaseModel):
     fullname = attr.ib(type=bytes)
     name = attr.ib(type=Optional[bytes])
     email = attr.ib(type=Optional[bytes])
+
+    @classmethod
+    def from_fullname(cls, fullname: bytes):
+        """Returns a Person object, by guessing the name and email from the
+        fullname, in the `name <email>` format.
+
+        The fullname is left unchanged."""
+        if fullname is None:
+            raise TypeError('fullname is None.')
+
+        name: Optional[bytes]
+        email: Optional[bytes]
+
+        try:
+            open_bracket = fullname.index(b'<')
+        except ValueError:
+            name = fullname
+            email = None
+        else:
+            raw_name = fullname[:open_bracket]
+            raw_email = fullname[open_bracket+1:]
+
+            if not raw_name:
+                name = None
+            else:
+                name = raw_name.strip()
+
+            try:
+                close_bracket = raw_email.rindex(b'>')
+            except ValueError:
+                email = raw_email
+            else:
+                email = raw_email[:close_bracket]
+
+        return Person(
+            name=name or None,
+            email=email or None,
+            fullname=fullname,
+        )
 
 
 @attr.s(frozen=True)
@@ -390,6 +429,15 @@ class BaseContent(BaseModel):
         type=str,
         validator=attr.validators.in_(['visible', 'hidden', 'absent']))
 
+    @staticmethod
+    def _hash_data(data: bytes):
+        """Hash some data, returning most of the fields of a content object"""
+        d = MultiHash.from_data(data).digest()
+        d['data'] = data
+        d['length'] = len(data)
+
+        return d
+
     def to_dict(self):
         content = super().to_dict()
         if content['ctime'] is None:
@@ -449,6 +497,17 @@ class Content(BaseContent):
         return content
 
     @classmethod
+    def from_data(cls, data, status='visible') -> 'Content':
+        """Generate a Content from a given `data` byte string.
+
+        This populates the Content with the hashes and length for the data
+        passed as argument, as well as the data itself.
+        """
+        d = cls._hash_data(data)
+        d['status'] = status
+        return cls(**d)
+
+    @classmethod
     def from_dict(cls, d):
         return super().from_dict(d, use_subclass=False)
 
@@ -502,6 +561,22 @@ class SkippedContent(BaseContent):
         if content['origin'] is None:
             del content['origin']
         return content
+
+    @classmethod
+    def from_data(cls, data, reason: str) -> 'SkippedContent':
+        """Generate a SkippedContent from a given `data` byte string.
+
+        This populates the SkippedContent with the hashes and length for the
+        data passed as argument.
+
+        You can use `attr.evolve` on such a generated content to nullify some
+        of its attributes, e.g. for tests.
+        """
+        d = cls._hash_data(data)
+        del d['data']
+        d['status'] = 'absent'
+        d['reason'] = reason
+        return cls(**d)
 
     @classmethod
     def from_dict(cls, d):
