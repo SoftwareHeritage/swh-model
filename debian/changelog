@@ -1,8 +1,14 @@
-swh-model (0.0.59-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.60-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.60     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-03-05 12:05:18 +0100)
+  * Upstream changes:     - v0.0.60     - * Add a method to generate
+    Content/SkippedContent from binary data     - * Draw contents from a
+    byte string instead of generating arbitrary hashes     - * Add
+    classmethod Person.from_address, to parse from 'name <email>'
+    strings.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 27 Feb 2020 17:08:29 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 05 Mar 2020 11:07:50 +0000
 
 swh-model (0.0.59-1~swh1) unstable-swh; urgency=medium
 

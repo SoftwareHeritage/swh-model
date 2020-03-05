@@ -7,10 +7,10 @@ import attr
 import datetime
 
 from hypothesis.strategies import (
-    binary, builds, characters, composite, dictionaries, from_regex,
-    integers, just, lists, none, one_of, sampled_from, text, tuples,
+    binary, builds, characters, composite, dictionaries,
+    from_regex, integers, just, lists, none, one_of,
+    sampled_from, sets, text, tuples,
 )
-
 
 from .from_disk import DentryPerms
 from .model import (
@@ -139,32 +139,32 @@ def contents():
     return one_of(present_contents(), skipped_contents())
 
 
-@composite
-def present_contents(draw):
-    return draw(builds(
-        Content,
-        length=integers(min_value=0, max_value=2**63-1),
-        sha1=sha1(),
-        sha1_git=sha1_git(),
-        sha256=binary(min_size=32, max_size=32),
-        blake2s256=binary(min_size=32, max_size=32),
+def present_contents():
+    return builds(
+        Content.from_data,
+        binary(max_size=4096),
         status=one_of(just('visible'), just('hidden')),
-        data=binary(),
-    ))
+    )
 
 
 @composite
 def skipped_contents(draw):
-    return draw(builds(
-        SkippedContent,
-        length=integers(min_value=-1, max_value=2**63-1),
-        sha1=optional(sha1()),
-        sha1_git=optional(sha1_git()),
-        sha256=optional(binary(min_size=32, max_size=32)),
-        blake2s256=optional(binary(min_size=32, max_size=32)),
-        status=just('absent'),
+    nullify_attrs = draw(
+        sets(sampled_from(['sha1', 'sha1_git', 'sha256', 'blake2s256']))
+    )
+
+    new_attrs = {
+        k: None
+        for k in nullify_attrs
+    }
+
+    ret = draw(builds(
+        SkippedContent.from_data,
+        binary(max_size=4096),
         reason=pgsql_text(),
     ))
+
+    return attr.evolve(ret, **new_attrs)
 
 
 def branch_names():
