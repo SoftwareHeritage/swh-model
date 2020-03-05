@@ -1,3 +1,15 @@
+swh-model (0.0.60-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.60     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-03-05 12:05:18 +0100)
+  * Upstream changes:     - v0.0.60     - * Add a method to generate
+    Content/SkippedContent from binary data     - * Draw contents from a
+    byte string instead of generating arbitrary hashes     - * Add
+    classmethod Person.from_address, to parse from 'name <email>'
+    strings.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 05 Mar 2020 11:07:50 +0000
+
 swh-model (0.0.59-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.59     - (tagged by Nicolas Dandrimont
