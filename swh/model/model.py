@@ -32,6 +32,20 @@ SHA1_SIZE = 20
 Sha1Git = bytes
 
 
+def dictify(value):
+    "Helper function used by BaseModel.to_dict()"
+    if isinstance(value, BaseModel):
+        return value.to_dict()
+    elif isinstance(value, Enum):
+        return value.value
+    elif isinstance(value, dict):
+        return {k: dictify(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [dictify(v) for v in value]
+    else:
+        return value
+
+
 class BaseModel:
     """Base class for SWH model classes.
 
@@ -41,21 +55,7 @@ class BaseModel:
     def to_dict(self):
         """Wrapper of `attr.asdict` that can be overridden by subclasses
         that have special handling of some of the fields."""
-
-        def dictify(value):
-            if isinstance(value, BaseModel):
-                return value.to_dict()
-            elif isinstance(value, Enum):
-                return value.value
-            elif isinstance(value, dict):
-                return {k: dictify(v) for k, v in value.items()}
-            elif isinstance(value, list):
-                return [dictify(v) for v in value]
-            else:
-                return value
-
-        ret = attr.asdict(self, recurse=False)
-        return dictify(ret)
+        return dictify(attr.asdict(self, recurse=False))
 
     @classmethod
     def from_dict(cls, d):
