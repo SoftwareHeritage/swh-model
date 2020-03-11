@@ -263,8 +263,8 @@ def test_directory_model_id_computation():
     del dir_dict['id']
 
     dir_id = hash_to_bytes(directory_identifier(dir_dict))
-    for dir_model in [Directory(**dir_dict), Directory.from_dict(dir_dict)]:
-        assert dir_model.id == dir_id
+    dir_model = Directory.from_dict(dir_dict)
+    assert dir_model.id == dir_id
 
 
 def test_revision_model_id_computation():
@@ -272,8 +272,8 @@ def test_revision_model_id_computation():
     del rev_dict['id']
 
     rev_id = hash_to_bytes(revision_identifier(rev_dict))
-    for rev_model in [Revision(**rev_dict), Revision.from_dict(rev_dict)]:
-        assert rev_model.id == rev_id
+    rev_model = Revision.from_dict(rev_dict)
+    assert rev_model.id == rev_id
 
 
 def test_revision_model_id_computation_with_no_date():
@@ -286,10 +286,10 @@ def test_revision_model_id_computation_with_no_date():
     del rev_dict['id']
 
     rev_id = hash_to_bytes(revision_identifier(rev_dict))
-    for rev_model in [Revision(**rev_dict), Revision.from_dict(rev_dict)]:
-        assert rev_model.date is None
-        assert rev_model.committer_date is None
-        assert rev_model.id == rev_id
+    rev_model = Revision.from_dict(rev_dict)
+    assert rev_model.date is None
+    assert rev_model.committer_date is None
+    assert rev_model.id == rev_id
 
 
 def test_release_model_id_computation():
@@ -297,8 +297,9 @@ def test_release_model_id_computation():
     del rel_dict['id']
 
     rel_id = hash_to_bytes(release_identifier(rel_dict))
-    for rel_model in [Release(**rel_dict), Release.from_dict(rel_dict)]:
-        assert rel_model.id == hash_to_bytes(rel_id)
+    rel_model = Release.from_dict(rel_dict)
+    assert isinstance(rel_model.date, TimestampWithTimezone)
+    assert rel_model.id == hash_to_bytes(rel_id)
 
 
 def test_snapshot_model_id_computation():
@@ -306,5 +307,5 @@ def test_snapshot_model_id_computation():
     del snp_dict['id']
 
     snp_id = hash_to_bytes(snapshot_identifier(snp_dict))
-    for snp_model in [Snapshot(**snp_dict), Snapshot.from_dict(snp_dict)]:
-        assert snp_model.id == snp_id
+    snp_model = Snapshot.from_dict(snp_dict)
+    assert snp_model.id == snp_id
