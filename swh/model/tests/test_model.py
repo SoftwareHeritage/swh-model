@@ -259,7 +259,7 @@ def test_skipped_content_from_data(data):
 
 
 def test_directory_model_id_computation():
-    dir_dict = dict(directory_example)
+    dir_dict = directory_example.copy()
     del dir_dict['id']
 
     dir_id = hash_to_bytes(directory_identifier(dir_dict))
@@ -268,7 +268,7 @@ def test_directory_model_id_computation():
 
 
 def test_revision_model_id_computation():
-    rev_dict = dict(revision_example)
+    rev_dict = revision_example.copy()
     del rev_dict['id']
 
     rev_id = hash_to_bytes(revision_identifier(rev_dict))
@@ -280,7 +280,7 @@ def test_revision_model_id_computation_with_no_date():
     """We can have revision with date to None
 
     """
-    rev_dict = dict(revision_example)
+    rev_dict = revision_example.copy()
     rev_dict['date'] = None
     rev_dict['committer_date'] = None
     del rev_dict['id']
@@ -293,7 +293,7 @@ def test_revision_model_id_computation_with_no_date():
 
 
 def test_release_model_id_computation():
-    rel_dict = dict(release_example)
+    rel_dict = release_example.copy()
     del rel_dict['id']
 
     rel_id = hash_to_bytes(release_identifier(rel_dict))
@@ -302,7 +302,7 @@ def test_release_model_id_computation():
 
 
 def test_snapshot_model_id_computation():
-    snp_dict = dict(snapshot_example)
+    snp_dict = snapshot_example.copy()
     del snp_dict['id']
 
     snp_id = hash_to_bytes(snapshot_identifier(snp_dict))
