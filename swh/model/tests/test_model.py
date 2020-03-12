@@ -6,6 +6,8 @@
 import copy
 import datetime
 
+import attr
+from attrs_strict import AttributeTypeError
 from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
@@ -68,6 +70,33 @@ def test_todict_origin_visit_updates(origin_visit_update):
     obj = origin_visit_update.to_dict()
 
     assert origin_visit_update == type(origin_visit_update).from_dict(obj)
+
+
+def test_timestamp_seconds():
+    attr.validate(Timestamp(seconds=0, microseconds=0))
+    with pytest.raises(AttributeTypeError):
+        Timestamp(seconds='0', microseconds=0)
+
+    attr.validate(Timestamp(seconds=2**63-1, microseconds=0))
+    with pytest.raises(ValueError):
+        Timestamp(seconds=2**63, microseconds=0)
+
+    attr.validate(Timestamp(seconds=-2**63, microseconds=0))
+    with pytest.raises(ValueError):
+        Timestamp(seconds=-2**63-1, microseconds=0)
+
+
+def test_timestamp_microseconds():
+    attr.validate(Timestamp(seconds=0, microseconds=0))
+    with pytest.raises(AttributeTypeError):
+        Timestamp(seconds=0, microseconds='0')
+
+    attr.validate(Timestamp(seconds=0, microseconds=10**6-1))
+    with pytest.raises(ValueError):
+        Timestamp(seconds=0, microseconds=10**6)
+
+    with pytest.raises(ValueError):
+        Timestamp(seconds=0, microseconds=-1)
 
 
 def test_timestampwithtimezone_from_datetime():
