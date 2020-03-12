@@ -18,9 +18,11 @@ from swh.model.model import (
     MissingData, Person
 )
 from swh.model.hashutil import hash_to_bytes, MultiHash
+
 from swh.model.hypothesis_strategies import (
-    objects, origins, origin_visits, origin_visit_updates
+    objects, origins, origin_visits, origin_visit_updates, timestamps
 )
+
 from swh.model.identifiers import (
     directory_identifier, revision_identifier, release_identifier,
     snapshot_identifier
@@ -72,6 +74,13 @@ def test_todict_origin_visit_updates(origin_visit_update):
     assert origin_visit_update == type(origin_visit_update).from_dict(obj)
 
 
+# Timestamp
+
+@given(timestamps())
+def test_timestamps_strategy(timestamp):
+    attr.validate(timestamp)
+
+
 def test_timestamp_seconds():
     attr.validate(Timestamp(seconds=0, microseconds=0))
     with pytest.raises(AttributeTypeError):
@@ -97,6 +106,87 @@ def test_timestamp_microseconds():
 
     with pytest.raises(ValueError):
         Timestamp(seconds=0, microseconds=-1)
+
+
+def test_timestamp_from_dict():
+    assert Timestamp.from_dict({'seconds': 10, 'microseconds': 5})
+
+    with pytest.raises(AttributeTypeError):
+        Timestamp.from_dict({'seconds': '10', 'microseconds': 5})
+
+    with pytest.raises(AttributeTypeError):
+        Timestamp.from_dict({'seconds': 10, 'microseconds': '5'})
+    with pytest.raises(ValueError):
+        Timestamp.from_dict({'seconds': 0, 'microseconds': -1})
+
+    Timestamp.from_dict({'seconds': 0, 'microseconds': 10**6 - 1})
+    with pytest.raises(ValueError):
+        Timestamp.from_dict({'seconds': 0, 'microseconds': 10**6})
+
+
+# TimestampWithTimezone
+
+def test_timestampwithtimezone():
+    ts = Timestamp(seconds=0, microseconds=0)
+    tstz = TimestampWithTimezone(
+        timestamp=ts,
+        offset=0,
+        negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.negative_utc is False
+
+    attr.validate(TimestampWithTimezone(
+        timestamp=ts,
+        offset=10,
+        negative_utc=False))
+
+    attr.validate(TimestampWithTimezone(
+        timestamp=ts,
+        offset=-10,
+        negative_utc=False))
+
+    tstz = TimestampWithTimezone(
+        timestamp=ts,
+        offset=0,
+        negative_utc=True)
+    attr.validate(tstz)
+    assert tstz.negative_utc is True
+
+    with pytest.raises(AttributeTypeError):
+        TimestampWithTimezone(
+            timestamp=datetime.datetime.now(),
+            offset=0,
+            negative_utc=False)
+
+    with pytest.raises(AttributeTypeError):
+        TimestampWithTimezone(
+            timestamp=ts,
+            offset='0',
+            negative_utc=False)
+
+    with pytest.raises(AttributeTypeError):
+        TimestampWithTimezone(
+            timestamp=ts,
+            offset=1.0,
+            negative_utc=False)
+
+    with pytest.raises(AttributeTypeError):
+        TimestampWithTimezone(
+            timestamp=ts,
+            offset=1,
+            negative_utc=0)
+
+    with pytest.raises(ValueError):
+        TimestampWithTimezone(
+            timestamp=ts,
+            offset=1,
+            negative_utc=True)
+
+    with pytest.raises(ValueError):
+        TimestampWithTimezone(
+            timestamp=ts,
+            offset=-1,
+            negative_utc=True)
 
 
 def test_timestampwithtimezone_from_datetime():

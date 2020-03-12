@@ -6,8 +6,9 @@
 import attr
 import datetime
 
+from hypothesis import assume
 from hypothesis.strategies import (
-    binary, builds, characters, composite, dictionaries,
+    binary, booleans, builds, characters, composite, dictionaries,
     from_regex, integers, just, lists, none, one_of,
     sampled_from, sets, text, tuples,
 )
@@ -65,11 +66,20 @@ def timestamps():
         microseconds=integers(0, 1000000))
 
 
-def timestamps_with_timezone():
-    return builds(
-        TimestampWithTimezone,
+@composite
+def timestamps_with_timezone(
+        draw,
         timestamp=timestamps(),
-        offset=integers(min_value=-14*60, max_value=14*60))
+        offset=integers(min_value=-14*60, max_value=14*60),
+        negative_utc=booleans()):
+    timestamp = draw(timestamp)
+    offset = draw(offset)
+    negative_utc = draw(negative_utc)
+    assume(not (negative_utc and offset))
+    return TimestampWithTimezone(
+        timestamp=timestamp,
+        offset=offset,
+        negative_utc=negative_utc)
 
 
 def origins():

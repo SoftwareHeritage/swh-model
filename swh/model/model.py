@@ -180,6 +180,11 @@ class TimestampWithTimezone(BaseModel):
             # you'll find in the wild...
             raise ValueError('offset too large: %d minutes' % value)
 
+    @negative_utc.validator
+    def check_negative_utc(self, attribute, value):
+        if self.offset and value:
+            raise ValueError("negative_utc can only be True is offset=0")
+
     @classmethod
     def from_dict(cls, obj: Union[Dict, datetime.datetime, int]):
         """Builds a TimestampWithTimezone from any of the formats
