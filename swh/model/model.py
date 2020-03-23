@@ -681,7 +681,7 @@ class SkippedContent(BaseContent):
         default=None)
 
     origin = attr.ib(
-        type=Optional[Origin],
+        type=Optional[str],
         validator=type_validator(),
         default=None)
 

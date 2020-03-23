@@ -14,15 +14,15 @@ import pytest
 
 from swh.model.model import (
     Content, SkippedContent, Directory, Revision, Release, Snapshot,
-    Timestamp, TimestampWithTimezone,
+    Origin, Timestamp, TimestampWithTimezone,
     MissingData, Person
 )
 from swh.model.hashutil import hash_to_bytes, MultiHash
 
 from swh.model.hypothesis_strategies import (
-    objects, origins, origin_visits, origin_visit_updates, timestamps
+    objects, origins, origin_visits, origin_visit_updates,
+    skipped_contents_d, timestamps
 )
-
 from swh.model.identifiers import (
     directory_identifier, revision_identifier, release_identifier,
     snapshot_identifier
@@ -385,6 +385,20 @@ def test_skipped_content_from_data(data):
     for key, value in MultiHash.from_data(data).digest().items():
         assert getattr(c, key) == value
 
+
+@given(skipped_contents_d())
+def test_skipped_content_origin_is_str(skipped_content_d):
+    assert SkippedContent.from_dict(skipped_content_d)
+
+    skipped_content_d['origin'] = 'http://path/to/origin'
+    assert SkippedContent.from_dict(skipped_content_d)
+
+    skipped_content_d['origin'] = Origin(url='http://path/to/origin')
+    with pytest.raises(ValueError, match='origin'):
+        SkippedContent.from_dict(skipped_content_d)
+
+
+# ID computation
 
 def test_directory_model_id_computation():
     dir_dict = directory_example.copy()
