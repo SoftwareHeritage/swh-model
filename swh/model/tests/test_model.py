@@ -18,11 +18,7 @@ from swh.model.model import (
     MissingData, Person
 )
 from swh.model.hashutil import hash_to_bytes, MultiHash
-
-from swh.model.hypothesis_strategies import (
-    objects, origins, origin_visits, origin_visit_updates,
-    skipped_contents_d, timestamps
-)
+import swh.model.hypothesis_strategies as strategies
 from swh.model.identifiers import (
     directory_identifier, revision_identifier, release_identifier,
     snapshot_identifier
@@ -32,7 +28,7 @@ from swh.model.tests.test_identifiers import (
 )
 
 
-@given(objects())
+@given(strategies.objects())
 def test_todict_inverse_fromdict(objtype_and_obj):
     (obj_type, obj) = objtype_and_obj
 
@@ -52,7 +48,7 @@ def test_todict_inverse_fromdict(objtype_and_obj):
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
 
 
-@given(origins())
+@given(strategies.origins())
 def test_todict_origins(origin):
     obj = origin.to_dict()
 
@@ -60,14 +56,14 @@ def test_todict_origins(origin):
     assert type(origin)(url=origin.url) == type(origin).from_dict(obj)
 
 
-@given(origin_visits())
+@given(strategies.origin_visits())
 def test_todict_origin_visits(origin_visit):
     obj = origin_visit.to_dict()
 
     assert origin_visit == type(origin_visit).from_dict(obj)
 
 
-@given(origin_visit_updates())
+@given(strategies.origin_visit_updates())
 def test_todict_origin_visit_updates(origin_visit_update):
     obj = origin_visit_update.to_dict()
 
@@ -76,7 +72,7 @@ def test_todict_origin_visit_updates(origin_visit_update):
 
 # Timestamp
 
-@given(timestamps())
+@given(strategies.timestamps())
 def test_timestamps_strategy(timestamp):
     attr.validate(timestamp)
 
@@ -326,6 +322,8 @@ def test_git_author_line_to_author():
         assert expected_person == Person.from_fullname(person)
 
 
+# Content
+
 def test_content_get_hash():
     hashes = dict(
         sha1=b'foo', sha1_git=b'bar', sha256=b'baz', blake2s256=b'qux')
@@ -356,6 +354,33 @@ def test_content_data_missing():
         c.with_data()
 
 
+@given(strategies.present_contents_d())
+def test_content_from_dict(content_d):
+    c = Content.from_data(**content_d)
+    assert c
+    assert c.ctime == content_d['ctime']
+
+    content_d2 = c.to_dict()
+    c2 = Content.from_dict(content_d2)
+    assert c2.ctime == c.ctime
+
+
+def test_content_from_dict_str_ctime():
+    # test with ctime as a string
+    n = datetime.datetime(2020, 5, 6, 12, 34)
+    content_d = {
+        'ctime': n.isoformat(),
+        'data': b'',
+        'length': 0,
+        'sha1': b'\x00',
+        'sha256': b'\x00',
+        'sha1_git': b'\x00',
+        'blake2s256': b'\x00',
+        }
+    c = Content.from_dict(content_d)
+    assert c.ctime == n
+
+
 @given(binary(max_size=4096))
 def test_content_from_data(data):
     c = Content.from_data(data)
@@ -376,6 +401,8 @@ def test_hidden_content_from_data(data):
         assert getattr(c, key) == value
 
 
+# SkippedContent
+
 @given(binary(max_size=4096))
 def test_skipped_content_from_data(data):
     c = SkippedContent.from_data(data, reason='reason')
@@ -386,7 +413,7 @@ def test_skipped_content_from_data(data):
         assert getattr(c, key) == value
 
 
-@given(skipped_contents_d())
+@given(strategies.skipped_contents_d())
 def test_skipped_content_origin_is_str(skipped_content_d):
     assert SkippedContent.from_dict(skipped_content_d)
 

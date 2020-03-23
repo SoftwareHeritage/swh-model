@@ -44,15 +44,13 @@ def test_dicts_generation(obj_type_and_obj):
     (obj_type, object_) = obj_type_and_obj
     assert_nested_dict(object_)
     if obj_type == 'content':
+        COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {'length', 'status', 'ctime'}
         if object_['status'] == 'visible':
-            assert set(object_) <= \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
+            assert set(object_) <= COMMON_KEYS | {'data'}
         elif object_['status'] == 'absent':
-            assert set(object_) == \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'reason'}
+            assert set(object_) == COMMON_KEYS | {'reason'}
         elif object_['status'] == 'hidden':
-            assert set(object_) <= \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
+            assert set(object_) <= COMMON_KEYS | {'data'}
         else:
             assert False, object_
     elif obj_type == 'release':
@@ -68,15 +66,13 @@ def test_model_to_dicts(obj_type_and_obj):
     obj_dict = object_.to_dict()
     assert_nested_dict(obj_dict)
     if obj_type == 'content':
+        COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {'length', 'status', 'ctime'}
         if obj_dict['status'] == 'visible':
-            assert set(obj_dict) == \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
+            assert set(obj_dict) == COMMON_KEYS | {'data'}
         elif obj_dict['status'] == 'absent':
-            assert set(obj_dict) == \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'reason'}
+            assert set(obj_dict) == COMMON_KEYS | {'reason'}
         elif obj_dict['status'] == 'hidden':
-            assert set(obj_dict) == \
-                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
+            assert set(obj_dict) == COMMON_KEYS | {'data'}
         else:
             assert False, obj_dict
     elif obj_type == 'release':

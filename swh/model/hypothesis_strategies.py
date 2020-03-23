@@ -239,6 +239,7 @@ def present_contents_d():
     return builds(
         dict,
         data=binary(max_size=4096),
+        ctime=optional(datetimes()),
         status=one_of(just('visible'), just('hidden')),
     )
 
@@ -258,6 +259,7 @@ def skipped_contents_d(draw):
         result[k] = None
     result['reason'] = draw(pgsql_text())
     result['status'] = 'absent'
+    result['ctime'] = draw(optional(datetimes()))
     return result
 
 

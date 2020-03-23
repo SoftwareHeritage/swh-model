@@ -554,12 +554,6 @@ class BaseContent(BaseModel):
 
         return d
 
-    def to_dict(self):
-        content = super().to_dict()
-        if content['ctime'] is None:
-            del content['ctime']
-        return content
-
     @classmethod
     def from_dict(cls, d, use_subclass=True):
         if use_subclass:
@@ -628,7 +622,7 @@ class Content(BaseContent):
         return content
 
     @classmethod
-    def from_data(cls, data, status='visible') -> 'Content':
+    def from_data(cls, data, status='visible', ctime=None) -> 'Content':
         """Generate a Content from a given `data` byte string.
 
         This populates the Content with the hashes and length for the data
@@ -636,10 +630,14 @@ class Content(BaseContent):
         """
         d = cls._hash_data(data)
         d['status'] = status
+        d['ctime'] = ctime
         return cls(**d)
 
     @classmethod
     def from_dict(cls, d):
+        if isinstance(d.get('ctime'), str):
+            d = d.copy()
+            d['ctime'] = dateutil.parser.parse(d['ctime'])
         return super().from_dict(d, use_subclass=False)
 
     def with_data(self) -> 'Content':
@@ -710,7 +708,11 @@ class SkippedContent(BaseContent):
         return content
 
     @classmethod
-    def from_data(cls, data, reason: str) -> 'SkippedContent':
+    def from_data(
+            cls,
+            data: bytes,
+            reason: str,
+            ctime: Optional[datetime.datetime] = None) -> 'SkippedContent':
         """Generate a SkippedContent from a given `data` byte string.
 
         This populates the SkippedContent with the hashes and length for the
@@ -723,6 +725,7 @@ class SkippedContent(BaseContent):
         del d['data']
         d['status'] = 'absent'
         d['reason'] = reason
+        d['ctime'] = ctime
         return cls(**d)
 
     @classmethod
