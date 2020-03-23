@@ -45,13 +45,13 @@ def test_dicts_generation(obj_type_and_obj):
     assert_nested_dict(object_)
     if obj_type == 'content':
         if object_['status'] == 'visible':
-            assert set(object_) == \
+            assert set(object_) <= \
                 set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
         elif object_['status'] == 'absent':
             assert set(object_) == \
                 set(DEFAULT_ALGORITHMS) | {'length', 'status', 'reason'}
         elif object_['status'] == 'hidden':
-            assert set(object_) == \
+            assert set(object_) <= \
                 set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
         else:
             assert False, object_
@@ -59,4 +59,28 @@ def test_dicts_generation(obj_type_and_obj):
         assert object_['target_type'] in target_types
     elif obj_type == 'snapshot':
         for branch in object_['branches'].values():
+            assert branch is None or branch['target_type'] in target_types
+
+
+@given(objects())
+def test_model_to_dicts(obj_type_and_obj):
+    (obj_type, object_) = obj_type_and_obj
+    obj_dict = object_.to_dict()
+    assert_nested_dict(obj_dict)
+    if obj_type == 'content':
+        if obj_dict['status'] == 'visible':
+            assert set(obj_dict) == \
+                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
+        elif obj_dict['status'] == 'absent':
+            assert set(obj_dict) == \
+                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'reason'}
+        elif obj_dict['status'] == 'hidden':
+            assert set(obj_dict) == \
+                set(DEFAULT_ALGORITHMS) | {'length', 'status', 'data'}
+        else:
+            assert False, obj_dict
+    elif obj_type == 'release':
+        assert obj_dict['target_type'] in target_types
+    elif obj_type == 'snapshot':
+        for branch in obj_dict['branches'].values():
             assert branch is None or branch['target_type'] in target_types
