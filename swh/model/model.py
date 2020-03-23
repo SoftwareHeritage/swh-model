@@ -727,8 +727,7 @@ class SkippedContent(BaseContent):
 
     @classmethod
     def from_dict(cls, d):
-        d2 = d
-        d = d.copy()
-        if d.pop('data', None) is not None:
-            raise ValueError('SkippedContent has no "data" attribute %r' % d2)
-        return super().from_dict(d, use_subclass=False)
+        d2 = d.copy()
+        if d2.pop('data', None) is not None:
+            raise ValueError('SkippedContent has no "data" attribute %r' % d)
+        return super().from_dict(d2, use_subclass=False)
