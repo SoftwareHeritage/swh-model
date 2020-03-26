@@ -612,7 +612,7 @@ def origin_identifier(origin):
     An origin's identifier is the sha1 checksum of the entire origin URL
 
     """
-    return hashlib.sha1(origin['url'].encode('ascii')).hexdigest()
+    return hashlib.sha1(origin['url'].encode('utf-8')).hexdigest()
 
 
 _object_type_map = {
