@@ -75,7 +75,6 @@ def timestamps_with_timezone():
 def origins():
     return builds(
         Origin,
-        type=sampled_from(['git', 'hg', 'svn', 'pypi', 'deb']),
         url=urls())
 
 

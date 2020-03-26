@@ -9,7 +9,7 @@ import unittest
 
 from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError
-from swh.model.hashutil import hash_to_bytes
+from swh.model.hashutil import hash_to_bytes as _x
 from swh.model.identifiers import (CONTENT, DIRECTORY,
                                    RELEASE, REVISION,
                                    SNAPSHOT, PersistentId)
@@ -119,85 +119,85 @@ directory_example = {
             'type': 'file',
             'perms': 33188,
             'name': b'README',
-            'target': '37ec8ea2110c0b7a32fbb0e872f6e7debbf95e21'
+            'target': _x('37ec8ea2110c0b7a32fbb0e872f6e7debbf95e21')
         },
         {
             'type': 'file',
             'perms': 33188,
             'name': b'Rakefile',
-            'target': '3bb0e8592a41ae3185ee32266c860714980dbed7'
+            'target': _x('3bb0e8592a41ae3185ee32266c860714980dbed7')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'app',
-            'target': '61e6e867f5d7ba3b40540869bc050b0c4fed9e95'
+            'target': _x('61e6e867f5d7ba3b40540869bc050b0c4fed9e95')
         },
         {
             'type': 'file',
             'perms': 33188,
             'name': b'1.megabyte',
-            'target': '7c2b2fbdd57d6765cdc9d84c2d7d333f11be7fb3'
+            'target': _x('7c2b2fbdd57d6765cdc9d84c2d7d333f11be7fb3')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'config',
-            'target': '591dfe784a2e9ccc63aaba1cb68a765734310d98'
+            'target': _x('591dfe784a2e9ccc63aaba1cb68a765734310d98')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'public',
-            'target': '9588bf4522c2b4648bfd1c61d175d1f88c1ad4a5'
+            'target': _x('9588bf4522c2b4648bfd1c61d175d1f88c1ad4a5')
         },
         {
             'type': 'file',
             'perms': 33188,
             'name': b'development.sqlite3',
-            'target': 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391'
+            'target': _x('e69de29bb2d1d6434b8b29ae775ad8c2e48c5391')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'doc',
-            'target': '154705c6aa1c8ead8c99c7915373e3c44012057f'
+            'target': _x('154705c6aa1c8ead8c99c7915373e3c44012057f')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'db',
-            'target': '85f157bdc39356b7bc7de9d0099b4ced8b3b382c'
+            'target': _x('85f157bdc39356b7bc7de9d0099b4ced8b3b382c')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'log',
-            'target': '5e3d3941c51cce73352dff89c805a304ba96fffe'
+            'target': _x('5e3d3941c51cce73352dff89c805a304ba96fffe')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'script',
-            'target': '1b278423caf176da3f3533592012502aa10f566c'
+            'target': _x('1b278423caf176da3f3533592012502aa10f566c')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'test',
-            'target': '035f0437c080bfd8711670b3e8677e686c69c763'
+            'target': _x('035f0437c080bfd8711670b3e8677e686c69c763')
         },
         {
             'type': 'dir',
             'perms': 16384,
             'name': b'vendor',
-            'target': '7c0dc9ad978c1af3f9a4ce061e50f5918bd27138'
+            'target': _x('7c0dc9ad978c1af3f9a4ce061e50f5918bd27138')
         },
         {
             'type': 'rev',
             'perms': 57344,
             'name': b'will_paginate',
-            'target': '3d531e169db92a16a9a8974f0ae6edf52e52659e'
+            'target': _x('3d531e169db92a16a9a8974f0ae6edf52e52659e')
         },
 
         # in git order, the dir named "order" should be between the files
@@ -206,19 +206,19 @@ directory_example = {
             'type': 'dir',
             'perms': 16384,
             'name': b'order',
-            'target': '62cdb7020ff920e5aa642c3d4066950dd1f01f4d'
+            'target': _x('62cdb7020ff920e5aa642c3d4066950dd1f01f4d')
         },
         {
             'type': 'file',
             'perms': 16384,
             'name': b'order.',
-            'target': '0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33'
+            'target': _x('0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33')
         },
         {
             'type': 'file',
             'perms': 16384,
             'name': b'order0',
-            'target': 'bbe960a25ea311d21d40669e93df2003ba9b90a2'
+            'target': _x('bbe960a25ea311d21d40669e93df2003ba9b90a2')
         },
     ],
 }
@@ -255,8 +255,8 @@ linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
 
 revision_example = {
     'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
-    'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
-    'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+    'directory': _x('85a74718d377195e1efd0843ba4f3260bad4fe07'),
+    'parents': [_x('01e2d0627a9a6edb24c37db45db5ecb31e9de808')],
     'author': {
         'name': b'Linus Torvalds',
         'email': b'torvalds@linux-foundation.org',
@@ -302,8 +302,8 @@ dg1KdHOa34shrKDaOVzW
 
         self.revision_none_metadata = {
             'id': 'bc0195aad0daa2ad5b0d76cce22b167bc3435590',
-            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
-            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'directory': _x('85a74718d377195e1efd0843ba4f3260bad4fe07'),
+            'parents': [_x('01e2d0627a9a6edb24c37db45db5ecb31e9de808')],
             'author': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@linux-foundation.org',
@@ -356,8 +356,8 @@ dg1KdHOa34shrKDaOVzW
         # cat commit.txt | git hash-object -t commit --stdin
         self.revision_with_extra_headers = {
             'id': '010d34f384fa99d047cdd5e2f41e56e5c2feee45',
-            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
-            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'directory': _x('85a74718d377195e1efd0843ba4f3260bad4fe07'),
+            'parents': [_x('01e2d0627a9a6edb24c37db45db5ecb31e9de808')],
             'author': {
                 'name': b'Linus Torvalds',
                 'email': b'torvalds@linux-foundation.org',
@@ -383,9 +383,9 @@ dg1KdHOa34shrKDaOVzW
 
         self.revision_with_gpgsig = {
             'id': '44cc742a8ca17b9c279be4cc195a93a6ef7a320e',
-            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
-            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
-                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'directory': _x('b134f9b7dc434f593c0bab696345548b37de0558'),
+            'parents': [_x('689664ae944b4692724f13b709a4e4de28b54e57'),
+                        _x('c888305e1efbaa252d01b4e5e6b778f865a97514')],
             'author': {
                 'name': b'Jiang Xin',
                 'email': b'worldhello.net@gmail.com',
@@ -417,9 +417,9 @@ dg1KdHOa34shrKDaOVzW
 
         self.revision_no_message = {
             'id': '4cfc623c9238fa92c832beed000ce2d003fd8333',
-            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
-            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
-                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'directory': _x('b134f9b7dc434f593c0bab696345548b37de0558'),
+            'parents': [_x('689664ae944b4692724f13b709a4e4de28b54e57'),
+                        _x('c888305e1efbaa252d01b4e5e6b778f865a97514')],
             'author': {
                 'name': b'Jiang Xin',
                 'email': b'worldhello.net@gmail.com',
@@ -442,9 +442,9 @@ dg1KdHOa34shrKDaOVzW
 
         self.revision_empty_message = {
             'id': '7442cd78bd3b4966921d6a7f7447417b7acb15eb',
-            'directory': 'b134f9b7dc434f593c0bab696345548b37de0558',
-            'parents': ['689664ae944b4692724f13b709a4e4de28b54e57',
-                        'c888305e1efbaa252d01b4e5e6b778f865a97514'],
+            'directory': _x('b134f9b7dc434f593c0bab696345548b37de0558'),
+            'parents': [_x('689664ae944b4692724f13b709a4e4de28b54e57'),
+                        _x('c888305e1efbaa252d01b4e5e6b778f865a97514')],
             'author': {
                 'name': b'Jiang Xin',
                 'email': b'worldhello.net@gmail.com',
@@ -467,8 +467,8 @@ dg1KdHOa34shrKDaOVzW
 
         self.revision_only_fullname = {
             'id': '010d34f384fa99d047cdd5e2f41e56e5c2feee45',
-            'directory': '85a74718d377195e1efd0843ba4f3260bad4fe07',
-            'parents': ['01e2d0627a9a6edb24c37db45db5ecb31e9de808'],
+            'directory': _x('85a74718d377195e1efd0843ba4f3260bad4fe07'),
+            'parents': [_x('01e2d0627a9a6edb24c37db45db5ecb31e9de808')],
             'author': {
                 'fullname': b'Linus Torvalds <torvalds@linux-foundation.org>',
             },
@@ -716,16 +716,14 @@ o6X/3T+vm8K3bf3driRr34c=
 
 
 snapshot_example = {
-    'id': hash_to_bytes('6e65b86363953b780d92b0a928f3e8fcdd10db36'),
+    'id': _x('6e65b86363953b780d92b0a928f3e8fcdd10db36'),
     'branches': {
         b'directory': {
-            'target': hash_to_bytes(
-                '1bd0e65f7d2ff14ae994de17a1e7fe65111dcad8'),
+            'target': _x('1bd0e65f7d2ff14ae994de17a1e7fe65111dcad8'),
             'target_type': 'directory',
         },
         b'content': {
-            'target': hash_to_bytes(
-                'fe95a46679d128ff167b7c55df5d02356c5a1ae1'),
+            'target': _x('fe95a46679d128ff167b7c55df5d02356c5a1ae1'),
             'target_type': 'content',
         },
         b'alias': {
@@ -733,19 +731,15 @@ snapshot_example = {
             'target_type': 'alias',
         },
         b'revision': {
-            'target': hash_to_bytes(
-                'aafb16d69fd30ff58afdd69036a26047f3aebdc6'),
+            'target': _x('aafb16d69fd30ff58afdd69036a26047f3aebdc6'),
             'target_type': 'revision',
         },
         b'release': {
-            'target': hash_to_bytes(
-                '7045404f3d1c54e6473c71bbb716529fbad4be24'),
+            'target': _x('7045404f3d1c54e6473c71bbb716529fbad4be24'),
             'target_type': 'release',
         },
         b'snapshot': {
-            'target': hash_to_bytes(
-                '1a8893e6a86f444e8be8e7bda6cb34fb1735a00e'
-            ),
+            'target': _x('1a8893e6a86f444e8be8e7bda6cb34fb1735a00e'),
             'target_type': 'snapshot',
         },
         b'dangling': None,
@@ -813,8 +807,7 @@ class SnapshotIdentifier(unittest.TestCase):
         )
 
     def test_persistent_identifier(self):
-        _snapshot_id = hashutil.hash_to_bytes(
-                    'c7c108084bc0bf3d81436bf980b46e98bd338453')
+        _snapshot_id = _x('c7c108084bc0bf3d81436bf980b46e98bd338453')
         _release_id = '22ece559cc7cc2364edc5e5593d63ae8bd229f9f'
         _revision_id = '309cf2674ee7a0749978cf8265ab91a60aea0f7d'
         _directory_id = 'd198bc9d7a6bcf6db04f476d29314f157507d505'

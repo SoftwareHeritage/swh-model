@@ -1,8 +1,11 @@
-swh-model (0.0.60-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.62-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.62     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-03-26 14:19:40 +0100)
+  * Upstream changes:     - v0.0.62     - * identifiers: encode origin
+    URLs in utf-8
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 05 Mar 2020 11:09:06 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 26 Mar 2020 13:22:20 +0000
 
 swh-model (0.0.60-1~swh1) unstable-swh; urgency=medium
 
