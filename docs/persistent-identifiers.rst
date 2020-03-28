@@ -135,7 +135,10 @@ Examples
 Contextual information
 ======================
 
-Persistent identifiers may be equipped with **qualifiers** to provide *contextual information* about the object designated by the identifier. Qualifiers come in different kinds :
+The Software Heritage persistent identifiers described above are *intrinsic identifiers*, as they are computed from the designated object itself, and it is often useful to provide *contextual information* about a particular
+occurrence of the object, like the origin from where the object has been found.
+To this end, persistent identifiers can be equipped with **qualifiers** that
+contain this *contextual information*. Qualifiers come in different kinds :
 
 * origin
 * visit
@@ -157,13 +160,13 @@ by the ``<identifier_with_context>`` entry point of the grammar:
   <origin_ctxt> ::= ";" "origin" "=" <url>
   <visit_ctxt> ::= ";" "visit" "=" <identifier>
   <anchor_ctxt> ::= ";" "anchor" "=" <identifier>
-  <path_ctxt> ::= ";" "path" "=" <path_absolute>
+  <path_ctxt> ::= ";" "path" "=" <path_absolute_encoded>
   <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
   <line_number> ::= <dec_digit> +
   <url> ::= (* RFC 3986 compliant URLs *)
-  <path_absolute> ::= (* RFC 3986 compliant absolute file path *)
+  <path_absolute_encoded> ::= (* RFC 3986 compliant absolute file path, percent-encoded *)
 
-For ``<path_absolute>`` see `Section 3.3 of RFC 3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_
+Here ``<path_absolude_encoded>`` is a percent-encoded version of the ``<path_absolute>`` in `Section 3.3 of RFC 3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_
 
 Semantics
 ---------
@@ -175,21 +178,21 @@ specified as a key/value pair, using ``=`` as a separator.
 The following piece of contextual information are supported:
 
 * **origin** : the *software origin* where an object has been found or observed in the wild,
-  as the URI that was used by Software Heritage to ingest the object into the archive;
-* **visit** : the *status of a full repository* containing the designated object, as a *snapshot*
-  corresponding to a specific *visit* of that repository;
+  as an URI;
+* **visit** : persistent identifier of a *snapshot* corresponding to a specific *visit* of a repository containing the designated object;
 * **anchor** : a *designated node* in the Merkle DAG relative to which a *path to the object* is specified,
   as a persistent identifier of a directory, a revision, a release or a snapshot;
-* **path** : the *absolute file path* from the *root directory* associated to the *anchor node* to the object;
+* **path** : the *absolute file path*, from the *root directory* associated to the *anchor node*, to the object;
   when the anchor denotes a directory or a revision, and almost always when it's a release,
   the root directory is uniquely determined; when the anchor denotes a snapshot, the root
-  directory is considered to be the one associated to the main branch of that snapshot;
+  directory is the one associated to the branch pointed to by the ``HEAD`` symbolic reference,
+  and undefined if such a reference is missing;
 * **lines** : *line number(s)* of interest, usually within a content object
 
-We recommend to equip with as many qualifiers as possible identifiers meant
-to be shared. Redundant information should be omitted: for example, if the *visit*
-is present, and the *path* is relative to the snapshot indicated there, then
-the *anchor* qualifier is superfluous.
+We recommend to equip identifiers meant to be shared with as many qualifiers as
+possible. Redundant information should be omitted: for example, if the *visit*
+is present, and the *path* is relative to the snapshot indicated there, then the
+*anchor* qualifier is superfluous.
 
 Example
 -------
