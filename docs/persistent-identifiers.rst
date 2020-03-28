@@ -135,15 +135,13 @@ Examples
 Contextual information
 ======================
 
-It is often useful to complement persistent identifiers with **contextual
-information** about where the identified object has been found as well as which
-specific parts of it are of interest. To that end it is possible, via a
-dedicated syntax, to extend persistent identifiers with the following pieces of
-information:
+Persistent identifiers may be equipped with **qualifiers** to provide *contextual information* about the object designated by the identifier. Qualifiers come in different kinds :
 
-* the **software origin** where an object has been found/observed
-* the **line number(s)** of interest, usually within a content object
-
+* origin
+* visit
+* anchor
+* path
+* lines
 
 Syntax
 ------
@@ -153,32 +151,64 @@ by the ``<identifier_with_context>`` entry point of the grammar:
 
 .. code-block:: bnf
 
-  <identifier_with_context> ::= <identifier> [<lines_ctxt>] [<origin_ctxt>]
-  <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
+  <identifier_with_context> ::= <identifier> [ <qualifierlist> ]
+  <qualifierlist> := <qualifier> [ <qualifierlist> ]
+  <qualifier> ::= <origin_ctxt> | <visit_ctxt> | <anchor_ctxt> | <path_ctxt> |<lines_ctxt>
   <origin_ctxt> ::= ";" "origin" "=" <url>
+  <visit_ctxt> ::= ";" "visit" "=" <identifier>
+  <anchor_ctxt> ::= ";" "anchor" "=" <identifier>
+  <path_ctxt> ::= ";" "path" "=" <path_absolute>
+  <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
   <line_number> ::= <dec_digit> +
   <url> ::= (* RFC 3986 compliant URLs *)
+  <path_absolute> ::= (* RFC 3986 compliant absolute file path *)
 
+For ``<path_absolute>`` see `Section 3.3 of RFC 3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_
 
 Semantics
 ---------
 
-``;`` is used as separator between persistent identifiers and additional
-optional contextual information. Each piece of contextual information is
+``;`` is used as separator between persistent identifiers and the
+optional contextual information qualifiers. Each contextual information qualifier is
 specified as a key/value pair, using ``=`` as a separator.
 
 The following piece of contextual information are supported:
 
-* line numbers: it is possible to specify a single line number or a line range,
-  separating two numbers with ``-``. Note that line numbers are purely
-  indicative and are not meant to be stable, as in some degenerate cases
-  (e.g., text files which mix different types of line terminators) it is
-  impossible to resolve them unambiguously.
+* **origin** : the *software origin* where an object has been found or observed in the wild,
+  as the URI that was used by Software Heritage to ingest the object into the archive;
+* **visit** : the *status of a full repository* containing the designated object, as a *snapshot*
+  corresponding to a specific *visit* of that repository;
+* **anchor** : a *designated node* in the Merkle DAG relative to which a *path to the object* is specified,
+  as a persistent identifier of a directory, a revision, a release or a snapshot;
+* **path** : the *absolute file path* from the *root directory* associated to the *anchor node* to the object;
+  when the anchor denotes a directory or a revision, and almost always when it's a release,
+  the root directory is uniquely determined; when the anchor denotes a snapshot, the root
+  directory is considered to be the one associated to the main branch of that snapshot;
+* **lines** : *line number(s)* of interest, usually within a content object
 
-* software origin: where a given object has been found or observed in the wild,
-  as the URI that was used by Software Heritage to ingest the object into the
-  archive
+We recommend to equip with as many qualifiers as possible identifiers meant
+to be shared. Redundant information should be omitted: for example, if the *visit*
+is present, and the *path* is relative to the snapshot indicated there, then
+the *anchor* qualifier is superfluous.
 
+Example
+-------
+
+The following `fully qualified identifier <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;lines=9-15>`_
+denotes the lines 9 to 15 of a file content that
+can be found at absolute path ``/Examples/SimpleFarm/simplefarm.ml`` from the root directory
+of the revision ``swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0`` that is contained
+in the snapshot ``swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9`` taken from
+the origin ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``.
+
+.. code-block:: url
+
+  swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;
+    anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;
+    path=/Examples/SimpleFarm/simplefarm.ml;
+    visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;
+    origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;
+    lines=9-15
 
 Resolution
 ==========
