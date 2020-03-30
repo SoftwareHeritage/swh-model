@@ -160,13 +160,13 @@ by the ``<identifier_with_context>`` entry point of the grammar:
   <origin_ctxt> ::= ";" "origin" "=" <url>
   <visit_ctxt> ::= ";" "visit" "=" <identifier>
   <anchor_ctxt> ::= ";" "anchor" "=" <identifier>
-  <path_ctxt> ::= ";" "path" "=" <path_absolute_encoded>
+  <path_ctxt> ::= ";" "path" "=" <path_absolute_escaped>
   <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
   <line_number> ::= <dec_digit> +
   <url> ::= (* RFC 3986 compliant URLs *)
-  <path_absolute_encoded> ::= (* RFC 3986 compliant absolute file path, percent-encoded *)
+  <path_absolute_escaped> ::= (* RFC 3986 compliant absolute file path, percent-encoded *)
 
-Here ``<path_absolude_encoded>`` is a percent-encoded version of the ``<path_absolute>`` in `Section 3.3 of RFC 3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_
+Here ``<path_absolute_escaped>`` is the ``<path_absolute>`` in `Section 3.3 of RFC 3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_ where all occurrences of ``;`` and ``%`` must be percent-encoded (as `%3B` and `%25` respectively).
 
 Semantics
 ---------
@@ -185,19 +185,21 @@ The following piece of contextual information are supported:
 * **path** : the *absolute file path*, from the *root directory* associated to the *anchor node*, to the object;
   when the anchor denotes a directory or a revision, and almost always when it's a release,
   the root directory is uniquely determined; when the anchor denotes a snapshot, the root
-  directory is the one associated to the branch pointed to by the ``HEAD`` symbolic reference,
+  directory is the one pointed to by ``HEAD`` (possibly indirectly),
   and undefined if such a reference is missing;
 * **lines** : *line number(s)* of interest, usually within a content object
 
 We recommend to equip identifiers meant to be shared with as many qualifiers as
-possible. Redundant information should be omitted: for example, if the *visit*
+possible. While qualifiers may be listed in any order, it is good practice
+to present them in the order given above, i.e. ``origin``, ``visit``, ``anchor``, ``path``, ``lines``.
+Redundant information should be omitted: for example, if the *visit*
 is present, and the *path* is relative to the snapshot indicated there, then the
 *anchor* qualifier is superfluous.
 
 Example
 -------
 
-The following `fully qualified identifier <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;lines=9-15>`_
+The following `fully qualified identifier <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
 denotes the lines 9 to 15 of a file content that
 can be found at absolute path ``/Examples/SimpleFarm/simplefarm.ml`` from the root directory
 of the revision ``swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0`` that is contained
@@ -207,11 +209,23 @@ the origin ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``.
 .. code-block:: url
 
   swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;
+    origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;
+    visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;
     anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;
     path=/Examples/SimpleFarm/simplefarm.ml;
-    visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;
-    origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;
     lines=9-15
+
+
+And this is an example of `a fully qualified identifier with a percent escaped file path <https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
+
+.. code-block:: url
+
+  swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;
+    origin=https://github.com/web-platform-tests/wpt;
+    visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;
+    anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;
+    path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/
+
 
 Resolution
 ==========
