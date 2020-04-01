@@ -1,3 +1,14 @@
+swh-model (0.0.63-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.63     - (tagged by Antoine R. Dumont
+    (@ardumont) <antoine.romain.dumont@gmail.com> on 2020-04-01 10:07:07
+    +0200)
+  * Upstream changes:     - v0.0.63     - origin/master model: Add new
+    OriginVisitUpdate model object + test strategy     - docs: Extend
+    SWH PID definition with additional context qualifiers.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 01 Apr 2020 08:08:58 +0000
+
 swh-model (0.0.62-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.62     - (tagged by Valentin Lorentz
