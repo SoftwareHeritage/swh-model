@@ -1,4 +1,4 @@
-# Copyright (C) 2019 The Software Heritage developers
+# Copyright (C) 2019-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -16,7 +16,9 @@ from swh.model.model import (
     MissingData, Person
 )
 from swh.model.hashutil import hash_to_bytes, MultiHash
-from swh.model.hypothesis_strategies import objects, origins, origin_visits
+from swh.model.hypothesis_strategies import (
+    objects, origins, origin_visits, origin_visit_updates
+)
 from swh.model.identifiers import (
     directory_identifier, revision_identifier, release_identifier,
     snapshot_identifier
@@ -59,6 +61,13 @@ def test_todict_origin_visits(origin_visit):
     obj = origin_visit.to_dict()
 
     assert origin_visit == type(origin_visit).from_dict(obj)
+
+
+@given(origin_visit_updates())
+def test_todict_origin_visit_updates(origin_visit_update):
+    obj = origin_visit_update.to_dict()
+
+    assert origin_visit_update == type(origin_visit_update).from_dict(obj)
 
 
 def test_timestampwithtimezone_from_datetime():
