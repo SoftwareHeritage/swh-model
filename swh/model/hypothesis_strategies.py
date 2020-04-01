@@ -1,4 +1,4 @@
-# Copyright (C) 2019 The Software Heritage developers
+# Copyright (C) 2019-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -15,8 +15,8 @@ from hypothesis.strategies import (
 from .from_disk import DentryPerms
 from .model import (
     Person, Timestamp, TimestampWithTimezone, Origin, OriginVisit,
-    Snapshot, SnapshotBranch, TargetType, Release, Revision,
-    Directory, DirectoryEntry, Content, SkippedContent
+    OriginVisitUpdate, Snapshot, SnapshotBranch, TargetType, Release,
+    Revision, Directory, DirectoryEntry, Content, SkippedContent
 )
 from .identifiers import snapshot_identifier, identifier_to_bytes
 
@@ -85,7 +85,22 @@ def origin_visits():
         origin=urls(),
         status=sampled_from(['ongoing', 'full', 'partial']),
         type=pgsql_text(),
-        snapshot=optional(sha1_git()))
+        snapshot=optional(sha1_git()),
+    )
+
+
+def metadata_dicts():
+    return dictionaries(pgsql_text(), pgsql_text())
+
+
+def origin_visit_updates():
+    return builds(
+        OriginVisitUpdate,
+        visit=integers(0, 1000),
+        origin=urls(),
+        status=sampled_from(['ongoing', 'full', 'partial']),
+        snapshot=optional(sha1_git()),
+        metadata=one_of(none(), metadata_dicts()))
 
 
 @composite
@@ -104,8 +119,7 @@ def releases(draw):
         author=author)
 
 
-def revision_metadata():
-    return dictionaries(pgsql_text(), pgsql_text())
+revision_metadata = metadata_dicts
 
 
 def revisions():
@@ -238,6 +252,7 @@ def objects():
     return one_of(
         origins().map(lambda x: ('origin', x)),
         origin_visits().map(lambda x: ('origin_visit', x)),
+        origin_visit_updates().map(lambda x: ('origin_visit_update', x)),
         snapshots().map(lambda x: ('snapshot', x)),
         releases().map(lambda x: ('release', x)),
         revisions().map(lambda x: ('revision', x)),

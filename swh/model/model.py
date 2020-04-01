@@ -234,6 +234,23 @@ class OriginVisit(BaseModel):
             **d)
 
 
+@attr.s(frozen=True)
+class OriginVisitUpdate(BaseModel):
+    """Represents a visit update of an origin at a given point in time.
+
+    """
+    origin = attr.ib(type=str)
+    visit = attr.ib(type=int)
+
+    date = attr.ib(type=datetime.datetime)
+    status = attr.ib(
+        type=str,
+        validator=attr.validators.in_(['ongoing', 'full', 'partial']))
+    snapshot = attr.ib(type=Optional[Sha1Git])
+    metadata = attr.ib(type=Optional[Dict[str, object]],
+                       default=None)
+
+
 class TargetType(Enum):
     """The type of content pointed to by a snapshot branch. Usually a
     revision or an alias."""
