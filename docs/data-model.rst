@@ -145,6 +145,11 @@ provenance information in the Software Heritage archive:
   Software Heritage clock) the visit happened and the full snapshot of the
   state of the software origin at the time.
 
+.. note::
+  This model currently records visits as a single point in time. However, the
+  actual visit process is not instantaneous. Loaders can record successive
+  changes to the state of the visit, as their work progresses, as updates to
+  the visit object.
 
 Data structure
 --------------
