@@ -315,13 +315,16 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
     if not only_objects:
         # Make sure aliases point to actual branches
         unresolved_aliases = {
-            target['target']
-            for target in branches.values()
+            branch: target['target']
+            for branch, target in branches.items()
             if (target
                 and target['target_type'] == 'alias'
                 and target['target'] not in branches)
-         }
-        for alias in unresolved_aliases:
+        }
+        for alias_name, alias_target in unresolved_aliases.items():
+            # Override alias branch with one pointing to a real object
+            # if max_size constraint is reached
+            alias = alias_target if len(branches) < max_size else alias_name
             branches[alias] = draw(branch_targets_d(only_objects=True))
 
     # Ensure no cycles between aliases
@@ -343,7 +346,8 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
 
 
 def snapshots(*, min_size=0, max_size=100, only_objects=False):
-    return snapshots_d(min_size=0, max_size=100, only_objects=False).map(
+    return snapshots_d(min_size=min_size, max_size=max_size,
+                       only_objects=only_objects).map(
         Snapshot.from_dict)
 
 

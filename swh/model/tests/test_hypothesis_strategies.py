@@ -6,10 +6,13 @@
 import datetime
 
 import attr
-from hypothesis import given
+from hypothesis import given, settings
 
 from swh.model.hashutil import DEFAULT_ALGORITHMS
-from swh.model.hypothesis_strategies import objects, object_dicts
+from swh.model.hypothesis_strategies import (
+    objects, object_dicts, snapshots
+)
+from swh.model.model import TargetType
 
 
 target_types = (
@@ -80,3 +83,42 @@ def test_model_to_dicts(obj_type_and_obj):
     elif obj_type == 'snapshot':
         for branch in obj_dict['branches'].values():
             assert branch is None or branch['target_type'] in target_types
+
+
+_min_snp_size = 10
+_max_snp_size = 100
+
+
+@given(snapshots(min_size=_min_snp_size, max_size=_max_snp_size))
+@settings(max_examples=1)
+def test_snapshots_strategy(snapshot):
+
+    branches = snapshot.branches
+
+    assert len(branches) >= _min_snp_size
+    assert len(branches) <= _max_snp_size
+
+    aliases = []
+
+    # check snapshot integrity
+    for name, branch in branches.items():
+        assert branch is None or branch.target_type.value in target_types
+        if branch is not None and branch.target_type == TargetType.ALIAS:
+            aliases.append(name)
+            assert branch.target in branches
+
+    # check no cycles between aliases
+    for alias in aliases:
+        processed_alias = set()
+        current_alias = alias
+        while (branches[current_alias] is not None
+                and branches[current_alias].target_type == TargetType.ALIAS):
+            assert branches[current_alias].target not in processed_alias
+            processed_alias.add(current_alias)
+            current_alias = branches[current_alias].target
+
+
+@given(snapshots(min_size=_min_snp_size, max_size=_min_snp_size))
+@settings(max_examples=1)
+def test_snapshots_strategy_fixed_size(snapshot):
+    assert len(snapshot.branches) == _min_snp_size
