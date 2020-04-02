@@ -371,7 +371,7 @@ class Release(BaseModel, HashableObject):
         type=bytes,
         validator=type_validator())
     message = attr.ib(
-        type=bytes,
+        type=Optional[bytes],
         validator=type_validator())
     target = attr.ib(
         type=Optional[Sha1Git],
