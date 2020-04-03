@@ -1,5 +1,6 @@
 vcversioner
 attrs
+attrs_strict
 hypothesis
 python-dateutil
 iso8601
