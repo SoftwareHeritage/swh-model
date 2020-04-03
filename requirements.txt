@@ -3,6 +3,7 @@
 # dependency lines, see https://pip.readthedocs.org/en/1.1/requirements.html
 vcversioner
 attrs
+attrs_strict
 hypothesis
 python-dateutil
 iso8601
