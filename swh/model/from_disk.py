@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018 The Software Heritage developers
+# Copyright (C) 2017-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -8,7 +8,7 @@ import os
 import stat
 
 import attr
-from typing import List, Optional
+from typing import List, Optional, Iterable, Any
 
 from .hashutil import MultiHash
 from .merkle import MerkleLeaf, MerkleNode
@@ -196,7 +196,8 @@ class Content(MerkleLeaf):
             return DiskBackedContent.from_dict(data)
 
 
-def accept_all_directories(dirname, entries):
+def accept_all_directories(
+        dirpath: str, dirname: str, entries: Iterable[Any]) -> bool:
     """Default filter for :func:`Directory.from_disk` accepting all
     directories
 
@@ -207,7 +208,8 @@ def accept_all_directories(dirname, entries):
     return True
 
 
-def ignore_empty_directories(dirname, entries):
+def ignore_empty_directories(
+        dirpath: str, dirname: str, entries: Iterable[Any]) -> bool:
     """Filter for :func:`directory_to_objects` ignoring empty directories
 
     Args:
@@ -233,8 +235,10 @@ def ignore_named_directories(names, *, case_sensitive=True):
     if not case_sensitive:
         names = [name.lower() for name in names]
 
-    def named_filter(dirname, entries,
-                     names=names, case_sensitive=case_sensitive):
+    def named_filter(dirpath: str, dirname: str,
+                     entries: Iterable[Any],
+                     names: Iterable[Any] = names,
+                     case_sensitive: bool = case_sensitive):
         if case_sensitive:
             return dirname not in names
         else:
@@ -282,7 +286,6 @@ class Directory(MerkleNode):
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
         """
-
         top_path = path
         dirs = {}
 
@@ -297,7 +300,7 @@ class Directory(MerkleNode):
                         path=path, max_content_length=max_content_length)
                     entries[name] = content
                 else:
-                    if dir_filter(name, dirs[path].entries):
+                    if dir_filter(path, name, dirs[path].entries):
                         entries[name] = dirs[path]
 
             dirs[root] = cls({'name': os.path.basename(root)})
