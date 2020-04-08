@@ -19,13 +19,13 @@ def revhash(revision_raw):
 
     """
     # HACK: string have somehow their \n expanded to \\n
-    if b'\\n' in revision_raw:
-        revision_raw = revision_raw.replace(b'\\n', b'\n')
+    if b"\\n" in revision_raw:
+        revision_raw = revision_raw.replace(b"\\n", b"\n")
 
-    h = hashutil.hash_git_data(revision_raw, 'commit')
+    h = hashutil.hash_git_data(revision_raw, "commit")
     return identifiers.identifier_to_str(h)
 
 
-if __name__ == '__main__':
-    revision_raw = sys.argv[1].encode('utf-8')
+if __name__ == "__main__":
+    revision_raw = sys.argv[1].encode("utf-8")
     print(revhash(revision_raw))

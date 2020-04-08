@@ -11,13 +11,18 @@ from typing import List, Dict
 from swh.model.hashutil import MultiHash
 
 
-PROTOCOLS = ['git', 'http', 'https', 'deb', 'svn', 'mock']
-DOMAINS = ['example.com', 'some.long.host.name', 'xn--n28h.tld']
-PATHS = ['', '/', '/stuff', '/stuff/',
-         '/path/to/resource',
-         '/path/with/anchor#id=42',
-         '/path/with/qargs?q=1&b']
-CONTENT_STATUS = ['visible', 'hidden', 'absent']
+PROTOCOLS = ["git", "http", "https", "deb", "svn", "mock"]
+DOMAINS = ["example.com", "some.long.host.name", "xn--n28h.tld"]
+PATHS = [
+    "",
+    "/",
+    "/stuff",
+    "/stuff/",
+    "/path/to/resource",
+    "/path/with/anchor#id=42",
+    "/path/with/qargs?q=1&b",
+]
+CONTENT_STATUS = ["visible", "hidden", "absent"]
 MAX_DATE = 3e9  # around 2065
 
 
@@ -25,7 +30,7 @@ def gen_all_origins():
     for protocol in PROTOCOLS:
         for domain in DOMAINS:
             for urlpath in PATHS:
-                yield {'url': '%s://%s%s' % (protocol, domain, urlpath)}
+                yield {"url": "%s://%s%s" % (protocol, domain, urlpath)}
 
 
 ORIGINS = list(gen_all_origins())
@@ -46,16 +51,17 @@ def gen_content():
     data = bytes(randint(0, 255) for i in range(size))
     status = choice(CONTENT_STATUS)
     h = MultiHash.from_data(data)
-    ctime = datetime.fromtimestamp(
-        random() * MAX_DATE, timezone(choice(all_timezones)))
-    content = {'data': data,
-               'status': status,
-               'length': size,
-               'ctime': ctime,
-               **h.digest()}
-    if status == 'absent':
-        content['reason'] = 'why not'
-        content['data'] = None
+    ctime = datetime.fromtimestamp(random() * MAX_DATE, timezone(choice(all_timezones)))
+    content = {
+        "data": data,
+        "status": status,
+        "length": size,
+        "ctime": ctime,
+        **h.digest(),
+    }
+    if status == "absent":
+        content["reason"] = "why not"
+        content["data"] = None
     return content
 
 

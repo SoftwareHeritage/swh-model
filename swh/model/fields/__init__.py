@@ -6,8 +6,13 @@
 # We do our imports here but we don't use them, so flake8 complains
 # flake8: noqa
 
-from .simple import (validate_type, validate_int, validate_str, validate_bytes,
-                     validate_datetime, validate_enum)
-from .hashes import (validate_sha1, validate_sha1_git, validate_sha256)
-from .compound import (validate_against_schema, validate_all_keys,
-                       validate_any_key)
+from .simple import (
+    validate_type,
+    validate_int,
+    validate_str,
+    validate_bytes,
+    validate_datetime,
+    validate_enum,
+)
+from .hashes import validate_sha1, validate_sha1_git, validate_sha256
+from .compound import validate_against_schema, validate_all_keys, validate_any_key

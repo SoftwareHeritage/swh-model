@@ -26,19 +26,16 @@ def validate_against_schema(model, schema, value):
 
     if not isinstance(value, dict):
         raise ValidationError(
-            'Unexpected type %(type)s for %(model)s, expected dict',
-            params={
-                'model': model,
-                'type': value.__class__.__name__,
-            },
-            code='model-unexpected-type',
+            "Unexpected type %(type)s for %(model)s, expected dict",
+            params={"model": model, "type": value.__class__.__name__,},
+            code="model-unexpected-type",
         )
 
     errors = defaultdict(list)
 
     for key, (mandatory, validators) in itertools.chain(
         ((k, v) for k, v in schema.items() if k != NON_FIELD_ERRORS),
-        [(NON_FIELD_ERRORS, (False, schema.get(NON_FIELD_ERRORS, [])))]
+        [(NON_FIELD_ERRORS, (False, schema.get(NON_FIELD_ERRORS, [])))],
     ):
         if not validators:
             continue
@@ -54,9 +51,9 @@ def validate_against_schema(model, schema, value):
                 if mandatory:
                     errors[key].append(
                         ValidationError(
-                            'Field %(field)s is mandatory',
-                            params={'field': key},
-                            code='model-field-mandatory',
+                            "Field %(field)s is mandatory",
+                            params={"field": key},
+                            code="model-field-mandatory",
                         )
                     )
 
@@ -74,19 +71,21 @@ def validate_against_schema(model, schema, value):
             else:
                 if not valid:
                     errdata = {
-                        'validator': validator.__name__,
+                        "validator": validator.__name__,
                     }
 
                     if key == NON_FIELD_ERRORS:
-                        errmsg = 'Validation of model %(model)s failed in ' \
-                                 '%(validator)s'
-                        errdata['model'] = model
-                        errcode = 'model-validation-failed'
+                        errmsg = (
+                            "Validation of model %(model)s failed in " "%(validator)s"
+                        )
+                        errdata["model"] = model
+                        errcode = "model-validation-failed"
                     else:
-                        errmsg = 'Validation of field %(field)s failed in ' \
-                                 '%(validator)s'
-                        errdata['field'] = key
-                        errcode = 'field-validation-failed'
+                        errmsg = (
+                            "Validation of field %(field)s failed in " "%(validator)s"
+                        )
+                        errdata["field"] = key
+                        errcode = "field-validation-failed"
 
                     errors[key].append(
                         ValidationError(errmsg, params=errdata, code=errcode)
@@ -102,11 +101,11 @@ def validate_all_keys(value, keys):
     """Validate that all the given keys are present in value"""
     missing_keys = set(keys) - set(value)
     if missing_keys:
-        missing_fields = ', '.join(sorted(missing_keys))
+        missing_fields = ", ".join(sorted(missing_keys))
         raise ValidationError(
-            'Missing mandatory fields %(missing_fields)s',
-            params={'missing_fields': missing_fields},
-            code='missing-mandatory-field'
+            "Missing mandatory fields %(missing_fields)s",
+            params={"missing_fields": missing_fields},
+            code="missing-mandatory-field",
         )
 
     return True
@@ -116,11 +115,11 @@ def validate_any_key(value, keys):
     """Validate that any of the given keys is present in value"""
     present_keys = set(keys) & set(value)
     if not present_keys:
-        missing_fields = ', '.join(sorted(keys))
+        missing_fields = ", ".join(sorted(keys))
         raise ValidationError(
-            'Must contain one of the alternative fields %(missing_fields)s',
-            params={'missing_fields': missing_fields},
-            code='missing-alternative-field',
+            "Must contain one of the alternative fields %(missing_fields)s",
+            params={"missing_fields": missing_fields},
+            code="missing-alternative-field",
         )
 
     return True

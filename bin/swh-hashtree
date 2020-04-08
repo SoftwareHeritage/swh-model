@@ -25,12 +25,11 @@ def combine_filters(*filters):
 
 
 @click.command()
-@click.option('--path', default='.',
-              help='Optional path to hash.')
-@click.option('--ignore-empty-folder', is_flag=True, default=False,
-              help='Ignore empty folder.')
-@click.option('--ignore', multiple=True,
-              help='Ignore pattern.')
+@click.option("--path", default=".", help="Optional path to hash.")
+@click.option(
+    "--ignore-empty-folder", is_flag=True, default=False, help="Ignore empty folder."
+)
+@click.option("--ignore", multiple=True, help="Ignore pattern.")
 def main(path, ignore_empty_folder=False, ignore=None):
 
     filters = []
@@ -38,14 +37,13 @@ def main(path, ignore_empty_folder=False, ignore=None):
         filters.append(from_disk.ignore_empty_directories)
     if ignore:
         filters.append(
-            from_disk.ignore_named_directories(
-                [os.fsencode(name) for name in ignore]
-            )
+            from_disk.ignore_named_directories([os.fsencode(name) for name in ignore])
         )
 
     try:
-        d = from_disk.Directory.from_disk(path=os.fsencode(path),
-                                          dir_filter=combine_filters(*filters))
+        d = from_disk.Directory.from_disk(
+            path=os.fsencode(path), dir_filter=combine_filters(*filters)
+        )
         hash = d.hash
     except Exception as e:
         print(e)
@@ -54,5 +52,5 @@ def main(path, ignore_empty_folder=False, ignore=None):
         print(hashutil.hash_to_hex(hash))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
