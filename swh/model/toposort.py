@@ -25,8 +25,8 @@ def toposort(revision_log):
     # Add the roots to the processing queue.
     queue = collections.deque()
     for rev in revision_log:
-        parents = rev['parents']
-        in_degree[rev['id']] = len(parents)
+        parents = rev["parents"]
+        in_degree[rev["id"]] = len(parents)
         if not parents:
             queue.append(rev)
         for parent in parents:
@@ -37,7 +37,7 @@ def toposort(revision_log):
     while queue:
         rev = queue.popleft()
         yield rev
-        for child in children[rev['id']]:
-            in_degree[child['id']] -= 1
-            if in_degree[child['id']] == 0:
+        for child in children[rev["id"]]:
+            in_degree[child["id"]] -= 1
+            if in_degree[child["id"]] == 0:
                 queue.append(child)

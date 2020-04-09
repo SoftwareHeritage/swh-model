@@ -15,18 +15,18 @@ from .fields.hashes import validate_sha1
 from .hashutil import hash_git_data, hash_to_hex, MultiHash
 
 
-ORIGIN = 'origin'
-SNAPSHOT = 'snapshot'
-REVISION = 'revision'
-RELEASE = 'release'
-DIRECTORY = 'directory'
-CONTENT = 'content'
+ORIGIN = "origin"
+SNAPSHOT = "snapshot"
+REVISION = "revision"
+RELEASE = "release"
+DIRECTORY = "directory"
+CONTENT = "content"
 
-PID_NAMESPACE = 'swh'
+PID_NAMESPACE = "swh"
 PID_VERSION = 1
-PID_TYPES = ['ori', 'snp', 'rel', 'rev', 'dir', 'cnt']
-PID_SEP = ':'
-PID_CTXT_SEP = ';'
+PID_TYPES = ["ori", "snp", "rel", "rev", "dir", "cnt"]
+PID_SEP = ":"
+PID_CTXT_SEP = ";"
 
 
 @lru_cache()
@@ -46,19 +46,21 @@ def identifier_to_bytes(identifier):
     if isinstance(identifier, bytes):
         if len(identifier) != 20:
             raise ValueError(
-                'Wrong length for bytes identifier %s, expected 20' %
-                len(identifier))
+                "Wrong length for bytes identifier %s, expected 20" % len(identifier)
+            )
         return identifier
 
     if isinstance(identifier, str):
         if len(identifier) != 40:
             raise ValueError(
-                'Wrong length for str identifier %s, expected 40' %
-                len(identifier))
+                "Wrong length for str identifier %s, expected 40" % len(identifier)
+            )
         return bytes.fromhex(identifier)
 
-    raise ValueError('Wrong type for identifier %s, expected bytes or str' %
-                     identifier.__class__.__name__)
+    raise ValueError(
+        "Wrong type for identifier %s, expected bytes or str"
+        % identifier.__class__.__name__
+    )
 
 
 @lru_cache()
@@ -79,19 +81,21 @@ def identifier_to_str(identifier):
     if isinstance(identifier, str):
         if len(identifier) != 40:
             raise ValueError(
-                'Wrong length for str identifier %s, expected 40' %
-                len(identifier))
+                "Wrong length for str identifier %s, expected 40" % len(identifier)
+            )
         return identifier
 
     if isinstance(identifier, bytes):
         if len(identifier) != 20:
             raise ValueError(
-                'Wrong length for bytes identifier %s, expected 20' %
-                len(identifier))
+                "Wrong length for bytes identifier %s, expected 20" % len(identifier)
+            )
         return binascii.hexlify(identifier).decode()
 
-    raise ValueError('Wrong type for identifier %s, expected bytes or str' %
-                     identifier.__class__.__name__)
+    raise ValueError(
+        "Wrong type for identifier %s, expected bytes or str"
+        % identifier.__class__.__name__
+    )
 
 
 def content_identifier(content):
@@ -111,22 +115,22 @@ def content_identifier(content):
 
     """
 
-    return MultiHash.from_data(content['data']).digest()
+    return MultiHash.from_data(content["data"]).digest()
 
 
 def directory_entry_sort_key(entry):
     """The sorting key for tree entries"""
-    if entry['type'] == 'dir':
-        return entry['name'] + b'/'
+    if entry["type"] == "dir":
+        return entry["name"] + b"/"
     else:
-        return entry['name']
+        return entry["name"]
 
 
 @lru_cache()
 def _perms_to_bytes(perms):
     """Convert the perms value to its bytes representation"""
     oc = oct(perms)[2:]
-    return oc.encode('ascii')
+    return oc.encode("ascii")
 
 
 def escape_newlines(snippet):
@@ -137,8 +141,8 @@ def escape_newlines(snippet):
 
     """
 
-    if b'\n' in snippet:
-        return b'\n '.join(snippet.split(b'\n'))
+    if b"\n" in snippet:
+        return b"\n ".join(snippet.split(b"\n"))
     else:
         return snippet
 
@@ -182,16 +186,18 @@ def directory_identifier(directory):
 
     components = []
 
-    for entry in sorted(directory['entries'], key=directory_entry_sort_key):
-        components.extend([
-            _perms_to_bytes(entry['perms']),
-            b'\x20',
-            entry['name'],
-            b'\x00',
-            identifier_to_bytes(entry['target']),
-        ])
+    for entry in sorted(directory["entries"], key=directory_entry_sort_key):
+        components.extend(
+            [
+                _perms_to_bytes(entry["perms"]),
+                b"\x20",
+                entry["name"],
+                b"\x00",
+                identifier_to_bytes(entry["target"]),
+            ]
+        )
 
-    return identifier_to_str(hash_git_data(b''.join(components), 'tree'))
+    return identifier_to_str(hash_git_data(b"".join(components), "tree"))
 
 
 def format_date(date):
@@ -209,15 +215,15 @@ def format_date(date):
 
     """
     if not isinstance(date, dict):
-        raise ValueError('format_date only supports dicts, %r received' % date)
+        raise ValueError("format_date only supports dicts, %r received" % date)
 
-    seconds = date.get('seconds', 0)
-    microseconds = date.get('microseconds', 0)
+    seconds = date.get("seconds", 0)
+    microseconds = date.get("microseconds", 0)
     if not microseconds:
         return str(seconds).encode()
     else:
-        float_value = ('%d.%06d' % (seconds, microseconds))
-        return float_value.rstrip('0').encode()
+        float_value = "%d.%06d" % (seconds, microseconds)
+        return float_value.rstrip("0").encode()
 
 
 @lru_cache()
@@ -232,14 +238,14 @@ def format_offset(offset, negative_utc=None):
     A null offset is represented as +0000.
     """
     if offset < 0 or offset == 0 and negative_utc:
-        sign = '-'
+        sign = "-"
     else:
-        sign = '+'
+        sign = "+"
 
     hours = abs(offset) // 60
     minutes = abs(offset) % 60
 
-    t = '%s%02d%02d' % (sign, hours, minutes)
+    t = "%s%02d%02d" % (sign, hours, minutes)
     return t.encode()
 
 
@@ -275,28 +281,29 @@ def normalize_timestamp(time_representation):
     negative_utc = False
 
     if isinstance(time_representation, dict):
-        ts = time_representation['timestamp']
+        ts = time_representation["timestamp"]
         if isinstance(ts, dict):
-            seconds = ts.get('seconds', 0)
-            microseconds = ts.get('microseconds', 0)
+            seconds = ts.get("seconds", 0)
+            microseconds = ts.get("microseconds", 0)
         elif isinstance(ts, int):
             seconds = ts
             microseconds = 0
         else:
             raise ValueError(
-                'normalize_timestamp received non-integer timestamp member:'
-                ' %r' % ts)
-        offset = time_representation['offset']
-        if 'negative_utc' in time_representation:
-            negative_utc = time_representation['negative_utc']
+                "normalize_timestamp received non-integer timestamp member:" " %r" % ts
+            )
+        offset = time_representation["offset"]
+        if "negative_utc" in time_representation:
+            negative_utc = time_representation["negative_utc"]
     elif isinstance(time_representation, datetime.datetime):
         seconds = int(time_representation.timestamp())
         microseconds = time_representation.microsecond
         utcoffset = time_representation.utcoffset()
         if utcoffset is None:
             raise ValueError(
-                'normalize_timestamp received datetime without timezone: %s' %
-                time_representation)
+                "normalize_timestamp received datetime without timezone: %s"
+                % time_representation
+            )
 
         # utcoffset is an integer number of minutes
         seconds_offset = utcoffset.total_seconds()
@@ -307,16 +314,14 @@ def normalize_timestamp(time_representation):
         offset = 0
     else:
         raise ValueError(
-            'normalize_timestamp received non-integer timestamp:'
-            ' %r' % time_representation)
+            "normalize_timestamp received non-integer timestamp:"
+            " %r" % time_representation
+        )
 
     return {
-        'timestamp': {
-            'seconds': seconds,
-            'microseconds': microseconds,
-        },
-        'offset': offset,
-        'negative_utc': negative_utc,
+        "timestamp": {"seconds": seconds, "microseconds": microseconds,},
+        "offset": offset,
+        "negative_utc": negative_utc,
     }
 
 
@@ -335,16 +340,16 @@ def format_author(author):
     if isinstance(author, bytes) or author is None:
         return author
 
-    if 'fullname' in author:
-        return author['fullname']
+    if "fullname" in author:
+        return author["fullname"]
 
     ret = []
-    if author['name'] is not None:
-        ret.append(author['name'])
-    if author['email'] is not None:
-        ret.append(b''.join([b'<', author['email'], b'>']))
+    if author["name"] is not None:
+        ret.append(author["name"])
+    if author["email"] is not None:
+        ret.append(b"".join([b"<", author["email"], b">"]))
 
-    return b' '.join(ret)
+    return b" ".join(ret)
 
 
 def format_author_line(header, author, date_offset):
@@ -385,19 +390,18 @@ def format_author_line(header, author, date_offset):
 
     """
 
-    ret = [header.encode(), b' ', escape_newlines(format_author(author))]
+    ret = [header.encode(), b" ", escape_newlines(format_author(author))]
 
     date_offset = normalize_timestamp(date_offset)
 
     if date_offset is not None:
-        date_f = format_date(date_offset['timestamp'])
-        offset_f = format_offset(date_offset['offset'],
-                                 date_offset['negative_utc'])
+        date_f = format_date(date_offset["timestamp"])
+        offset_f = format_offset(date_offset["offset"], date_offset["negative_utc"])
 
-        ret.extend([b' ', date_f, b' ', offset_f])
+        ret.extend([b" ", date_f, b" ", offset_f])
 
-    ret.append(b'\n')
-    return b''.join(ret)
+    ret.append(b"\n")
+    return b"".join(ret)
 
 
 def revision_identifier(revision):
@@ -451,74 +455,84 @@ def revision_identifier(revision):
 
     """
     components = [
-        b'tree ', identifier_to_str(revision['directory']).encode(), b'\n',
+        b"tree ",
+        identifier_to_str(revision["directory"]).encode(),
+        b"\n",
     ]
-    for parent in revision['parents']:
+    for parent in revision["parents"]:
         if parent:
-            components.extend([
-                b'parent ', identifier_to_str(parent).encode(), b'\n',
-            ])
+            components.extend(
+                [b"parent ", identifier_to_str(parent).encode(), b"\n",]
+            )
 
-    components.extend([
-        format_author_line('author', revision['author'], revision['date']),
-        format_author_line('committer', revision['committer'],
-                           revision['committer_date']),
-    ])
+    components.extend(
+        [
+            format_author_line("author", revision["author"], revision["date"]),
+            format_author_line(
+                "committer", revision["committer"], revision["committer_date"]
+            ),
+        ]
+    )
 
     # Handle extra headers
-    metadata = revision.get('metadata')
+    metadata = revision.get("metadata")
     if not metadata:
         metadata = {}
 
-    for key, value in metadata.get('extra_headers', []):
+    for key, value in metadata.get("extra_headers", []):
 
         # Integer values: decimal representation
         if isinstance(value, int):
-            value = str(value).encode('utf-8')
+            value = str(value).encode("utf-8")
 
         # Unicode string values: utf-8 encoding
         if isinstance(value, str):
-            value = value.encode('utf-8')
+            value = value.encode("utf-8")
 
         # encode the key to utf-8
-        components.extend([key.encode('utf-8'), b' ',
-                           escape_newlines(value), b'\n'])
+        components.extend([key.encode("utf-8"), b" ", escape_newlines(value), b"\n"])
 
-    if revision['message'] is not None:
-        components.extend([b'\n', revision['message']])
+    if revision["message"] is not None:
+        components.extend([b"\n", revision["message"]])
 
-    commit_raw = b''.join(components)
-    return identifier_to_str(hash_git_data(commit_raw, 'commit'))
+    commit_raw = b"".join(components)
+    return identifier_to_str(hash_git_data(commit_raw, "commit"))
 
 
 def target_type_to_git(target_type):
     """Convert a software heritage target type to a git object type"""
     return {
-        'content': b'blob',
-        'directory': b'tree',
-        'revision': b'commit',
-        'release': b'tag',
-        'snapshot': b'refs'
+        "content": b"blob",
+        "directory": b"tree",
+        "revision": b"commit",
+        "release": b"tag",
+        "snapshot": b"refs",
     }[target_type]
 
 
 def release_identifier(release):
     """Return the intrinsic identifier for a release."""
     components = [
-        b'object ', identifier_to_str(release['target']).encode(), b'\n',
-        b'type ', target_type_to_git(release['target_type']), b'\n',
-        b'tag ', release['name'], b'\n',
+        b"object ",
+        identifier_to_str(release["target"]).encode(),
+        b"\n",
+        b"type ",
+        target_type_to_git(release["target_type"]),
+        b"\n",
+        b"tag ",
+        release["name"],
+        b"\n",
     ]
 
-    if 'author' in release and release['author']:
+    if "author" in release and release["author"]:
         components.append(
-            format_author_line('tagger', release['author'], release['date'])
+            format_author_line("tagger", release["author"], release["date"])
         )
 
-    if release['message'] is not None:
-        components.extend([b'\n', release['message']])
+    if release["message"] is not None:
+        components.extend([b"\n", release["message"]])
 
-    return identifier_to_str(hash_git_data(b''.join(components), 'tag'))
+    return identifier_to_str(hash_git_data(b"".join(components), "tag"))
 
 
 def snapshot_identifier(snapshot, *, ignore_unresolved=False):
@@ -580,30 +594,38 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
     unresolved = []
     lines = []
 
-    for name, target in sorted(snapshot['branches'].items()):
+    for name, target in sorted(snapshot["branches"].items()):
         if not target:
-            target_type = b'dangling'
-            target_id = b''
-        elif target['target_type'] == 'alias':
-            target_type = b'alias'
-            target_id = target['target']
-            if target_id not in snapshot['branches'] or target_id == name:
+            target_type = b"dangling"
+            target_id = b""
+        elif target["target_type"] == "alias":
+            target_type = b"alias"
+            target_id = target["target"]
+            if target_id not in snapshot["branches"] or target_id == name:
                 unresolved.append((name, target_id))
         else:
-            target_type = target['target_type'].encode()
-            target_id = identifier_to_bytes(target['target'])
+            target_type = target["target_type"].encode()
+            target_id = identifier_to_bytes(target["target"])
 
-        lines.extend([
-            target_type, b'\x20', name, b'\x00',
-            ('%d:' % len(target_id)).encode(), target_id,
-        ])
+        lines.extend(
+            [
+                target_type,
+                b"\x20",
+                name,
+                b"\x00",
+                ("%d:" % len(target_id)).encode(),
+                target_id,
+            ]
+        )
 
     if unresolved and not ignore_unresolved:
-        raise ValueError('Branch aliases unresolved: %s' %
-                         ', '.join('%s -> %s' % x for x in unresolved),
-                         unresolved)
+        raise ValueError(
+            "Branch aliases unresolved: %s"
+            % ", ".join("%s -> %s" % x for x in unresolved),
+            unresolved,
+        )
 
-    return identifier_to_str(hash_git_data(b''.join(lines), 'snapshot'))
+    return identifier_to_str(hash_git_data(b"".join(lines), "snapshot"))
 
 
 def origin_identifier(origin):
@@ -612,45 +634,29 @@ def origin_identifier(origin):
     An origin's identifier is the sha1 checksum of the entire origin URL
 
     """
-    return hashlib.sha1(origin['url'].encode('utf-8')).hexdigest()
+    return hashlib.sha1(origin["url"].encode("utf-8")).hexdigest()
 
 
 _object_type_map = {
-    ORIGIN: {
-        'short_name': 'ori',
-        'key_id': 'id'
-    },
-    SNAPSHOT: {
-        'short_name': 'snp',
-        'key_id': 'id'
-    },
-    RELEASE: {
-        'short_name': 'rel',
-        'key_id': 'id'
-    },
-    REVISION: {
-        'short_name': 'rev',
-        'key_id': 'id'
-    },
-    DIRECTORY: {
-        'short_name': 'dir',
-        'key_id': 'id'
-    },
-    CONTENT: {
-        'short_name': 'cnt',
-        'key_id': 'sha1_git'
-    }
+    ORIGIN: {"short_name": "ori", "key_id": "id"},
+    SNAPSHOT: {"short_name": "snp", "key_id": "id"},
+    RELEASE: {"short_name": "rel", "key_id": "id"},
+    REVISION: {"short_name": "rev", "key_id": "id"},
+    DIRECTORY: {"short_name": "dir", "key_id": "id"},
+    CONTENT: {"short_name": "cnt", "key_id": "sha1_git"},
 }
 
 
 _PersistentId = NamedTuple(
-    'PersistentId', [
-        ('namespace', str),
-        ('scheme_version', int),
-        ('object_type', str),
-        ('object_id', str),
-        ('metadata', Dict[str, Any]),
-    ])
+    "PersistentId",
+    [
+        ("namespace", str),
+        ("scheme_version", int),
+        ("object_type", str),
+        ("object_id", str),
+        ("metadata", Dict[str, Any]),
+    ],
+)
 
 
 class PersistentId(_PersistentId):
@@ -692,41 +698,51 @@ class PersistentId(_PersistentId):
         pid_str = str(pid)
         # 'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
     """
+
     __slots__ = ()
 
-    def __new__(cls, namespace=PID_NAMESPACE, scheme_version=PID_VERSION,
-                object_type='', object_id='', metadata={}):
+    def __new__(
+        cls,
+        namespace=PID_NAMESPACE,
+        scheme_version=PID_VERSION,
+        object_type="",
+        object_id="",
+        metadata={},
+    ):
         o = _object_type_map.get(object_type)
         if not o:
-            raise ValidationError('Wrong input: Supported types are %s' % (
-                list(_object_type_map.keys())))
+            raise ValidationError(
+                "Wrong input: Supported types are %s" % (list(_object_type_map.keys()))
+            )
         if namespace != PID_NAMESPACE:
             raise ValidationError(
-                "Wrong format: only supported namespace is '%s'"
-                % PID_NAMESPACE)
+                "Wrong format: only supported namespace is '%s'" % PID_NAMESPACE
+            )
         if scheme_version != PID_VERSION:
             raise ValidationError(
-                'Wrong format: only supported version is %d' % PID_VERSION)
+                "Wrong format: only supported version is %d" % PID_VERSION
+            )
         # internal swh representation resolution
         if isinstance(object_id, dict):
-            object_id = object_id[o['key_id']]
+            object_id = object_id[o["key_id"]]
         validate_sha1(object_id)  # can raise if invalid hash
         object_id = hash_to_hex(object_id)
         return super(cls, PersistentId).__new__(
-            cls, namespace, scheme_version, object_type, object_id, metadata)
+            cls, namespace, scheme_version, object_type, object_id, metadata
+        )
 
     def __str__(self):
         o = _object_type_map.get(self.object_type)
-        pid = PID_SEP.join([self.namespace, str(self.scheme_version),
-                            o['short_name'], self.object_id])
+        pid = PID_SEP.join(
+            [self.namespace, str(self.scheme_version), o["short_name"], self.object_id]
+        )
         if self.metadata:
             for k, v in self.metadata.items():
-                pid += '%s%s=%s' % (PID_CTXT_SEP, k, v)
+                pid += "%s%s=%s" % (PID_CTXT_SEP, k, v)
         return pid
 
 
-def persistent_identifier(object_type, object_id, scheme_version=1,
-                          metadata={}):
+def persistent_identifier(object_type, object_id, scheme_version=1, metadata={}):
     """Compute persistent identifier (stable over time) as per
        documentation.
 
@@ -750,8 +766,12 @@ def persistent_identifier(object_type, object_id, scheme_version=1,
         str: the persistent identifier
 
     """
-    pid = PersistentId(scheme_version=scheme_version, object_type=object_type,
-                       object_id=object_id, metadata=metadata)
+    pid = PersistentId(
+        scheme_version=scheme_version,
+        object_type=object_type,
+        object_id=object_id,
+        metadata=metadata,
+    )
     return str(pid)
 
 
@@ -777,32 +797,30 @@ def parse_persistent_identifier(persistent_id):
     """
     # <pid>;<contextual-information>
     persistent_id_parts = persistent_id.split(PID_CTXT_SEP)
-    pid_data = persistent_id_parts.pop(0).split(':')
+    pid_data = persistent_id_parts.pop(0).split(":")
 
     if len(pid_data) != 4:
-        raise ValidationError(
-            'Wrong format: There should be 4 mandatory values')
+        raise ValidationError("Wrong format: There should be 4 mandatory values")
 
     # Checking for parsing errors
     _ns, _version, _type, _id = pid_data
     pid_data[1] = int(pid_data[1])
 
     for otype, data in _object_type_map.items():
-        if _type == data['short_name']:
+        if _type == data["short_name"]:
             pid_data[2] = otype
             break
 
     if not _id:
-        raise ValidationError(
-            'Wrong format: Identifier should be present')
+        raise ValidationError("Wrong format: Identifier should be present")
 
     persistent_id_metadata = {}
     for part in persistent_id_parts:
         try:
-            key, val = part.split('=')
+            key, val = part.split("=")
             persistent_id_metadata[key] = val
         except Exception:
-            msg = 'Contextual data is badly formatted, form key=val expected'
+            msg = "Contextual data is badly formatted, form key=val expected"
             raise ValidationError(msg)
     pid_data.append(persistent_id_metadata)
     return PersistentId(*pid_data)

@@ -59,10 +59,10 @@ import os
 from io import BytesIO
 from typing import Callable, Dict
 
-ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256', 'blake2b512'])
+ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512"])
 """Hashing algorithms supported by this module"""
 
-DEFAULT_ALGORITHMS = set(['sha1', 'sha256', 'sha1_git', 'blake2s256'])
+DEFAULT_ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256"])
 """Algorithms computed by default when calling the functions from this module.
 
 Subset of :const:`ALGORITHMS`.
@@ -87,12 +87,13 @@ class MultiHash:
     computed and returned.
 
     """
+
     def __init__(self, hash_names=DEFAULT_ALGORITHMS, length=None):
         self.state = {}
         self.track_length = False
         for name in hash_names:
-            if name == 'length':
-                self.state['length'] = 0
+            if name == "length":
+                self.state["length"] = 0
                 self.track_length = True
             else:
                 self.state[name] = _new_hash(name, length)
@@ -116,7 +117,7 @@ class MultiHash:
     @classmethod
     def from_path(cls, path, hash_names=DEFAULT_ALGORITHMS):
         length = os.path.getsize(path)
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             ret = cls.from_file(f, hash_names=hash_names, length=length)
         return ret
 
@@ -128,34 +129,33 @@ class MultiHash:
 
     def update(self, chunk):
         for name, h in self.state.items():
-            if name == 'length':
+            if name == "length":
                 continue
             h.update(chunk)
         if self.track_length:
-            self.state['length'] += len(chunk)
+            self.state["length"] += len(chunk)
 
     def digest(self):
         return {
-            name: h.digest() if name != 'length' else h
+            name: h.digest() if name != "length" else h
             for name, h in self.state.items()
         }
 
     def hexdigest(self):
         return {
-            name: h.hexdigest() if name != 'length' else h
+            name: h.hexdigest() if name != "length" else h
             for name, h in self.state.items()
         }
 
     def bytehexdigest(self):
         return {
-            name: hash_to_bytehex(h.digest()) if name != 'length' else h
+            name: hash_to_bytehex(h.digest()) if name != "length" else h
             for name, h in self.state.items()
         }
 
     def copy(self):
         copied_state = {
-            name: h.copy() if name != 'length' else h
-            for name, h in self.state.items()
+            name: h.copy() if name != "length" else h for name, h in self.state.items()
         }
         return self.from_state(copied_state, self.track_length)
 
@@ -168,8 +168,8 @@ def _new_blake2_hash(algo):
         return _blake2_hash_cache[algo]()
 
     lalgo = algo.lower()
-    if not lalgo.startswith('blake2'):
-        raise ValueError('Algorithm %s is not a blake2 hash' % algo)
+    if not lalgo.startswith("blake2"):
+        raise ValueError("Algorithm %s is not a blake2 hash" % algo)
 
     blake_family = lalgo[:7]
 
@@ -178,12 +178,10 @@ def _new_blake2_hash(algo):
         try:
             digest_size, remainder = divmod(int(lalgo[7:]), 8)
         except ValueError:
-            raise ValueError(
-                'Unknown digest size for algo %s' % algo
-            ) from None
+            raise ValueError("Unknown digest size for algo %s" % algo) from None
         if remainder:
             raise ValueError(
-                'Digest size for algorithm %s must be a multiple of 8' % algo
+                "Digest size for algorithm %s must be a multiple of 8" % algo
             )
 
     if lalgo in hashlib.algorithms_available:
@@ -196,6 +194,7 @@ def _new_blake2_hash(algo):
             blake2 = getattr(hashlib, blake_family)
         else:
             import pyblake2
+
             blake2 = getattr(pyblake2, blake_family)
 
         _blake2_hash_cache[algo] = lambda: blake2(digest_size=digest_size)
@@ -208,7 +207,7 @@ def _new_hashlib_hash(algo):
 
     Handle the swh-specific names for the blake2-related algorithms
     """
-    if algo.startswith('blake2'):
+    if algo.startswith("blake2"):
         return _new_blake2_hash(algo)
     else:
         return hashlib.new(algo)
@@ -236,8 +235,8 @@ def _new_git_hash(base_algo, git_type, length):
     """
 
     h = _new_hashlib_hash(base_algo)
-    git_header = '%s %d\0' % (git_type, length)
-    h.update(git_header.encode('ascii'))
+    git_header = "%s %d\0" % (git_type, length)
+    h.update(git_header.encode("ascii"))
 
     return h
 
@@ -264,19 +263,20 @@ def _new_hash(algo, length=None):
     """
     if algo not in ALGORITHMS:
         raise ValueError(
-            'Unexpected hashing algorithm %s, expected one of %s' %
-            (algo, ', '.join(sorted(ALGORITHMS))))
+            "Unexpected hashing algorithm %s, expected one of %s"
+            % (algo, ", ".join(sorted(ALGORITHMS)))
+        )
 
-    if algo.endswith('_git'):
+    if algo.endswith("_git"):
         if length is None:
-            raise ValueError('Missing length for git hashing algorithm')
+            raise ValueError("Missing length for git hashing algorithm")
         base_algo = algo[:-4]
-        return _new_git_hash(base_algo, 'blob', length)
+        return _new_git_hash(base_algo, "blob", length)
 
     return _new_hashlib_hash(algo)
 
 
-def hash_git_data(data, git_type, base_algo='sha1'):
+def hash_git_data(data, git_type, base_algo="sha1"):
     """Hash the given data as a git object of type git_type.
 
     Args:
@@ -290,11 +290,13 @@ def hash_git_data(data, git_type, base_algo='sha1'):
         ValueError if the git_type is unexpected.
     """
 
-    git_object_types = {'blob', 'tree', 'commit', 'tag', 'snapshot'}
+    git_object_types = {"blob", "tree", "commit", "tag", "snapshot"}
 
     if git_type not in git_object_types:
-        raise ValueError('Unexpected git object type %s, expected one of %s' %
-                         (git_type, ', '.join(sorted(git_object_types))))
+        raise ValueError(
+            "Unexpected git object type %s, expected one of %s"
+            % (git_type, ", ".join(sorted(git_object_types)))
+        )
 
     h = _new_git_hash(base_algo, git_type, len(data))
     h.update(data)
@@ -315,7 +317,7 @@ def hash_to_hex(hash):
     """
     if isinstance(hash, str):
         return hash
-    return binascii.hexlify(hash).decode('ascii')
+    return binascii.hexlify(hash).decode("ascii")
 
 
 @functools.lru_cache()

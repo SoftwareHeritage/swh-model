@@ -108,7 +108,8 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
       collected (bool): whether the current node has been collected
 
     """
-    __slots__ = ['parents', 'data', '__hash', 'collected']
+
+    __slots__ = ["parents", "data", "__hash", "collected"]
 
     type = None  # type: Optional[str]  # TODO: make this an enum
     """Type of the current node (used as a classifier for :func:`collect`)"""
@@ -121,8 +122,11 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         self.collected = False
 
     def __eq__(self, other):
-        return isinstance(other, MerkleNode) \
-            and super().__eq__(other) and self.data == other.data
+        return (
+            isinstance(other, MerkleNode)
+            and super().__eq__(other)
+            and self.data == other.data
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -170,7 +174,7 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         The hash should depend on the data of the node, as well as on hashes
         of the children nodes.
         """
-        raise NotImplementedError('Must implement compute_hash method')
+        raise NotImplementedError("Must implement compute_hash method")
 
     def __setitem__(self, name, new_child):
         """Add a child, invalidating the current hash"""
@@ -273,14 +277,13 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         for child in self.values():
             child.reset_collect()
 
-    def iter_tree(self) -> Iterator['MerkleNode']:
+    def iter_tree(self) -> Iterator["MerkleNode"]:
         """Yields all children nodes, recursively. Common nodes are
         deduplicated.
         """
         yield from self._iter_tree(set())
 
-    def _iter_tree(
-            self, seen: Set[bytes]) -> Iterator['MerkleNode']:
+    def _iter_tree(self, seen: Set[bytes]) -> Iterator["MerkleNode"]:
         if self.hash not in seen:
             seen.add(self.hash)
             yield self
@@ -293,17 +296,18 @@ class MerkleLeaf(MerkleNode):
 
     A Merkle leaf is simply a Merkle node with children disabled.
     """
+
     __slots__ = []  # type: List[str]
 
     def __setitem__(self, name, child):
-        raise ValueError('%s is a leaf' % self.__class__.__name__)
+        raise ValueError("%s is a leaf" % self.__class__.__name__)
 
     def __getitem__(self, name):
-        raise ValueError('%s is a leaf' % self.__class__.__name__)
+        raise ValueError("%s is a leaf" % self.__class__.__name__)
 
     def __delitem__(self, name):
-        raise ValueError('%s is a leaf' % self.__class__.__name__)
+        raise ValueError("%s is a leaf" % self.__class__.__name__)
 
     def update(self, new_children):
         """Children update operation. Disabled for leaves."""
-        raise ValueError('%s is a leaf' % self.__class__.__name__)
+        raise ValueError("%s is a leaf" % self.__class__.__name__)

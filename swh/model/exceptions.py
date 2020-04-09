@@ -33,11 +33,12 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-NON_FIELD_ERRORS = '__all__'
+NON_FIELD_ERRORS = "__all__"
 
 
 class ValidationError(Exception):
     """An error while validating data."""
+
     def __init__(self, message, code=None, params=None):
         """
         The `message` argument can be a single error, a list of errors, or a
@@ -54,16 +55,15 @@ class ValidationError(Exception):
             message = message[0]
 
         if isinstance(message, ValidationError):
-            if hasattr(message, 'error_dict'):
+            if hasattr(message, "error_dict"):
                 message = message.error_dict
             # PY2 has a `message` property which is always there so we can't
             # duck-type on it. It was introduced in Python 2.5 and already
             # deprecated in Python 2.6.
-            elif not hasattr(message, 'message'):
+            elif not hasattr(message, "message"):
                 message = message.error_list
             else:
-                message, code, params = (message.message, message.code,
-                                         message.params)
+                message, code, params = (message.message, message.code, message.params)
 
         if isinstance(message, dict):
             self.error_dict = {}
@@ -78,9 +78,8 @@ class ValidationError(Exception):
                 # Normalize plain strings to instances of ValidationError.
                 if not isinstance(message, ValidationError):
                     message = ValidationError(message)
-                if hasattr(message, 'error_dict'):
-                    self.error_list.extend(sum(message.error_dict.values(),
-                                               []))
+                if hasattr(message, "error_dict"):
+                    self.error_list.extend(sum(message.error_dict.values(), []))
                 else:
                     self.error_list.extend(message.error_list)
 
@@ -94,18 +93,18 @@ class ValidationError(Exception):
     def message_dict(self):
         # Trigger an AttributeError if this ValidationError
         # doesn't have an error_dict.
-        getattr(self, 'error_dict')
+        getattr(self, "error_dict")
 
         return dict(self)
 
     @property
     def messages(self):
-        if hasattr(self, 'error_dict'):
+        if hasattr(self, "error_dict"):
             return sum(dict(self).values(), [])
         return list(self)
 
     def update_error_dict(self, error_dict):
-        if hasattr(self, 'error_dict'):
+        if hasattr(self, "error_dict"):
             for field, error_list in self.error_dict.items():
                 error_dict.setdefault(field, []).extend(error_list)
         else:
@@ -113,7 +112,7 @@ class ValidationError(Exception):
         return error_dict
 
     def __iter__(self):
-        if hasattr(self, 'error_dict'):
+        if hasattr(self, "error_dict"):
             for field, errors in self.error_dict.items():
                 yield field, list(ValidationError(errors))
         else:
@@ -124,9 +123,9 @@ class ValidationError(Exception):
                 yield message
 
     def __str__(self):
-        if hasattr(self, 'error_dict'):
+        if hasattr(self, "error_dict"):
             return repr(dict(self))
         return repr(list(self))
 
     def __repr__(self):
-        return 'ValidationError(%s)' % self
+        return "ValidationError(%s)" % self

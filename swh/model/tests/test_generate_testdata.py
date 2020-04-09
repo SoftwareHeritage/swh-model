@@ -28,7 +28,7 @@ def test_gen_origins_default():
 
 def test_gen_origins_max():
     nmax = len(ORIGINS)
-    origins = gen_origins(nmax+1)
+    origins = gen_origins(nmax + 1)
     assert len(origins) == nmax
     models = {Origin.from_dict(d).url for d in origins}
     # ensure we did not generate the same origin twice

@@ -13,16 +13,13 @@ def validate_type(value, type):
     """Validate that value is an integer"""
     if not isinstance(value, type):
         if isinstance(type, tuple):
-            typestr = 'one of %s' % ', '.join(typ.__name__ for typ in type)
+            typestr = "one of %s" % ", ".join(typ.__name__ for typ in type)
         else:
             typestr = type.__name__
         raise ValidationError(
-            'Unexpected type %(type)s, expected %(expected_type)s',
-            params={
-                'type': value.__class__.__name__,
-                'expected_type': typestr,
-            },
-            code='unexpected-type'
+            "Unexpected type %(type)s, expected %(expected_type)s",
+            params={"type": value.__class__.__name__, "expected_type": typestr,},
+            code="unexpected-type",
         )
 
     return True
@@ -54,10 +51,12 @@ def validate_datetime(value):
         errors.append(e)
 
     if isinstance(value, datetime.datetime) and value.tzinfo is None:
-        errors.append(ValidationError(
-            'Datetimes must be timezone-aware in swh',
-            code='datetime-without-tzinfo',
-        ))
+        errors.append(
+            ValidationError(
+                "Datetimes must be timezone-aware in swh",
+                code="datetime-without-tzinfo",
+            )
+        )
 
     if errors:
         raise ValidationError(errors)
@@ -69,12 +68,12 @@ def validate_enum(value, expected_values):
     """Validate that value is contained in expected_values"""
     if value not in expected_values:
         raise ValidationError(
-            'Unexpected value %(value)s, expected one of %(expected_values)s',
+            "Unexpected value %(value)s, expected one of %(expected_values)s",
             params={
-                'value': value,
-                'expected_values': ', '.join(sorted(expected_values)),
+                "value": value,
+                "expected_values": ", ".join(sorted(expected_values)),
             },
-            code='unexpected-value',
+            code="unexpected-value",
         )
 
     return True
