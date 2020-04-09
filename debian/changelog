@@ -1,3 +1,13 @@
+swh-model (0.0.65-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.65     - (tagged by Antoine R. Dumont
+    (@ardumont) <antoine.romain.dumont@gmail.com> on 2020-04-09 16:25:24
+    +0200)
+  * Upstream changes:     - v0.0.65     - from_disk: path parameter to
+    dir_filter functions     - Enable black
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 09 Apr 2020 14:27:21 +0000
+
 swh-model (0.0.64-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.64     - (tagged by Antoine Lambert
