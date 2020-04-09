@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018 The Software Heritage developers
+# Copyright (C) 2017-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -8,12 +8,13 @@ import os
 import stat
 
 import attr
-from typing import List, Optional
+from typing import List, Optional, Iterable, Any
 
 from .hashutil import MultiHash
 from .merkle import MerkleLeaf, MerkleNode
 from .identifiers import (
-    directory_entry_sort_key, directory_identifier,
+    directory_entry_sort_key,
+    directory_identifier,
     identifier_to_bytes as id_to_bytes,
     identifier_to_str as id_to_str,
 )
@@ -23,24 +24,24 @@ from . import model
 @attr.s
 class DiskBackedContent(model.Content):
     """Subclass of Content, which allows lazy-loading data from the disk."""
+
     path = attr.ib(type=Optional[bytes], default=None)
 
     def __attrs_post_init__(self):
         if self.path is None:
-            raise TypeError('path must not be None.')
+            raise TypeError("path must not be None.")
 
     def with_data(self) -> model.Content:
         args = self.to_dict()
-        del args['path']
+        del args["path"]
         assert self.path is not None
-        with open(self.path, 'rb') as fd:
-            return model.Content.from_dict({
-                **args,
-                'data': fd.read()})
+        with open(self.path, "rb") as fd:
+            return model.Content.from_dict({**args, "data": fd.read()})
 
 
 class DentryPerms(enum.IntEnum):
     """Admissible permissions for directory entries."""
+
     content = 0o100644
     """Content"""
     executable_content = 0o100755
@@ -89,8 +90,9 @@ class Content(MerkleLeaf):
     computation.
 
     """
+
     __slots__ = []  # type: List[str]
-    type = 'content'
+    type = "content"
 
     @classmethod
     def from_bytes(cls, *, mode, data):
@@ -101,10 +103,10 @@ class Content(MerkleLeaf):
           data (bytes): raw contents of the file
         """
         ret = MultiHash.from_data(data).digest()
-        ret['length'] = len(data)
-        ret['perms'] = mode_to_perms(mode)
-        ret['data'] = data
-        ret['status'] = 'visible'
+        ret["length"] = len(data)
+        ret["perms"] = mode_to_perms(mode)
+        ret["data"] = data
+        ret["status"] = "visible"
 
         return cls(ret)
 
@@ -114,8 +116,7 @@ class Content(MerkleLeaf):
         return cls.from_bytes(mode=mode, data=os.readlink(path))
 
     @classmethod
-    def from_file(
-            cls, *, path, max_content_length=None):
+    def from_file(cls, *, path, max_content_length=None):
         """Compute the Software Heritage content entry corresponding to an
         on-disk file.
 
@@ -132,8 +133,7 @@ class Content(MerkleLeaf):
         file_stat = os.lstat(path)
         mode = file_stat.st_mode
         length = file_stat.st_size
-        too_large = max_content_length is not None \
-            and length > max_content_length
+        too_large = max_content_length is not None and length > max_content_length
 
         if stat.S_ISLNK(mode):
             # Symbolic link: return a file whose contents are the link target
@@ -145,15 +145,15 @@ class Content(MerkleLeaf):
                 # Thankfully, this should not happen for reasonable values of
                 # max_content_length because of OS/filesystem limitations,
                 # so let's just raise an error.
-                raise Exception(f'Symlink too large ({length} bytes)')
+                raise Exception(f"Symlink too large ({length} bytes)")
 
             return cls.from_symlink(path=path, mode=mode)
         elif not stat.S_ISREG(mode):
             # not a regular file: return the empty file instead
-            return cls.from_bytes(mode=mode, data=b'')
+            return cls.from_bytes(mode=mode, data=b"")
 
         if too_large:
-            skip_reason = 'Content too large'
+            skip_reason = "Content too large"
         else:
             skip_reason = None
 
@@ -161,42 +161,42 @@ class Content(MerkleLeaf):
         if skip_reason:
             ret = {
                 **hashes,
-                'status': 'absent',
-                'reason': skip_reason,
+                "status": "absent",
+                "reason": skip_reason,
             }
         else:
             ret = {
                 **hashes,
-                'status': 'visible',
+                "status": "visible",
             }
 
-        ret['path'] = path
-        ret['perms'] = mode_to_perms(mode)
-        ret['length'] = length
+        ret["path"] = path
+        ret["perms"] = mode_to_perms(mode)
+        ret["length"] = length
 
         obj = cls(ret)
         return obj
 
     def __repr__(self):
-        return 'Content(id=%s)' % id_to_str(self.hash)
+        return "Content(id=%s)" % id_to_str(self.hash)
 
     def compute_hash(self):
-        return self.data['sha1_git']
+        return self.data["sha1_git"]
 
     def to_model(self) -> model.BaseContent:
         """Builds a `model.BaseContent` object based on this leaf."""
         data = self.get_data().copy()
-        data.pop('perms', None)
-        if data['status'] == 'absent':
-            data.pop('path', None)
+        data.pop("perms", None)
+        if data["status"] == "absent":
+            data.pop("path", None)
             return model.SkippedContent.from_dict(data)
-        elif 'data' in data:
+        elif "data" in data:
             return model.Content.from_dict(data)
         else:
             return DiskBackedContent.from_dict(data)
 
 
-def accept_all_directories(dirname, entries):
+def accept_all_directories(dirpath: str, dirname: str, entries: Iterable[Any]) -> bool:
     """Default filter for :func:`Directory.from_disk` accepting all
     directories
 
@@ -207,7 +207,9 @@ def accept_all_directories(dirname, entries):
     return True
 
 
-def ignore_empty_directories(dirname, entries):
+def ignore_empty_directories(
+    dirpath: str, dirname: str, entries: Iterable[Any]
+) -> bool:
     """Filter for :func:`directory_to_objects` ignoring empty directories
 
     Args:
@@ -233,8 +235,13 @@ def ignore_named_directories(names, *, case_sensitive=True):
     if not case_sensitive:
         names = [name.lower() for name in names]
 
-    def named_filter(dirname, entries,
-                     names=names, case_sensitive=case_sensitive):
+    def named_filter(
+        dirpath: str,
+        dirname: str,
+        entries: Iterable[Any],
+        names: Iterable[Any] = names,
+        case_sensitive: bool = case_sensitive,
+    ):
         if case_sensitive:
             return dirname not in names
         else:
@@ -262,13 +269,14 @@ class Directory(MerkleNode):
     the same method. This enables the efficient collection of updated nodes,
     for instance when the client is applying diffs.
     """
-    __slots__ = ['__entries']
-    type = 'directory'
+
+    __slots__ = ["__entries"]
+    type = "directory"
 
     @classmethod
-    def from_disk(cls, *, path,
-                  dir_filter=accept_all_directories,
-                  max_content_length=None):
+    def from_disk(
+        cls, *, path, dir_filter=accept_all_directories, max_content_length=None
+    ):
         """Compute the Software Heritage objects for a given directory tree
 
         Args:
@@ -282,7 +290,6 @@ class Directory(MerkleNode):
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
         """
-
         top_path = path
         dirs = {}
 
@@ -294,13 +301,14 @@ class Directory(MerkleNode):
                 path = os.path.join(root, name)
                 if not os.path.isdir(path) or os.path.islink(path):
                     content = Content.from_file(
-                        path=path, max_content_length=max_content_length)
+                        path=path, max_content_length=max_content_length
+                    )
                     entries[name] = content
                 else:
-                    if dir_filter(name, dirs[path].entries):
+                    if dir_filter(path, name, dirs[path].entries):
                         entries[name] = dirs[path]
 
-            dirs[root] = cls({'name': os.path.basename(root)})
+            dirs[root] = cls({"name": os.path.basename(root)})
             dirs[root].update(entries)
 
         return dirs[top_path]
@@ -317,25 +325,25 @@ class Directory(MerkleNode):
     def child_to_directory_entry(name, child):
         if isinstance(child, Directory):
             return {
-                'type': 'dir',
-                'perms': DentryPerms.directory,
-                'target': child.hash,
-                'name': name,
+                "type": "dir",
+                "perms": DentryPerms.directory,
+                "target": child.hash,
+                "name": name,
             }
         elif isinstance(child, Content):
             return {
-                'type': 'file',
-                'perms': child.data['perms'],
-                'target': child.hash,
-                'name': name,
+                "type": "file",
+                "perms": child.data["perms"],
+                "target": child.hash,
+                "name": name,
             }
         else:
-            raise ValueError('unknown child')
+            raise ValueError("unknown child")
 
     def get_data(self, **kwargs):
         return {
-            'id': self.hash,
-            'entries': self.entries,
+            "id": self.hash,
+            "entries": self.entries,
         }
 
     @property
@@ -343,15 +351,18 @@ class Directory(MerkleNode):
         """Child nodes, sorted by name in the same way `directory_identifier`
         does."""
         if self.__entries is None:
-            self.__entries = sorted((
-                self.child_to_directory_entry(name, child)
-                for name, child in self.items()
-            ), key=directory_entry_sort_key)
+            self.__entries = sorted(
+                (
+                    self.child_to_directory_entry(name, child)
+                    for name, child in self.items()
+                ),
+                key=directory_entry_sort_key,
+            )
 
         return self.__entries
 
     def compute_hash(self):
-        return id_to_bytes(directory_identifier({'entries': self.entries}))
+        return id_to_bytes(directory_identifier({"entries": self.entries}))
 
     def to_model(self) -> model.Directory:
         """Builds a `model.Directory` object based on this node;
@@ -360,48 +371,49 @@ class Directory(MerkleNode):
 
     def __getitem__(self, key):
         if not isinstance(key, bytes):
-            raise ValueError('Can only get a bytes from Directory')
+            raise ValueError("Can only get a bytes from Directory")
 
         # Convenience shortcut
-        if key == b'':
+        if key == b"":
             return self
 
-        if b'/' not in key:
+        if b"/" not in key:
             return super().__getitem__(key)
         else:
-            key1, key2 = key.split(b'/', 1)
+            key1, key2 = key.split(b"/", 1)
             return self.__getitem__(key1)[key2]
 
     def __setitem__(self, key, value):
         if not isinstance(key, bytes):
-            raise ValueError('Can only set a bytes Directory entry')
+            raise ValueError("Can only set a bytes Directory entry")
         if not isinstance(value, (Content, Directory)):
-            raise ValueError('Can only set a Directory entry to a Content or '
-                             'Directory')
+            raise ValueError(
+                "Can only set a Directory entry to a Content or " "Directory"
+            )
 
-        if key == b'':
-            raise ValueError('Directory entry must have a name')
-        if b'\x00' in key:
-            raise ValueError('Directory entry name must not contain nul bytes')
+        if key == b"":
+            raise ValueError("Directory entry must have a name")
+        if b"\x00" in key:
+            raise ValueError("Directory entry name must not contain nul bytes")
 
-        if b'/' not in key:
+        if b"/" not in key:
             return super().__setitem__(key, value)
         else:
-            key1, key2 = key.rsplit(b'/', 1)
+            key1, key2 = key.rsplit(b"/", 1)
             self[key1].__setitem__(key2, value)
 
     def __delitem__(self, key):
         if not isinstance(key, bytes):
-            raise ValueError('Can only delete a bytes Directory entry')
+            raise ValueError("Can only delete a bytes Directory entry")
 
-        if b'/' not in key:
+        if b"/" not in key:
             super().__delitem__(key)
         else:
-            key1, key2 = key.rsplit(b'/', 1)
+            key1, key2 = key.rsplit(b"/", 1)
             del self[key1][key2]
 
     def __repr__(self):
-        return 'Directory(id=%s, entries=[%s])' % (
+        return "Directory(id=%s, entries=[%s])" % (
             id_to_str(self.hash),
-            ', '.join(str(entry) for entry in self),
+            ", ".join(str(entry) for entry in self),
         )

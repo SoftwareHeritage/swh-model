@@ -22,22 +22,22 @@ def validate_hash(value, hash_type):
     """
 
     hash_lengths = {
-        'sha1': 20,
-        'sha1_git': 20,
-        'sha256': 32,
+        "sha1": 20,
+        "sha1_git": 20,
+        "sha256": 32,
     }
 
     hex_digits = set(string.hexdigits)
 
     if hash_type not in hash_lengths:
         raise ValidationError(
-            'Unexpected hash type %(hash_type)s, expected one of'
-            ' %(hash_types)s',
+            "Unexpected hash type %(hash_type)s, expected one of" " %(hash_types)s",
             params={
-                'hash_type': hash_type,
-                'hash_types': ', '.join(sorted(hash_lengths)),
+                "hash_type": hash_type,
+                "hash_types": ", ".join(sorted(hash_lengths)),
             },
-            code='unexpected-hash-type')
+            code="unexpected-hash-type",
+        )
 
     if isinstance(value, str):
         errors = []
@@ -48,10 +48,10 @@ def validate_hash(value, hash_type):
                     "Unexpected characters `%(unexpected_chars)s' for hash "
                     "type %(hash_type)s",
                     params={
-                        'unexpected_chars': ', '.join(sorted(extra_chars)),
-                        'hash_type': hash_type,
+                        "unexpected_chars": ", ".join(sorted(extra_chars)),
+                        "hash_type": hash_type,
                     },
-                    code='unexpected-hash-contents',
+                    code="unexpected-hash-contents",
                 )
             )
 
@@ -60,14 +60,14 @@ def validate_hash(value, hash_type):
         if length != expected_length:
             errors.append(
                 ValidationError(
-                    'Unexpected length %(length)d for hash type '
-                    '%(hash_type)s, expected %(expected_length)d',
+                    "Unexpected length %(length)d for hash type "
+                    "%(hash_type)s, expected %(expected_length)d",
                     params={
-                        'length': length,
-                        'expected_length': expected_length,
-                        'hash_type': hash_type,
+                        "length": length,
+                        "expected_length": expected_length,
+                        "hash_type": hash_type,
                     },
-                    code='unexpected-hash-length',
+                    code="unexpected-hash-length",
                 )
             )
 
@@ -81,37 +81,35 @@ def validate_hash(value, hash_type):
         expected_length = hash_lengths[hash_type]
         if length != expected_length:
             raise ValidationError(
-                'Unexpected length %(length)d for hash type '
-                '%(hash_type)s, expected %(expected_length)d',
+                "Unexpected length %(length)d for hash type "
+                "%(hash_type)s, expected %(expected_length)d",
                 params={
-                    'length': length,
-                    'expected_length': expected_length,
-                    'hash_type': hash_type,
+                    "length": length,
+                    "expected_length": expected_length,
+                    "hash_type": hash_type,
                 },
-                code='unexpected-hash-length',
+                code="unexpected-hash-length",
             )
 
         return True
 
     raise ValidationError(
-        'Unexpected type %(type)s for hash, expected str or bytes',
-        params={
-            'type': value.__class__.__name__,
-        },
-        code='unexpected-hash-value-type',
+        "Unexpected type %(type)s for hash, expected str or bytes",
+        params={"type": value.__class__.__name__,},
+        code="unexpected-hash-value-type",
     )
 
 
 def validate_sha1(sha1):
     """Validate that sha1 is a valid sha1 hash"""
-    return validate_hash(sha1, 'sha1')
+    return validate_hash(sha1, "sha1")
 
 
 def validate_sha1_git(sha1_git):
     """Validate that sha1_git is a valid sha1_git hash"""
-    return validate_hash(sha1_git, 'sha1_git')
+    return validate_hash(sha1_git, "sha1_git")
 
 
 def validate_sha256(sha256):
     """Validate that sha256 is a valid sha256 hash"""
-    return validate_hash(sha256, 'sha256')
+    return validate_hash(sha256, "sha256")

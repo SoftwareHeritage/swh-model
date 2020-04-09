@@ -12,19 +12,20 @@ from swh.model.fields import simple
 
 class ValidateSimple(unittest.TestCase):
     def setUp(self):
-        self.valid_str = 'I am a valid string'
+        self.valid_str = "I am a valid string"
 
-        self.valid_bytes = b'I am a valid bytes object'
+        self.valid_bytes = b"I am a valid bytes object"
 
-        self.enum_values = {'an enum value', 'other', 'and another'}
-        self.invalid_enum_value = 'invalid enum value'
+        self.enum_values = {"an enum value", "other", "and another"}
+        self.invalid_enum_value = "invalid enum value"
 
         self.valid_int = 42
 
         self.valid_real = 42.42
 
-        self.valid_datetime = datetime.datetime(1999, 1, 1, 12, 0, 0,
-                                                tzinfo=datetime.timezone.utc)
+        self.valid_datetime = datetime.datetime(
+            1999, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc
+        )
         self.invalid_datetime_notz = datetime.datetime(1999, 1, 1, 12, 0, 0)
 
     def test_validate_int(self):
@@ -36,9 +37,9 @@ class ValidateSimple(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-type')
-        self.assertEqual(exc.params['expected_type'], 'Integral')
-        self.assertEqual(exc.params['type'], 'str')
+        self.assertEqual(exc.code, "unexpected-type")
+        self.assertEqual(exc.params["expected_type"], "Integral")
+        self.assertEqual(exc.params["type"], "str")
 
     def test_validate_str(self):
         self.assertTrue(simple.validate_str(self.valid_str))
@@ -49,18 +50,18 @@ class ValidateSimple(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-type')
-        self.assertEqual(exc.params['expected_type'], 'str')
-        self.assertEqual(exc.params['type'], 'int')
+        self.assertEqual(exc.code, "unexpected-type")
+        self.assertEqual(exc.params["expected_type"], "str")
+        self.assertEqual(exc.params["type"], "int")
 
         with self.assertRaises(ValidationError) as cm:
             simple.validate_str(self.valid_bytes)
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-type')
-        self.assertEqual(exc.params['expected_type'], 'str')
-        self.assertEqual(exc.params['type'], 'bytes')
+        self.assertEqual(exc.code, "unexpected-type")
+        self.assertEqual(exc.params["expected_type"], "str")
+        self.assertEqual(exc.params["type"], "bytes")
 
     def test_validate_bytes(self):
         self.assertTrue(simple.validate_bytes(self.valid_bytes))
@@ -71,18 +72,18 @@ class ValidateSimple(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-type')
-        self.assertEqual(exc.params['expected_type'], 'bytes')
-        self.assertEqual(exc.params['type'], 'int')
+        self.assertEqual(exc.code, "unexpected-type")
+        self.assertEqual(exc.params["expected_type"], "bytes")
+        self.assertEqual(exc.params["type"], "int")
 
         with self.assertRaises(ValidationError) as cm:
             simple.validate_bytes(self.valid_str)
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-type')
-        self.assertEqual(exc.params['expected_type'], 'bytes')
-        self.assertEqual(exc.params['type'], 'str')
+        self.assertEqual(exc.code, "unexpected-type")
+        self.assertEqual(exc.params["expected_type"], "bytes")
+        self.assertEqual(exc.params["type"], "str")
 
     def test_validate_datetime(self):
         self.assertTrue(simple.validate_datetime(self.valid_datetime))
@@ -95,9 +96,9 @@ class ValidateSimple(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-type')
-        self.assertEqual(exc.params['expected_type'], 'one of datetime, Real')
-        self.assertEqual(exc.params['type'], 'str')
+        self.assertEqual(exc.code, "unexpected-type")
+        self.assertEqual(exc.params["expected_type"], "one of datetime, Real")
+        self.assertEqual(exc.params["type"], "str")
 
     def test_validate_datetime_invalide_tz(self):
         with self.assertRaises(ValidationError) as cm:
@@ -105,7 +106,7 @@ class ValidateSimple(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'datetime-without-tzinfo')
+        self.assertEqual(exc.code, "datetime-without-tzinfo")
 
     def test_validate_enum(self):
         for value in self.enum_values:
@@ -117,7 +118,8 @@ class ValidateSimple(unittest.TestCase):
 
         exc = cm.exception
         self.assertIsInstance(str(exc), str)
-        self.assertEqual(exc.code, 'unexpected-value')
-        self.assertEqual(exc.params['value'], self.invalid_enum_value)
-        self.assertEqual(exc.params['expected_values'],
-                         ', '.join(sorted(self.enum_values)))
+        self.assertEqual(exc.code, "unexpected-value")
+        self.assertEqual(exc.params["value"], self.invalid_enum_value)
+        self.assertEqual(
+            exc.params["expected_values"], ", ".join(sorted(self.enum_values))
+        )
