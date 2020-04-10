@@ -1,8 +1,12 @@
-swh-model (0.0.65-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.66-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.66     - (tagged by Antoine R. Dumont
+    (@ardumont) <antoine.romain.dumont@gmail.com> on 2020-04-10 16:46:31
+    +0200)
+  * Upstream changes:     - v0.0.66     - rename-visit-status model:
+    Rename OriginVisitUpdate to OriginVisitStatus
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 09 Apr 2020 14:28:31 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 10 Apr 2020 14:48:17 +0000
 
 swh-model (0.0.65-1~swh1) unstable-swh; urgency=medium
 

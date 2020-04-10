@@ -76,11 +76,11 @@ def test_todict_origin_visits(origin_visit):
     assert origin_visit == type(origin_visit).from_dict(obj)
 
 
-@given(strategies.origin_visit_updates())
-def test_todict_origin_visit_updates(origin_visit_update):
-    obj = origin_visit_update.to_dict()
+@given(strategies.origin_visit_statuses())
+def test_todict_origin_visit_statuses(origin_visit_status):
+    obj = origin_visit_status.to_dict()
 
-    assert origin_visit_update == type(origin_visit_update).from_dict(obj)
+    assert origin_visit_status == type(origin_visit_status).from_dict(obj)
 
 
 # Timestamp
