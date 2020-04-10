@@ -324,7 +324,7 @@ class Snapshot(BaseModel, HashableObject):
                 name: SnapshotBranch.from_dict(branch) if branch else None
                 for (name, branch) in d.pop("branches").items()
             },
-            **d
+            **d,
         )
 
 
@@ -419,7 +419,7 @@ class Revision(BaseModel, HashableObject):
             date=date,
             committer_date=committer_date,
             type=RevisionType(d.pop("type")),
-            **d
+            **d,
         )
 
 
