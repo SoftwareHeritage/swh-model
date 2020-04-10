@@ -243,7 +243,7 @@ class OriginVisit(BaseModel):
 
 
 @attr.s(frozen=True)
-class OriginVisitUpdate(BaseModel):
+class OriginVisitStatus(BaseModel):
     """Represents a visit update of an origin at a given point in time.
 
     """

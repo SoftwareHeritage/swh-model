@@ -32,7 +32,7 @@ from .model import (
     TimestampWithTimezone,
     Origin,
     OriginVisit,
-    OriginVisitUpdate,
+    OriginVisitStatus,
     Snapshot,
     SnapshotBranch,
     ObjectType,
@@ -153,7 +153,7 @@ def metadata_dicts():
     return dictionaries(pgsql_text(), pgsql_text())
 
 
-def origin_visit_updates_d():
+def origin_visit_statuses_d():
     return builds(
         dict,
         visit=integers(0, 1000),
@@ -165,8 +165,8 @@ def origin_visit_updates_d():
     )
 
 
-def origin_visit_updates():
-    return origin_visit_updates_d().map(OriginVisitUpdate.from_dict)
+def origin_visit_statuses():
+    return origin_visit_statuses_d().map(OriginVisitStatus.from_dict)
 
 
 @composite
@@ -384,7 +384,7 @@ def objects():
     return one_of(
         origins().map(lambda x: ("origin", x)),
         origin_visits().map(lambda x: ("origin_visit", x)),
-        origin_visit_updates().map(lambda x: ("origin_visit_update", x)),
+        origin_visit_statuses().map(lambda x: ("origin_visit_update", x)),
         snapshots().map(lambda x: ("snapshot", x)),
         releases().map(lambda x: ("release", x)),
         revisions().map(lambda x: ("revision", x)),
