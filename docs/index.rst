@@ -11,4 +11,5 @@ Implementation of the :ref:`data-model` to archive source code artifacts.
 
    data-model
    persistent-identifiers
+   cli
    /apidoc/swh.model
