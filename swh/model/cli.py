@@ -169,6 +169,8 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     \b
     https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html
 
+    Tip: you can pass "-" to identify the content of standard input.
+
     \b
     Examples:
 
@@ -189,7 +191,7 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
 
     """  # NoQA  # overlong lines in shell examples are fine
     if not objects:
-        objects = ["-"]
+        raise click.UsageError("no object given")
 
     if verify and len(objects) != 1:
         raise click.BadParameter("verification requires a single object")

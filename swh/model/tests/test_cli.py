@@ -38,7 +38,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
         for _, content in self.contents.items():
-            result = self.runner.invoke(cli.identify, input=content["data"])
+            result = self.runner.invoke(cli.identify, ["-"], input=content["data"])
             self.assertPidOK(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
     def test_directory_id(self):
