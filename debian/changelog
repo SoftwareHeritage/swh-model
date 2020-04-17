@@ -1,3 +1,18 @@
+swh-model (0.0.67-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.0.67     - (tagged by Stefano Zacchiroli
+    <zack@upsilon.cc> on 2020-04-17 17:49:42 +0200)
+  * Upstream changes:     - v0.0.67 / 2020-04-17     - * CLI: add test
+    for swh identify w/o args     - * CLI: require explicit "-" to
+    identify via stdin     - * SWHID doc: fix minor grammar issue     -
+    * SWHID doc: fix link in CISE paper reference     - *
+    identifiers.py: reference to SWHIDs using explicit anchors     - *
+    swh identify: embrace SWHID naming in user-facing doc/messages     -
+    * PID doc: embrace the SWHID naming     - * PID doc: add reference
+    to CISE paper     - * doc: document identify CLI
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 17 Apr 2020 15:54:03 +0000
+
 swh-model (0.0.66-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.66     - (tagged by Antoine R. Dumont
