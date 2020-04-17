@@ -66,7 +66,7 @@ prefix makes explicit that these identifiers are related to *SoftWare
 Heritage*. ``1`` (``<scheme_version>``) is the current version of this
 identifier *scheme*; future editions will use higher version numbers, possibly
 breaking backward compatibility (but without breaking the resolvability of
-SWHIDs conform to previous versions of the scheme).
+SWHIDs that conform to previous versions of the scheme).
 
 A SWHID points to a single object, whose type is explicitly captured by
 ``<object_type>``:
