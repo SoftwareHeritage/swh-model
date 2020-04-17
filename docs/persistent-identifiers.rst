@@ -286,3 +286,9 @@ References
   <https://hal.archives-ouvertes.fr/hal-01865790v4>`_. In Proceedings of `iPRES
   2018 <https://ipres2018.org/>`_: 15th International Conference on Digital
   Preservation, Boston, MA, USA, September 2018, 9 pages.
+
+* Roberto Di Cosmo, Morane Gruenpeter, Stefano Zacchiroli. `Referencing Source
+  Code Artifacts: a Separate Concern in Software Citation
+  <https://arxiv.org/abs/2001.08647>_`. In Computing in Science and
+  Engineering, volume 22, issue 2, pages 33-43. ISSN 1521-9615,
+  IEEE. March 2020.
