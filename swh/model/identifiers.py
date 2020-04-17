@@ -743,11 +743,7 @@ class PersistentId(_PersistentId):
 
 
 def persistent_identifier(object_type, object_id, scheme_version=1, metadata={}):
-    """Compute persistent identifier (stable over time) as per
-       documentation.
-
-    Documentation:
-        https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html  # noqa
+    """Compute :ref:`SWHID <persistent-identifiers>` persistent identifiers.
 
     Args:
         object_type (str): object's type, either 'content', 'directory',
@@ -776,7 +772,7 @@ def persistent_identifier(object_type, object_id, scheme_version=1, metadata={})
 
 
 def parse_persistent_identifier(persistent_id):
-    """Parse swh's :ref:`persistent-identifiers` scheme.
+    """Parse :ref:`SWHID <persistent-identifiers>` persistent identifiers.
 
     Args:
         persistent_id (str): A persistent identifier
