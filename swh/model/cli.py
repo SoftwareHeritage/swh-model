@@ -159,7 +159,7 @@ def identify_object(obj_type, follow_symlinks, obj):
     type=PidParamType(),
     help="reference identifier to be compared with computed one",
 )
-@click.argument("objects", nargs=-1)
+@click.argument("objects", nargs=-1, required=True)
 def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     """Compute the Software Heritage persistent identifier (SWHID) for the given
     source code object(s).
@@ -190,8 +190,6 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
       swh:1:snp:510aa88bdc517345d258c1fc2babcd0e1f905e93	helloworld.git
 
     """  # NoQA  # overlong lines in shell examples are fine
-    if not objects:
-        raise click.UsageError("no object given")
 
     if verify and len(objects) != 1:
         raise click.BadParameter("verification requires a single object")

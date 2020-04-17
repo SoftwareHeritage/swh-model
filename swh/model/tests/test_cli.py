@@ -26,6 +26,10 @@ class TestIdentify(DataMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output.split()[0], pid)
 
+    def test_no_args(self):
+        result = self.runner.invoke(cli.identify)
+        self.assertNotEqual(result.exit_code, 0)
+
     def test_content_id(self):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
