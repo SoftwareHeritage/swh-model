@@ -37,7 +37,7 @@ class PidParamType(click.ParamType):
             pids.parse_persistent_identifier(value)
             return value  # return as string, as we need just that
         except ValidationError as e:
-            self.fail("%s is not a valid PID. %s." % (value, e), param, ctx)
+            self.fail("%s is not a valid SWHID. %s." % (value, e), param, ctx)
 
 
 def pid_of_file(path):
@@ -155,16 +155,16 @@ def identify_object(obj_type, follow_symlinks, obj):
 @click.option(
     "--verify",
     "-v",
-    metavar="PID",
+    metavar="SWHID",
     type=PidParamType(),
     help="reference identifier to be compared with computed one",
 )
 @click.argument("objects", nargs=-1)
 def identify(obj_type, verify, show_filename, follow_symlinks, objects):
-    """Compute the Software Heritage persistent identifier (PID) for the given
+    """Compute the Software Heritage persistent identifier (SWHID) for the given
     source code object(s).
 
-    For more details about Software Heritage PIDs see:
+    For more details about SWHIDs see:
 
     \b
     https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html
@@ -199,10 +199,10 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     if verify:
         pid = next(results)[1]
         if verify == pid:
-            click.echo("PID match: %s" % pid)
+            click.echo("SWHID match: %s" % pid)
             sys.exit(0)
         else:
-            click.echo("PID mismatch: %s != %s" % (verify, pid))
+            click.echo("SWHID mismatch: %s != %s" % (verify, pid))
             sys.exit(1)
     else:
         for (obj, pid) in results:
