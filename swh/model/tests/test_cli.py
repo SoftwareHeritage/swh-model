@@ -26,6 +26,10 @@ class TestIdentify(DataMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output.split()[0], pid)
 
+    def test_no_args(self):
+        result = self.runner.invoke(cli.identify)
+        self.assertNotEqual(result.exit_code, 0)
+
     def test_content_id(self):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
@@ -38,7 +42,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
         for _, content in self.contents.items():
-            result = self.runner.invoke(cli.identify, input=content["data"])
+            result = self.runner.invoke(cli.identify, ["-"], input=content["data"])
             self.assertPidOK(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
     def test_directory_id(self):
