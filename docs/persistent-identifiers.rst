@@ -302,6 +302,6 @@ References
 
 * Roberto Di Cosmo, Morane Gruenpeter, Stefano Zacchiroli. `Referencing Source
   Code Artifacts: a Separate Concern in Software Citation
-  <https://arxiv.org/abs/2001.08647>_`. In Computing in Science and
+  <https://arxiv.org/abs/2001.08647>`_. In Computing in Science and
   Engineering, volume 22, issue 2, pages 33-43. ISSN 1521-9615,
   IEEE. March 2020.
