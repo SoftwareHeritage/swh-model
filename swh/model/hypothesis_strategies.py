@@ -384,7 +384,7 @@ def objects():
     return one_of(
         origins().map(lambda x: ("origin", x)),
         origin_visits().map(lambda x: ("origin_visit", x)),
-        origin_visit_statuses().map(lambda x: ("origin_visit_update", x)),
+        origin_visit_statuses().map(lambda x: ("origin_visit_status", x)),
         snapshots().map(lambda x: ("snapshot", x)),
         releases().map(lambda x: ("release", x)),
         revisions().map(lambda x: ("revision", x)),
@@ -401,6 +401,7 @@ def object_dicts():
     return one_of(
         origins_d().map(lambda x: ("origin", x)),
         origin_visits_d().map(lambda x: ("origin_visit", x)),
+        origin_visit_statuses_d().map(lambda x: ("origin_visit_status", x)),
         snapshots_d().map(lambda x: ("snapshot", x)),
         releases_d().map(lambda x: ("release", x)),
         revisions_d().map(lambda x: ("revision", x)),
