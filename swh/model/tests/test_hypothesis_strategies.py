@@ -14,12 +14,34 @@ from swh.model.model import TargetType
 
 
 target_types = ("content", "directory", "revision", "release", "snapshot", "alias")
+all_but_skipped_content = (
+    "origin",
+    "origin_visit",
+    "origin_visit_status",
+    "snapshot",
+    "release",
+    "revision",
+    "directory",
+    "content",
+)
 
 
 @given(objects(blacklist_types=()))
 def test_generation(obj_type_and_obj):
     (obj_type, object_) = obj_type_and_obj
     attr.validate(object_)
+
+
+@given(objects(split_content=False))
+def test_generation_merged_content(obj_type_and_obj):
+    # we should never generate a "skipped_content" here
+    assert obj_type_and_obj[0] != "skipped_content"
+
+
+@given(objects(split_content=True, blacklist_types=all_but_skipped_content))
+def test_generation_split_content(obj_type_and_obj):
+    # we should only generate "skipped_content"
+    assert obj_type_and_obj[0] == "skipped_content"
 
 
 @given(objects(blacklist_types=("origin_visit", "directory")))
@@ -62,6 +84,18 @@ def test_dicts_generation(obj_type_and_obj):
     elif obj_type == "snapshot":
         for branch in object_["branches"].values():
             assert branch is None or branch["target_type"] in target_types
+
+
+@given(object_dicts(split_content=False))
+def test_dicts_generation_merged_content(obj_type_and_obj):
+    # we should never generate a "skipped_content" here
+    assert obj_type_and_obj[0] != "skipped_content"
+
+
+@given(object_dicts(split_content=True, blacklist_types=all_but_skipped_content))
+def test_dicts_generation_split_content(obj_type_and_obj):
+    # we should only generate "skipped_content"
+    assert obj_type_and_obj[0] == "skipped_content"
 
 
 @given(object_dicts(blacklist_types=("release", "content")))

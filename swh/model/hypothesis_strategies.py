@@ -380,45 +380,66 @@ def snapshots(*, min_size=0, max_size=100, only_objects=False):
     ).map(Snapshot.from_dict)
 
 
-def objects(blacklist_types=("origin_visit_status",)):
+def objects(blacklist_types=("origin_visit_status",), split_content=False):
     """generates a random couple (type, obj)
 
     which obj is an instance of the Model class corresponding to obj_type.
+
+    `blacklist_types` is a list of obj_type to exclude from the strategy.
+
+    If `split_content` is True, generates Content and SkippedContent under different
+    obj_type, resp. "content" and "skipped_content".
     """
+    strategies = [
+        ("origin", origins),
+        ("origin_visit", origin_visits),
+        ("origin_visit_status", origin_visit_statuses),
+        ("snapshot", snapshots),
+        ("release", releases),
+        ("revision", revisions),
+        ("directory", directories),
+    ]
+    if split_content:
+        strategies.append(("content", present_contents))
+        strategies.append(("skipped_content", skipped_contents))
+    else:
+        strategies.append(("content", contents))
     args = [
         obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
-        for (obj_type, obj_gen) in (
-            ("origin", origins),
-            ("origin_visit", origin_visits),
-            ("origin_visit_status", origin_visit_statuses),
-            ("snapshot", snapshots),
-            ("release", releases),
-            ("revision", revisions),
-            ("directory", directories),
-            ("content", contents),
-        )
+        for (obj_type, obj_gen) in strategies
         if obj_type not in blacklist_types
     ]
     return one_of(*args)
 
 
-def object_dicts(blacklist_types=("origin_visit_status",)):
+def object_dicts(blacklist_types=("origin_visit_status",), split_content=False):
     """generates a random couple (type, dict)
 
     which dict is suitable for <ModelForType>.from_dict() factory methods.
+
+    `blacklist_types` is a list of obj_type to exclude from the strategy.
+
+    If `split_content` is True, generates Content and SkippedContent under different
+    obj_type, resp. "content" and "skipped_content".
+
     """
+    strategies = [
+        ("origin", origins_d),
+        ("origin_visit", origin_visits_d),
+        ("origin_visit_status", origin_visit_statuses_d),
+        ("snapshot", snapshots_d),
+        ("release", releases_d),
+        ("revision", revisions_d),
+        ("directory", directories_d),
+    ]
+    if split_content:
+        strategies.append(("content", present_contents_d))
+        strategies.append(("skipped_content", skipped_contents_d))
+    else:
+        strategies.append(("content", contents_d))
     args = [
         obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
-        for (obj_type, obj_gen) in [
-            ("origin", origins_d),
-            ("origin_visit", origin_visits_d),
-            ("origin_visit_status", origin_visit_statuses_d),
-            ("snapshot", snapshots_d),
-            ("release", releases_d),
-            ("revision", revisions_d),
-            ("directory", directories_d),
-            ("content", contents_d),
-        ]
+        for (obj_type, obj_gen) in strategies
         if obj_type not in blacklist_types
     ]
     return one_of(*args)
