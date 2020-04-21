@@ -16,10 +16,15 @@ from swh.model.model import TargetType
 target_types = ("content", "directory", "revision", "release", "snapshot", "alias")
 
 
-@given(objects())
+@given(objects(blacklist_types=()))
 def test_generation(obj_type_and_obj):
     (obj_type, object_) = obj_type_and_obj
     attr.validate(object_)
+
+
+@given(objects(blacklist_types=("origin_visit", "directory")))
+def test_generation_blacklist(obj_type_and_obj):
+    assert obj_type_and_obj[0] not in ("origin_visit", "directory")
 
 
 def assert_nested_dict(obj):
@@ -38,7 +43,7 @@ def assert_nested_dict(obj):
         assert False, obj
 
 
-@given(object_dicts())
+@given(object_dicts(blacklist_types=()))
 def test_dicts_generation(obj_type_and_obj):
     (obj_type, object_) = obj_type_and_obj
     assert_nested_dict(object_)
@@ -57,6 +62,11 @@ def test_dicts_generation(obj_type_and_obj):
     elif obj_type == "snapshot":
         for branch in object_["branches"].values():
             assert branch is None or branch["target_type"] in target_types
+
+
+@given(object_dicts(blacklist_types=("release", "content")))
+def test_dicts_generation_blacklist(obj_type_and_obj):
+    assert obj_type_and_obj[0] not in ("release", "content")
 
 
 @given(objects())

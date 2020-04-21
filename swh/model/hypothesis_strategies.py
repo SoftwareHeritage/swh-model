@@ -380,31 +380,45 @@ def snapshots(*, min_size=0, max_size=100, only_objects=False):
     ).map(Snapshot.from_dict)
 
 
-def objects():
-    return one_of(
-        origins().map(lambda x: ("origin", x)),
-        origin_visits().map(lambda x: ("origin_visit", x)),
-        origin_visit_statuses().map(lambda x: ("origin_visit_status", x)),
-        snapshots().map(lambda x: ("snapshot", x)),
-        releases().map(lambda x: ("release", x)),
-        revisions().map(lambda x: ("revision", x)),
-        directories().map(lambda x: ("directory", x)),
-        contents().map(lambda x: ("content", x)),
-    )
+def objects(blacklist_types=("origin_visit_status",)):
+    """generates a random couple (type, obj)
+
+    which obj is an instance of the Model class corresponding to obj_type.
+    """
+    args = [
+        obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
+        for (obj_type, obj_gen) in (
+            ("origin", origins),
+            ("origin_visit", origin_visits),
+            ("origin_visit_status", origin_visit_statuses),
+            ("snapshot", snapshots),
+            ("release", releases),
+            ("revision", revisions),
+            ("directory", directories),
+            ("content", contents),
+        )
+        if obj_type not in blacklist_types
+    ]
+    return one_of(*args)
 
 
-def object_dicts():
+def object_dicts(blacklist_types=("origin_visit_status",)):
     """generates a random couple (type, dict)
 
     which dict is suitable for <ModelForType>.from_dict() factory methods.
     """
-    return one_of(
-        origins_d().map(lambda x: ("origin", x)),
-        origin_visits_d().map(lambda x: ("origin_visit", x)),
-        origin_visit_statuses_d().map(lambda x: ("origin_visit_status", x)),
-        snapshots_d().map(lambda x: ("snapshot", x)),
-        releases_d().map(lambda x: ("release", x)),
-        revisions_d().map(lambda x: ("revision", x)),
-        directories_d().map(lambda x: ("directory", x)),
-        contents_d().map(lambda x: ("content", x)),
-    )
+    args = [
+        obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
+        for (obj_type, obj_gen) in [
+            ("origin", origins_d),
+            ("origin_visit", origin_visits_d),
+            ("origin_visit_status", origin_visit_statuses_d),
+            ("snapshot", snapshots_d),
+            ("release", releases_d),
+            ("revision", revisions_d),
+            ("directory", directories_d),
+            ("content", contents_d),
+        ]
+        if obj_type not in blacklist_types
+    ]
+    return one_of(*args)
