@@ -163,19 +163,23 @@ the ``<identifier_with_context>`` entry point of the grammar:
   <identifier_with_context> ::= <identifier> [ <qualifierlist> ]
   <qualifierlist> := <qualifier> [ <qualifierlist> ]
   <qualifier> ::= <origin_ctxt> | <visit_ctxt> | <anchor_ctxt> | <path_ctxt> |<lines_ctxt>
-  <origin_ctxt> ::= ";" "origin" "=" <url>
+  <origin_ctxt> ::= ";" "origin" "=" <url_escaped>
   <visit_ctxt> ::= ";" "visit" "=" <identifier>
   <anchor_ctxt> ::= ";" "anchor" "=" <identifier>
   <path_ctxt> ::= ";" "path" "=" <path_absolute_escaped>
   <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
   <line_number> ::= <dec_digit> +
-  <url> ::= (* RFC 3986 compliant URLs *)
+  <url_escaped> ::= (* RFC 3986 compliant URLs, percent-escaped *)
   <path_absolute_escaped> ::= (* RFC 3986 compliant absolute file path, percent-escaped *)
 
-Here ``<path_absolute_escaped>`` is the ``<path_absolute>`` in `Section 3.3 of
-RFC 3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_ where all
-occurrences of ``;`` and ``%`` must be percent-encoded (as `%3B` and `%25`
-respectively).
+Where:
+
+- ``<path_absolute_escaped>`` is the ``<path_absolute>`` in `Section 3.3 of RFC
+  3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_, where all
+  occurrences of ``;`` and ``%`` have been percent-encoded (as `%3B` and `%25`
+  respectively)
+- ``<url_escaped>`` is a RFC 3987 compliant URL, where all occurrences of ``;``
+  and ``%`` have been percent-encoded (as `%3B` and `%25` respectively)
 
 
 Semantics
