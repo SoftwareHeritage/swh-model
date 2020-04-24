@@ -7,18 +7,17 @@ SoftWare Heritage persistent IDentifiers (SWHID)
 **version 1.2**
 
 
-Description
-===========
+Overview
+========
 
 You can point to objects present in the Software Heritage archive by the means
 of **SoftWare Heritage persistent IDentifiers**, or **SWHID** for short, that
 are guaranteed to remain stable (persistent) over time. Their syntax, meaning,
 and usage is described below. Note that they are identifiers and not URLs, even
-though an URL-based resolver for Software Heritage persistent identifiers is
-also provided.
+though URL-based resolvers for SWHIDs are also available.
 
 A SWHID can point to any software artifact (or "object") available in the
-Software Heritage archive. Objects come in different types, and most notably:
+Software Heritage archive. Objects come in different types:
 
 * contents
 * directories
@@ -27,13 +26,15 @@ Software Heritage archive. Objects come in different types, and most notably:
 * snapshots
 
 Each object is identified by an intrinsic, type-specific object identifier that
-is embedded in its SWHID as described below. SWHIDs are strong cryptographic
-hashes computed on the entire set of object properties to form a `Merkle
-structure <https://en.wikipedia.org/wiki/Merkle_tree>`_.
+is embedded in its SWHID as described below. The intrinsic identifiers embedded
+in SWHIDs are strong cryptographic hashes computed on the entire set of object
+properties. Together, these identifiers form a `Merkle structure
+<https://en.wikipedia.org/wiki/Merkle_tree>`_, specifically a Merkle DAG.
 
 See the :ref:`Software Heritage data model <data-model>` for an overview of
 object types and how they are linked together. See
-:py:mod:`swh.model.identifiers` for details on how SWHIDs are computed.
+:py:mod:`swh.model.identifiers` for details on how the intrinsic identifiers
+embedded in SWHIDs are computed.
 
 
 Syntax
