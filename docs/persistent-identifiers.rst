@@ -174,12 +174,13 @@ the ``<identifier_with_context>`` entry point of the grammar:
 
 Where:
 
-- ``<path_absolute_escaped>`` is the ``<path_absolute>`` in `Section 3.3 of RFC
-  3986 <https://tools.ietf.org/html/rfc3986#section-3.3>`_, where all
-  occurrences of ``;`` and ``%`` have been percent-encoded (as `%3B` and `%25`
-  respectively)
-- ``<url_escaped>`` is a RFC 3987 compliant URL, where all occurrences of ``;``
-  and ``%`` have been percent-encoded (as `%3B` and `%25` respectively)
+- ``<path_absolute_escaped>`` is an ``<ipath-absolute>`` from `RFC 3987`_,
+  where all occurrences of ``;`` and ``%`` have been percent-encoded (as
+  ``%3B`` and ``%25`` respectively)
+- ``<url_escaped>`` is a `RFC 3987`_ IRI, where all occurrences of ``;`` and
+  ``%`` have been percent-encoded, as per ``<path_absolute_escaped>`` above
+
+.. _RFC 3987: https://tools.ietf.org/html/rfc3987
 
 
 Semantics
