@@ -174,11 +174,13 @@ the ``<identifier_with_context>`` entry point of the grammar:
 
 Where:
 
-- ``<path_absolute_escaped>`` is an ``<ipath-absolute>`` from `RFC 3987`_,
-  where all occurrences of ``;`` and ``%`` have been percent-encoded (as
-  ``%3B`` and ``%25`` respectively)
-- ``<url_escaped>`` is a `RFC 3987`_ IRI, where all occurrences of ``;`` and
-  ``%`` have been percent-encoded, as per ``<path_absolute_escaped>`` above
+- ``<path_absolute_escaped>`` is an ``<ipath-absolute>`` from `RFC 3987`_, and
+- ``<url_escaped>`` is a `RFC 3987`_ IRI
+
+in either case all occurrences of ``;`` (and ``%``, as required by the RFC)
+have been percent-encoded (as ``%3B`` and ``%25`` respectively). Other
+characters *can* be percent-encoded, e.g., to improve readability and/or
+embeddability of SWHID in other contexts.
 
 .. _RFC 3987: https://tools.ietf.org/html/rfc3987
 
