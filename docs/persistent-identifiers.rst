@@ -4,7 +4,7 @@
 SoftWare Heritage persistent IDentifiers (SWHIDs)
 =================================================
 
-**version 1.2**
+**version 1.3, last modified 2020-04-28**
 
 
 Overview
