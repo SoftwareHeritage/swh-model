@@ -1,8 +1,15 @@
-swh-model (0.0.68-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.0.69-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.0.69     - (tagged by Stefano Zacchiroli
+    <zack@upsilon.cc> on 2020-04-28 16:05:58 +0200)
+  * Upstream changes:     - v0.0.69 / 2020-04-28     - * SWHID spec:
+    bump version to 1.3 and add last modified date     - * SWHID spec:
+    make SWHIDs plural where needed     - * SWHID spec: simplify and
+    generalize escaping requirements     - * SWHID spec: add support for
+    IRI     - * SWHID: deal with escaping in origin qualifiers     - *
+    SWHID doc: improve wording of intrinsic parts v. the rest
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 21 Apr 2020 14:29:47 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 28 Apr 2020 14:10:35 +0000
 
 swh-model (0.0.68-1~swh1) unstable-swh; urgency=medium
 
