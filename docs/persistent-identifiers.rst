@@ -16,8 +16,12 @@ are guaranteed to remain stable (persistent) over time. Their syntax, meaning,
 and usage is described below. Note that they are identifiers and not URLs, even
 though URL-based resolvers for SWHIDs are also available.
 
-A SWHID can point to any software artifact (or "object") available in the
-Software Heritage archive. Objects come in different types:
+A SWHID consists of two separate parts, a *core identifier* that can point to
+any software artifact (or "object") available in the Software Heritage archive,
+and an *optional list of qualifiers* that allows to specify the context where
+the object is meant to be seen, or point to a subpart of the object itself.
+
+Objects come in different types:
 
 * contents
 * directories
@@ -36,6 +40,15 @@ object types and how they are linked together. See
 :py:mod:`swh.model.identifiers` for details on how the intrinsic identifiers
 embedded in SWHIDs are computed.
 
+The optional qualifiers are of two kinds:
+
+* *context qualifiers* carry information about the context where a given
+  object is meant to be seen; this is particularly important, as the same object
+  can be reached in the Merkle graph following different *paths* from different
+  nodes (or *anchors*), and it may have been retrieved from different *origins*,
+  that may evolve between different *visits*,
+* *fragment qualifiers* allow to pinpoint specific subparts of an object
+
 
 Syntax
 ------
@@ -45,7 +58,8 @@ grammar:
 
 .. code-block:: bnf
 
-  <identifier> ::= "swh" ":" <scheme_version> ":" <object_type> ":" <object_id> ;
+  <identifier> ::= <identifier_core> [ <qualifierlist> ] ;
+  <identifier_core> ::= "swh" ":" <scheme_version> ":" <object_type> ":" <object_id> ;
   <scheme_version> ::= "1" ;
   <object_type> ::=
       "snp"  (* snapshot *)
@@ -55,14 +69,48 @@ grammar:
     | "cnt"  (* content *)
     ;
   <object_id> ::= 40 * <hex_digit> ;  (* intrinsic object id, as hex-encoded SHA1 *)
-  <dec_digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  <dec_digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
   <hex_digit> ::= <dec_digit> | "a" | "b" | "c" | "d" | "e" | "f" ;
+  <qualifierlist> := <qualifier> [ <qualifierlist> ] ;
+  <qualifier> ::=
+      <context_qualifier>
+    | <fragment_qualifier>
+    ;
+  <context_qualifier> ::=
+      <origin_ctxt>
+    | <visit_ctxt>
+    | <anchor_ctxt>
+    | <path_ctxt>
+    ;
+  <origin_ctxt> ::= ";" "origin" "=" <url_escaped> ;
+  <visit_ctxt> ::= ";" "visit" "=" <identifier_core> ;
+  <anchor_ctxt> ::= ";" "anchor" "=" <identifier_core> ;
+  <path_ctxt> ::= ";" "path" "=" <path_absolute_escaped> ;
+  <fragment_qualifier> ::= ";" "lines" "=" <line_number> ["-" <line_number>] ;
+  <line_number> ::= <dec_digit> + ;
+  <url_escaped> ::= (* RFC 3986 compliant URLs, percent-escaped *)
+  <path_absolute_escaped> ::= (* RFC 3986 compliant absolute file path, percent-escaped *)
+
+Where:
+
+- ``<path_absolute_escaped>`` is an ``<ipath-absolute>`` from `RFC 3987`_, and
+- ``<url_escaped>`` is a `RFC 3987`_ IRI
+
+in either case all occurrences of ``;`` (and ``%``, as required by the RFC)
+have been percent-encoded (as ``%3B`` and ``%25`` respectively). Other
+characters *can* be percent-encoded, e.g., to improve readability and/or
+embeddability of SWHID in other contexts.
+
+.. _RFC 3987: https://tools.ietf.org/html/rfc3987
 
 
 Semantics
 ---------
 
-``:`` is used as separator between the logical parts of SWHIDs. The ``swh``
+Core identifiers
+~~~~~~~~~~~~~~~~
+
+``:`` is used as separator between the logical parts of core identifiers. The ``swh``
 prefix makes explicit that these identifiers are related to *SoftWare
 Heritage*. ``1`` (``<scheme_version>``) is the current version of this
 identifier *scheme*; future editions will use higher version numbers, possibly
@@ -87,20 +135,56 @@ computed on the content and metadata of the object itself, as follows:
 
 * for **releases**, as per
   :py:func:`swh.model.identifiers.release_identifier`
+  that produces the same result as a git release hash
 
 * for **revisions**, as per
   :py:func:`swh.model.identifiers.revision_identifier`
+  that produces the same result as a git commit hash
 
-* for **directories**, as per
+* for **directories**, per
   :py:func:`swh.model.identifiers.directory_identifier`
+  that produces the same result as a git tree hash
 
-* for **contents**, the intrinsic identifier is the ``sha1_git`` hash of the
-  multiple hashes returned by
+* for **contents**, the intrinsic identifier is the ``sha1_git`` hash returned by
   :py:func:`swh.model.identifiers.content_identifier`, i.e., the SHA1 of a byte
   sequence obtained by juxtaposing the ASCII string ``"blob"`` (without
   quotes), a space, the length of the content as decimal digits, a NULL byte,
   and the actual content of the file.
 
+Qualifiers
+~~~~~~~~~~
+
+``;`` is used as separator between the core identifier and the optional
+qualifiers, and optional qualifiers. Each qualifier is specified as a
+key/value pair, using ``=`` as a separator.
+
+The following *context qualifiers* are available:
+
+* **origin** : the *software origin* where an object has been found or observed
+  in the wild, as an URI;
+* **visit** : the core identifier of a *snapshot* corresponding to a specific
+  *visit* of a repository containing the designated object;
+* **anchor** : a *designated node* in the Merkle DAG relative to which a *path
+  to the object* is specified, as the core identifier of a directory, a
+  revision, a release or a snapshot;
+* **path** : the *absolute file path*, from the *root directory* associated to
+  the *anchor node*, to the object; when the anchor denotes a directory or a
+  revision, and almost always when it's a release, the root directory is
+  uniquely determined; when the anchor denotes a snapshot, the root directory
+  is the one pointed to by ``HEAD`` (possibly indirectly), and undefined if
+  such a reference is missing;
+
+The following *fragment qualifier* is available:
+
+* **lines** : *line number(s)* of interest, usually within a content object
+
+We recommend to equip identifiers meant to be shared with as many qualifiers as
+possible. While qualifiers may be listed in any order, it is good practice to
+present them in the order given above, i.e., ``origin``, ``visit``, ``anchor``,
+``path``, ``lines``.  Redundant information should be omitted: for example, if
+the *visit* is present, and the *path* is relative to the snapshot indicated
+there, then the *anchor* qualifier is superfluous; similarly, if the *path* is
+empty, it may be omitted.
 
 Git compatibility
 ~~~~~~~~~~~~~~~~~
@@ -108,11 +192,10 @@ Git compatibility
 SWHIDs for contents, directories, revisions, and releases are, at present,
 compatible with the `Git <https://git-scm.com/>`_ way of `computing identifiers
 <https://git-scm.com/book/en/v2/Git-Internals-Git-Objects>`_ for its objects.
-A SWHID for a content object will correspond (in its ``<object_id>`` part) to a
-Git blob identifier of any file with the same content; a SWHID for a revision
-will correspond to the Git commit identifier for the same revision, etc.  This
-is not the case for snapshot identifiers, as Git does not have a corresponding
-object type.
+The ``<object_id>`` part of a SWHID for a content object is the Git blob
+identifier of any file with the same content; for a revision it is the Git
+commit identifier for the same revision, etc.  This is not the case for snapshot
+identifiers, as Git does not have a corresponding object type.
 
 Note that Git compatibility is incidental and is not guaranteed to be
 maintained in future versions of this scheme (or Git).
@@ -120,6 +203,9 @@ maintained in future versions of this scheme (or Git).
 
 Examples
 --------
+
+Core identifiers
+~~~~~~~~~~~~~~~~
 
 * ``swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2`` points to the content
   of a file containing the full text of the GPL3 license
@@ -134,99 +220,10 @@ Examples
 * ``swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453`` points to a snapshot
   of the entire Darktable Git repository taken on 4 May 2017 from GitHub
 
+Identifiers with qualifiers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Contextual information
-======================
-
-The SWHIDs as described above are *intrinsic identifiers*, as they are computed
-from the designated object itself, and it is often useful to provide
-*contextual information* about a particular occurrence of the object, like the
-origin from where the object has been found.  To this end, SWHIDs can be
-coupled with **qualifiers** that capture such *contextual information*.
-Qualifiers come in different kinds:
-
-* origin
-* visit
-* anchor
-* path
-* lines
-
-
-Syntax
-------
-
-The full-syntax to complement SWHIDs with contextual information is given by
-the ``<identifier_with_context>`` entry point of the grammar:
-
-.. code-block:: bnf
-
-  <identifier_with_context> ::= <identifier> [ <qualifierlist> ]
-  <qualifierlist> := <qualifier> [ <qualifierlist> ]
-  <qualifier> ::= <origin_ctxt> | <visit_ctxt> | <anchor_ctxt> | <path_ctxt> |<lines_ctxt>
-  <origin_ctxt> ::= ";" "origin" "=" <url_escaped>
-  <visit_ctxt> ::= ";" "visit" "=" <identifier>
-  <anchor_ctxt> ::= ";" "anchor" "=" <identifier>
-  <path_ctxt> ::= ";" "path" "=" <path_absolute_escaped>
-  <lines_ctxt> ::= ";" "lines" "=" <line_number> ["-" <line_number>]
-  <line_number> ::= <dec_digit> +
-  <url_escaped> ::= (* RFC 3986 compliant URLs, percent-escaped *)
-  <path_absolute_escaped> ::= (* RFC 3986 compliant absolute file path, percent-escaped *)
-
-Where:
-
-- ``<path_absolute_escaped>`` is an ``<ipath-absolute>`` from `RFC 3987`_, and
-- ``<url_escaped>`` is a `RFC 3987`_ IRI
-
-in either case all occurrences of ``;`` (and ``%``, as required by the RFC)
-have been percent-encoded (as ``%3B`` and ``%25`` respectively). Other
-characters *can* be percent-encoded, e.g., to improve readability and/or
-embeddability of SWHID in other contexts.
-
-.. _RFC 3987: https://tools.ietf.org/html/rfc3987
-
-
-Semantics
----------
-
-``;`` is used as separator between SWHIDs and the optional contextual
-information qualifiers. Each contextual information qualifier is specified as a
-key/value pair, using ``=`` as a separator.
-
-The following piece of contextual information are supported:
-
-* **origin** : the *software origin* where an object has been found or observed
-  in the wild, as an URI;
-* **visit** : persistent identifier of a *snapshot* corresponding to a specific
-  *visit* of a repository containing the designated object;
-* **anchor** : a *designated node* in the Merkle DAG relative to which a *path
-  to the object* is specified, as a persistent identifier of a directory, a
-  revision, a release or a snapshot;
-* **path** : the *absolute file path*, from the *root directory* associated to
-  the *anchor node*, to the object; when the anchor denotes a directory or a
-  revision, and almost always when it's a release, the root directory is
-  uniquely determined; when the anchor denotes a snapshot, the root directory
-  is the one pointed to by ``HEAD`` (possibly indirectly), and undefined if
-  such a reference is missing;
-* **lines** : *line number(s)* of interest, usually within a content object
-
-We recommend to equip identifiers meant to be shared with as many qualifiers as
-possible. While qualifiers may be listed in any order, it is good practice to
-present them in the order given above, i.e., ``origin``, ``visit``, ``anchor``,
-``path``, ``lines``.  Redundant information should be omitted: for example, if
-the *visit* is present, and the *path* is relative to the snapshot indicated
-there, then the *anchor* qualifier is superfluous.
-
-
-Example
--------
-
-The following `fully qualified SWHID
-<https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
-denotes the lines 9 to 15 of a file content that can be found at absolute path
-``/Examples/SimpleFarm/simplefarm.ml`` from the root directory of the revision
-``swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0`` that is contained in the
-snapshot ``swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9`` taken from the
-origin ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``.
+* The following `fully qualified SWHID <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_ denotes the lines 9 to 15 of a file content that can be found at absolute path ``/Examples/SimpleFarm/simplefarm.ml`` from the root directory of the revision ``swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0`` that is contained in the snapshot ``swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9`` taken from the origin ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``
 
 .. code-block:: url
 
@@ -238,9 +235,7 @@ origin ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``.
     lines=9-15
 
 
-And this is an example of `a fully qualified SWHID with a percent escaped file
-path
-<https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
+* This is an example of `a fully qualified SWHID with a percent escaped file path <https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
 
 .. code-block:: url
 
@@ -251,12 +246,24 @@ path
     path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/
 
 
-Resolution
-==========
+Computing and resolving SWHIDs
+==============================
 
+An important property of SWHIDs is that a core identifier is *intrinsic*: it can
+be *computed from the object itself* using the `swh-identify <https://docs.softwareheritage.org/devel/swh-model/cli.html>`_ utility, or equivalently using standard git tools.
 
-Dedicated resolvers
--------------------
+This has various practical implications:
+
+* when a software artifact is obtained from Software Heritage by resolving a
+  SWHID, it is straightforward to verify that it is exactly the intended one:
+  just compute the core identifier from the artefact itself, and check that it
+  is the same as the core identifier part of the SHWID
+
+* the core identifier of a software artifact can be computed *before* its archival on
+  Software Heritage
+
+Resolvers
+---------
 
 SWHIDs can be resolved using the Software Heritage Web application (see
 :py:mod:`swh.web`).  In particular, the **root endpoint** ``/`` can be given a
@@ -273,10 +280,11 @@ Examples:
 * `<https://archive.softwareheritage.org/api/1/resolve/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
 * `<https://archive.softwareheritage.org/api/1/resolve/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
 * `<https://archive.softwareheritage.org/api/1/resolve/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
-
+* `<https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
+* `<https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
 
 External resolvers
-------------------
+~~~~~~~~~~~~~~~~~~
 
 The following **independent resolvers** support resolution of SWHIDs:
 
@@ -293,10 +301,10 @@ Examples:
 * `<https://identifiers.org/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
 * `<https://n2t.net/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
 * `<https://n2t.net/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
+* `<https://n2t.net/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
+* `<https://n2t.net/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
 
-Note that resolution via Identifiers.org does not support contextual
-information, due to `syntactic incompatibilities
-<http://identifiers.org/documentation#custom_requests>`_.
+Note that resolution via Identifiers.org currently only supports *core identifiers* due to `syntactic incompatibilities with qualifiers <http://identifiers.org/documentation#custom_requests>`_.
 
 
 References
