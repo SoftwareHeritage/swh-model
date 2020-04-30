@@ -9,7 +9,14 @@ import attr
 from hypothesis import given, settings
 
 from swh.model.hashutil import DEFAULT_ALGORITHMS
-from swh.model.hypothesis_strategies import objects, object_dicts, snapshots
+from swh.model.hypothesis_strategies import (
+    objects,
+    object_dicts,
+    contents,
+    skipped_contents,
+    snapshots,
+    origin_visits,
+)
 from swh.model.model import TargetType
 
 
@@ -125,6 +132,16 @@ def test_model_to_dicts(obj_type_and_obj):
             assert branch is None or branch["target_type"] in target_types
 
 
+@given(contents())
+def test_content_aware_datetime(cont):
+    assert cont.ctime is None or cont.ctime.tzinfo is not None
+
+
+@given(skipped_contents())
+def test_skipped_content_aware_datetime(cont):
+    assert cont.ctime is None or cont.ctime.tzinfo is not None
+
+
 _min_snp_size = 10
 _max_snp_size = 100
 
@@ -164,3 +181,8 @@ def test_snapshots_strategy(snapshot):
 @settings(max_examples=1)
 def test_snapshots_strategy_fixed_size(snapshot):
     assert len(snapshot.branches) == _min_snp_size
+
+
+@given(origin_visits())
+def test_origin_visit_aware_datetime(visit):
+    assert visit.date.tzinfo is not None
