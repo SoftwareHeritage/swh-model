@@ -1,3 +1,19 @@
+swh-model (0.1.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.1.0     - (tagged by Stefano Zacchiroli
+    <zack@upsilon.cc> on 2020-04-30 19:23:13 +0200)
+  * Upstream changes:     - v0.1.0 / 2020-04-30     - * SWHID spec: full
+    reread     - * setup.py: add documentation link     - *
+    hypothesis_strategies: Generate aware datetimes instead of naive
+    ones.     - * doc: check-in IANA registration template for the "swh"
+    URI scheme     - * Restructure SWHID documentation in preparation
+    for T2385     - merge grammars into a single one     - explain
+    better that SWHIDs are made up of core identifier + qualifiers     -
+    separate qualifier into context and fragment onex     - add
+    reference to swh-identify
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 30 Apr 2020 20:31:00 +0000
+
 swh-model (0.0.69-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.0.69     - (tagged by Stefano Zacchiroli
