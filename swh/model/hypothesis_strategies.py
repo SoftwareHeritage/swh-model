@@ -6,6 +6,7 @@
 import datetime
 
 from hypothesis import assume
+from hypothesis.extra.dateutil import timezones
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -68,6 +69,10 @@ def sha1_git():
 
 def sha1():
     return binary(min_size=20, max_size=20)
+
+
+def aware_datetimes():
+    return datetimes(timezones=timezones())
 
 
 @composite
@@ -138,7 +143,7 @@ def origin_visits_d():
         dict,
         visit=integers(0, 1000),
         origin=urls(),
-        date=datetimes(),
+        date=aware_datetimes(),
         status=sampled_from(["ongoing", "full", "partial"]),
         type=pgsql_text(),
         snapshot=optional(sha1_git()),
@@ -159,7 +164,7 @@ def origin_visit_statuses_d():
         visit=integers(0, 1000),
         origin=urls(),
         status=sampled_from(["ongoing", "full", "partial"]),
-        date=datetimes(),
+        date=aware_datetimes(),
         snapshot=optional(sha1_git()),
         metadata=one_of(none(), metadata_dicts()),
     )
@@ -268,7 +273,7 @@ def present_contents_d():
     return builds(
         dict,
         data=binary(max_size=4096),
-        ctime=optional(datetimes()),
+        ctime=optional(aware_datetimes()),
         status=one_of(just("visible"), just("hidden")),
     )
 
@@ -288,7 +293,7 @@ def skipped_contents_d(draw):
         result[k] = None
     result["reason"] = draw(pgsql_text())
     result["status"] = "absent"
-    result["ctime"] = draw(optional(datetimes()))
+    result["ctime"] = draw(optional(aware_datetimes()))
     return result
 
 
