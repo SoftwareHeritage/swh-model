@@ -6,10 +6,12 @@
 import datetime
 
 import attr
+import iso8601
 from hypothesis import given, settings
 
 from swh.model.hashutil import DEFAULT_ALGORITHMS
 from swh.model.hypothesis_strategies import (
+    aware_datetimes,
     objects,
     object_dicts,
     contents,
@@ -91,6 +93,14 @@ def test_dicts_generation(obj_type_and_obj):
     elif obj_type == "snapshot":
         for branch in object_["branches"].values():
             assert branch is None or branch["target_type"] in target_types
+
+
+@given(aware_datetimes())
+def test_datetimes(dt):
+    # Checks this doesn't raise an error, eg. about seconds in the TZ offset
+    iso8601.parse_date(dt.isoformat())
+
+    assert dt.tzinfo is not None
 
 
 @given(object_dicts(split_content=False))
