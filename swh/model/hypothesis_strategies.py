@@ -72,7 +72,17 @@ def sha1():
 
 
 def aware_datetimes():
-    return datetimes(timezones=timezones())
+    # datetimes in Software Heritage are not used for software artifacts
+    # (which may be much older than 2000), but only for objects like scheduler
+    # task runs, and origin visits, which were created by Software Heritage,
+    # so at least in 2015.
+    # We're forbidding old datetimes, because until 1956, many timezones had seconds
+    # in their "UTC offsets" (see
+    # <https://en.wikipedia.org/wiki/Time_zone#Worldwide_time_zones>), which is not
+    # encodable in ISO8601; and we need our datetimes to be ISO8601-encodable in the
+    # RPC protocol
+    min_value = datetime.datetime(2000, 1, 1, 0, 0, 0)
+    return datetimes(min_value=min_value, timezones=timezones())
 
 
 @composite
