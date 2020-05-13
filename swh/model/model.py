@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 The Software Heritage developers
+# Copyright (C) 2018-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -9,6 +9,7 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from hashlib import sha256
 from typing import Dict, Optional, Tuple, TypeVar, Union
+from typing_extensions import Final
 
 import attr
 from attrs_strict import type_validator
@@ -101,6 +102,8 @@ class HashableObject(metaclass=ABCMeta):
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
 
+    object_type: Final = "person"
+
     fullname = attr.ib(type=bytes, validator=type_validator())
     name = attr.ib(type=Optional[bytes], validator=type_validator())
     email = attr.ib(type=Optional[bytes], validator=type_validator())
@@ -153,6 +156,8 @@ class Person(BaseModel):
 class Timestamp(BaseModel):
     """Represents a naive timestamp from a VCS."""
 
+    object_type: Final = "timestamp"
+
     seconds = attr.ib(type=int, validator=type_validator())
     microseconds = attr.ib(type=int, validator=type_validator())
 
@@ -172,6 +177,8 @@ class Timestamp(BaseModel):
 @attr.s(frozen=True)
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
+
+    object_type: Final = "timestamp_with_timezone"
 
     timestamp = attr.ib(type=Timestamp, validator=type_validator())
     offset = attr.ib(type=int, validator=type_validator())
@@ -223,6 +230,8 @@ class TimestampWithTimezone(BaseModel):
 class Origin(BaseModel):
     """Represents a software source: a VCS and an URL."""
 
+    object_type: Final = "origin"
+
     url = attr.ib(type=str, validator=type_validator())
 
 
@@ -230,6 +239,8 @@ class Origin(BaseModel):
 class OriginVisit(BaseModel):
     """Represents a visit of an origin at a given point in time, by a
     SWH loader."""
+
+    object_type: Final = "origin_visit"
 
     origin = attr.ib(type=str, validator=type_validator())
     date = attr.ib(type=datetime.datetime, validator=type_validator())
@@ -257,6 +268,8 @@ class OriginVisitStatus(BaseModel):
     """Represents a visit update of an origin at a given point in time.
 
     """
+
+    object_type: Final = "origin_visit_status"
 
     origin = attr.ib(type=str, validator=type_validator())
     visit = attr.ib(type=int, validator=type_validator())
@@ -298,6 +311,8 @@ class ObjectType(Enum):
 class SnapshotBranch(BaseModel):
     """Represents one of the branches of a snapshot."""
 
+    object_type: Final = "snapshot_branch"
+
     target = attr.ib(type=bytes, validator=type_validator())
     target_type = attr.ib(type=TargetType, validator=type_validator())
 
@@ -317,6 +332,8 @@ class SnapshotBranch(BaseModel):
 @attr.s(frozen=True)
 class Snapshot(BaseModel, HashableObject):
     """Represents the full state of an origin at a given point in time."""
+
+    object_type: Final = "snapshot"
 
     branches = attr.ib(
         type=Dict[bytes, Optional[SnapshotBranch]], validator=type_validator()
@@ -341,6 +358,8 @@ class Snapshot(BaseModel, HashableObject):
 
 @attr.s(frozen=True)
 class Release(BaseModel, HashableObject):
+    object_type: Final = "release"
+
     name = attr.ib(type=bytes, validator=type_validator())
     message = attr.ib(type=Optional[bytes], validator=type_validator())
     target = attr.ib(type=Optional[Sha1Git], validator=type_validator())
@@ -399,6 +418,8 @@ class RevisionType(Enum):
 
 @attr.s(frozen=True)
 class Revision(BaseModel, HashableObject):
+    object_type: Final = "revision"
+
     message = attr.ib(type=Optional[bytes], validator=type_validator())
     author = attr.ib(type=Person, validator=type_validator())
     committer = attr.ib(type=Person, validator=type_validator())
@@ -453,6 +474,8 @@ class Revision(BaseModel, HashableObject):
 
 @attr.s(frozen=True)
 class DirectoryEntry(BaseModel):
+    object_type: Final = "directory_entry"
+
     name = attr.ib(type=bytes, validator=type_validator())
     type = attr.ib(type=str, validator=attr.validators.in_(["file", "dir", "rev"]))
     target = attr.ib(type=Sha1Git, validator=type_validator())
@@ -462,6 +485,8 @@ class DirectoryEntry(BaseModel):
 
 @attr.s(frozen=True)
 class Directory(BaseModel, HashableObject):
+    object_type: Final = "directory"
+
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
@@ -518,6 +543,8 @@ class BaseContent(BaseModel):
 
 @attr.s(frozen=True)
 class Content(BaseContent):
+    object_type: Final = "content"
+
     sha1 = attr.ib(type=bytes, validator=type_validator())
     sha1_git = attr.ib(type=Sha1Git, validator=type_validator())
     sha256 = attr.ib(type=bytes, validator=type_validator())
@@ -584,6 +611,8 @@ class Content(BaseContent):
 
 @attr.s(frozen=True)
 class SkippedContent(BaseContent):
+    object_type: Final = "skipped_content"
+
     sha1 = attr.ib(type=Optional[bytes], validator=type_validator())
     sha1_git = attr.ib(type=Optional[Sha1Git], validator=type_validator())
     sha256 = attr.ib(type=Optional[bytes], validator=type_validator())
