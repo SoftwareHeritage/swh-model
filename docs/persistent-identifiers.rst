@@ -4,7 +4,7 @@
 SoftWare Heritage persistent IDentifiers (SWHIDs)
 =================================================
 
-**version 1.4, last modified 2020-04-30**
+**version 1.5, last modified 2020-05-14**
 
 .. contents::
    :local:
@@ -257,7 +257,7 @@ Identifiers with qualifiers
 ---------------------------
 
 * The following `SWHID
-  <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
+  <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
   denotes the lines 9 to 15 of a file content that can be found at absolute
   path ``/Examples/SimpleFarm/simplefarm.ml`` from the root directory of the
   revision ``swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0`` that is
@@ -340,7 +340,7 @@ Examples:
 * `<https://archive.softwareheritage.org/api/1/resolve/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
 * `<https://archive.softwareheritage.org/api/1/resolve/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
 * `<https://archive.softwareheritage.org/api/1/resolve/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
-* `<https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
+* `<https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
 * `<https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
 
 
@@ -366,7 +366,7 @@ Examples:
 * `<https://identifiers.org/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`_
 * `<https://n2t.net/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
 * `<https://n2t.net/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
-* `<https://n2t.net/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
+* `<https://n2t.net/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
 * `<https://n2t.net/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
 
 
