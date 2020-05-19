@@ -61,6 +61,37 @@ def test_todict_inverse_fromdict(objtype_and_obj):
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
 
 
+# Anonymization
+
+
+@given(strategies.objects())
+def test_anonymization(objtype_and_obj):
+    (obj_type, obj) = objtype_and_obj
+
+    def check_person(p):
+        if p is not None:
+            assert p.name is None
+            assert p.email is None
+            assert len(p.fullname) == 32
+
+    anon_obj = obj.anonymize()
+    if obj_type == "person":
+        assert anon_obj is not None
+        check_person(anon_obj)
+    elif obj_type == "release":
+        assert anon_obj is not None
+        check_person(anon_obj.author)
+    elif obj_type == "revision":
+        assert anon_obj is not None
+        check_person(anon_obj.author)
+        check_person(anon_obj.committer)
+    else:
+        assert anon_obj is None
+
+
+# Origin, OriginVisit
+
+
 @given(strategies.origins())
 def test_todict_origins(origin):
     obj = origin.to_dict()

@@ -7,7 +7,8 @@ import datetime
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from hashlib import sha256
+from typing import Dict, List, Optional, TypeVar, Union
 
 import attr
 from attrs_strict import type_validator
@@ -51,6 +52,9 @@ def dictify(value):
         return value
 
 
+ModelType = TypeVar("ModelType", bound="BaseModel")
+
+
 class BaseModel:
     """Base class for SWH model classes.
 
@@ -67,6 +71,13 @@ class BaseModel:
         """Takes a dictionary representing a tree of SWH objects, and
         recursively builds the corresponding objects."""
         return cls(**d)
+
+    def anonymize(self: ModelType) -> Optional[ModelType]:
+        """Returns an anonymized version of the object, if needed.
+
+        If the object model does not need/support anonymization, returns None.
+        """
+        return None
 
 
 class HashableObject(metaclass=ABCMeta):
@@ -128,6 +139,14 @@ class Person(BaseModel):
                 email = raw_email[:close_bracket]
 
         return Person(name=name or None, email=email or None, fullname=fullname,)
+
+    def anonymize(self) -> "Person":
+        """Returns an anonymized version of the Person object.
+
+        Anonymization is simply a Person which fullname is the hashed, with unset name
+        or email.
+        """
+        return Person(fullname=sha256(self.fullname).digest(), name=None, email=None,)
 
 
 @attr.s(frozen=True)
@@ -369,6 +388,14 @@ class Release(BaseModel, HashableObject):
             d["date"] = TimestampWithTimezone.from_dict(d["date"])
         return cls(target_type=ObjectType(d.pop("target_type")), **d)
 
+    def anonymize(self) -> "Release":
+        """Returns an anonymized version of the Release object.
+
+        Anonymization consists in replacing the author with an anonymized Person object.
+        """
+        author = self.author and self.author.anonymize()
+        return attr.evolve(self, author=author)
+
 
 class RevisionType(Enum):
     GIT = "git"
@@ -420,6 +447,16 @@ class Revision(BaseModel, HashableObject):
             committer_date=committer_date,
             type=RevisionType(d.pop("type")),
             **d,
+        )
+
+    def anonymize(self) -> "Revision":
+        """Returns an anonymized version of the Revision object.
+
+        Anonymization consists in replacing the author and committer with an anonymized
+        Person object.
+        """
+        return attr.evolve(
+            self, author=self.author.anonymize(), committer=self.committer.anonymize()
         )
 
 
