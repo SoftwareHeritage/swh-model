@@ -18,6 +18,7 @@ from swh.model.hypothesis_strategies import (
     skipped_contents,
     snapshots,
     origin_visits,
+    persons,
 )
 from swh.model.model import TargetType
 
@@ -196,3 +197,10 @@ def test_snapshots_strategy_fixed_size(snapshot):
 @given(origin_visits())
 def test_origin_visit_aware_datetime(visit):
     assert visit.date.tzinfo is not None
+
+
+@given(persons())
+def test_person_do_not_look_like_anonimized(person):
+    assert not (
+        len(person.fullname) == 32 and person.name is None and person.email is None
+    )
