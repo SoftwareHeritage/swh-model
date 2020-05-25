@@ -93,10 +93,13 @@ def urls(draw):
     return "%s://%s" % (protocol, domain)
 
 
-def persons_d():
-    return builds(
-        dict, fullname=binary(), email=optional(binary()), name=optional(binary()),
-    )
+@composite
+def persons_d(draw):
+    fullname = draw(binary())
+    email = draw(optional(binary()))
+    name = draw(optional(binary()))
+    assume(not (len(fullname) == 32 and email is None and name is None))
+    return dict(fullname=fullname, name=name, email=email)
 
 
 def persons():
