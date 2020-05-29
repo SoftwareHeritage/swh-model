@@ -540,7 +540,10 @@ class Content(BaseContent):
     data = attr.ib(type=Optional[bytes], validator=type_validator(), default=None)
 
     ctime = attr.ib(
-        type=Optional[datetime.datetime], validator=type_validator(), default=None
+        type=Optional[datetime.datetime],
+        validator=type_validator(),
+        default=None,
+        eq=False,
     )
 
     @length.validator
@@ -600,7 +603,10 @@ class SkippedContent(BaseContent):
     origin = attr.ib(type=Optional[str], validator=type_validator(), default=None)
 
     ctime = attr.ib(
-        type=Optional[datetime.datetime], validator=type_validator(), default=None
+        type=Optional[datetime.datetime],
+        validator=type_validator(),
+        default=None,
+        eq=False,
     )
 
     @reason.validator
