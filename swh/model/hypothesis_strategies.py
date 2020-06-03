@@ -18,12 +18,12 @@ from hypothesis.strategies import (
     from_regex,
     integers,
     just,
-    lists,
     none,
     one_of,
     sampled_from,
     sets,
     text,
+    tuples,
 )
 
 from .from_disk import DentryPerms
@@ -240,7 +240,7 @@ def revisions_d():
         committer=persons_d(),
         date=timestamps_with_timezone_d(),
         committer_date=timestamps_with_timezone_d(),
-        parents=lists(sha1_git()),
+        parents=tuples(sha1_git()),
         directory=sha1_git(),
         type=sampled_from([x.value for x in RevisionType]),
         metadata=one_of(none(), revision_metadata()),
@@ -267,7 +267,7 @@ def directory_entries():
 
 
 def directories_d():
-    return builds(dict, entries=lists(directory_entries_d()))
+    return builds(dict, entries=tuples(directory_entries_d()))
 
 
 def directories():
