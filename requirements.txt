@@ -3,7 +3,7 @@
 # dependency lines, see https://pip.readthedocs.org/en/1.1/requirements.html
 vcversioner
 attrs
-attrs_strict
+attrs_strict >= 0.0.7
 hypothesis
 python-dateutil
 iso8601

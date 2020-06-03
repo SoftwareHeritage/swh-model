@@ -66,7 +66,7 @@ def assert_nested_dict(obj):
         for (key, value) in obj.items():
             assert isinstance(key, (str, bytes)), key
             assert_nested_dict(value)
-    elif isinstance(obj, list):
+    elif isinstance(obj, tuple):
         for value in obj:
             assert_nested_dict(value)
     elif isinstance(obj, (int, float, str, bytes, bool, type(None), datetime.datetime)):

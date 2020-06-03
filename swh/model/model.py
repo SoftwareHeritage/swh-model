@@ -8,7 +8,7 @@ import datetime
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 from hashlib import sha256
-from typing import Dict, List, Optional, TypeVar, Union
+from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import attr
 from attrs_strict import type_validator
@@ -46,8 +46,8 @@ def dictify(value):
         return value.value
     elif isinstance(value, dict):
         return {k: dictify(v) for k, v in value.items()}
-    elif isinstance(value, list):
-        return [dictify(v) for v in value]
+    elif isinstance(value, tuple):
+        return tuple(dictify(v) for v in value)
     else:
         return value
 
@@ -420,9 +420,7 @@ class Revision(BaseModel, HashableObject):
     metadata = attr.ib(
         type=Optional[Dict[str, object]], validator=type_validator(), default=None
     )
-    parents = attr.ib(
-        type=List[Sha1Git], validator=type_validator(), default=attr.Factory(list)
-    )
+    parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     @staticmethod
@@ -446,6 +444,7 @@ class Revision(BaseModel, HashableObject):
             date=date,
             committer_date=committer_date,
             type=RevisionType(d.pop("type")),
+            parents=tuple(d.pop("parents")),  # for BW compat
             **d,
         )
 
@@ -471,7 +470,7 @@ class DirectoryEntry(BaseModel):
 
 @attr.s(frozen=True)
 class Directory(BaseModel, HashableObject):
-    entries = attr.ib(type=List[DirectoryEntry], validator=type_validator())
+    entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     @staticmethod
@@ -482,7 +481,10 @@ class Directory(BaseModel, HashableObject):
     def from_dict(cls, d):
         d = d.copy()
         return cls(
-            entries=[DirectoryEntry.from_dict(entry) for entry in d.pop("entries")], **d
+            entries=tuple(
+                DirectoryEntry.from_dict(entry) for entry in d.pop("entries")
+            ),
+            **d,
         )
 
 
