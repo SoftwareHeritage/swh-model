@@ -1,3 +1,11 @@
+swh-model (0.2.2-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.2.2     - (tagged by David Douard
+    <david.douard@sdfa3.org> on 2020-06-03 11:28:38 +0200)
+  * Upstream changes:     - v0.2.2
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 03 Jun 2020 09:33:46 +0000
+
 swh-model (0.2.1-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.2.1     - (tagged by David Douard
