@@ -154,7 +154,7 @@ def origins():
 def origin_visits_d():
     return builds(
         dict,
-        visit=integers(0, 1000),
+        visit=integers(1, 1000),
         origin=urls(),
         date=aware_datetimes(),
         status=sampled_from(["ongoing", "full", "partial"]),
@@ -174,7 +174,7 @@ def metadata_dicts():
 def origin_visit_statuses_d():
     return builds(
         dict,
-        visit=integers(0, 1000),
+        visit=integers(1, 1000),
         origin=urls(),
         status=sampled_from(["ongoing", "full", "partial"]),
         date=aware_datetimes(),
