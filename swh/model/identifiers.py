@@ -295,6 +295,8 @@ def normalize_timestamp(time_representation):
         offset = time_representation["offset"]
         if "negative_utc" in time_representation:
             negative_utc = time_representation["negative_utc"]
+        if negative_utc is None:
+            negative_utc = False
     elif isinstance(time_representation, datetime.datetime):
         seconds = int(time_representation.timestamp())
         microseconds = time_representation.microsecond

@@ -5,6 +5,7 @@
 
 import binascii
 import datetime
+import pytest
 import unittest
 
 from swh.model import hashutil, identifiers
@@ -17,6 +18,7 @@ from swh.model.identifiers import (
     REVISION,
     SNAPSHOT,
     PersistentId,
+    normalize_timestamp,
 )
 
 
@@ -963,3 +965,108 @@ class OriginIdentifier(unittest.TestCase):
             identifiers.origin_identifier(self.origin),
             "b63a575fe3faab7692c9f38fb09d4bb45651bb0f",
         )
+
+
+TS_DICTS = [
+    (
+        {"timestamp": 12345, "offset": 0},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset": 0, "negative_utc": False},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset": 0, "negative_utc": False},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset": 0, "negative_utc": None},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": {"seconds": 12345}, "offset": 0, "negative_utc": None},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": None,
+        },
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 100},
+            "offset": 0,
+            "negative_utc": None,
+        },
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 100},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset": 0, "negative_utc": True},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": True,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset": 0, "negative_utc": None},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+]
+
+
+@pytest.mark.parametrize("dict_input,expected", TS_DICTS)
+def test_normalize_timestamp_dict(dict_input, expected):
+    assert normalize_timestamp(dict_input) == expected
+
+
+TS_DICTS_INVALID_TIMESTAMP = [
+    {"timestamp": 1.2, "offset": 0},
+    {"timestamp": "1", "offset": 0},
+    # these below should really also trigger a ValueError...
+    # {"timestamp": {"seconds": "1"}, "offset": 0},
+    # {"timestamp": {"seconds": 1.2}, "offset": 0},
+    # {"timestamp": {"seconds": 1.2}, "offset": 0},
+]
+
+
+@pytest.mark.parametrize("dict_input", TS_DICTS_INVALID_TIMESTAMP)
+def test_normalize_timestamp_dict_invalid_timestamp(dict_input):
+    with pytest.raises(ValueError, match="non-integer timestamp"):
+        normalize_timestamp(dict_input)
