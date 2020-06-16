@@ -234,7 +234,7 @@ revision_metadata = metadata_dicts
 def revisions_d():
     return builds(
         dict,
-        message=binary(),
+        message=optional(binary()),
         synthetic=booleans(),
         author=persons_d(),
         committer=persons_d(),
