@@ -407,7 +407,7 @@ class RevisionType(Enum):
 
 @attr.s(frozen=True)
 class Revision(BaseModel, HashableObject):
-    message = attr.ib(type=bytes, validator=type_validator())
+    message = attr.ib(type=Optional[bytes], validator=type_validator())
     author = attr.ib(type=Person, validator=type_validator())
     committer = attr.ib(type=Person, validator=type_validator())
     date = attr.ib(type=Optional[TimestampWithTimezone], validator=type_validator())
