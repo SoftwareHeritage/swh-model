@@ -191,7 +191,7 @@ def origin_visit_statuses():
 def releases_d(draw):
     target_type = sampled_from([x.value for x in ObjectType])
     name = binary()
-    message = binary()
+    message = optional(binary())
     synthetic = booleans()
     target = sha1_git()
     metadata = optional(revision_metadata())
