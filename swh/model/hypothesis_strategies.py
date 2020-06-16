@@ -179,7 +179,7 @@ def origin_visit_statuses_d():
         status=sampled_from(["ongoing", "full", "partial"]),
         date=aware_datetimes(),
         snapshot=optional(sha1_git()),
-        metadata=one_of(none(), metadata_dicts()),
+        metadata=optional(metadata_dicts()),
     )
 
 
@@ -194,7 +194,7 @@ def releases_d(draw):
     message = binary()
     synthetic = booleans()
     target = sha1_git()
-    metadata = one_of(none(), revision_metadata())
+    metadata = optional(revision_metadata())
 
     return draw(
         one_of(
@@ -243,7 +243,7 @@ def revisions_d():
         parents=tuples(sha1_git()),
         directory=sha1_git(),
         type=sampled_from([x.value for x in RevisionType]),
-        metadata=one_of(none(), revision_metadata()),
+        metadata=optional(revision_metadata()),
     )
     # TODO: metadata['extra_headers'] can have binary keys and values
 
@@ -350,7 +350,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
     branches = draw(
         dictionaries(
             keys=branch_names(),
-            values=one_of(none(), branch_targets_d(only_objects=only_objects)),
+            values=optional(branch_targets_d(only_objects=only_objects)),
             min_size=min_size,
             max_size=max_size,
         )
