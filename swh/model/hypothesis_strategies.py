@@ -160,6 +160,7 @@ def origin_visits_d():
         status=sampled_from(["ongoing", "full", "partial"]),
         type=pgsql_text(),
         snapshot=optional(sha1_git()),
+        metadata=none(),
     )
 
 
