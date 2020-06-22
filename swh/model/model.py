@@ -252,14 +252,6 @@ class OriginVisit(BaseModel):
             del ov["visit"]
         return ov
 
-    @classmethod
-    def from_dict(cls, d):
-        """Parses the date from a string, and accepts missing visit ids."""
-        if isinstance(d["date"], str):
-            d = d.copy()
-            d["date"] = dateutil.parser.parse(d["date"])
-        return super().from_dict(d)
-
 
 @attr.s(frozen=True)
 class OriginVisitStatus(BaseModel):
