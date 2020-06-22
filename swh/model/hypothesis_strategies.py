@@ -158,9 +158,6 @@ def origin_visits_d():
         origin=urls(),
         date=aware_datetimes(),
         type=pgsql_text(),
-        status=none(),
-        snapshot=none(),
-        metadata=none(),
     )
 
 
