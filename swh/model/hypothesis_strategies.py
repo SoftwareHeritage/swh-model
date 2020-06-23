@@ -157,9 +157,9 @@ def origin_visits_d():
         visit=integers(1, 1000),
         origin=urls(),
         date=aware_datetimes(),
-        status=sampled_from(["ongoing", "full", "partial"]),
         type=pgsql_text(),
-        snapshot=optional(sha1_git()),
+        status=none(),
+        snapshot=none(),
         metadata=none(),
     )
 
