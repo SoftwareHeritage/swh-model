@@ -233,16 +233,15 @@ class OriginVisit(BaseModel):
 
     origin = attr.ib(type=str, validator=type_validator())
     date = attr.ib(type=datetime.datetime, validator=type_validator())
-    status = attr.ib(
-        type=str, validator=attr.validators.in_(["ongoing", "full", "partial"])
-    )
     type = attr.ib(type=str, validator=type_validator())
-    snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
+    """Should not be set before calling 'origin_visit_add()'."""
+    visit = attr.ib(type=Optional[int], validator=type_validator(), default=None)
+
+    status = attr.ib(type=Optional[str], validator=type_validator(), default=None)
+    snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator(), default=None)
     metadata = attr.ib(
         type=Optional[Dict[str, object]], validator=type_validator(), default=None
     )
-    visit = attr.ib(type=Optional[int], validator=type_validator(), default=None)
-    """Should not be set before calling 'origin_visit_add()'."""
 
     def to_dict(self):
         """Serializes the date as a string and omits the visit id if it is
@@ -251,14 +250,6 @@ class OriginVisit(BaseModel):
         if ov["visit"] is None:
             del ov["visit"]
         return ov
-
-    @classmethod
-    def from_dict(cls, d):
-        """Parses the date from a string, and accepts missing visit ids."""
-        if isinstance(d["date"], str):
-            d = d.copy()
-            d["date"] = dateutil.parser.parse(d["date"])
-        return super().from_dict(d)
 
 
 @attr.s(frozen=True)
@@ -272,7 +263,8 @@ class OriginVisitStatus(BaseModel):
 
     date = attr.ib(type=datetime.datetime, validator=type_validator())
     status = attr.ib(
-        type=str, validator=attr.validators.in_(["ongoing", "full", "partial"])
+        type=str,
+        validator=attr.validators.in_(["created", "ongoing", "full", "partial"]),
     )
     snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
     metadata = attr.ib(
