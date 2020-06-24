@@ -177,7 +177,7 @@ def origin_visit_statuses_d():
         dict,
         visit=integers(1, 1000),
         origin=urls(),
-        status=sampled_from(["ongoing", "full", "partial"]),
+        status=sampled_from(["created", "ongoing", "full", "partial"]),
         date=aware_datetimes(),
         snapshot=optional(sha1_git()),
         metadata=optional(metadata_dicts()),

@@ -263,7 +263,8 @@ class OriginVisitStatus(BaseModel):
 
     date = attr.ib(type=datetime.datetime, validator=type_validator())
     status = attr.ib(
-        type=str, validator=attr.validators.in_(["ongoing", "full", "partial"])
+        type=str,
+        validator=attr.validators.in_(["created", "ongoing", "full", "partial"]),
     )
     snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
     metadata = attr.ib(
