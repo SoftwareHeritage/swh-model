@@ -1,3 +1,9 @@
+swh-model (0.3.5-2~swh1~bpo10+1) buster-swh; urgency=medium
+
+  * Rebuild for buster-swh
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 30 Jun 2020 10:48:27 +0000
+
 swh-model (0.3.5-2~swh1) unstable-swh; urgency=medium
 
   * Update dependency + Bump
