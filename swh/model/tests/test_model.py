@@ -13,6 +13,7 @@ from hypothesis.strategies import binary
 import pytest
 
 from swh.model.model import (
+    BaseModel,
     Content,
     SkippedContent,
     Directory,
@@ -468,3 +469,24 @@ def test_snapshot_model_id_computation():
     snp_id = hash_to_bytes(snapshot_identifier(snp_dict))
     snp_model = Snapshot.from_dict(snp_dict)
     assert snp_model.id == snp_id
+
+
+@given(strategies.objects(split_content=True))
+def test_object_type(objtype_and_obj):
+    obj_type, obj = objtype_and_obj
+    assert obj_type == obj.object_type
+
+
+def test_object_type_is_final():
+    object_types = set()
+
+    def check_final(cls):
+        if hasattr(cls, "object_type"):
+            assert cls.object_type not in object_types
+            object_types.add(cls.object_type)
+        if cls.__subclasses__():
+            assert not hasattr(cls, "object_type")
+        for subcls in cls.__subclasses__():
+            check_final(subcls)
+
+    check_final(BaseModel)
