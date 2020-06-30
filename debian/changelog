@@ -1,8 +1,18 @@
-swh-model (0.3.4-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.3.5-2~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * Update dependency + Bump
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 24 Jun 2020 08:48:39 +0000
+ -- Antoine R. Dumont (@ardumont) <ardumont@softwareheritage.org>  Tue, 30 Jun 2020 12:40:52 +0200
+
+swh-model (0.3.5-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.3.5     - (tagged by Antoine R. Dumont
+    (@ardumont) <ardumont@softwareheritage.org> on 2020-06-30 11:21:07
+    +0200)
+  * Upstream changes:     - v0.3.5     - Tag model entities with their
+    "object_type"
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 30 Jun 2020 09:31:43 +0000
 
 swh-model (0.3.4-1~swh1) unstable-swh; urgency=medium
 

@@ -3,12 +3,15 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import datetime
 import enum
 import os
 import stat
 
 import attr
+from attrs_strict import type_validator
 from typing import List, Optional, Iterable, Any
+from typing_extensions import Final
 
 from .hashutil import MultiHash
 from .merkle import MerkleLeaf, MerkleNode
@@ -22,10 +25,36 @@ from . import model
 
 
 @attr.s
-class DiskBackedContent(model.Content):
-    """Subclass of Content, which allows lazy-loading data from the disk."""
+class DiskBackedContent(model.BaseContent):
+    """Content-like class, which allows lazy-loading data from the disk."""
+
+    object_type: Final = "content_file"
+
+    sha1 = attr.ib(type=bytes, validator=type_validator())
+    sha1_git = attr.ib(type=model.Sha1Git, validator=type_validator())
+    sha256 = attr.ib(type=bytes, validator=type_validator())
+    blake2s256 = attr.ib(type=bytes, validator=type_validator())
+
+    length = attr.ib(type=int, validator=type_validator())
+
+    status = attr.ib(
+        type=str,
+        validator=attr.validators.in_(["visible", "hidden"]),
+        default="visible",
+    )
+
+    ctime = attr.ib(
+        type=Optional[datetime.datetime],
+        validator=type_validator(),
+        default=None,
+        eq=False,
+    )
 
     path = attr.ib(type=Optional[bytes], default=None)
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
 
     def __attrs_post_init__(self):
         if self.path is None:
