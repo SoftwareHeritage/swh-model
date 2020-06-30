@@ -1,3 +1,9 @@
+swh-model (0.3.5-2~swh1) unstable-swh; urgency=medium
+
+  * Update dependency + Bump
+
+ -- Antoine R. Dumont (@ardumont) <ardumont@softwareheritage.org>  Tue, 30 Jun 2020 12:40:52 +0200
+
 swh-model (0.3.5-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.3.5     - (tagged by Antoine R. Dumont
