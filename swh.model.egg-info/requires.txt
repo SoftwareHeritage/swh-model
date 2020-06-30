@@ -1,9 +1,10 @@
-vcversioner
 attrs
 attrs_strict>=0.0.7
 hypothesis
-python-dateutil
 iso8601
+python-dateutil
+typing_extensions
+vcversioner
 
 [:python_version < "3.6"]
 pyblake2
