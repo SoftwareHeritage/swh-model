@@ -237,7 +237,7 @@ class Origin(BaseModel):
 
 @attr.s(frozen=True)
 class OriginVisit(BaseModel):
-    """Represents a visit of an origin at a given point in time, by a
+    """Represents an origin visit with a given type at a given point in time, by a
     SWH loader."""
 
     object_type: Final = "origin_visit"
@@ -247,12 +247,6 @@ class OriginVisit(BaseModel):
     type = attr.ib(type=str, validator=type_validator())
     """Should not be set before calling 'origin_visit_add()'."""
     visit = attr.ib(type=Optional[int], validator=type_validator(), default=None)
-
-    status = attr.ib(type=Optional[str], validator=type_validator(), default=None)
-    snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator(), default=None)
-    metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
-    )
 
     def to_dict(self):
         """Serializes the date as a string and omits the visit id if it is
