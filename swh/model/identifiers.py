@@ -426,7 +426,7 @@ def revision_identifier(revision):
     - author_date
     - committer
     - committer_date
-    - metadata -> extra_headers
+    - extra_headers or metadata -> extra_headers
     - message
 
     A revision's identifier is the 'git'-checksum of a commit manifest
@@ -486,22 +486,13 @@ def revision_identifier(revision):
     )
 
     # Handle extra headers
-    metadata = revision.get("metadata")
-    if not metadata:
-        metadata = {}
+    metadata = revision.get("metadata") or {}
+    extra_headers = revision.get("extra_headers", ())
+    if not extra_headers and "extra_headers" in metadata:
+        extra_headers = metadata["extra_headers"]
 
-    for key, value in metadata.get("extra_headers", []):
-
-        # Integer values: decimal representation
-        if isinstance(value, int):
-            value = str(value).encode("utf-8")
-
-        # Unicode string values: utf-8 encoding
-        if isinstance(value, str):
-            value = value.encode("utf-8")
-
-        # encode the key to utf-8
-        components.extend([key.encode("utf-8"), b" ", escape_newlines(value), b"\n"])
+    for key, value in extra_headers:
+        components.extend([key, b" ", escape_newlines(value), b"\n"])
 
     if revision["message"] is not None:
         components.extend([b"\n", revision["message"]])

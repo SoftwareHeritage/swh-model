@@ -370,12 +370,10 @@ dg1KdHOa34shrKDaOVzW
                 2015, 7, 12, 15, 10, 30, tzinfo=linus_tz
             ),
             "message": b"Linux 4.2-rc2\n",
-            "metadata": {
-                "extra_headers": [
-                    ["svn-repo-uuid", "046f1af7-66c2-d61b-5410-ce57b7db7bff"],
-                    ["svn-revision", 10],
-                ]
-            },
+            "extra_headers": (
+                (b"svn-repo-uuid", b"046f1af7-66c2-d61b-5410-ce57b7db7bff"),
+                (b"svn-revision", b"10"),
+            ),
         }
 
         self.revision_with_gpgsig = {
@@ -393,7 +391,7 @@ dg1KdHOa34shrKDaOVzW
             "date": {"timestamp": 1428538899, "offset": 480,},
             "committer": {"name": b"Jiang Xin", "email": b"worldhello.net@gmail.com",},
             "committer_date": {"timestamp": 1428538899, "offset": 480,},
-            "metadata": {"extra_headers": [["gpgsig", gpgsig],],},
+            "extra_headers": ((b"gpgsig", gpgsig),),
             "message": b"""Merge branch 'master' of git://github.com/alexhenrie/git-po
 
 * 'master' of git://github.com/alexhenrie/git-po:
@@ -450,12 +448,10 @@ dg1KdHOa34shrKDaOVzW
                 2015, 7, 12, 15, 10, 30, tzinfo=linus_tz
             ),
             "message": b"Linux 4.2-rc2\n",
-            "metadata": {
-                "extra_headers": [
-                    ["svn-repo-uuid", "046f1af7-66c2-d61b-5410-ce57b7db7bff"],
-                    ["svn-revision", 10],
-                ]
-            },
+            "extra_headers": (
+                (b"svn-repo-uuid", b"046f1af7-66c2-d61b-5410-ce57b7db7bff"),
+                (b"svn-revision", b"10"),
+            ),
         }
 
     def test_revision_identifier(self):
