@@ -121,7 +121,7 @@ class Content(MerkleLeaf):
     """
 
     __slots__ = []  # type: List[str]
-    type = "content"
+    object_type: Final = "content"
 
     @classmethod
     def from_bytes(cls, *, mode, data):
@@ -300,7 +300,7 @@ class Directory(MerkleNode):
     """
 
     __slots__ = ["__entries"]
-    type = "directory"
+    object_type: Final = "directory"
 
     @classmethod
     def from_disk(
@@ -352,14 +352,14 @@ class Directory(MerkleNode):
 
     @staticmethod
     def child_to_directory_entry(name, child):
-        if isinstance(child, Directory):
+        if child.object_type == "directory":
             return {
                 "type": "dir",
                 "perms": DentryPerms.directory,
                 "target": child.hash,
                 "name": name,
             }
-        elif isinstance(child, Content):
+        elif child.object_type == "content":
             return {
                 "type": "file",
                 "perms": child.data["perms"],
@@ -367,7 +367,7 @@ class Directory(MerkleNode):
                 "name": name,
             }
         else:
-            raise ValueError("unknown child")
+            raise ValueError(f"unknown child {child}")
 
     def get_data(self, **kwargs):
         return {
