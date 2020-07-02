@@ -1,8 +1,13 @@
-swh-model (0.3.6-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.3.7-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.3.7     - (tagged by Antoine R. Dumont
+    (@ardumont) <ardumont@softwareheritage.org> on 2020-07-02 15:15:46
+    +0200)
+  * Upstream changes:     - v0.3.7     - Refactor common loader behavior
+    within from_disk.iter_directory     - Unify object_type some more
+    within the merkle and from_disk modules
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 01 Jul 2020 13:50:10 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 02 Jul 2020 13:17:32 +0000
 
 swh-model (0.3.6-1~swh1) unstable-swh; urgency=medium
 
