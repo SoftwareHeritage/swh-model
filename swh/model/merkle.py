@@ -1,4 +1,4 @@
-# Copyright (C) 2017 The Software Heritage developers
+# Copyright (C) 2017-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -8,7 +8,7 @@
 import abc
 import collections
 
-from typing import Iterator, List, Optional, Set
+from typing import Iterator, List, Set
 
 
 def deep_update(left, right):
@@ -111,7 +111,6 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
 
     __slots__ = ["parents", "data", "__hash", "collected"]
 
-    type = None  # type: Optional[str]  # TODO: make this an enum
     """Type of the current node (used as a classifier for :func:`collect`)"""
 
     def __init__(self, data=None):
@@ -234,7 +233,7 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         """
         if not self.collected:
             self.collected = True
-            return {self.type: {self.hash: self.get_data(**kwargs)}}
+            return {self.object_type: {self.hash: self.get_data(**kwargs)}}
         else:
             return {}
 

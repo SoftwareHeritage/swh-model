@@ -1,4 +1,4 @@
-# Copyright (C) 2017 The Software Heritage developers
+# Copyright (C) 2017-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -9,7 +9,7 @@ from swh.model import merkle
 
 
 class MerkleTestNode(merkle.MerkleNode):
-    type = "tested_merkle_node_type"
+    object_type = "tested_merkle_node_type"
 
     def __init__(self, data):
         super().__init__(data)
@@ -23,7 +23,7 @@ class MerkleTestNode(merkle.MerkleNode):
 
 
 class MerkleTestLeaf(merkle.MerkleLeaf):
-    type = "tested_merkle_leaf_type"
+    object_type = "tested_merkle_leaf_type"
 
     def __init__(self, data):
         super().__init__(data)
@@ -62,7 +62,11 @@ class TestMerkleLeaf(unittest.TestCase):
         collected = self.instance.collect()
         self.assertEqual(
             collected,
-            {self.instance.type: {self.instance.hash: self.instance.get_data(),},},
+            {
+                self.instance.object_type: {
+                    self.instance.hash: self.instance.get_data(),
+                },
+            },
         )
         collected2 = self.instance.collect()
         self.assertEqual(collected2, {})
@@ -162,7 +166,7 @@ class TestMerkleNode(unittest.TestCase):
 
     def test_collect(self):
         collected = self.root.collect()
-        self.assertEqual(len(collected[self.root.type]), len(self.nodes))
+        self.assertEqual(len(collected[self.root.object_type]), len(self.nodes))
         for node in self.nodes.values():
             self.assertTrue(node.collected)
         collected2 = self.root.collect()
@@ -229,7 +233,7 @@ class TestMerkleNode(unittest.TestCase):
         # Ensure we collected root, root/b, and both new children
         collected_after_update = self.root.collect()
         self.assertCountEqual(
-            collected_after_update[MerkleTestNode.type],
+            collected_after_update[MerkleTestNode.object_type],
             [
                 self.nodes[b"root"].hash,
                 self.nodes[b"root/b"].hash,
