@@ -10,7 +10,7 @@ import stat
 
 import attr
 from attrs_strict import type_validator
-from typing import List, Optional, Iterable, Any
+from typing import Any, Iterable, List, Optional, Tuple
 from typing_extensions import Final
 
 from .hashutil import MultiHash
@@ -277,6 +277,40 @@ def ignore_named_directories(names, *, case_sensitive=True):
             return dirname.lower() not in names
 
     return named_filter
+
+
+def iter_directory(
+    directory,
+) -> Tuple[List[model.Content], List[model.SkippedContent], List[model.Directory]]:
+    """Return the directory listing from a disk-memory directory instance.
+
+    Raises:
+        TypeError in case an unexpected object type is listed.
+
+    Returns:
+        Tuple of respectively iterable of content, skipped content and directories.
+
+    """
+    contents: List[model.Content] = []
+    skipped_contents: List[model.SkippedContent] = []
+    directories: List[model.Directory] = []
+
+    for obj in directory.iter_tree():
+        obj = obj.to_model()
+        obj_type = obj.object_type
+        if obj_type in (model.Content.object_type, DiskBackedContent.object_type):
+            # FIXME: read the data from disk later (when the
+            # storage buffer is flushed).
+            obj = obj.with_data()
+            contents.append(obj)
+        elif obj_type == model.SkippedContent.object_type:
+            skipped_contents.append(obj)
+        elif obj_type == model.Directory.object_type:
+            directories.append(obj)
+        else:
+            raise TypeError(f"Unexpected object type from disk: {obj}")
+
+    return contents, skipped_contents, directories
 
 
 class Directory(MerkleNode):

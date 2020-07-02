@@ -1,4 +1,4 @@
-# Copyright (C) 2017 The Software Heritage developers
+# Copyright (C) 2017-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -9,6 +9,7 @@ import tarfile
 import tempfile
 import unittest
 
+from collections import defaultdict
 from typing import ClassVar, Optional
 
 from swh.model import from_disk
@@ -856,6 +857,31 @@ class TarballTest(DataMixin, unittest.TestCase):
                 self.assertDirectoryEqual(obj, expected)
             else:
                 raise self.failureException("Unknown type for %s" % obj)
+
+
+class TarballIterDirectory(DataMixin, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.make_from_tarball(self.tmpdir_name)
+
+    def test_iter_directory(self):
+        """Iter from_disk.directory should yield the full arborescence tree
+
+        """
+        directory = Directory.from_disk(
+            path=os.path.join(self.tmpdir_name, b"sample-folder")
+        )
+
+        contents, skipped_contents, directories = from_disk.iter_directory(directory)
+
+        expected_nb = defaultdict(int)
+        for name in self.tarball_contents.keys():
+            obj = directory[name]
+            expected_nb[obj.object_type] += 1
+
+        assert len(contents) == expected_nb["content"] and len(contents) > 0
+        assert len(skipped_contents) == 0
+        assert len(directories) == expected_nb["directory"] and len(directories) > 0
 
 
 class DirectoryManipulation(DataMixin, unittest.TestCase):
