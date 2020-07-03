@@ -1,5 +1,6 @@
 attrs
 attrs_strict>=0.0.7
+deprecated
 hypothesis
 iso8601
 python-dateutil

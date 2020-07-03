@@ -10,6 +10,8 @@ import hashlib
 from functools import lru_cache
 from typing import Any, Dict, NamedTuple
 
+from deprecated import deprecated
+
 from .exceptions import ValidationError
 from .fields.hashes import validate_sha1
 from .hashutil import hash_git_data, hash_to_hex, MultiHash
@@ -22,11 +24,18 @@ RELEASE = "release"
 DIRECTORY = "directory"
 CONTENT = "content"
 
-PID_NAMESPACE = "swh"
-PID_VERSION = 1
-PID_TYPES = ["ori", "snp", "rel", "rev", "dir", "cnt"]
-PID_SEP = ":"
-PID_CTXT_SEP = ";"
+SWHID_NAMESPACE = "swh"
+SWHID_VERSION = 1
+SWHID_TYPES = ["ori", "snp", "rel", "rev", "dir", "cnt"]
+SWHID_SEP = ":"
+SWHID_CTXT_SEP = ";"
+
+# deprecated variables
+PID_NAMESPACE = SWHID_NAMESPACE
+PID_VERSION = SWHID_VERSION
+PID_TYPES = SWHID_TYPES
+PID_SEP = SWHID_SEP
+PID_CTXT_SEP = SWHID_CTXT_SEP
 
 
 @lru_cache()
@@ -649,8 +658,8 @@ _object_type_map = {
 }
 
 
-_PersistentId = NamedTuple(
-    "PersistentId",
+_SWHID = NamedTuple(
+    "SWHID",
     [
         ("namespace", str),
         ("scheme_version", int),
@@ -661,25 +670,23 @@ _PersistentId = NamedTuple(
 )
 
 
-class PersistentId(_PersistentId):
+class SWHID(_SWHID):
     """
-    Named tuple holding the relevant info associated to a Software Heritage
-    persistent identifier.
+    Named tuple holding the relevant info associated to a SoftWare Heritage
+    persistent IDentifier (SWHID)
 
     Args:
-        namespace (str): the namespace of the identifier, defaults to 'swh'
+        namespace (str): the namespace of the identifier, defaults to ``swh``
         scheme_version (int): the scheme version of the identifier,
             defaults to 1
         object_type (str): the type of object the identifier points to,
-            either 'content', 'directory', 'release', 'revision' or 'snapshot'
-        object_id (dict/bytes/str): object's dict representation or
-            object identifier
+            either ``content``, ``directory``, ``release``, ``revision`` or ``snapshot``
+        object_id (str): object's identifier
         metadata (dict): optional dict filled with metadata related to
             pointed object
 
     Raises:
-        swh.model.exceptions.ValidationError: In case of invalid object type
-            or id
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
 
     Once created, it contains the following attributes:
 
@@ -690,14 +697,14 @@ class PersistentId(_PersistentId):
         object_id (str): hexadecimal representation of the object hash
         metadata (dict): metadata related to the pointed object
 
-    To get the raw persistent identifier string from an instance of
-    this named tuple, use the :func:`str` function::
+    To get the raw SWHID string from an instance of this named tuple,
+    use the :func:`str` function::
 
-        pid = PersistentId(
+        swhid = SWHID(
             object_type='content',
             object_id='8ff44f081d43176474b267de5451f2c2e88089d0'
         )
-        pid_str = str(pid)
+        swhid_str = str(swhid)
         # 'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
     """
 
@@ -705,79 +712,110 @@ class PersistentId(_PersistentId):
 
     def __new__(
         cls,
-        namespace=PID_NAMESPACE,
-        scheme_version=PID_VERSION,
-        object_type="",
-        object_id="",
-        metadata={},
+        namespace: str = SWHID_NAMESPACE,
+        scheme_version: int = SWHID_VERSION,
+        object_type: str = "",
+        object_id: str = "",
+        metadata: Dict[str, Any] = {},
     ):
         o = _object_type_map.get(object_type)
         if not o:
             raise ValidationError(
                 "Wrong input: Supported types are %s" % (list(_object_type_map.keys()))
             )
-        if namespace != PID_NAMESPACE:
+        if namespace != SWHID_NAMESPACE:
             raise ValidationError(
-                "Wrong format: only supported namespace is '%s'" % PID_NAMESPACE
+                "Wrong format: only supported namespace is '%s'" % SWHID_NAMESPACE
             )
-        if scheme_version != PID_VERSION:
+        if scheme_version != SWHID_VERSION:
             raise ValidationError(
-                "Wrong format: only supported version is %d" % PID_VERSION
+                "Wrong format: only supported version is %d" % SWHID_VERSION
             )
+
         # internal swh representation resolution
         if isinstance(object_id, dict):
             object_id = object_id[o["key_id"]]
+
         validate_sha1(object_id)  # can raise if invalid hash
         object_id = hash_to_hex(object_id)
-        return super(cls, PersistentId).__new__(
+        return super().__new__(
             cls, namespace, scheme_version, object_type, object_id, metadata
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         o = _object_type_map.get(self.object_type)
-        pid = PID_SEP.join(
+        assert o
+        swhid = SWHID_SEP.join(
             [self.namespace, str(self.scheme_version), o["short_name"], self.object_id]
         )
         if self.metadata:
             for k, v in self.metadata.items():
-                pid += "%s%s=%s" % (PID_CTXT_SEP, k, v)
-        return pid
+                swhid += "%s%s=%s" % (SWHID_CTXT_SEP, k, v)
+        return swhid
 
 
-def persistent_identifier(object_type, object_id, scheme_version=1, metadata={}):
-    """Compute :ref:`SWHID <persistent-identifiers>` persistent identifiers.
+@deprecated("Use swh.model.identifiers.SWHID instead")
+class PersistentId(SWHID):
+    """
+    Named tuple holding the relevant info associated to a SoftWare Heritage
+    persistent IDentifier.
 
-    Args:
-        object_type (str): object's type, either 'content', 'directory',
-            'release', 'revision' or 'snapshot'
-        object_id (dict/bytes/str): object's dict representation or object
-            identifier
-        scheme_version (int): persistent identifier scheme version,
-            defaults to 1
-        metadata (dict): metadata related to the pointed object
-
-    Raises:
-        swh.model.exceptions.ValidationError: In case of invalid object type
-        or id
-
-    Returns:
-        str: the persistent identifier
+    .. deprecated:: 0.3.8
+        Use :class:`swh.model.identifiers.SWHID` instead
 
     """
-    pid = PersistentId(
+
+    def __new__(cls, *args, **kwargs):
+        return super(cls, PersistentId).__new__(cls, *args, **kwargs)
+
+
+def swhid(
+    object_type: str,
+    object_id: str,
+    scheme_version: int = 1,
+    metadata: Dict[str, Any] = {},
+) -> str:
+    """Compute :ref:`persistent-identifiers`
+
+    Args:
+        object_type: object's type, either ``content``, ``directory``,
+            ``release``, ``revision`` or ``snapshot``
+        object_id: object's identifier
+        scheme_version: SWHID scheme version, defaults to 1
+        metadata: metadata related to the pointed object
+
+    Raises:
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
+
+    Returns:
+        the SWHID of the object
+
+    """
+    swhid = SWHID(
         scheme_version=scheme_version,
         object_type=object_type,
         object_id=object_id,
         metadata=metadata,
     )
-    return str(pid)
+    return str(swhid)
 
 
-def parse_persistent_identifier(persistent_id):
-    """Parse :ref:`SWHID <persistent-identifiers>` persistent identifiers.
+@deprecated("Use swh.model.identifiers.swhid instead")
+def persistent_identifier(*args, **kwargs) -> str:
+    """Compute :ref:`persistent-identifiers`
+
+    .. deprecated:: 0.3.8
+        Use :func:`swh.model.identifiers.swhid` instead
+
+    """
+    return swhid(*args, **kwargs)
+
+
+def parse_swhid(swhid: str) -> SWHID:
+    """Parse :ref:`persistent-identifiers`.
 
     Args:
-        persistent_id (str): A persistent identifier
+        swhid (str): A persistent identifier
 
     Raises:
         swh.model.exceptions.ValidationError: in case of:
@@ -790,35 +828,43 @@ def parse_persistent_identifier(persistent_id):
             * invalid hash identifier supplied
 
     Returns:
-        PersistentId: a named tuple holding the parsing result
+        a named tuple holding the parsing result
 
     """
-    # <pid>;<contextual-information>
-    persistent_id_parts = persistent_id.split(PID_CTXT_SEP)
-    pid_data = persistent_id_parts.pop(0).split(":")
+    # <swhid>;<contextual-information>
+    swhid_parts = swhid.split(SWHID_CTXT_SEP)
+    swhid_data = swhid_parts.pop(0).split(":")
 
-    if len(pid_data) != 4:
+    if len(swhid_data) != 4:
         raise ValidationError("Wrong format: There should be 4 mandatory values")
 
     # Checking for parsing errors
-    _ns, _version, _type, _id = pid_data
-    pid_data[1] = int(pid_data[1])
+    _ns, _version, _type, _id = swhid_data
 
     for otype, data in _object_type_map.items():
         if _type == data["short_name"]:
-            pid_data[2] = otype
+            _type = otype
             break
 
     if not _id:
         raise ValidationError("Wrong format: Identifier should be present")
 
-    persistent_id_metadata = {}
-    for part in persistent_id_parts:
+    _metadata = {}
+    for part in swhid_parts:
         try:
             key, val = part.split("=")
-            persistent_id_metadata[key] = val
+            _metadata[key] = val
         except Exception:
             msg = "Contextual data is badly formatted, form key=val expected"
             raise ValidationError(msg)
-    pid_data.append(persistent_id_metadata)
-    return PersistentId(*pid_data)
+    return SWHID(_ns, int(_version), _type, _id, _metadata)
+
+
+@deprecated("Use swh.model.identifiers.parse_swhid instead")
+def parse_persistent_identifier(persistent_id: str) -> PersistentId:
+    """Parse :ref:`persistent-identifiers`.
+
+    .. deprecated:: 0.3.8
+        Use :func:`swh.model.identifiers.parse_swhid` instead
+    """
+    return PersistentId(**parse_swhid(persistent_id)._asdict())

@@ -17,7 +17,7 @@ from swh.model.identifiers import (
     RELEASE,
     REVISION,
     SNAPSHOT,
-    PersistentId,
+    SWHID,
     normalize_timestamp,
 )
 
@@ -739,7 +739,7 @@ class SnapshotIdentifier(unittest.TestCase):
             identifiers.identifier_to_str(self.all_types["id"]),
         )
 
-    def test_persistent_identifier(self):
+    def test_swhid(self):
         _snapshot_id = _x("c7c108084bc0bf3d81436bf980b46e98bd338453")
         _release_id = "22ece559cc7cc2364edc5e5593d63ae8bd229f9f"
         _revision_id = "309cf2674ee7a0749978cf8265ab91a60aea0f7d"
@@ -751,7 +751,7 @@ class SnapshotIdentifier(unittest.TestCase):
         _directory = {"id": _directory_id}
         _content = {"sha1_git": _content_id}
 
-        for full_type, _hash, expected_persistent_id, version, _meta in [
+        for full_type, _hash, expected_swhid, version, _meta in [
             (
                 SNAPSHOT,
                 _snapshot_id,
@@ -831,17 +831,15 @@ class SnapshotIdentifier(unittest.TestCase):
             ),
         ]:
             if version:
-                actual_value = identifiers.persistent_identifier(
+                actual_value = identifiers.swhid(
                     full_type, _hash, version, metadata=_meta
                 )
             else:
-                actual_value = identifiers.persistent_identifier(
-                    full_type, _hash, metadata=_meta
-                )
+                actual_value = identifiers.swhid(full_type, _hash, metadata=_meta)
 
-            self.assertEqual(actual_value, expected_persistent_id)
+            self.assertEqual(actual_value, expected_swhid)
 
-    def test_persistent_identifier_wrong_input(self):
+    def test_swhid_wrong_input(self):
         _snapshot_id = "notahash4bc0bf3d81436bf980b46e98bd338453"
         _snapshot = {"id": _snapshot_id}
 
@@ -851,10 +849,10 @@ class SnapshotIdentifier(unittest.TestCase):
             ("foo", ""),
         ]:
             with self.assertRaises(ValidationError):
-                identifiers.persistent_identifier(_type, _hash)
+                identifiers.swhid(_type, _hash)
 
-    def test_parse_persistent_identifier(self):
-        for pid, _type, _version, _hash in [
+    def test_parse_swhid(self):
+        for swhid, _type, _version, _hash in [
             (
                 "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
                 CONTENT,
@@ -886,17 +884,17 @@ class SnapshotIdentifier(unittest.TestCase):
                 "c7c108084bc0bf3d81436bf980b46e98bd338453",
             ),
         ]:
-            expected_result = PersistentId(
+            expected_result = SWHID(
                 namespace="swh",
                 scheme_version=_version,
                 object_type=_type,
                 object_id=_hash,
                 metadata={},
             )
-            actual_result = identifiers.parse_persistent_identifier(pid)
+            actual_result = identifiers.parse_swhid(swhid)
             self.assertEqual(actual_result, expected_result)
 
-        for pid, _type, _version, _hash, _metadata in [
+        for swhid, _type, _version, _hash, _metadata in [
             (
                 "swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython",  # noqa
                 CONTENT,
@@ -912,18 +910,18 @@ class SnapshotIdentifier(unittest.TestCase):
                 {"origin": "deb://Debian/packages/linuxdoc-tools"},
             ),
         ]:
-            expected_result = PersistentId(
+            expected_result = SWHID(
                 namespace="swh",
                 scheme_version=_version,
                 object_type=_type,
                 object_id=_hash,
                 metadata=_metadata,
             )
-            actual_result = identifiers.parse_persistent_identifier(pid)
+            actual_result = identifiers.parse_swhid(swhid)
             self.assertEqual(actual_result, expected_result)
 
-    def test_parse_persistent_identifier_parsing_error(self):
-        for pid in [
+    def test_parse_swhid_parsing_error(self):
+        for swhid in [
             ("swh:1:cnt"),
             ("swh:1:"),
             ("swh:"),
@@ -936,7 +934,7 @@ class SnapshotIdentifier(unittest.TestCase):
             ("swh:1:snp:foo"),
         ]:
             with self.assertRaises(ValidationError):
-                identifiers.parse_persistent_identifier(pid)
+                identifiers.parse_swhid(swhid)
 
     def test_persistentid_class_validation_error(self):
         for _ns, _version, _type, _id in [
@@ -946,7 +944,7 @@ class SnapshotIdentifier(unittest.TestCase):
             ("swh", 1, SNAPSHOT, "gh6959356d30f1a4e9b7f6bca59b9a336464c03d"),
         ]:
             with self.assertRaises(ValidationError):
-                PersistentId(
+                SWHID(
                     namespace=_ns,
                     scheme_version=_version,
                     object_type=_type,
