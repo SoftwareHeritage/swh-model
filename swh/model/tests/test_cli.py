@@ -22,9 +22,9 @@ class TestIdentify(DataMixin, unittest.TestCase):
         super().setUp()
         self.runner = CliRunner()
 
-    def assertPidOK(self, result, pid):
+    def assertSWHID(self, result, swhid):
         self.assertEqual(result.exit_code, 0)
-        self.assertEqual(result.output.split()[0], pid)
+        self.assertEqual(result.output.split()[0], swhid)
 
     def test_no_args(self):
         result = self.runner.invoke(cli.identify)
@@ -36,21 +36,21 @@ class TestIdentify(DataMixin, unittest.TestCase):
         for filename, content in self.contents.items():
             path = os.path.join(self.tmpdir_name, filename)
             result = self.runner.invoke(cli.identify, ["--type", "content", path])
-            self.assertPidOK(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
+            self.assertSWHID(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
     def test_content_id_from_stdin(self):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
         for _, content in self.contents.items():
             result = self.runner.invoke(cli.identify, ["-"], input=content["data"])
-            self.assertPidOK(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
+            self.assertSWHID(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
     def test_directory_id(self):
         """identify an entire directory"""
         self.make_from_tarball(self.tmpdir_name)
         path = os.path.join(self.tmpdir_name, b"sample-folder")
         result = self.runner.invoke(cli.identify, ["--type", "directory", path])
-        self.assertPidOK(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")
+        self.assertSWHID(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")
 
     def test_snapshot_id(self):
         """identify a snapshot"""
@@ -64,7 +64,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
                 result = self.runner.invoke(
                     cli.identify, ["--type", "snapshot", repo_dir]
                 )
-                self.assertPidOK(
+                self.assertSWHID(
                     result, "swh:1:snp:abc888898124270905a0ef3c67e872ce08e7e0c1"
                 )
 
@@ -72,7 +72,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         """identify an origin URL"""
         url = "https://github.com/torvalds/linux"
         result = self.runner.invoke(cli.identify, ["--type", "origin", url])
-        self.assertPidOK(result, "swh:1:ori:b63a575fe3faab7692c9f38fb09d4bb45651bb0f")
+        self.assertSWHID(result, "swh:1:ori:b63a575fe3faab7692c9f38fb09d4bb45651bb0f")
 
     def test_symlink(self):
         """identify symlink --- both itself and target"""
@@ -82,10 +82,10 @@ class TestIdentify(DataMixin, unittest.TestCase):
         os.symlink(os.path.basename(regular), link)
 
         result = self.runner.invoke(cli.identify, [link])
-        self.assertPidOK(result, "swh:1:cnt:257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
+        self.assertSWHID(result, "swh:1:cnt:257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
 
         result = self.runner.invoke(cli.identify, ["--no-dereference", link])
-        self.assertPidOK(result, "swh:1:cnt:996f1789ff67c0e3f69ef5933a55d54c5d0e9954")
+        self.assertSWHID(result, "swh:1:cnt:996f1789ff67c0e3f69ef5933a55d54c5d0e9954")
 
     def test_show_filename(self):
         """filename is shown by default"""
@@ -108,7 +108,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
             result = self.runner.invoke(
                 cli.identify, ["--type", "content", "--no-filename", path]
             )
-            self.assertPidOK(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
+            self.assertSWHID(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
     def test_auto_content(self):
         """automatic object type detection: content"""

@@ -331,7 +331,7 @@ corresponding object, like this:
 
 A **dedicated** ``/resolve`` **endpoint** of the Software Heritage `Web API
 <https://archive.softwareheritage.org/api/>`_ is also available to
-programmatically resolve SWHIDs; see: :http:get:`/api/1/resolve/(swh_id)/`.
+programmatically resolve SWHIDs; see: :http:get:`/api/1/resolve/(swhid)/`.
 
 Examples:
 

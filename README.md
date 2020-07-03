@@ -4,8 +4,8 @@ swh-model
 Implementation of the Data model of the Software Heritage project, used to
 archive source code artifacts.
 
-This module defines the notion of Persistent Identifier (PID) and provides
-tools to compute them:
+This module defines the notion of SoftWare Heritage persistent IDentifiers
+(SWHIDs) and provides tools to compute them:
 
 ```sh
    $ swh-identify fork.c kmod.c sched/deadline.c
