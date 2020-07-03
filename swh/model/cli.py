@@ -12,7 +12,15 @@ from functools import partial
 from urllib.parse import urlparse
 
 from swh.model import hashutil
-from swh.model import identifiers as pids
+from swh.model.identifiers import (
+    origin_identifier,
+    snapshot_identifier,
+    parse_swhid,
+    swhid,
+    SWHID,
+    CONTENT,
+    DIRECTORY,
+)
 from swh.model.exceptions import ValidationError
 from swh.model.from_disk import Content, Directory
 
@@ -29,40 +37,38 @@ _DULWICH_TYPES = {
 }
 
 
-class PidParamType(click.ParamType):
+class SWHIDParamType(click.ParamType):
     name = "persistent identifier"
 
     def convert(self, value, param, ctx):
         try:
-            pids.parse_persistent_identifier(value)
+            parse_swhid(value)
             return value  # return as string, as we need just that
         except ValidationError as e:
             self.fail("%s is not a valid SWHID. %s." % (value, e), param, ctx)
 
 
-def pid_of_file(path):
+def swhid_of_file(path):
     object = Content.from_file(path=path).get_data()
-    return pids.persistent_identifier(pids.CONTENT, object)
+    return swhid(CONTENT, object)
 
 
-def pid_of_file_content(data):
+def swhid_of_file_content(data):
     object = Content.from_bytes(mode=644, data=data).get_data()
-    return pids.persistent_identifier(pids.CONTENT, object)
+    return swhid(CONTENT, object)
 
 
-def pid_of_dir(path):
+def swhid_of_dir(path):
     object = Directory.from_disk(path=path).get_data()
-    return pids.persistent_identifier(pids.DIRECTORY, object)
+    return swhid(DIRECTORY, object)
 
 
-def pid_of_origin(url):
-    pid = pids.PersistentId(
-        object_type="origin", object_id=pids.origin_identifier({"url": url})
-    )
-    return str(pid)
+def swhid_of_origin(url):
+    swhid = SWHID(object_type="origin", object_id=origin_identifier({"url": url}))
+    return str(swhid)
 
 
-def pid_of_git_repo(path):
+def swhid_of_git_repo(path):
     repo = dulwich.repo.Repo(path)
 
     branches = {}
@@ -84,10 +90,8 @@ def pid_of_git_repo(path):
 
     snapshot = {"branches": branches}
 
-    pid = pids.PersistentId(
-        object_type="snapshot", object_id=pids.snapshot_identifier(snapshot)
-    )
-    return str(pid)
+    swhid = SWHID(object_type="snapshot", object_id=snapshot_identifier(snapshot))
+    return str(swhid)
 
 
 def identify_object(obj_type, follow_symlinks, obj):
@@ -105,29 +109,29 @@ def identify_object(obj_type, follow_symlinks, obj):
             except ValueError:
                 raise click.BadParameter("cannot detect object type for %s" % obj)
 
-    pid = None
+    swhid = None
 
     if obj == "-":
         content = sys.stdin.buffer.read()
-        pid = pid_of_file_content(content)
+        swhid = swhid_of_file_content(content)
     elif obj_type in ["content", "directory"]:
         path = obj.encode(sys.getfilesystemencoding())
         if follow_symlinks and os.path.islink(obj):
             path = os.path.realpath(obj)
         if obj_type == "content":
-            pid = pid_of_file(path)
+            swhid = swhid_of_file(path)
         elif obj_type == "directory":
-            pid = pid_of_dir(path)
+            swhid = swhid_of_dir(path)
     elif obj_type == "origin":
-        pid = pid_of_origin(obj)
+        swhid = swhid_of_origin(obj)
     elif obj_type == "snapshot":
-        pid = pid_of_git_repo(obj)
+        swhid = swhid_of_git_repo(obj)
     else:  # shouldn't happen, due to option validation
         raise click.BadParameter("invalid object type: " + obj_type)
 
     # note: we return original obj instead of path here, to preserve user-given
     # file name in output
-    return (obj, pid)
+    return (obj, swhid)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -156,7 +160,7 @@ def identify_object(obj_type, follow_symlinks, obj):
     "--verify",
     "-v",
     metavar="SWHID",
-    type=PidParamType(),
+    type=SWHIDParamType(),
     help="reference identifier to be compared with computed one",
 )
 @click.argument("objects", nargs=-1, required=True)
@@ -197,18 +201,18 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     results = map(partial(identify_object, obj_type, follow_symlinks), objects)
 
     if verify:
-        pid = next(results)[1]
-        if verify == pid:
-            click.echo("SWHID match: %s" % pid)
+        swhid = next(results)[1]
+        if verify == swhid:
+            click.echo("SWHID match: %s" % swhid)
             sys.exit(0)
         else:
-            click.echo("SWHID mismatch: %s != %s" % (verify, pid))
+            click.echo("SWHID mismatch: %s != %s" % (verify, swhid))
             sys.exit(1)
     else:
-        for (obj, pid) in results:
-            msg = pid
+        for (obj, swhid) in results:
+            msg = swhid
             if show_filename:
-                msg = "%s\t%s" % (pid, os.fsdecode(obj))
+                msg = "%s\t%s" % (swhid, os.fsdecode(obj))
             click.echo(msg)
 
 

@@ -3,6 +3,7 @@
 # dependency lines, see https://pip.readthedocs.org/en/1.1/requirements.html
 attrs
 attrs_strict >= 0.0.7
+deprecated
 hypothesis
 iso8601
 python-dateutil
