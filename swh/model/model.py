@@ -6,7 +6,6 @@
 import datetime
 
 from abc import ABCMeta, abstractmethod
-from copy import deepcopy
 from enum import Enum
 from hashlib import sha256
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
@@ -17,6 +16,8 @@ from attrs_strict import type_validator
 import dateutil.parser
 import iso8601
 
+from .collections import ImmutableDict
+from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
 from .identifiers import (
     normalize_timestamp,
     directory_identifier,
@@ -25,7 +26,6 @@ from .identifiers import (
     snapshot_identifier,
     SWHID,
 )
-from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
 
 
 class MissingData(Exception):
@@ -41,13 +41,26 @@ SHA1_SIZE = 20
 Sha1Git = bytes
 
 
+KT = TypeVar("KT")
+VT = TypeVar("VT")
+
+
+def freeze_optional_dict(
+    d: Union[None, Dict[KT, VT], ImmutableDict[KT, VT]]  # type: ignore
+) -> Optional[ImmutableDict[KT, VT]]:
+    if isinstance(d, dict):
+        return ImmutableDict(d)
+    else:
+        return d
+
+
 def dictify(value):
     "Helper function used by BaseModel.to_dict()"
     if isinstance(value, BaseModel):
         return value.to_dict()
     elif isinstance(value, Enum):
         return value.value
-    elif isinstance(value, dict):
+    elif isinstance(value, (dict, ImmutableDict)):
         return {k: dictify(v) for k, v in value.items()}
     elif isinstance(value, tuple):
         return tuple(dictify(v) for v in value)
@@ -277,7 +290,10 @@ class OriginVisitStatus(BaseModel):
     )
     snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
     metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
+        type=Optional[ImmutableDict[str, object]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+        default=None,
     )
 
 
@@ -332,7 +348,9 @@ class Snapshot(BaseModel, HashableObject):
     object_type: Final = "snapshot"
 
     branches = attr.ib(
-        type=Dict[bytes, Optional[SnapshotBranch]], validator=type_validator()
+        type=ImmutableDict[bytes, Optional[SnapshotBranch]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
@@ -344,10 +362,10 @@ class Snapshot(BaseModel, HashableObject):
     def from_dict(cls, d):
         d = d.copy()
         return cls(
-            branches={
-                name: SnapshotBranch.from_dict(branch) if branch else None
+            branches=ImmutableDict(
+                (name, SnapshotBranch.from_dict(branch) if branch else None)
                 for (name, branch) in d.pop("branches").items()
-            },
+            ),
             **d,
         )
 
@@ -366,7 +384,10 @@ class Release(BaseModel, HashableObject):
         type=Optional[TimestampWithTimezone], validator=type_validator(), default=None
     )
     metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
+        type=Optional[ImmutableDict[str, object]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+        default=None,
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
@@ -431,7 +452,10 @@ class Revision(BaseModel, HashableObject):
     directory = attr.ib(type=Sha1Git, validator=type_validator())
     synthetic = attr.ib(type=bool, validator=type_validator())
     metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
+        type=Optional[ImmutableDict[str, object]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+        default=None,
     )
     parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
@@ -447,12 +471,11 @@ class Revision(BaseModel, HashableObject):
         # ensure metadata is a deep copy of whatever was given, and if needed
         # extract extra_headers from there
         if self.metadata:
-            metadata = deepcopy(self.metadata)
+            metadata = self.metadata
             if not self.extra_headers and "extra_headers" in metadata:
+                (extra_headers, metadata) = metadata.copy_pop("extra_headers")
                 object.__setattr__(
-                    self,
-                    "extra_headers",
-                    tuplify_extra_headers(metadata.pop("extra_headers")),
+                    self, "extra_headers", tuplify_extra_headers(extra_headers),
                 )
                 attr.validate(self)
             object.__setattr__(self, "metadata", metadata)
@@ -713,7 +736,10 @@ class MetadataAuthority(BaseModel):
     type = attr.ib(type=MetadataAuthorityType, validator=type_validator())
     url = attr.ib(type=str, validator=type_validator())
     metadata = attr.ib(
-        type=Optional[Dict[str, Any]], default=None, validator=type_validator()
+        type=Optional[ImmutableDict[str, Any]],
+        default=None,
+        validator=type_validator(),
+        converter=freeze_optional_dict,
     )
 
 
@@ -725,7 +751,10 @@ class MetadataFetcher(BaseModel):
     name = attr.ib(type=str, validator=type_validator())
     version = attr.ib(type=str, validator=type_validator())
     metadata = attr.ib(
-        type=Optional[Dict[str, Any]], default=None, validator=type_validator()
+        type=Optional[ImmutableDict[str, Any]],
+        default=None,
+        validator=type_validator(),
+        converter=freeze_optional_dict,
     )
 
 
