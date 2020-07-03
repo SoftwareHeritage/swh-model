@@ -716,6 +716,38 @@ def test_metadata_valid():
     )
 
 
+def test_metadata_to_dict():
+    """Checks valid RawExtrinsicMetadata objects don't raise an error."""
+
+    common_fields = {
+        "authority": {"type": "forge", "url": "https://forge.softwareheritage.org",},
+        "fetcher": {"name": "test-fetcher", "version": "0.0.1",},
+        "discovery_date": _common_metadata_fields["discovery_date"],
+        "format": "json",
+        "metadata": b'{"foo": "bar"}',
+    }
+
+    m = RawExtrinsicMetadata(
+        type=MetadataTargetType.ORIGIN, id=_origin_url, **_common_metadata_fields
+    )
+    assert m.to_dict() == {
+        "type": "origin",
+        "id": _origin_url,
+        **common_fields,
+    }
+    assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
+
+    m = RawExtrinsicMetadata(
+        type=MetadataTargetType.CONTENT, id=_content_swhid, **_common_metadata_fields
+    )
+    assert m.to_dict() == {
+        "type": "content",
+        "id": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        **common_fields,
+    }
+    assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
+
+
 def test_metadata_invalid_id():
     """Checks various invalid values for the 'id' field."""
 

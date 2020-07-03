@@ -25,6 +25,7 @@ from .identifiers import (
     release_identifier,
     snapshot_identifier,
     SWHID,
+    parse_swhid,
 )
 
 
@@ -58,6 +59,8 @@ def dictify(value):
     "Helper function used by BaseModel.to_dict()"
     if isinstance(value, BaseModel):
         return value.to_dict()
+    elif isinstance(value, SWHID):
+        return str(value)
     elif isinstance(value, Enum):
         return value.value
     elif isinstance(value, (dict, ImmutableDict)):
@@ -742,6 +745,17 @@ class MetadataAuthority(BaseModel):
         converter=freeze_optional_dict,
     )
 
+    def to_dict(self):
+        d = super().to_dict()
+        if d["metadata"] is None:
+            del d["metadata"]
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        d["type"] = MetadataAuthorityType(d["type"])
+        return super().from_dict(d)
+
 
 @attr.s(frozen=True)
 class MetadataFetcher(BaseModel):
@@ -756,6 +770,12 @@ class MetadataFetcher(BaseModel):
         validator=type_validator(),
         converter=freeze_optional_dict,
     )
+
+    def to_dict(self):
+        d = super().to_dict()
+        if d["metadata"] is None:
+            del d["metadata"]
+        return d
 
 
 class MetadataTargetType(Enum):
@@ -929,3 +949,38 @@ class RawExtrinsicMetadata(BaseModel):
 
         if pid.metadata:
             raise ValueError(f"Expected core SWHID, but got: {pid}")
+
+    def to_dict(self):
+        d = super().to_dict()
+        context_keys = (
+            "origin",
+            "visit",
+            "snapshot",
+            "release",
+            "revision",
+            "directory",
+            "path",
+        )
+        for context_key in context_keys:
+            if d[context_key] is None:
+                del d[context_key]
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        d = {
+            **d,
+            "type": MetadataTargetType(d["type"]),
+            "authority": MetadataAuthority.from_dict(d["authority"]),
+            "fetcher": MetadataFetcher.from_dict(d["fetcher"]),
+        }
+
+        if d["type"] != MetadataTargetType.ORIGIN:
+            d["id"] = parse_swhid(d["id"])
+
+        swhid_keys = ("snapshot", "release", "revision", "directory")
+        for swhid_key in swhid_keys:
+            if d.get(swhid_key):
+                d[swhid_key] = parse_swhid(d[swhid_key])
+
+        return super().from_dict(d)
