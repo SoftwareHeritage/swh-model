@@ -6,9 +6,10 @@
 import datetime
 
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 from enum import Enum
 from hashlib import sha256
-from typing import Dict, Optional, Tuple, TypeVar, Union
+from typing import Dict, Iterable, Optional, Tuple, TypeVar, Union
 from typing_extensions import Final
 
 import attr
@@ -410,6 +411,10 @@ class RevisionType(Enum):
     MERCURIAL = "hg"
 
 
+def tuplify_extra_headers(value: Iterable) -> Tuple:
+    return tuple((k, v) for k, v in value)
+
+
 @attr.s(frozen=True)
 class Revision(BaseModel, HashableObject):
     object_type: Final = "revision"
@@ -429,6 +434,27 @@ class Revision(BaseModel, HashableObject):
     )
     parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    extra_headers = attr.ib(
+        type=Tuple[Tuple[bytes, bytes], ...],  # but it makes mypy sad
+        validator=type_validator(),
+        converter=tuplify_extra_headers,  # type: ignore
+        default=(),
+    )
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        # ensure metadata is a deep copy of whatever was given, and if needed
+        # extract extra_headers from there
+        if self.metadata:
+            metadata = deepcopy(self.metadata)
+            if not self.extra_headers and "extra_headers" in metadata:
+                object.__setattr__(
+                    self,
+                    "extra_headers",
+                    tuplify_extra_headers(metadata.pop("extra_headers")),
+                )
+                attr.validate(self)
+            object.__setattr__(self, "metadata", metadata)
 
     @staticmethod
     def compute_hash(object_dict):
