@@ -415,6 +415,194 @@ def test_skipped_content_origin_is_str(skipped_content_d):
         SkippedContent.from_dict(skipped_content_d)
 
 
+# Revision
+
+
+def test_revision_extra_headers_no_headers():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev = Revision.from_dict(rev_dict)
+    rev_dict = attr.asdict(rev, recurse=False)
+
+    rev_model = Revision(**rev_dict)
+    assert rev_model.metadata is None
+    assert rev_model.extra_headers == ()
+
+    rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+    rev_model = Revision(**rev_dict)
+    assert rev_model.metadata == rev_dict["metadata"]
+    assert rev_model.extra_headers == ()
+
+
+def test_revision_extra_headers_with_headers():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev = Revision.from_dict(rev_dict)
+    rev_dict = attr.asdict(rev, recurse=False)
+    rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+    extra_headers = (
+        (b"header1", b"value1"),
+        (b"header2", b"42"),
+        (b"header3", b"should I?\u0000"),
+        (b"header1", b"again"),
+    )
+
+    rev_dict["extra_headers"] = extra_headers
+    rev_model = Revision(**rev_dict)
+    assert "extra_headers" not in rev_model.metadata
+    assert rev_model.extra_headers == extra_headers
+
+
+def test_revision_extra_headers_in_metadata():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev = Revision.from_dict(rev_dict)
+    rev_dict = attr.asdict(rev, recurse=False)
+    rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+
+    extra_headers = (
+        (b"header1", b"value1"),
+        (b"header2", b"42"),
+        (b"header3", b"should I?\u0000"),
+        (b"header1", b"again"),
+    )
+
+    # check the bw-compat init hook does the job
+    # ie. extra_headers are given in the metadata field
+    rev_dict["metadata"]["extra_headers"] = extra_headers
+    rev_model = Revision(**rev_dict)
+    assert "extra_headers" not in rev_model.metadata
+    assert rev_model.extra_headers == extra_headers
+
+
+def test_revision_extra_headers_as_lists():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev = Revision.from_dict(rev_dict)
+    rev_dict = attr.asdict(rev, recurse=False)
+    rev_dict["metadata"] = {}
+
+    extra_headers = (
+        (b"header1", b"value1"),
+        (b"header2", b"42"),
+        (b"header3", b"should I?\u0000"),
+        (b"header1", b"again"),
+    )
+
+    # check Revision.extra_headers tuplify does the job
+    rev_dict["extra_headers"] = [list(x) for x in extra_headers]
+    rev_model = Revision(**rev_dict)
+    assert "extra_headers" not in rev_model.metadata
+    assert rev_model.extra_headers == extra_headers
+
+
+def test_revision_extra_headers_type_error():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev = Revision.from_dict(rev_dict)
+    orig_rev_dict = attr.asdict(rev, recurse=False)
+    orig_rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+    extra_headers = (
+        ("header1", b"value1"),
+        (b"header2", 42),
+        ("header1", "again"),
+    )
+    # check headers one at a time
+    #   if given as extra_header
+    for extra_header in extra_headers:
+        rev_dict = copy.deepcopy(orig_rev_dict)
+        rev_dict["extra_headers"] = (extra_header,)
+        with pytest.raises(AttributeTypeError):
+            Revision(**rev_dict)
+    #   if given as metadata
+    for extra_header in extra_headers:
+        rev_dict = copy.deepcopy(orig_rev_dict)
+        rev_dict["metadata"]["extra_headers"] = (extra_header,)
+        with pytest.raises(AttributeTypeError):
+            Revision(**rev_dict)
+
+
+def test_revision_extra_headers_from_dict():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev_model = Revision.from_dict(rev_dict)
+    assert rev_model.metadata is None
+    assert rev_model.extra_headers == ()
+
+    rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+    rev_model = Revision.from_dict(rev_dict)
+    assert rev_model.metadata == rev_dict["metadata"]
+    assert rev_model.extra_headers == ()
+
+    extra_headers = (
+        (b"header1", b"value1"),
+        (b"header2", b"42"),
+        (b"header3", b"should I?\nmaybe\x00\xff"),
+        (b"header1", b"again"),
+    )
+    rev_dict["extra_headers"] = extra_headers
+    rev_model = Revision.from_dict(rev_dict)
+    assert "extra_headers" not in rev_model.metadata
+    assert rev_model.extra_headers == extra_headers
+
+
+def test_revision_extra_headers_in_metadata_from_dict():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+
+    rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+    extra_headers = (
+        (b"header1", b"value1"),
+        (b"header2", b"42"),
+        (b"header3", b"should I?\nmaybe\x00\xff"),
+        (b"header1", b"again"),
+    )
+    # check the bw-compat init hook does the job
+    rev_dict["metadata"]["extra_headers"] = extra_headers
+    rev_model = Revision.from_dict(rev_dict)
+    assert "extra_headers" not in rev_model.metadata
+    assert rev_model.extra_headers == extra_headers
+
+
+def test_revision_extra_headers_as_lists_from_dict():
+    rev_dict = revision_example.copy()
+    rev_dict.pop("id")
+    rev_model = Revision.from_dict(rev_dict)
+    rev_dict["metadata"] = {
+        "something": "somewhere",
+        "some other thing": "stranger",
+    }
+    extra_headers = (
+        (b"header1", b"value1"),
+        (b"header2", b"42"),
+        (b"header3", b"should I?\nmaybe\x00\xff"),
+        (b"header1", b"again"),
+    )
+    # check Revision.extra_headers converter does the job
+    rev_dict["extra_headers"] = [list(x) for x in extra_headers]
+    rev_model = Revision.from_dict(rev_dict)
+    assert "extra_headers" not in rev_model.metadata
+    assert rev_model.extra_headers == extra_headers
+
+
 # ID computation
 
 

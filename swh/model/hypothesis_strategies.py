@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     from_regex,
     integers,
     just,
+    lists,
     none,
     one_of,
     sampled_from,
@@ -229,6 +230,12 @@ def releases():
 revision_metadata = metadata_dicts
 
 
+def extra_headers():
+    return lists(
+        tuples(binary(min_size=0, max_size=50), binary(min_size=0, max_size=500))
+    ).map(tuple)
+
+
 def revisions_d():
     return builds(
         dict,
@@ -242,6 +249,7 @@ def revisions_d():
         directory=sha1_git(),
         type=sampled_from([x.value for x in RevisionType]),
         metadata=optional(revision_metadata()),
+        extra_headers=extra_headers(),
     )
     # TODO: metadata['extra_headers'] can have binary keys and values
 
