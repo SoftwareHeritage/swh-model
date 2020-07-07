@@ -13,9 +13,16 @@ VT = TypeVar("VT")
 class ImmutableDict(Mapping, Generic[KT, VT]):
     data: Tuple[Tuple[KT, VT], ...]
 
-    def __init__(self, data: Union[Iterable[Tuple[KT, VT]], Dict[KT, VT]] = {}):
+    def __init__(
+        self,
+        data: Union[
+            Iterable[Tuple[KT, VT]], "ImmutableDict[KT, VT]", Dict[KT, VT]
+        ] = {},
+    ):
         if isinstance(data, dict):
             self.data = tuple(item for item in data.items())
+        elif isinstance(data, ImmutableDict):
+            self.data = data.data
         else:
             self.data = tuple(data)
 

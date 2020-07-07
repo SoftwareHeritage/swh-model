@@ -32,6 +32,22 @@ def test_immutabledict_one_item():
     assert list(d.items()) == [("foo", "bar")]
 
 
+def test_immutabledict_from_iterable():
+    d1 = ImmutableDict()
+    d2 = ImmutableDict({"foo": "bar"})
+
+    assert ImmutableDict([]) == d1
+    assert ImmutableDict([("foo", "bar")]) == d2
+
+
+def test_immutabledict_from_immutabledict():
+    d1 = ImmutableDict()
+    d2 = ImmutableDict({"foo": "bar"})
+
+    assert ImmutableDict(d1) == d1
+    assert ImmutableDict(d2) == d2
+
+
 def test_immutabledict_immutable():
     d = ImmutableDict({"foo": "bar"})
 
