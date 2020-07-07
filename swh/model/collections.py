@@ -42,6 +42,9 @@ class ImmutableDict(Mapping, Generic[KT, VT]):
     def items(self):
         yield from self.data
 
+    def __hash__(self):
+        return hash(tuple(sorted(self.data)))
+
     def copy_pop(self, popped_key) -> Tuple[Optional[VT], "ImmutableDict[KT, VT]"]:
         """Returns a copy of this ImmutableDict without the given key,
         as well as the value associated to the key."""

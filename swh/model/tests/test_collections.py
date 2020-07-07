@@ -64,3 +64,23 @@ def test_immutabledict_copy_pop():
     assert d.copy_pop("foo") == ("bar", ImmutableDict({"baz": "qux"}))
 
     assert d.copy_pop("not a key") == (None, d)
+
+
+def test_hash():
+    assert hash(ImmutableDict()) == hash(ImmutableDict({}))
+    assert hash(ImmutableDict({"foo": "bar"})) == hash(ImmutableDict({"foo": "bar"}))
+    assert hash(ImmutableDict({"foo": "bar", "baz": "qux"})) == hash(
+        ImmutableDict({"foo": "bar", "baz": "qux"})
+    )
+    assert hash(ImmutableDict({"foo": "bar", "baz": "qux"})) == hash(
+        ImmutableDict({"baz": "qux", "foo": "bar"})
+    )
+
+
+def test_equality_order():
+    assert ImmutableDict({"foo": "bar", "baz": "qux"}) == ImmutableDict(
+        {"foo": "bar", "baz": "qux"}
+    )
+    assert ImmutableDict({"foo": "bar", "baz": "qux"}) == ImmutableDict(
+        {"baz": "qux", "foo": "bar"}
+    )
