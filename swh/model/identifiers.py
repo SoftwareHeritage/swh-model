@@ -8,10 +8,11 @@ import datetime
 import hashlib
 
 from functools import lru_cache
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, Union
 
 from deprecated import deprecated
 
+from .collections import ImmutableDict
 from .exceptions import ValidationError
 from .fields.hashes import validate_sha1
 from .hashutil import hash_git_data, hash_to_hex, MultiHash
@@ -656,7 +657,7 @@ _SWHID = NamedTuple(
         ("scheme_version", int),
         ("object_type", str),
         ("object_id", str),
-        ("metadata", Dict[str, Any]),
+        ("metadata", ImmutableDict[str, Any]),
     ],
 )
 
@@ -707,7 +708,7 @@ class SWHID(_SWHID):
         scheme_version: int = SWHID_VERSION,
         object_type: str = "",
         object_id: str = "",
-        metadata: Dict[str, Any] = {},
+        metadata: Union[ImmutableDict[str, Any], Dict[str, Any]] = ImmutableDict(),
     ):
         o = _object_type_map.get(object_type)
         if not o:
@@ -730,7 +731,12 @@ class SWHID(_SWHID):
         validate_sha1(object_id)  # can raise if invalid hash
         object_id = hash_to_hex(object_id)
         return super().__new__(
-            cls, namespace, scheme_version, object_type, object_id, metadata
+            cls,
+            namespace,
+            scheme_version,
+            object_type,
+            object_id,
+            ImmutableDict(metadata),
         )
 
     def __str__(self) -> str:
@@ -764,7 +770,7 @@ def swhid(
     object_type: str,
     object_id: str,
     scheme_version: int = 1,
-    metadata: Dict[str, Any] = {},
+    metadata: Union[ImmutableDict[str, Any], Dict[str, Any]] = ImmutableDict(),
 ) -> str:
     """Compute :ref:`persistent-identifiers`
 
