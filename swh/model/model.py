@@ -6,10 +6,9 @@
 import datetime
 
 from abc import ABCMeta, abstractmethod
-from copy import deepcopy
 from enum import Enum
 from hashlib import sha256
-from typing import Dict, Iterable, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
 from typing_extensions import Final
 
 import attr
@@ -17,14 +16,17 @@ from attrs_strict import type_validator
 import dateutil.parser
 import iso8601
 
+from .collections import ImmutableDict
+from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
 from .identifiers import (
     normalize_timestamp,
     directory_identifier,
     revision_identifier,
     release_identifier,
     snapshot_identifier,
+    SWHID,
+    parse_swhid,
 )
-from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
 
 
 class MissingData(Exception):
@@ -40,13 +42,28 @@ SHA1_SIZE = 20
 Sha1Git = bytes
 
 
+KT = TypeVar("KT")
+VT = TypeVar("VT")
+
+
+def freeze_optional_dict(
+    d: Union[None, Dict[KT, VT], ImmutableDict[KT, VT]]  # type: ignore
+) -> Optional[ImmutableDict[KT, VT]]:
+    if isinstance(d, dict):
+        return ImmutableDict(d)
+    else:
+        return d
+
+
 def dictify(value):
     "Helper function used by BaseModel.to_dict()"
     if isinstance(value, BaseModel):
         return value.to_dict()
+    elif isinstance(value, SWHID):
+        return str(value)
     elif isinstance(value, Enum):
         return value.value
-    elif isinstance(value, dict):
+    elif isinstance(value, (dict, ImmutableDict)):
         return {k: dictify(v) for k, v in value.items()}
     elif isinstance(value, tuple):
         return tuple(dictify(v) for v in value)
@@ -276,7 +293,10 @@ class OriginVisitStatus(BaseModel):
     )
     snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
     metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
+        type=Optional[ImmutableDict[str, object]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+        default=None,
     )
 
 
@@ -331,7 +351,9 @@ class Snapshot(BaseModel, HashableObject):
     object_type: Final = "snapshot"
 
     branches = attr.ib(
-        type=Dict[bytes, Optional[SnapshotBranch]], validator=type_validator()
+        type=ImmutableDict[bytes, Optional[SnapshotBranch]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
@@ -343,10 +365,10 @@ class Snapshot(BaseModel, HashableObject):
     def from_dict(cls, d):
         d = d.copy()
         return cls(
-            branches={
-                name: SnapshotBranch.from_dict(branch) if branch else None
+            branches=ImmutableDict(
+                (name, SnapshotBranch.from_dict(branch) if branch else None)
                 for (name, branch) in d.pop("branches").items()
-            },
+            ),
             **d,
         )
 
@@ -365,7 +387,10 @@ class Release(BaseModel, HashableObject):
         type=Optional[TimestampWithTimezone], validator=type_validator(), default=None
     )
     metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
+        type=Optional[ImmutableDict[str, object]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+        default=None,
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
@@ -430,7 +455,10 @@ class Revision(BaseModel, HashableObject):
     directory = attr.ib(type=Sha1Git, validator=type_validator())
     synthetic = attr.ib(type=bool, validator=type_validator())
     metadata = attr.ib(
-        type=Optional[Dict[str, object]], validator=type_validator(), default=None
+        type=Optional[ImmutableDict[str, object]],
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+        default=None,
     )
     parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
@@ -446,12 +474,11 @@ class Revision(BaseModel, HashableObject):
         # ensure metadata is a deep copy of whatever was given, and if needed
         # extract extra_headers from there
         if self.metadata:
-            metadata = deepcopy(self.metadata)
+            metadata = self.metadata
             if not self.extra_headers and "extra_headers" in metadata:
+                (extra_headers, metadata) = metadata.copy_pop("extra_headers")
                 object.__setattr__(
-                    self,
-                    "extra_headers",
-                    tuplify_extra_headers(metadata.pop("extra_headers")),
+                    self, "extra_headers", tuplify_extra_headers(extra_headers),
                 )
                 attr.validate(self)
             object.__setattr__(self, "metadata", metadata)
@@ -696,3 +723,264 @@ class SkippedContent(BaseContent):
         if d2.pop("data", None) is not None:
             raise ValueError('SkippedContent has no "data" attribute %r' % d)
         return super().from_dict(d2, use_subclass=False)
+
+
+class MetadataAuthorityType(Enum):
+    DEPOSIT = "deposit"
+    FORGE = "forge"
+    REGISTRY = "registry"
+
+
+@attr.s(frozen=True)
+class MetadataAuthority(BaseModel):
+    """Represents an entity that provides metadata about an origin or
+    software artifact."""
+
+    type = attr.ib(type=MetadataAuthorityType, validator=type_validator())
+    url = attr.ib(type=str, validator=type_validator())
+    metadata = attr.ib(
+        type=Optional[ImmutableDict[str, Any]],
+        default=None,
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+    )
+
+    def to_dict(self):
+        d = super().to_dict()
+        if d["metadata"] is None:
+            del d["metadata"]
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        d["type"] = MetadataAuthorityType(d["type"])
+        return super().from_dict(d)
+
+
+@attr.s(frozen=True)
+class MetadataFetcher(BaseModel):
+    """Represents a software component used to fetch metadata from a metadata
+    authority, and ingest them into the Software Heritage archive."""
+
+    name = attr.ib(type=str, validator=type_validator())
+    version = attr.ib(type=str, validator=type_validator())
+    metadata = attr.ib(
+        type=Optional[ImmutableDict[str, Any]],
+        default=None,
+        validator=type_validator(),
+        converter=freeze_optional_dict,
+    )
+
+    def to_dict(self):
+        d = super().to_dict()
+        if d["metadata"] is None:
+            del d["metadata"]
+        return d
+
+
+class MetadataTargetType(Enum):
+    """The type of object extrinsic metadata refer to."""
+
+    CONTENT = "content"
+    DIRECTORY = "directory"
+    REVISION = "revision"
+    RELEASE = "release"
+    SNAPSHOT = "snapshot"
+    ORIGIN = "origin"
+
+
+@attr.s(frozen=True)
+class RawExtrinsicMetadata(BaseModel):
+    # target object
+    type = attr.ib(type=MetadataTargetType, validator=type_validator())
+    id = attr.ib(type=Union[str, SWHID], validator=type_validator())
+    """URL if type=MetadataTargetType.ORIGIN, else core SWHID"""
+
+    # source
+    discovery_date = attr.ib(type=datetime.datetime, validator=type_validator())
+    authority = attr.ib(type=MetadataAuthority, validator=type_validator())
+    fetcher = attr.ib(type=MetadataFetcher, validator=type_validator())
+
+    # the metadata itself
+    format = attr.ib(type=str, validator=type_validator())
+    metadata = attr.ib(type=bytes, validator=type_validator())
+
+    # context
+    origin = attr.ib(type=Optional[str], default=None, validator=type_validator())
+    visit = attr.ib(type=Optional[int], default=None, validator=type_validator())
+    snapshot = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
+    release = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
+    revision = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
+    path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
+    directory = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
+
+    @id.validator
+    def check_id(self, attribute, value):
+        if self.type == MetadataTargetType.ORIGIN:
+            if isinstance(value, SWHID) or value.startswith("swh:"):
+                raise ValueError(
+                    "Got SWHID as id for origin metadata (expected an URL)."
+                )
+        else:
+            self._check_pid(self.type.value, value)
+
+    @origin.validator
+    def check_origin(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (
+            MetadataTargetType.SNAPSHOT,
+            MetadataTargetType.RELEASE,
+            MetadataTargetType.REVISION,
+            MetadataTargetType.DIRECTORY,
+            MetadataTargetType.CONTENT,
+        ):
+            raise ValueError(
+                f"Unexpected 'origin' context for {self.type.value} object: {value}"
+            )
+
+        if value.startswith("swh:"):
+            # Technically this is valid; but:
+            # 1. SWHIDs are URIs, not URLs
+            # 2. if a SWHID gets here, it's very likely to be a mistake
+            #    (and we can remove this check if it turns out there is a
+            #    legitimate use for it).
+            raise ValueError(f"SWHID used as context origin URL: {value}")
+
+    @visit.validator
+    def check_visit(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (
+            MetadataTargetType.SNAPSHOT,
+            MetadataTargetType.RELEASE,
+            MetadataTargetType.REVISION,
+            MetadataTargetType.DIRECTORY,
+            MetadataTargetType.CONTENT,
+        ):
+            raise ValueError(
+                f"Unexpected 'visit' context for {self.type.value} object: {value}"
+            )
+
+        if self.origin is None:
+            raise ValueError("'origin' context must be set if 'visit' is.")
+
+        if value <= 0:
+            raise ValueError("Nonpositive visit id")
+
+    @snapshot.validator
+    def check_snapshot(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (
+            MetadataTargetType.RELEASE,
+            MetadataTargetType.REVISION,
+            MetadataTargetType.DIRECTORY,
+            MetadataTargetType.CONTENT,
+        ):
+            raise ValueError(
+                f"Unexpected 'snapshot' context for {self.type.value} object: {value}"
+            )
+
+        self._check_pid("snapshot", value)
+
+    @release.validator
+    def check_release(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (
+            MetadataTargetType.REVISION,
+            MetadataTargetType.DIRECTORY,
+            MetadataTargetType.CONTENT,
+        ):
+            raise ValueError(
+                f"Unexpected 'release' context for {self.type.value} object: {value}"
+            )
+
+        self._check_pid("release", value)
+
+    @revision.validator
+    def check_revision(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (MetadataTargetType.DIRECTORY, MetadataTargetType.CONTENT,):
+            raise ValueError(
+                f"Unexpected 'revision' context for {self.type.value} object: {value}"
+            )
+
+        self._check_pid("revision", value)
+
+    @path.validator
+    def check_path(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (MetadataTargetType.DIRECTORY, MetadataTargetType.CONTENT,):
+            raise ValueError(
+                f"Unexpected 'path' context for {self.type.value} object: {value}"
+            )
+
+    @directory.validator
+    def check_directory(self, attribute, value):
+        if value is None:
+            return
+
+        if self.type not in (MetadataTargetType.CONTENT,):
+            raise ValueError(
+                f"Unexpected 'directory' context for {self.type.value} object: {value}"
+            )
+
+        self._check_pid("directory", value)
+
+    def _check_pid(self, expected_object_type, pid):
+        if isinstance(pid, str):
+            raise ValueError(f"Expected SWHID, got a string: {pid}")
+
+        if pid.object_type != expected_object_type:
+            raise ValueError(
+                f"Expected SWHID type '{expected_object_type}', "
+                f"got '{pid.object_type}' in {pid}"
+            )
+
+        if pid.metadata:
+            raise ValueError(f"Expected core SWHID, but got: {pid}")
+
+    def to_dict(self):
+        d = super().to_dict()
+        context_keys = (
+            "origin",
+            "visit",
+            "snapshot",
+            "release",
+            "revision",
+            "directory",
+            "path",
+        )
+        for context_key in context_keys:
+            if d[context_key] is None:
+                del d[context_key]
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        d = {
+            **d,
+            "type": MetadataTargetType(d["type"]),
+            "authority": MetadataAuthority.from_dict(d["authority"]),
+            "fetcher": MetadataFetcher.from_dict(d["fetcher"]),
+        }
+
+        if d["type"] != MetadataTargetType.ORIGIN:
+            d["id"] = parse_swhid(d["id"])
+
+        swhid_keys = ("snapshot", "release", "revision", "directory")
+        for swhid_key in swhid_keys:
+            if d.get(swhid_key):
+                d[swhid_key] = parse_swhid(d[swhid_key])
+
+        return super().from_dict(d)
