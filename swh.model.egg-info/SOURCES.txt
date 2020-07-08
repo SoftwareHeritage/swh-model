@@ -17,6 +17,7 @@ swh.model.egg-info/requires.txt
 swh.model.egg-info/top_level.txt
 swh/model/__init__.py
 swh/model/cli.py
+swh/model/collections.py
 swh/model/exceptions.py
 swh/model/from_disk.py
 swh/model/hashutil.py
@@ -25,6 +26,7 @@ swh/model/identifiers.py
 swh/model/merkle.py
 swh/model/model.py
 swh/model/py.typed
+swh/model/test_identifiers.py
 swh/model/toposort.py
 swh/model/validators.py
 swh/model/fields/__init__.py
@@ -35,6 +37,7 @@ swh/model/tests/__init__.py
 swh/model/tests/generate_testdata.py
 swh/model/tests/generate_testdata_from_disk.py
 swh/model/tests/test_cli.py
+swh/model/tests/test_collections.py
 swh/model/tests/test_from_disk.py
 swh/model/tests/test_generate_testdata.py
 swh/model/tests/test_hashutil.py
