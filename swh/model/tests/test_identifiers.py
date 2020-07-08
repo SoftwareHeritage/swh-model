@@ -915,6 +915,16 @@ class SnapshotIdentifier(unittest.TestCase):
             )
             actual_result = identifiers.parse_swhid(swhid)
             self.assertEqual(actual_result, expected_result)
+            self.assertEqual(
+                expected_result.to_dict(),
+                {
+                    "namespace": "swh",
+                    "scheme_version": _version,
+                    "object_type": _type,
+                    "object_id": _hash,
+                    "metadata": _metadata,
+                },
+            )
 
     def test_parse_swhid_parsing_error(self):
         for swhid in [

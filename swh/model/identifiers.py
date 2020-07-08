@@ -723,6 +723,9 @@ class SWHID:
     def check_object_id(self, attribute, value):
         validate_sha1(value)  # can raise if invalid hash
 
+    def to_dict(self) -> Dict[str, Any]:
+        return attr.asdict(self)
+
     def __str__(self) -> str:
         o = _object_type_map.get(self.object_type)
         assert o
@@ -856,4 +859,4 @@ def parse_persistent_identifier(persistent_id: str) -> PersistentId:
     .. deprecated:: 0.3.8
         Use :func:`swh.model.identifiers.parse_swhid` instead
     """
-    return PersistentId(**attr.asdict(parse_swhid(persistent_id)))
+    return PersistentId(**parse_swhid(persistent_id).to_dict())
