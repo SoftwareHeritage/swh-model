@@ -1,8 +1,12 @@
-swh-model (0.5.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.6.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.6.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-07-20 12:45:59 +0200)
+  * Upstream changes:     - v0.6.0     - * Rework dia -> pdf pipeline
+    for inkscape 1.0     - * Rename MetadataAuthorityType.DEPOSIT to
+    MetadataAuthorityType.DEPOSIT_CLIENT.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 08 Jul 2020 15:25:23 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 20 Jul 2020 10:49:27 +0000
 
 swh-model (0.5.0-1~swh1) unstable-swh; urgency=medium
 
