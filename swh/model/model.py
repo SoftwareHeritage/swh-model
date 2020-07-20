@@ -726,7 +726,7 @@ class SkippedContent(BaseContent):
 
 
 class MetadataAuthorityType(Enum):
-    DEPOSIT = "deposit"
+    DEPOSIT_CLIENT = "deposit_client"
     FORGE = "forge"
     REGISTRY = "registry"
 
