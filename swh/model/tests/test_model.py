@@ -456,7 +456,7 @@ def test_revision_extra_headers_with_headers():
     extra_headers = (
         (b"header1", b"value1"),
         (b"header2", b"42"),
-        (b"header3", b"should I?\u0000"),
+        (b"header3", b"should I?\x00"),
         (b"header1", b"again"),
     )
 
@@ -479,7 +479,7 @@ def test_revision_extra_headers_in_metadata():
     extra_headers = (
         (b"header1", b"value1"),
         (b"header2", b"42"),
-        (b"header3", b"should I?\u0000"),
+        (b"header3", b"should I?\x00"),
         (b"header1", b"again"),
     )
 
@@ -501,7 +501,7 @@ def test_revision_extra_headers_as_lists():
     extra_headers = (
         (b"header1", b"value1"),
         (b"header2", b"42"),
-        (b"header3", b"should I?\u0000"),
+        (b"header3", b"should I?\x00"),
         (b"header1", b"again"),
     )
 
