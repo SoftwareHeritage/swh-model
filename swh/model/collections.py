@@ -26,6 +26,9 @@ class ImmutableDict(Mapping, Generic[KT, VT]):
         else:
             self.data = tuple(data)
 
+    def __repr__(self):
+        return f"ImmutableDict({dict(self.data)!r})"
+
     def __getitem__(self, key):
         for (k, v) in self.data:
             if k == key:
