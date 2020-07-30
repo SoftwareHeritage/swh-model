@@ -736,6 +736,8 @@ class MetadataAuthority(BaseModel):
     """Represents an entity that provides metadata about an origin or
     software artifact."""
 
+    object_type: Final = "metadata_authority"
+
     type = attr.ib(type=MetadataAuthorityType, validator=type_validator())
     url = attr.ib(type=str, validator=type_validator())
     metadata = attr.ib(
@@ -761,6 +763,8 @@ class MetadataAuthority(BaseModel):
 class MetadataFetcher(BaseModel):
     """Represents a software component used to fetch metadata from a metadata
     authority, and ingest them into the Software Heritage archive."""
+
+    object_type: Final = "metadata_fetcher"
 
     name = attr.ib(type=str, validator=type_validator())
     version = attr.ib(type=str, validator=type_validator())
@@ -791,6 +795,8 @@ class MetadataTargetType(Enum):
 
 @attr.s(frozen=True)
 class RawExtrinsicMetadata(BaseModel):
+    object_type: Final = "raw_extrinsic_metadata"
+
     # target object
     type = attr.ib(type=MetadataTargetType, validator=type_validator())
     id = attr.ib(type=Union[str, SWHID], validator=type_validator())
