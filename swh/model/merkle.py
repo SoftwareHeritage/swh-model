@@ -6,7 +6,7 @@
 """Merkle tree data structure"""
 
 import abc
-import collections
+from collections.abc import Mapping
 
 from typing import Iterator, List, Set
 
@@ -66,7 +66,7 @@ def deep_update(left, right):
 
     """
     for key, rvalue in right.items():
-        if isinstance(rvalue, collections.Mapping):
+        if isinstance(rvalue, Mapping):
             new_lvalue = deep_update(left.get(key, {}), rvalue)
             left[key] = new_lvalue
         else:
