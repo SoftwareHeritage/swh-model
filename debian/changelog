@@ -1,8 +1,15 @@
-swh-model (0.6.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.6.1-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.6.1     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-07-31 10:47:56 +0200)
+  * Upstream changes:     - v0.6.1     - * Declare pytest markers     -
+    * Import Mapping from collections.abc instead of collections     - *
+    Fix incorrectly typed null constants in extra_headers byte strings
+    - * add ImmutableDict.__repr__     - * Add missing object_type class
+    attributes on MetadataAuthority, MetadataFetcher, and
+    RawExtrinsicMetadata.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 20 Jul 2020 10:50:54 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 31 Jul 2020 08:51:42 +0000
 
 swh-model (0.6.0-1~swh1) unstable-swh; urgency=medium
 
