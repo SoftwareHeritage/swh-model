@@ -15,9 +15,9 @@ Build-Depends: debhelper (>= 9),
                python3-hypothesis,
                python3-pytest,
                python3-setuptools,
+               python3-setuptools-scm,
                python3-typing-extensions,
-               python3-tz,
-               python3-vcversioner
+               python3-tz
 Standards-Version: 3.9.6
 Homepage: https://forge.softwareheritage.org/diffusion/DMOD/
 
