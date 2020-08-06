@@ -48,7 +48,7 @@ setup(
     url="https://forge.softwareheritage.org/diffusion/DMOD/",
     packages=find_packages(),
     setup_requires=["setuptools-scm"],
-    use_setup_scm=True,
+    use_setup_version=True,
     install_requires=(
         parse_requirements() + parse_requirements("swh") + blake2_requirements
     ),
