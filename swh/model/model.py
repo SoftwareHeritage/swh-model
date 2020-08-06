@@ -625,6 +625,8 @@ class Content(BaseContent):
         content = super().to_dict()
         if content["data"] is None:
             del content["data"]
+        if content["ctime"] is None:
+            del content["ctime"]
         return content
 
     @classmethod
@@ -697,6 +699,8 @@ class SkippedContent(BaseContent):
         content = super().to_dict()
         if content["origin"] is None:
             del content["origin"]
+        if content["ctime"] is None:
+            del content["ctime"]
         return content
 
     @classmethod
