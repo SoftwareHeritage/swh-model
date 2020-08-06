@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Use
+# git-revhash 'tree 4b825dc642cb6eb9a060e54bf8d69288fbee4904\nparent 22c0fa5195a53f2e733ec75a9b6e9d1624a8b771\nauthor seanius <seanius@3187e211-bb14-4c82-9596-0b59d67cd7f4> 1138341044 +0000\ncommitter seanius <seanius@3187e211-bb14-4c82-9596-0b59d67cd7f4> 1138341044 +0000\n\nmaking dir structure...\n'  # noqa
+# output: 17a631d474f49bbebfdf3d885dcde470d7faafd7
+
+echo -ne $* | git hash-object --stdin -t commit

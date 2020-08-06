@@ -47,7 +47,8 @@ setup(
     author_email="swh-devel@inria.fr",
     url="https://forge.softwareheritage.org/diffusion/DMOD/",
     packages=find_packages(),
-    setup_requires=["vcversioner"],
+    setup_requires=["setuptools-scm"],
+    use_scm_version=True,
     install_requires=(
         parse_requirements() + parse_requirements("swh") + blake2_requirements
     ),
@@ -55,7 +56,6 @@ setup(
         "cli": parse_requirements("cli"),
         "testing": parse_requirements("test"),
     },
-    vcversioner={},
     include_package_data=True,
     entry_points="""
         [console_scripts]
