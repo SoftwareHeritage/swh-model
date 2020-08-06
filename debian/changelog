@@ -1,8 +1,12 @@
-swh-model (0.6.4-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.6.5-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.6.5     - (tagged by Antoine R. Dumont
+    (@ardumont) <ardumont@softwareheritage.org> on 2020-08-06 19:59:26
+    +0200)
+  * Upstream changes:     - v0.6.5     - model: Add final object_type
+    field on metadata related model objects
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 06 Aug 2020 16:50:04 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 06 Aug 2020 18:01:05 +0000
 
 swh-model (0.6.4-1~swh1) unstable-swh; urgency=medium
 
