@@ -40,6 +40,7 @@ SHA1_SIZE = 20
 
 # TODO: Limit this to 20 bytes
 Sha1Git = bytes
+Sha1 = bytes
 
 
 KT = TypeVar("KT")
