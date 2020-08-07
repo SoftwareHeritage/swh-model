@@ -1,4 +1,4 @@
-# Copyright (C) 2019 The Software Heritage developers
+# Copyright (C) 2019-2020 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -123,11 +123,15 @@ def test_dicts_generation_blacklist(obj_type_and_obj):
 
 @given(objects())
 def test_model_to_dicts(obj_type_and_obj):
-    (obj_type, object_) = obj_type_and_obj
+    _, object_ = obj_type_and_obj
+    object_type = object_.object_type
     obj_dict = object_.to_dict()
     assert_nested_dict(obj_dict)
-    if obj_type == "content":
-        COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {"length", "status", "ctime"}
+    if object_type in ("content", "skipped_content"):
+        COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {"length", "status"}
+        if object_.ctime is not None:
+            COMMON_KEYS |= {"ctime"}
+
         if obj_dict["status"] == "visible":
             assert set(obj_dict) == COMMON_KEYS | {"data"}
         elif obj_dict["status"] == "absent":
@@ -136,9 +140,9 @@ def test_model_to_dicts(obj_type_and_obj):
             assert set(obj_dict) == COMMON_KEYS | {"data"}
         else:
             assert False, obj_dict
-    elif obj_type == "release":
+    elif object_type == "release":
         assert obj_dict["target_type"] in target_types
-    elif obj_type == "snapshot":
+    elif object_type == "snapshot":
         for branch in obj_dict["branches"].values():
             assert branch is None or branch["target_type"] in target_types
 
