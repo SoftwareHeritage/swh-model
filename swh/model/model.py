@@ -267,6 +267,12 @@ class OriginVisit(BaseModel):
     """Should not be set before calling 'origin_visit_add()'."""
     visit = attr.ib(type=Optional[int], validator=type_validator(), default=None)
 
+    @date.validator
+    def check_date(self, attribute, value):
+        """Checks the date has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("date must be a timezone-aware datetime.")
+
     def to_dict(self):
         """Serializes the date as a string and omits the visit id if it is
         `None`."""
@@ -299,6 +305,12 @@ class OriginVisitStatus(BaseModel):
         converter=freeze_optional_dict,
         default=None,
     )
+
+    @date.validator
+    def check_date(self, attribute, value):
+        """Checks the date has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("date must be a timezone-aware datetime.")
 
 
 class TargetType(Enum):
@@ -621,6 +633,12 @@ class Content(BaseContent):
         if value < 0:
             raise ValueError("Length must be positive.")
 
+    @ctime.validator
+    def check_ctime(self, attribute, value):
+        """Checks the ctime has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("ctime must be a timezone-aware datetime.")
+
     def to_dict(self):
         content = super().to_dict()
         if content["data"] is None:
@@ -694,6 +712,12 @@ class SkippedContent(BaseContent):
         """Checks the length is positive or -1."""
         if value < -1:
             raise ValueError("Length must be positive or -1.")
+
+    @ctime.validator
+    def check_ctime(self, attribute, value):
+        """Checks the ctime has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("ctime must be a timezone-aware datetime.")
 
     def to_dict(self):
         content = super().to_dict()
@@ -834,6 +858,12 @@ class RawExtrinsicMetadata(BaseModel):
                 )
         else:
             self._check_pid(self.type.value, value)
+
+    @discovery_date.validator
+    def check_discovery_date(self, attribute, value):
+        """Checks the discovery_date has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("discovery_date must be a timezone-aware datetime.")
 
     @origin.validator
     def check_origin(self, attribute, value):
