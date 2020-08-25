@@ -449,7 +449,7 @@ class RevisionType(Enum):
     MERCURIAL = "hg"
 
 
-def tuplify_extra_headers(value: Iterable) -> Tuple:
+def tuplify_extra_headers(value: Iterable):
     return tuple((k, v) for k, v in value)
 
 
@@ -476,9 +476,9 @@ class Revision(BaseModel, HashableObject):
     parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
     extra_headers = attr.ib(
-        type=Tuple[Tuple[bytes, bytes], ...],  # but it makes mypy sad
+        type=Tuple[Tuple[bytes, bytes], ...],
         validator=type_validator(),
-        converter=tuplify_extra_headers,  # type: ignore
+        converter=tuplify_extra_headers,
         default=(),
     )
 
