@@ -28,28 +28,27 @@ from hypothesis.strategies import (
 )
 
 from .from_disk import DentryPerms
+from .identifiers import identifier_to_bytes, snapshot_identifier
 from .model import (
-    Person,
-    Timestamp,
-    TimestampWithTimezone,
+    BaseContent,
+    Content,
+    Directory,
+    DirectoryEntry,
+    ObjectType,
     Origin,
     OriginVisit,
     OriginVisitStatus,
-    Snapshot,
-    SnapshotBranch,
-    ObjectType,
-    TargetType,
+    Person,
     Release,
     Revision,
     RevisionType,
-    BaseContent,
-    Directory,
-    DirectoryEntry,
-    Content,
     SkippedContent,
+    Snapshot,
+    SnapshotBranch,
+    TargetType,
+    Timestamp,
+    TimestampWithTimezone,
 )
-from .identifiers import snapshot_identifier, identifier_to_bytes
-
 
 pgsql_alphabet = characters(
     blacklist_categories=("Cs",), blacklist_characters=["\u0000"]

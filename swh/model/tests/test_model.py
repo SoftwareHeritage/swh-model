@@ -12,41 +12,41 @@ from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
 
+from swh.model.hashutil import MultiHash, hash_to_bytes
+import swh.model.hypothesis_strategies as strategies
+from swh.model.identifiers import (
+    SWHID,
+    directory_identifier,
+    parse_swhid,
+    release_identifier,
+    revision_identifier,
+    snapshot_identifier,
+)
 from swh.model.model import (
     BaseModel,
     Content,
-    SkippedContent,
     Directory,
-    Revision,
-    Release,
-    Snapshot,
-    Origin,
-    OriginVisit,
-    OriginVisitStatus,
-    Timestamp,
-    TimestampWithTimezone,
-    MissingData,
-    Person,
-    RawExtrinsicMetadata,
-    MetadataTargetType,
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
-)
-from swh.model.hashutil import hash_to_bytes, MultiHash
-import swh.model.hypothesis_strategies as strategies
-from swh.model.identifiers import (
-    directory_identifier,
-    revision_identifier,
-    release_identifier,
-    snapshot_identifier,
-    parse_swhid,
-    SWHID,
+    MetadataTargetType,
+    MissingData,
+    Origin,
+    OriginVisit,
+    OriginVisitStatus,
+    Person,
+    RawExtrinsicMetadata,
+    Release,
+    Revision,
+    SkippedContent,
+    Snapshot,
+    Timestamp,
+    TimestampWithTimezone,
 )
 from swh.model.tests.test_identifiers import (
     directory_example,
-    revision_example,
     release_example,
+    revision_example,
     snapshot_example,
 )
 

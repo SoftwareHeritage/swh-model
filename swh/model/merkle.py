@@ -7,7 +7,6 @@
 
 import abc
 from collections.abc import Mapping
-
 from typing import Iterator, List, Set
 
 

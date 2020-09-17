@@ -11,7 +11,7 @@
 
 import sys
 
-from swh.model import identifiers, hashutil
+from swh.model import hashutil, identifiers
 
 
 def revhash(revision_raw):

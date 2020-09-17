@@ -4,12 +4,12 @@
 # See top-level LICENSE file for more information
 
 from datetime import datetime
-from pytz import all_timezones, timezone
 from random import choice, randint, random, shuffle
-from typing import List, Dict
+from typing import Dict, List
+
+from pytz import all_timezones, timezone
 
 from swh.model.hashutil import MultiHash
-
 
 PROTOCOLS = ["git", "http", "https", "deb", "svn", "mock"]
 DOMAINS = ["example.com", "some.long.host.name", "xn--n28h.tld"]

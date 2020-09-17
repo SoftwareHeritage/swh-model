@@ -5,9 +5,8 @@
 
 import binascii
 import datetime
-import hashlib
-
 from functools import lru_cache
+import hashlib
 from typing import Any, Dict, Union
 
 import attr
@@ -16,8 +15,7 @@ from deprecated import deprecated
 from .collections import ImmutableDict
 from .exceptions import ValidationError
 from .fields.hashes import validate_sha1
-from .hashutil import hash_git_data, hash_to_hex, MultiHash
-
+from .hashutil import MultiHash, hash_git_data, hash_to_hex
 
 ORIGIN = "origin"
 SNAPSHOT = "snapshot"

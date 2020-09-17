@@ -3,29 +3,28 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import datetime
-
 from abc import ABCMeta, abstractmethod
+import datetime
 from enum import Enum
 from hashlib import sha256
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
-from typing_extensions import Final
 
 import attr
 from attrs_strict import type_validator
 import dateutil.parser
 import iso8601
+from typing_extensions import Final
 
 from .collections import ImmutableDict
-from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
+from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytes
 from .identifiers import (
-    normalize_timestamp,
-    directory_identifier,
-    revision_identifier,
-    release_identifier,
-    snapshot_identifier,
     SWHID,
+    directory_identifier,
+    normalize_timestamp,
     parse_swhid,
+    release_identifier,
+    revision_identifier,
+    snapshot_identifier,
 )
 
 

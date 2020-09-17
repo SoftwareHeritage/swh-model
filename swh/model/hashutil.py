@@ -54,9 +54,8 @@ Basic usage examples:
 import binascii
 import functools
 import hashlib
-import os
-
 from io import BytesIO
+import os
 from typing import Callable, Dict
 
 ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512"])

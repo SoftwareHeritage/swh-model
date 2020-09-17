@@ -3,12 +3,12 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-# WARNING: do not import unnecessary things here to keep cli startup time under
-# control
-import click
 import os
 import sys
 
+# WARNING: do not import unnecessary things here to keep cli startup time under
+# control
+import click
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -38,7 +38,7 @@ class SWHIDParamType(click.ParamType):
 
 def swhid_of_file(path):
     from swh.model.from_disk import Content
-    from swh.model.identifiers import swhid, CONTENT
+    from swh.model.identifiers import CONTENT, swhid
 
     object = Content.from_file(path=path).get_data()
     return swhid(CONTENT, object)
@@ -46,7 +46,7 @@ def swhid_of_file(path):
 
 def swhid_of_file_content(data):
     from swh.model.from_disk import Content
-    from swh.model.identifiers import swhid, CONTENT
+    from swh.model.identifiers import CONTENT, swhid
 
     object = Content.from_bytes(mode=644, data=data).get_data()
     return swhid(CONTENT, object)
@@ -54,24 +54,23 @@ def swhid_of_file_content(data):
 
 def swhid_of_dir(path):
     from swh.model.from_disk import Directory
-    from swh.model.identifiers import swhid, DIRECTORY
+    from swh.model.identifiers import DIRECTORY, swhid
 
     object = Directory.from_disk(path=path).get_data()
     return swhid(DIRECTORY, object)
 
 
 def swhid_of_origin(url):
-    from swh.model.identifiers import origin_identifier
-    from swh.model.identifiers import SWHID
+    from swh.model.identifiers import SWHID, origin_identifier
 
     return str(SWHID(object_type="origin", object_id=origin_identifier({"url": url})))
 
 
 def swhid_of_git_repo(path):
     import dulwich.repo
+
     from swh.model import hashutil
-    from swh.model.identifiers import snapshot_identifier
-    from swh.model.identifiers import SWHID
+    from swh.model.identifiers import SWHID, snapshot_identifier
 
     repo = dulwich.repo.Repo(path)
 
