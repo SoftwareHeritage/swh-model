@@ -856,7 +856,7 @@ class RawExtrinsicMetadata(BaseModel):
                     "Got SWHID as id for origin metadata (expected an URL)."
                 )
         else:
-            self._check_pid(self.type.value, value)
+            self._check_swhid(self.type.value, value)
 
     @discovery_date.validator
     def check_discovery_date(self, attribute, value):
@@ -925,7 +925,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'snapshot' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("snapshot", value)
+        self._check_swhid("snapshot", value)
 
     @release.validator
     def check_release(self, attribute, value):
@@ -941,7 +941,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'release' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("release", value)
+        self._check_swhid("release", value)
 
     @revision.validator
     def check_revision(self, attribute, value):
@@ -953,7 +953,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'revision' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("revision", value)
+        self._check_swhid("revision", value)
 
     @path.validator
     def check_path(self, attribute, value):
@@ -975,20 +975,20 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'directory' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("directory", value)
+        self._check_swhid("directory", value)
 
-    def _check_pid(self, expected_object_type, pid):
-        if isinstance(pid, str):
-            raise ValueError(f"Expected SWHID, got a string: {pid}")
+    def _check_swhid(self, expected_object_type, swhid):
+        if isinstance(swhid, str):
+            raise ValueError(f"Expected SWHID, got a string: {swhid}")
 
-        if pid.object_type != expected_object_type:
+        if swhid.object_type != expected_object_type:
             raise ValueError(
                 f"Expected SWHID type '{expected_object_type}', "
-                f"got '{pid.object_type}' in {pid}"
+                f"got '{swhid.object_type}' in {swhid}"
             )
 
-        if pid.metadata:
-            raise ValueError(f"Expected core SWHID, but got: {pid}")
+        if swhid.metadata:
+            raise ValueError(f"Expected core SWHID, but got: {swhid}")
 
     def to_dict(self):
         d = super().to_dict()

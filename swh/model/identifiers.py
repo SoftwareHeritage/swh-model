@@ -10,7 +10,6 @@ import hashlib
 from typing import Any, Dict, Union
 
 import attr
-from deprecated import deprecated
 
 from .collections import ImmutableDict
 from .exceptions import ValidationError
@@ -29,13 +28,6 @@ SWHID_VERSION = 1
 SWHID_TYPES = ["ori", "snp", "rel", "rev", "dir", "cnt"]
 SWHID_SEP = ":"
 SWHID_CTXT_SEP = ";"
-
-# deprecated variables
-PID_NAMESPACE = SWHID_NAMESPACE
-PID_VERSION = SWHID_VERSION
-PID_TYPES = SWHID_TYPES
-PID_SEP = SWHID_SEP
-PID_CTXT_SEP = SWHID_CTXT_SEP
 
 
 @lru_cache()
@@ -736,20 +728,6 @@ class SWHID:
         return swhid
 
 
-@deprecated("Use swh.model.identifiers.SWHID instead")
-class PersistentId(SWHID):
-    """
-    Named tuple holding the relevant info associated to a SoftWare Heritage
-    persistent IDentifier.
-
-    .. deprecated:: 0.3.8
-        Use :class:`swh.model.identifiers.SWHID` instead
-
-    """
-
-    pass
-
-
 def swhid(
     object_type: str,
     object_id: Union[str, Dict[str, Any]],
@@ -782,17 +760,6 @@ def swhid(
         metadata=metadata,  # type: ignore  # mypy can't properly unify types
     )
     return str(swhid)
-
-
-@deprecated("Use swh.model.identifiers.swhid instead")
-def persistent_identifier(*args, **kwargs) -> str:
-    """Compute :ref:`persistent-identifiers`
-
-    .. deprecated:: 0.3.8
-        Use :func:`swh.model.identifiers.swhid` instead
-
-    """
-    return swhid(*args, **kwargs)
 
 
 def parse_swhid(swhid: str) -> SWHID:
@@ -848,13 +815,3 @@ def parse_swhid(swhid: str) -> SWHID:
         _id,
         _metadata,  # type: ignore  # mypy can't properly unify types
     )
-
-
-@deprecated("Use swh.model.identifiers.parse_swhid instead")
-def parse_persistent_identifier(persistent_id: str) -> PersistentId:
-    """Parse :ref:`persistent-identifiers`.
-
-    .. deprecated:: 0.3.8
-        Use :func:`swh.model.identifiers.parse_swhid` instead
-    """
-    return PersistentId(**parse_swhid(persistent_id).to_dict())
