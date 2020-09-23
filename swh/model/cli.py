@@ -9,6 +9,8 @@ import sys
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
 import click
+from swh.core.cli import swh as swh_cli_group
+
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -138,7 +140,7 @@ def identify_object(obj_type, follow_symlinks, obj):
     return (obj, swhid)
 
 
-@click.command(context_settings=CONTEXT_SETTINGS)
+@swh_cli_group.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "--dereference/--no-dereference",
     "follow_symlinks",

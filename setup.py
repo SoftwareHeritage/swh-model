@@ -54,14 +54,14 @@ setup(
     ),
     extras_require={
         "cli": parse_requirements("cli"),
-        "testing": parse_requirements("test"),
+        "testing": parse_requirements("test") + parse_requirements("cli"),
     },
     include_package_data=True,
     entry_points="""
         [console_scripts]
         swh-identify=swh.model.cli:identify
         [swh.cli.subcommands]
-        identify=swh.model.cli:identify
+        identify=swh.model.cli
     """,
     classifiers=[
         "Programming Language :: Python :: 3",
