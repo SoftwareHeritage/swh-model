@@ -7,7 +7,7 @@ from operator import itemgetter
 import os
 import sys
 
-from swh.model.from_disk import Directory, DentryPerms
+from swh.model.from_disk import DentryPerms, Directory
 from swh.model.hashutil import ALGORITHMS, hash_to_hex
 
 

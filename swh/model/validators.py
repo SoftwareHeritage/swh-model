@@ -3,8 +3,8 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-from .exceptions import ValidationError, NON_FIELD_ERRORS
 from . import fields
+from .exceptions import NON_FIELD_ERRORS, ValidationError
 from .hashutil import MultiHash, hash_to_bytes
 
 

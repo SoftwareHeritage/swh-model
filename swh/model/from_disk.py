@@ -7,21 +7,18 @@ import datetime
 import enum
 import os
 import stat
+from typing import Any, Iterable, List, Optional, Tuple
 
 import attr
 from attrs_strict import type_validator
-from typing import Any, Iterable, List, Optional, Tuple
 from typing_extensions import Final
 
-from .hashutil import MultiHash
-from .merkle import MerkleLeaf, MerkleNode
-from .identifiers import (
-    directory_entry_sort_key,
-    directory_identifier,
-    identifier_to_bytes as id_to_bytes,
-    identifier_to_str as id_to_str,
-)
 from . import model
+from .hashutil import MultiHash
+from .identifiers import directory_entry_sort_key, directory_identifier
+from .identifiers import identifier_to_bytes as id_to_bytes
+from .identifiers import identifier_to_str as id_to_str
+from .merkle import MerkleLeaf, MerkleNode
 
 
 @attr.s

@@ -3,19 +3,18 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+from collections import defaultdict
 import os
-import pytest
 import tarfile
 import tempfile
+from typing import ClassVar, Optional
 import unittest
 
-from collections import defaultdict
-from typing import ClassVar, Optional
+import pytest
 
-from swh.model import from_disk
+from swh.model import from_disk, model
 from swh.model.from_disk import Content, DentryPerms, Directory, DiskBackedContent
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
-from swh.model import model
 
 TEST_DATA = os.path.join(os.path.dirname(__file__), "data")
 

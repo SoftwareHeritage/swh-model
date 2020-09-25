@@ -5,8 +5,9 @@
 
 import binascii
 import datetime
-import pytest
 import unittest
+
+import pytest
 
 from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError

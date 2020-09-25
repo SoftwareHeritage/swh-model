@@ -6,22 +6,21 @@
 import datetime
 
 import attr
-import iso8601
 from hypothesis import given, settings
+import iso8601
 
 from swh.model.hashutil import DEFAULT_ALGORITHMS
 from swh.model.hypothesis_strategies import (
     aware_datetimes,
-    objects,
-    object_dicts,
     contents,
-    skipped_contents,
-    snapshots,
+    object_dicts,
+    objects,
     origin_visits,
     persons,
+    skipped_contents,
+    snapshots,
 )
 from swh.model.model import TargetType
-
 
 target_types = ("content", "directory", "revision", "release", "snapshot", "alias")
 all_but_skipped_content = (
