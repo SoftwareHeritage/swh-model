@@ -12,39 +12,41 @@ from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
 
+from swh.model.hashutil import MultiHash, hash_to_bytes
+import swh.model.hypothesis_strategies as strategies
+from swh.model.identifiers import (
+    SWHID,
+    directory_identifier,
+    parse_swhid,
+    release_identifier,
+    revision_identifier,
+    snapshot_identifier,
+)
 from swh.model.model import (
     BaseModel,
     Content,
-    SkippedContent,
     Directory,
-    Revision,
-    Release,
-    Snapshot,
-    Origin,
-    Timestamp,
-    TimestampWithTimezone,
-    MissingData,
-    Person,
-    RawExtrinsicMetadata,
-    MetadataTargetType,
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
-)
-from swh.model.hashutil import hash_to_bytes, MultiHash
-import swh.model.hypothesis_strategies as strategies
-from swh.model.identifiers import (
-    directory_identifier,
-    revision_identifier,
-    release_identifier,
-    snapshot_identifier,
-    parse_swhid,
-    SWHID,
+    MetadataTargetType,
+    MissingData,
+    Origin,
+    OriginVisit,
+    OriginVisitStatus,
+    Person,
+    RawExtrinsicMetadata,
+    Release,
+    Revision,
+    SkippedContent,
+    Snapshot,
+    Timestamp,
+    TimestampWithTimezone,
 )
 from swh.model.tests.test_identifiers import (
     directory_example,
-    revision_example,
     release_example,
+    revision_example,
     snapshot_example,
 )
 
@@ -97,7 +99,7 @@ def test_anonymization(objtype_and_obj):
         assert anon_obj is None
 
 
-# Origin, OriginVisit
+# Origin, OriginVisit, OriginVisitStatus
 
 
 @given(strategies.origins())
@@ -115,11 +117,29 @@ def test_todict_origin_visits(origin_visit):
     assert origin_visit == type(origin_visit).from_dict(obj)
 
 
+def test_origin_visit_naive_datetime():
+    with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
+        OriginVisit(
+            origin="http://foo/", date=datetime.datetime.now(), type="git",
+        )
+
+
 @given(strategies.origin_visit_statuses())
 def test_todict_origin_visit_statuses(origin_visit_status):
     obj = origin_visit_status.to_dict()
 
     assert origin_visit_status == type(origin_visit_status).from_dict(obj)
+
+
+def test_origin_visit_status_naive_datetime():
+    with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
+        OriginVisitStatus(
+            origin="http://foo/",
+            visit=42,
+            date=datetime.datetime.now(),
+            status="ongoing",
+            snapshot=None,
+        )
 
 
 # Timestamp
@@ -222,6 +242,13 @@ def test_timestampwithtimezone_from_datetime():
         offset=60,
         negative_utc=False,
     )
+
+
+def test_timestampwithtimezone_from_naive_datetime():
+    date = datetime.datetime(2020, 2, 27, 14, 39, 19)
+
+    with pytest.raises(ValueError, match="datetime without timezone"):
+        TimestampWithTimezone.from_datetime(date)
 
 
 def test_timestampwithtimezone_from_iso8601():
@@ -363,7 +390,7 @@ def test_content_from_dict(content_d):
 
 def test_content_from_dict_str_ctime():
     # test with ctime as a string
-    n = datetime.datetime(2020, 5, 6, 12, 34)
+    n = datetime.datetime(2020, 5, 6, 12, 34, tzinfo=datetime.timezone.utc)
     content_d = {
         "ctime": n.isoformat(),
         "data": b"",
@@ -375,6 +402,22 @@ def test_content_from_dict_str_ctime():
     }
     c = Content.from_dict(content_d)
     assert c.ctime == n
+
+
+def test_content_from_dict_str_naive_ctime():
+    # test with ctime as a string
+    n = datetime.datetime(2020, 5, 6, 12, 34)
+    content_d = {
+        "ctime": n.isoformat(),
+        "data": b"",
+        "length": 0,
+        "sha1": b"\x00",
+        "sha256": b"\x00",
+        "sha1_git": b"\x00",
+        "blake2s256": b"\x00",
+    }
+    with pytest.raises(ValueError, match="must be a timezone-aware datetime."):
+        Content.from_dict(content_d)
 
 
 @given(binary(max_size=4096))
@@ -395,6 +438,14 @@ def test_hidden_content_from_data(data):
     assert c.status == "hidden"
     for key, value in MultiHash.from_data(data).digest().items():
         assert getattr(c, key) == value
+
+
+def test_content_naive_datetime():
+    c = Content.from_data(b"foo")
+    with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
+        Content(
+            **c.to_dict(), ctime=datetime.datetime.now(),
+        )
 
 
 # SkippedContent
@@ -420,6 +471,14 @@ def test_skipped_content_origin_is_str(skipped_content_d):
     skipped_content_d["origin"] = Origin(url="http://path/to/origin")
     with pytest.raises(ValueError, match="origin"):
         SkippedContent.from_dict(skipped_content_d)
+
+
+def test_skipped_content_naive_datetime():
+    c = SkippedContent.from_data(b"foo", reason="reason")
+    with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
+        SkippedContent(
+            **c.to_dict(), ctime=datetime.datetime.now(),
+        )
 
 
 # Revision
@@ -694,7 +753,7 @@ _metadata_fetcher = MetadataFetcher(name="test-fetcher", version="0.0.1",)
 _content_swhid = parse_swhid("swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2")
 _origin_url = "https://forge.softwareheritage.org/source/swh-model.git"
 _common_metadata_fields = dict(
-    discovery_date=datetime.datetime.now(),
+    discovery_date=datetime.datetime.now(tz=datetime.timezone.utc),
     authority=_metadata_authority,
     fetcher=_metadata_fetcher,
     format="json",
@@ -799,6 +858,15 @@ def test_metadata_invalid_id():
                 metadata={"foo": "bar"},
             ),
             **_common_metadata_fields,
+        )
+
+
+def test_metadata_naive_datetime():
+    with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
+        RawExtrinsicMetadata(
+            type=MetadataTargetType.ORIGIN,
+            id=_origin_url,
+            **{**_common_metadata_fields, "discovery_date": datetime.datetime.now()},
         )
 
 

@@ -17,7 +17,6 @@ requirements.txt
 setup.cfg
 setup.py
 tox.ini
-version.txt
 bin/git-revhash
 bin/swh-hashtree
 bin/swh-revhash

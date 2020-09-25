@@ -3,29 +3,28 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import datetime
-
 from abc import ABCMeta, abstractmethod
+import datetime
 from enum import Enum
 from hashlib import sha256
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
-from typing_extensions import Final
 
 import attr
 from attrs_strict import type_validator
 import dateutil.parser
 import iso8601
+from typing_extensions import Final
 
 from .collections import ImmutableDict
-from .hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, MultiHash
+from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytes
 from .identifiers import (
-    normalize_timestamp,
-    directory_identifier,
-    revision_identifier,
-    release_identifier,
-    snapshot_identifier,
     SWHID,
+    directory_identifier,
+    normalize_timestamp,
     parse_swhid,
+    release_identifier,
+    revision_identifier,
+    snapshot_identifier,
 )
 
 
@@ -267,6 +266,12 @@ class OriginVisit(BaseModel):
     """Should not be set before calling 'origin_visit_add()'."""
     visit = attr.ib(type=Optional[int], validator=type_validator(), default=None)
 
+    @date.validator
+    def check_date(self, attribute, value):
+        """Checks the date has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("date must be a timezone-aware datetime.")
+
     def to_dict(self):
         """Serializes the date as a string and omits the visit id if it is
         `None`."""
@@ -299,6 +304,12 @@ class OriginVisitStatus(BaseModel):
         converter=freeze_optional_dict,
         default=None,
     )
+
+    @date.validator
+    def check_date(self, attribute, value):
+        """Checks the date has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("date must be a timezone-aware datetime.")
 
 
 class TargetType(Enum):
@@ -437,7 +448,7 @@ class RevisionType(Enum):
     MERCURIAL = "hg"
 
 
-def tuplify_extra_headers(value: Iterable) -> Tuple:
+def tuplify_extra_headers(value: Iterable):
     return tuple((k, v) for k, v in value)
 
 
@@ -464,9 +475,9 @@ class Revision(BaseModel, HashableObject):
     parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
     extra_headers = attr.ib(
-        type=Tuple[Tuple[bytes, bytes], ...],  # but it makes mypy sad
+        type=Tuple[Tuple[bytes, bytes], ...],
         validator=type_validator(),
-        converter=tuplify_extra_headers,  # type: ignore
+        converter=tuplify_extra_headers,
         default=(),
     )
 
@@ -621,6 +632,12 @@ class Content(BaseContent):
         if value < 0:
             raise ValueError("Length must be positive.")
 
+    @ctime.validator
+    def check_ctime(self, attribute, value):
+        """Checks the ctime has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("ctime must be a timezone-aware datetime.")
+
     def to_dict(self):
         content = super().to_dict()
         if content["data"] is None:
@@ -694,6 +711,12 @@ class SkippedContent(BaseContent):
         """Checks the length is positive or -1."""
         if value < -1:
             raise ValueError("Length must be positive or -1.")
+
+    @ctime.validator
+    def check_ctime(self, attribute, value):
+        """Checks the ctime has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("ctime must be a timezone-aware datetime.")
 
     def to_dict(self):
         content = super().to_dict()
@@ -833,7 +856,13 @@ class RawExtrinsicMetadata(BaseModel):
                     "Got SWHID as id for origin metadata (expected an URL)."
                 )
         else:
-            self._check_pid(self.type.value, value)
+            self._check_swhid(self.type.value, value)
+
+    @discovery_date.validator
+    def check_discovery_date(self, attribute, value):
+        """Checks the discovery_date has a timezone."""
+        if value is not None and value.tzinfo is None:
+            raise ValueError("discovery_date must be a timezone-aware datetime.")
 
     @origin.validator
     def check_origin(self, attribute, value):
@@ -896,7 +925,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'snapshot' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("snapshot", value)
+        self._check_swhid("snapshot", value)
 
     @release.validator
     def check_release(self, attribute, value):
@@ -912,7 +941,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'release' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("release", value)
+        self._check_swhid("release", value)
 
     @revision.validator
     def check_revision(self, attribute, value):
@@ -924,7 +953,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'revision' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("revision", value)
+        self._check_swhid("revision", value)
 
     @path.validator
     def check_path(self, attribute, value):
@@ -946,20 +975,20 @@ class RawExtrinsicMetadata(BaseModel):
                 f"Unexpected 'directory' context for {self.type.value} object: {value}"
             )
 
-        self._check_pid("directory", value)
+        self._check_swhid("directory", value)
 
-    def _check_pid(self, expected_object_type, pid):
-        if isinstance(pid, str):
-            raise ValueError(f"Expected SWHID, got a string: {pid}")
+    def _check_swhid(self, expected_object_type, swhid):
+        if isinstance(swhid, str):
+            raise ValueError(f"Expected SWHID, got a string: {swhid}")
 
-        if pid.object_type != expected_object_type:
+        if swhid.object_type != expected_object_type:
             raise ValueError(
                 f"Expected SWHID type '{expected_object_type}', "
-                f"got '{pid.object_type}' in {pid}"
+                f"got '{swhid.object_type}' in {swhid}"
             )
 
-        if pid.metadata:
-            raise ValueError(f"Expected core SWHID, but got: {pid}")
+        if swhid.metadata:
+            raise ValueError(f"Expected core SWHID, but got: {swhid}")
 
     def to_dict(self):
         d = super().to_dict()

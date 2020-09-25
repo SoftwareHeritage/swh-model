@@ -1,3 +1,3 @@
-swh.core
+swh.core >= 0.3
 Click
 dulwich

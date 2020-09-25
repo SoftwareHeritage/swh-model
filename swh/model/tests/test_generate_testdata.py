@@ -3,9 +3,9 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-from .generate_testdata import gen_contents, gen_origins, ORIGINS
+from swh.model.model import BaseContent, Origin
 
-from swh.model.model import Origin, BaseContent
+from .generate_testdata import ORIGINS, gen_contents, gen_origins
 
 
 def test_gen_origins_empty():

@@ -5,8 +5,9 @@
 #    --ignore-empty-folders
 # 38f8d2c3a951f6b94007896d0981077e48bbd702
 
-import click
 import os
+
+import click
 
 from swh.model import from_disk, hashutil
 
