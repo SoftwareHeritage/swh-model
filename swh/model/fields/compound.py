@@ -6,7 +6,7 @@
 from collections import defaultdict
 import itertools
 
-from ..exceptions import ValidationError, NON_FIELD_ERRORS
+from ..exceptions import NON_FIELD_ERRORS, ValidationError
 
 
 def validate_against_schema(model, schema, value):

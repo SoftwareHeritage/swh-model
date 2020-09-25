@@ -4,10 +4,10 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-from setuptools import setup, find_packages
-
-from os import path
 from io import open
+from os import path
+
+from setuptools import find_packages, setup
 
 here = path.abspath(path.dirname(__file__))
 
@@ -54,14 +54,14 @@ setup(
     ),
     extras_require={
         "cli": parse_requirements("cli"),
-        "testing": parse_requirements("test"),
+        "testing": parse_requirements("test") + parse_requirements("cli"),
     },
     include_package_data=True,
     entry_points="""
         [console_scripts]
         swh-identify=swh.model.cli:identify
         [swh.cli.subcommands]
-        identify=swh.model.cli:identify
+        identify=swh.model.cli
     """,
     classifiers=[
         "Programming Language :: Python :: 3",

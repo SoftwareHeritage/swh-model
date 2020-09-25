@@ -1,28 +1,15 @@
-# Copyright (C) 2018-2019  The Software Heritage developers
+# Copyright (C) 2018-2020  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import click
-import dulwich.repo
 import os
 import sys
 
-from functools import partial
-from urllib.parse import urlparse
-
-from swh.model import hashutil
-from swh.model.identifiers import (
-    origin_identifier,
-    snapshot_identifier,
-    parse_swhid,
-    swhid,
-    SWHID,
-    CONTENT,
-    DIRECTORY,
-)
-from swh.model.exceptions import ValidationError
-from swh.model.from_disk import Content, Directory
+# WARNING: do not import unnecessary things here to keep cli startup time under
+# control
+import click
+from swh.core.cli import swh as swh_cli_group
 
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -41,6 +28,9 @@ class SWHIDParamType(click.ParamType):
     name = "persistent identifier"
 
     def convert(self, value, param, ctx):
+        from swh.model.exceptions import ValidationError
+        from swh.model.identifiers import parse_swhid
+
         try:
             parse_swhid(value)
             return value  # return as string, as we need just that
@@ -49,26 +39,41 @@ class SWHIDParamType(click.ParamType):
 
 
 def swhid_of_file(path):
+    from swh.model.from_disk import Content
+    from swh.model.identifiers import CONTENT, swhid
+
     object = Content.from_file(path=path).get_data()
     return swhid(CONTENT, object)
 
 
 def swhid_of_file_content(data):
+    from swh.model.from_disk import Content
+    from swh.model.identifiers import CONTENT, swhid
+
     object = Content.from_bytes(mode=644, data=data).get_data()
     return swhid(CONTENT, object)
 
 
 def swhid_of_dir(path):
+    from swh.model.from_disk import Directory
+    from swh.model.identifiers import DIRECTORY, swhid
+
     object = Directory.from_disk(path=path).get_data()
     return swhid(DIRECTORY, object)
 
 
 def swhid_of_origin(url):
-    swhid = SWHID(object_type="origin", object_id=origin_identifier({"url": url}))
-    return str(swhid)
+    from swh.model.identifiers import SWHID, origin_identifier
+
+    return str(SWHID(object_type="origin", object_id=origin_identifier({"url": url})))
 
 
 def swhid_of_git_repo(path):
+    import dulwich.repo
+
+    from swh.model import hashutil
+    from swh.model.identifiers import SWHID, snapshot_identifier
+
     repo = dulwich.repo.Repo(path)
 
     branches = {}
@@ -90,11 +95,12 @@ def swhid_of_git_repo(path):
 
     snapshot = {"branches": branches}
 
-    swhid = SWHID(object_type="snapshot", object_id=snapshot_identifier(snapshot))
-    return str(swhid)
+    return str(SWHID(object_type="snapshot", object_id=snapshot_identifier(snapshot)))
 
 
 def identify_object(obj_type, follow_symlinks, obj):
+    from urllib.parse import urlparse
+
     if obj_type == "auto":
         if obj == "-" or os.path.isfile(obj):
             obj_type = "content"
@@ -134,7 +140,7 @@ def identify_object(obj_type, follow_symlinks, obj):
     return (obj, swhid)
 
 
-@click.command(context_settings=CONTEXT_SETTINGS)
+@swh_cli_group.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "--dereference/--no-dereference",
     "follow_symlinks",
@@ -194,6 +200,7 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
       swh:1:snp:510aa88bdc517345d258c1fc2babcd0e1f905e93	helloworld.git
 
     """  # NoQA  # overlong lines in shell examples are fine
+    from functools import partial
 
     if verify and len(objects) != 1:
         raise click.BadParameter("verification requires a single object")

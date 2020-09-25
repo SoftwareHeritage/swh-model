@@ -10,7 +10,7 @@ typing_extensions
 pyblake2
 
 [cli]
-swh.core
+swh.core>=0.3
 Click
 dulwich
 
@@ -19,3 +19,6 @@ Click
 dulwich
 pytest
 pytz
+swh.core>=0.3
+Click
+dulwich
