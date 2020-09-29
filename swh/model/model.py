@@ -35,6 +35,10 @@ class MissingData(Exception):
     pass
 
 
+KeyType = Union[Dict[str, str], Dict[str, bytes], bytes]
+"""The type returned by BaseModel.unique_key()."""
+
+
 SHA1_SIZE = 20
 
 # TODO: Limit this to 20 bytes
@@ -98,6 +102,11 @@ class BaseModel:
         """
         return None
 
+    def unique_key(self) -> KeyType:
+        """Returns a unique key for this object, that can be used for
+        deduplication."""
+        raise NotImplementedError(f"unique_key for {self}")
+
 
 class HashableObject(metaclass=ABCMeta):
     """Mixin to automatically compute object identifier hash when
@@ -114,6 +123,9 @@ class HashableObject(metaclass=ABCMeta):
         if not self.id:
             obj_id = hash_to_bytes(self.compute_hash(self.to_dict()))
             object.__setattr__(self, "id", obj_id)
+
+    def unique_key(self) -> KeyType:
+        return self.id  # type: ignore
 
 
 @attr.s(frozen=True)
@@ -252,6 +264,9 @@ class Origin(BaseModel):
 
     url = attr.ib(type=str, validator=type_validator())
 
+    def unique_key(self) -> KeyType:
+        return {"url": self.url}
+
 
 @attr.s(frozen=True)
 class OriginVisit(BaseModel):
@@ -279,6 +294,9 @@ class OriginVisit(BaseModel):
         if ov["visit"] is None:
             del ov["visit"]
         return ov
+
+    def unique_key(self) -> KeyType:
+        return {"origin": self.origin, "date": str(self.date)}
 
 
 @attr.s(frozen=True)
@@ -310,6 +328,9 @@ class OriginVisitStatus(BaseModel):
         """Checks the date has a timezone."""
         if value is not None and value.tzinfo is None:
             raise ValueError("date must be a timezone-aware datetime.")
+
+    def unique_key(self) -> KeyType:
+        return {"origin": self.origin, "visit": str(self.visit), "date": str(self.date)}
 
 
 class TargetType(Enum):
@@ -357,7 +378,7 @@ class SnapshotBranch(BaseModel):
 
 
 @attr.s(frozen=True)
-class Snapshot(BaseModel, HashableObject):
+class Snapshot(HashableObject, BaseModel):
     """Represents the full state of an origin at a given point in time."""
 
     object_type: Final = "snapshot"
@@ -386,7 +407,7 @@ class Snapshot(BaseModel, HashableObject):
 
 
 @attr.s(frozen=True)
-class Release(BaseModel, HashableObject):
+class Release(HashableObject, BaseModel):
     object_type: Final = "release"
 
     name = attr.ib(type=bytes, validator=type_validator())
@@ -453,7 +474,7 @@ def tuplify_extra_headers(value: Iterable):
 
 
 @attr.s(frozen=True)
-class Revision(BaseModel, HashableObject):
+class Revision(HashableObject, BaseModel):
     object_type: Final = "revision"
 
     message = attr.ib(type=Optional[bytes], validator=type_validator())
@@ -543,7 +564,7 @@ class DirectoryEntry(BaseModel):
 
 
 @attr.s(frozen=True)
-class Directory(BaseModel, HashableObject):
+class Directory(HashableObject, BaseModel):
     object_type: Final = "directory"
 
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
@@ -675,6 +696,9 @@ class Content(BaseContent):
             raise MissingData("Content data is None.")
         return self
 
+    def unique_key(self) -> KeyType:
+        return self.sha1  # TODO: use a dict of hashes
+
 
 @attr.s(frozen=True)
 class SkippedContent(BaseContent):
@@ -752,6 +776,9 @@ class SkippedContent(BaseContent):
             raise ValueError('SkippedContent has no "data" attribute %r' % d)
         return super().from_dict(d2, use_subclass=False)
 
+    def unique_key(self) -> KeyType:
+        return self.hashes()
+
 
 class MetadataAuthorityType(Enum):
     DEPOSIT_CLIENT = "deposit_client"
@@ -786,6 +813,9 @@ class MetadataAuthority(BaseModel):
         d["type"] = MetadataAuthorityType(d["type"])
         return super().from_dict(d)
 
+    def unique_key(self) -> KeyType:
+        return {"type": self.type.value, "url": self.url}
+
 
 @attr.s(frozen=True)
 class MetadataFetcher(BaseModel):
@@ -808,6 +838,9 @@ class MetadataFetcher(BaseModel):
         if d["metadata"] is None:
             del d["metadata"]
         return d
+
+    def unique_key(self) -> KeyType:
+        return {"name": self.name, "version": self.version}
 
 
 class MetadataTargetType(Enum):
@@ -1024,3 +1057,14 @@ class RawExtrinsicMetadata(BaseModel):
                 d[swhid_key] = parse_swhid(d[swhid_key])
 
         return super().from_dict(d)
+
+    def unique_key(self) -> KeyType:
+        return {
+            "type": self.type.value,
+            "id": str(self.id),
+            "authority_type": self.authority.type.value,
+            "authority_url": self.authority.url,
+            "discovery_date": str(self.discovery_date),
+            "fetcher_name": self.fetcher.name,
+            "fetcher_version": self.fetcher.version,
+        }
