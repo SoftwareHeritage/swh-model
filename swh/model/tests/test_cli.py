@@ -146,3 +146,19 @@ class TestIdentify(DataMixin, unittest.TestCase):
                 f.write("trailing garbage to make verification fail")
             result = self.runner.invoke(cli.identify, ["--verify", expected_id, path])
             self.assertEqual(result.exit_code, 1)
+
+    def test_exclude(self):
+        """exclude patterns"""
+        self.make_from_tarball(self.tmpdir_name)
+        path = os.path.join(self.tmpdir_name, b"sample-folder")
+
+        excluded_dir = os.path.join(path, b"excluded_dir\x96")
+        os.mkdir(excluded_dir)
+        with open(os.path.join(excluded_dir, b"some_file"), "w") as f:
+            f.write("content")
+
+        result = self.runner.invoke(
+            cli.identify, ["--type", "directory", "--exclude", "excluded_*", path]
+        )
+
+        self.assertSWHID(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")

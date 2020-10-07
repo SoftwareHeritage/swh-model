@@ -5,15 +5,19 @@
 
 import datetime
 import enum
+import fnmatch
+import glob
 import os
+import re
 import stat
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, Iterator, List, Optional, Pattern, Tuple
 
 import attr
 from attrs_strict import type_validator
 from typing_extensions import Final
 
 from . import model
+from .exceptions import InvalidDirectoryPath
 from .hashutil import MultiHash
 from .identifiers import directory_entry_sort_key, directory_identifier
 from .identifiers import identifier_to_bytes as id_to_bytes
@@ -274,6 +278,63 @@ def ignore_named_directories(names, *, case_sensitive=True):
             return dirname.lower() not in names
 
     return named_filter
+
+
+# TODO: `extract_regex_objs` has been copied and adapted from `swh.scanner`.
+# In the future `swh.scanner` should use the `swh.model` version and remove its own.
+def extract_regex_objs(
+    root_path: bytes, patterns: Iterable[bytes]
+) -> Iterator[Pattern[bytes]]:
+    """Generates a regex object for each pattern given in input and checks if
+       the path is a subdirectory or relative to the root path.
+
+      Args:
+        root_path (bytes): path to the root directory
+        patterns (list of byte): patterns to match
+
+       Yields:
+          an SRE_Pattern object
+    """
+    absolute_root_path = os.path.abspath(root_path)
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            absolute_path = os.path.abspath(path)
+            if not absolute_path.startswith(absolute_root_path):
+                error_msg = (
+                    b'The path "' + path + b'" is not a subdirectory or relative '
+                    b'to the root directory path: "' + root_path + b'"'
+                )
+                raise InvalidDirectoryPath(error_msg)
+
+        regex = fnmatch.translate((pattern.decode()))
+        yield re.compile(regex.encode())
+
+
+def ignore_directories_patterns(root_path: bytes, patterns: Iterable[bytes]):
+    """Filter for :func:`directory_to_objects` to ignore directories
+    matching certain patterns.
+
+    Args:
+      root_path (bytes): path of the root directory
+      patterns (list of byte): patterns to ignore
+
+    Returns:
+      a directory filter for :func:`directory_to_objects`
+    """
+    sre_patterns = set(extract_regex_objs(root_path, patterns))
+
+    def pattern_filter(
+        dirpath: bytes,
+        dirname: bytes,
+        entries: Iterable[Any],
+        patterns: Iterable[Any] = sre_patterns,
+        root_path: bytes = os.path.abspath(root_path),
+    ):
+        full_path = os.path.abspath(dirpath)
+        relative_path = os.path.relpath(full_path, root_path)
+        return not any([pattern.match(relative_path) for pattern in patterns])
+
+    return pattern_filter
 
 
 def iter_directory(
