@@ -9,8 +9,9 @@ import sys
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
 import click
-from swh.core.cli import swh as swh_cli_group
 
+from swh.core.cli import swh as swh_cli_group
+from swh.model.identifiers import SWHID
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -25,17 +26,19 @@ _DULWICH_TYPES = {
 
 
 class SWHIDParamType(click.ParamType):
-    name = "persistent identifier"
+    """Click argument that accepts SWHID and return them as
+    :class:`swh.model.identifiers.SWHID` instances """
 
-    def convert(self, value, param, ctx):
+    name = "SWHID"
+
+    def convert(self, value, param, ctx) -> SWHID:
         from swh.model.exceptions import ValidationError
         from swh.model.identifiers import parse_swhid
 
         try:
-            parse_swhid(value)
-            return value  # return as string, as we need just that
+            return parse_swhid(value)
         except ValidationError as e:
-            self.fail("%s is not a valid SWHID. %s." % (value, e), param, ctx)
+            self.fail(f'"{value}" is not a valid SWHID: {e}', param, ctx)
 
 
 def swhid_of_file(path):
@@ -209,7 +212,7 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
 
     if verify:
         swhid = next(results)[1]
-        if verify == swhid:
+        if str(verify) == swhid:
             click.echo("SWHID match: %s" % swhid)
             sys.exit(0)
         else:

@@ -1,8 +1,14 @@
-swh-model (0.6.7-3~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.7.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.7.0     - (tagged by Antoine R. Dumont
+    (@ardumont) <ardumont@softwareheritage.org> on 2020-10-07 12:47:02
+    +0200)
+  * Upstream changes:     - v0.7.0     - cli: make SWHIDParamType return
+    SWHID type instead of string     - tox.ini: pin black to the pre-
+    commit version (19.10b0) to avoid flip-flops     - Merge the two
+    test_identifiers.py files.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 25 Sep 2020 16:48:51 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 07 Oct 2020 10:47:55 +0000
 
 swh-model (0.6.7-3~swh1) unstable-swh; urgency=medium
 
