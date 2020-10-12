@@ -71,6 +71,36 @@ def test_todict_inverse_fromdict(objtype_and_obj):
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
 
 
+def test_unique_key():
+    url = "http://example.org/"
+    date = datetime.datetime.now(tz=datetime.timezone.utc)
+    id_ = b"42" * 10
+    assert Origin(url=url).unique_key() == {"url": url}
+    assert OriginVisit(origin=url, date=date, type="git").unique_key() == {
+        "origin": url,
+        "date": str(date),
+    }
+    assert OriginVisitStatus(
+        origin=url, visit=42, date=date, status="created", snapshot=None
+    ).unique_key() == {"origin": url, "visit": "42", "date": str(date),}
+
+    assert Snapshot.from_dict({**snapshot_example, "id": id_}).unique_key() == id_
+    assert Release.from_dict({**release_example, "id": id_}).unique_key() == id_
+    assert Revision.from_dict({**revision_example, "id": id_}).unique_key() == id_
+    assert Directory.from_dict({**directory_example, "id": id_}).unique_key() == id_
+
+    cont = Content.from_data(b"foo")
+    assert cont.unique_key().hex() == "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
+
+    kwargs = {
+        **cont.to_dict(),
+        "reason": "foo",
+        "status": "absent",
+    }
+    del kwargs["data"]
+    assert SkippedContent(**kwargs).unique_key() == cont.hashes()
+
+
 # Anonymization
 
 

@@ -1,8 +1,11 @@
-swh-model (0.7.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.7.1-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.7.1     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2020-10-12 12:16:47 +0200)
+  * Upstream changes:     - v0.7.1     - Add a 'unique_key' method on
+    model objects
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 07 Oct 2020 10:49:03 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 12 Oct 2020 10:19:10 +0000
 
 swh-model (0.7.0-1~swh1) unstable-swh; urgency=medium
 
