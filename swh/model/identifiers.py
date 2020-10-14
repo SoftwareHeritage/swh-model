@@ -7,7 +7,7 @@ import binascii
 import datetime
 from functools import lru_cache
 import hashlib
-from typing import Any, Dict, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import attr
 
@@ -355,45 +355,101 @@ def format_author(author):
     return b" ".join(ret)
 
 
-def format_author_line(header, author, date_offset):
-    """Format a an author line according to git standards.
+def format_manifest(
+    headers: Iterable[Tuple[bytes, bytes]], message: Optional[bytes] = None,
+) -> bytes:
+    """Format a manifest comprised of a sequence of `headers` and an optional `message`.
 
-    An author line has three components:
+    The manifest format, compatible with the git format for tag and commit
+    objects, is as follows:
 
-    - a header, describing the type of author (author, committer, tagger)
-    - a name and email, which is an arbitrary bytestring
-    - optionally, a timestamp with UTC offset specification
+      - for each `key`, `value` in `headers`, emit:
 
-    The author line is formatted thus::
+        - the `key`, literally
+        - an ascii space (``\\x20``)
+        - the `value`, with newlines escaped using :func:`escape_newlines`,
+        - an ascii newline (``\\x0a``)
 
-        `header` `name and email`[ `timestamp` `utc_offset`]
+      - if the `message` is not None, emit:
+
+        - an ascii newline (``\\x0a``)
+        - the `message`, literally
+
+    Args:
+      headers: a sequence of key/value headers stored in the manifest;
+      message: an optional message used to trail the manifest.
+
+    Returns:
+      the formatted manifest as bytes
+    """
+    entries: List[bytes] = []
+
+    for key, value in headers:
+        entries.extend((key, b" ", escape_newlines(value), b"\n"))
+
+    if message is not None:
+        entries.extend((b"\n", message))
+
+    return b"".join(entries)
+
+
+def hash_manifest(
+    type: str, headers: Iterable[Tuple[bytes, bytes]], message: Optional[bytes] = None,
+):
+    """Hash the manifest of an object of type `type`, comprised of a sequence
+    of `headers` and an optional `message`.
+
+    Before hashing, the manifest is serialized with the :func:`format_manifest`
+    function.
+
+    We then use the git "salted sha1" (:func:`swh.model.hashutil.hash_git_data`)
+    with the given `type` to hash the manifest.
+
+    Args:
+      type: the type of object for which we're computing a manifest (e.g.
+        "tag", "commit", ...)
+      headers: a sequence of key/value headers stored in the manifest;
+      message: an optional message used to trail the manifest.
+
+    """
+    manifest = format_manifest(headers, message)
+    return hash_git_data(manifest, type)
+
+
+def format_author_data(author, date_offset) -> bytes:
+    """Format authorship data according to git standards.
+
+    Git authorship data has two components:
+
+    - an author specification, usually a name and email, but in practice an
+      arbitrary bytestring
+    - optionally, a timestamp with a UTC offset specification
+
+    The authorship data is formatted thus::
+
+        `name and email`[ `timestamp` `utc_offset`]
 
     The timestamp is encoded as a (decimal) number of seconds since the UNIX
     epoch (1970-01-01 at 00:00 UTC). As an extension to the git format, we
     support fractional timestamps, using a dot as the separator for the decimal
     part.
 
-    The utc offset is a number of minutes encoded as '[+-]HHMM'. Note some
+    The utc offset is a number of minutes encoded as '[+-]HHMM'. Note that some
     tools can pass a negative offset corresponding to the UTC timezone
     ('-0000'), which is valid and is encoded as such.
 
-    For convenience, this function returns the whole line with its trailing
-    newline.
-
     Args:
-        header: the header of the author line (one of 'author', 'committer',
-            'tagger')
         author: an author specification (dict with two bytes values: name and
             email, or byte value)
         date_offset: a normalized date/time representation as returned by
             :func:`normalize_timestamp`.
 
     Returns:
-        the newline-terminated byte string containing the author line
+        the byte string containing the authorship data
 
     """
 
-    ret = [header.encode(), b" ", escape_newlines(format_author(author))]
+    ret = [format_author(author)]
 
     date_offset = normalize_timestamp(date_offset)
 
@@ -403,7 +459,6 @@ def format_author_line(header, author, date_offset):
 
         ret.extend([b" ", date_f, b" ", offset_f])
 
-    ret.append(b"\n")
     return b"".join(ret)
 
 
@@ -457,24 +512,19 @@ def revision_identifier(revision):
     type.
 
     """
-    components = [
-        b"tree ",
-        identifier_to_str(revision["directory"]).encode(),
-        b"\n",
-    ]
+    headers = [(b"tree", identifier_to_str(revision["directory"]).encode())]
     for parent in revision["parents"]:
         if parent:
-            components.extend(
-                [b"parent ", identifier_to_str(parent).encode(), b"\n",]
-            )
+            headers.append((b"parent", identifier_to_str(parent).encode()))
 
-    components.extend(
-        [
-            format_author_line("author", revision["author"], revision["date"]),
-            format_author_line(
-                "committer", revision["committer"], revision["committer_date"]
-            ),
-        ]
+    headers.append(
+        (b"author", format_author_data(revision["author"], revision["date"]))
+    )
+    headers.append(
+        (
+            b"committer",
+            format_author_data(revision["committer"], revision["committer_date"]),
+        )
     )
 
     # Handle extra headers
@@ -483,14 +533,9 @@ def revision_identifier(revision):
     if not extra_headers and "extra_headers" in metadata:
         extra_headers = metadata["extra_headers"]
 
-    for key, value in extra_headers:
-        components.extend([key, b" ", escape_newlines(value), b"\n"])
+    headers.extend(extra_headers)
 
-    if revision["message"] is not None:
-        components.extend([b"\n", revision["message"]])
-
-    commit_raw = b"".join(components)
-    return identifier_to_str(hash_git_data(commit_raw, "commit"))
+    return identifier_to_str(hash_manifest("commit", headers, revision["message"]))
 
 
 def target_type_to_git(target_type):
@@ -506,27 +551,18 @@ def target_type_to_git(target_type):
 
 def release_identifier(release):
     """Return the intrinsic identifier for a release."""
-    components = [
-        b"object ",
-        identifier_to_str(release["target"]).encode(),
-        b"\n",
-        b"type ",
-        target_type_to_git(release["target_type"]),
-        b"\n",
-        b"tag ",
-        release["name"],
-        b"\n",
+    headers = [
+        (b"object", identifier_to_str(release["target"]).encode()),
+        (b"type", target_type_to_git(release["target_type"])),
+        (b"tag", release["name"]),
     ]
 
     if "author" in release and release["author"]:
-        components.append(
-            format_author_line("tagger", release["author"], release["date"])
+        headers.append(
+            (b"tagger", format_author_data(release["author"], release["date"]))
         )
 
-    if release["message"] is not None:
-        components.extend([b"\n", release["message"]])
-
-    return identifier_to_str(hash_git_data(b"".join(components), "tag"))
+    return identifier_to_str(hash_manifest("tag", headers, release["message"]))
 
 
 def snapshot_identifier(snapshot, *, ignore_unresolved=False):
