@@ -112,16 +112,19 @@ class HashableObject(metaclass=ABCMeta):
     """Mixin to automatically compute object identifier hash when
     the associated model is instantiated."""
 
-    @staticmethod
     @abstractmethod
-    def compute_hash(object_dict):
+    def compute_hash(self) -> bytes:
         """Derived model classes must implement this to compute
-        the object hash from its dict representation."""
+        the object hash.
+
+        This method is called by the object initialization if the `id`
+        attribute is set to an empty value.
+        """
         pass
 
     def __attrs_post_init__(self):
         if not self.id:
-            obj_id = hash_to_bytes(self.compute_hash(self.to_dict()))
+            obj_id = self.compute_hash()
             object.__setattr__(self, "id", obj_id)
 
     def unique_key(self) -> KeyType:
@@ -390,9 +393,8 @@ class Snapshot(HashableObject, BaseModel):
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
-    @staticmethod
-    def compute_hash(object_dict):
-        return snapshot_identifier(object_dict)
+    def compute_hash(self) -> bytes:
+        return hash_to_bytes(snapshot_identifier(self.to_dict()))
 
     @classmethod
     def from_dict(cls, d):
@@ -427,9 +429,8 @@ class Release(HashableObject, BaseModel):
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
-    @staticmethod
-    def compute_hash(object_dict):
-        return release_identifier(object_dict)
+    def compute_hash(self) -> bytes:
+        return hash_to_bytes(release_identifier(self.to_dict()))
 
     @author.validator
     def check_author(self, attribute, value):
@@ -516,9 +517,8 @@ class Revision(HashableObject, BaseModel):
                 attr.validate(self)
             object.__setattr__(self, "metadata", metadata)
 
-    @staticmethod
-    def compute_hash(object_dict):
-        return revision_identifier(object_dict)
+    def compute_hash(self) -> bytes:
+        return hash_to_bytes(revision_identifier(self.to_dict()))
 
     @classmethod
     def from_dict(cls, d):
@@ -570,9 +570,8 @@ class Directory(HashableObject, BaseModel):
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
-    @staticmethod
-    def compute_hash(object_dict):
-        return directory_identifier(object_dict)
+    def compute_hash(self) -> bytes:
+        return hash_to_bytes(directory_identifier(self.to_dict()))
 
     @classmethod
     def from_dict(cls, d):
