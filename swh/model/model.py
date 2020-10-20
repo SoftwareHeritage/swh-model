@@ -8,6 +8,7 @@ import datetime
 from enum import Enum
 from hashlib import sha256
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
+import warnings
 
 import attr
 from attrs_strict import type_validator
@@ -854,12 +855,10 @@ class MetadataTargetType(Enum):
 
 
 @attr.s(frozen=True)
-class RawExtrinsicMetadata(BaseModel):
-    object_type: Final = "raw_extrinsic_metadata"
-
+class _RawExtrinsicMetadata(BaseModel):
     # target object
     type = attr.ib(type=MetadataTargetType, validator=type_validator())
-    id = attr.ib(type=Union[str, SWHID], validator=type_validator())
+    target = attr.ib(type=Union[str, SWHID], validator=type_validator())
     """URL if type=MetadataTargetType.ORIGIN, else core SWHID"""
 
     # source
@@ -880,12 +879,12 @@ class RawExtrinsicMetadata(BaseModel):
     path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
     directory = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
 
-    @id.validator
-    def check_id(self, attribute, value):
+    @target.validator
+    def check_target(self, attribute, value):
         if self.type == MetadataTargetType.ORIGIN:
             if isinstance(value, SWHID) or value.startswith("swh:"):
                 raise ValueError(
-                    "Got SWHID as id for origin metadata (expected an URL)."
+                    "Got SWHID as target for origin metadata (expected an URL)."
                 )
         else:
             self._check_swhid(self.type.value, value)
@@ -1024,6 +1023,7 @@ class RawExtrinsicMetadata(BaseModel):
 
     def to_dict(self):
         d = super().to_dict()
+        d["id"] = d["target"]
         context_keys = (
             "origin",
             "visit",
@@ -1047,8 +1047,16 @@ class RawExtrinsicMetadata(BaseModel):
             "fetcher": MetadataFetcher.from_dict(d["fetcher"]),
         }
 
+        if "id" in d:
+            warnings.warn(
+                "RawExtrinsicMetadata `id` attribute is now called `target`",
+                DeprecationWarning,
+            )
+            # Backwards-compatibility for id -> target migration
+            d["target"] = d.pop("id")
+
         if d["type"] != MetadataTargetType.ORIGIN:
-            d["id"] = parse_swhid(d["id"])
+            d["target"] = parse_swhid(d["target"])
 
         swhid_keys = ("snapshot", "release", "revision", "directory")
         for swhid_key in swhid_keys:
@@ -1060,10 +1068,32 @@ class RawExtrinsicMetadata(BaseModel):
     def unique_key(self) -> KeyType:
         return {
             "type": self.type.value,
-            "id": str(self.id),
+            "target": str(self.target),
             "authority_type": self.authority.type.value,
             "authority_url": self.authority.url,
             "discovery_date": str(self.discovery_date),
             "fetcher_name": self.fetcher.name,
             "fetcher_version": self.fetcher.version,
         }
+
+
+class RawExtrinsicMetadata(_RawExtrinsicMetadata):
+    object_type: Final = "raw_extrinsic_metadata"
+
+    def __init__(self, **kwargs):
+        if "id" in kwargs:
+            warnings.warn(
+                "RawExtrinsicMetadata `id` attribute is now called `target`",
+                DeprecationWarning,
+            )
+            kwargs["target"] = kwargs.pop("id")
+
+        super().__init__(**kwargs)
+
+    @property
+    def id(self):
+        warnings.warn(
+            "RawExtrinsicMetadata `id` attribute is now called `target`",
+            DeprecationWarning,
+        )
+        return self.target
