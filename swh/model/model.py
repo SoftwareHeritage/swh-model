@@ -854,6 +854,24 @@ class MetadataTargetType(Enum):
     ORIGIN = "origin"
 
 
+def mangle_raw_extrinsic_metadata_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+    """Rename the raw_extrinsic_metadata `id` field to `target`, throwing a
+    DeprecationWarning if appropriate"""
+    if "id" in d:
+        target = d.pop("id")
+        if d.get("target") is None:
+            warnings.warn(
+                "RawExtrinsicMetadata `id` attribute is now called `target`",
+                DeprecationWarning,
+            )
+            d["target"] = target
+        elif d["target"] != target:
+            raise ValueError(
+                "Different values for `id` and `target` in RawExtrinsicMetadata"
+            )
+    return d
+
+
 @attr.s(frozen=True)
 class _RawExtrinsicMetadata(BaseModel):
     # target object
@@ -1040,20 +1058,14 @@ class _RawExtrinsicMetadata(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
-        d = {
-            **d,
-            "type": MetadataTargetType(d["type"]),
-            "authority": MetadataAuthority.from_dict(d["authority"]),
-            "fetcher": MetadataFetcher.from_dict(d["fetcher"]),
-        }
-
-        if "id" in d:
-            warnings.warn(
-                "RawExtrinsicMetadata `id` attribute is now called `target`",
-                DeprecationWarning,
-            )
-            # Backwards-compatibility for id -> target migration
-            d["target"] = d.pop("id")
+        d = mangle_raw_extrinsic_metadata_dict(
+            {
+                **d,
+                "type": MetadataTargetType(d["type"]),
+                "authority": MetadataAuthority.from_dict(d["authority"]),
+                "fetcher": MetadataFetcher.from_dict(d["fetcher"]),
+            }
+        )
 
         if d["type"] != MetadataTargetType.ORIGIN:
             d["target"] = parse_swhid(d["target"])
@@ -1081,14 +1093,7 @@ class RawExtrinsicMetadata(_RawExtrinsicMetadata):
     object_type: Final = "raw_extrinsic_metadata"
 
     def __init__(self, **kwargs):
-        if "id" in kwargs:
-            warnings.warn(
-                "RawExtrinsicMetadata `id` attribute is now called `target`",
-                DeprecationWarning,
-            )
-            kwargs["target"] = kwargs.pop("id")
-
-        super().__init__(**kwargs)
+        super().__init__(**mangle_raw_extrinsic_metadata_dict(kwargs))
 
     @property
     def id(self):
