@@ -1,3 +1,14 @@
+swh-model (0.7.2-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.7.2     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2020-10-27 10:37:19 +0100)
+  * Upstream changes:     - Release swh.model v0.7.2     - Add a new --
+    exclude flag to swh identify     - Migrate RawExtrinsicMetadata `id`
+    attribute to `target`     - Future-proof the
+    swh.model.model.HashableObject interface
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 27 Oct 2020 09:41:19 +0000
+
 swh-model (0.7.1-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.7.1     - (tagged by Valentin Lorentz
