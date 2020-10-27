@@ -5,6 +5,7 @@
 
 import os
 import sys
+from typing import List
 
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
@@ -57,11 +58,21 @@ def swhid_of_file_content(data):
     return swhid(CONTENT, object)
 
 
-def swhid_of_dir(path):
-    from swh.model.from_disk import Directory
+def swhid_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> str:
+    from swh.model.from_disk import (
+        Directory,
+        accept_all_directories,
+        ignore_directories_patterns,
+    )
     from swh.model.identifiers import DIRECTORY, swhid
 
-    object = Directory.from_disk(path=path).get_data()
+    dir_filter = (
+        ignore_directories_patterns(path, exclude_patterns)
+        if exclude_patterns
+        else accept_all_directories
+    )
+
+    object = Directory.from_disk(path=path, dir_filter=dir_filter).get_data()
     return swhid(DIRECTORY, object)
 
 
@@ -101,7 +112,7 @@ def swhid_of_git_repo(path):
     return str(SWHID(object_type="snapshot", object_id=snapshot_identifier(snapshot)))
 
 
-def identify_object(obj_type, follow_symlinks, obj):
+def identify_object(obj_type, follow_symlinks, exclude_patterns, obj):
     from urllib.parse import urlparse
 
     if obj_type == "auto":
@@ -130,7 +141,9 @@ def identify_object(obj_type, follow_symlinks, obj):
         if obj_type == "content":
             swhid = swhid_of_file(path)
         elif obj_type == "directory":
-            swhid = swhid_of_dir(path)
+            swhid = swhid_of_dir(
+                path, [pattern.encode() for pattern in exclude_patterns]
+            )
     elif obj_type == "origin":
         swhid = swhid_of_origin(obj)
     elif obj_type == "snapshot":
@@ -166,6 +179,15 @@ def identify_object(obj_type, follow_symlinks, obj):
     help="type of object to identify (default: auto)",
 )
 @click.option(
+    "--exclude",
+    "-x",
+    "exclude_patterns",
+    metavar="PATTERN",
+    multiple=True,
+    help="Exclude directories using glob patterns \
+    (e.g., '*.git' to exclude all .git directories)",
+)
+@click.option(
     "--verify",
     "-v",
     metavar="SWHID",
@@ -173,7 +195,9 @@ def identify_object(obj_type, follow_symlinks, obj):
     help="reference identifier to be compared with computed one",
 )
 @click.argument("objects", nargs=-1, required=True)
-def identify(obj_type, verify, show_filename, follow_symlinks, objects):
+def identify(
+    obj_type, verify, show_filename, follow_symlinks, objects, exclude_patterns,
+):
     """Compute the Software Heritage persistent identifier (SWHID) for the given
     source code object(s).
 
@@ -208,7 +232,9 @@ def identify(obj_type, verify, show_filename, follow_symlinks, objects):
     if verify and len(objects) != 1:
         raise click.BadParameter("verification requires a single object")
 
-    results = map(partial(identify_object, obj_type, follow_symlinks), objects)
+    results = map(
+        partial(identify_object, obj_type, follow_symlinks, exclude_patterns), objects,
+    )
 
     if verify:
         swhid = next(results)[1]
