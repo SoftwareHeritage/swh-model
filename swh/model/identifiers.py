@@ -728,21 +728,23 @@ class SWHID:
     def check_namespace(self, attribute, value):
         if value != SWHID_NAMESPACE:
             raise ValidationError(
-                "Wrong format: only supported namespace is '%s'" % SWHID_NAMESPACE
+                f"Invalid SWHID: namespace is '{value}' but must be '{SWHID_NAMESPACE}'"
             )
 
     @scheme_version.validator
     def check_scheme_version(self, attribute, value):
         if value != SWHID_VERSION:
             raise ValidationError(
-                "Wrong format: only supported version is %d" % SWHID_VERSION
+                f"Invalid SWHID: version is {value} but must be {SWHID_VERSION}"
             )
 
     @object_type.validator
     def check_object_type(self, attribute, value):
         if value not in _object_type_map:
+            supported_types = ", ".join(_object_type_map.keys())
             raise ValidationError(
-                "Wrong input: Supported types are %s" % (list(_object_type_map.keys()))
+                f"Invalid SWHID: object type is {value} but must be "
+                f"one of {supported_types}"
             )
 
     @object_id.validator
@@ -823,7 +825,9 @@ def parse_swhid(swhid: str) -> SWHID:
     swhid_data = swhid_parts.pop(0).split(":")
 
     if len(swhid_data) != 4:
-        raise ValidationError("Wrong format: There should be 4 mandatory values")
+        raise ValidationError(
+            "Invalid SWHID, format must be 'swh:1:OBJECT_TYPE:OBJECT_ID'"
+        )
 
     # Checking for parsing errors
     _ns, _version, _type, _id = swhid_data
@@ -834,7 +838,9 @@ def parse_swhid(swhid: str) -> SWHID:
             break
 
     if not _id:
-        raise ValidationError("Wrong format: Identifier should be present")
+        raise ValidationError(
+            "Invalid SWHID: missing OBJECT_ID (as a 40 hex digit string)"
+        )
 
     _metadata = {}
     for part in swhid_parts:
@@ -842,8 +848,10 @@ def parse_swhid(swhid: str) -> SWHID:
             key, val = part.split("=")
             _metadata[key] = val
         except Exception:
-            msg = "Contextual data is badly formatted, form key=val expected"
-            raise ValidationError(msg)
+            raise ValidationError(
+                "Invalid SWHID: contextual data must be a ;-separated list of "
+                " key=value pairs"
+            )
     return SWHID(
         _ns,
         int(_version),
