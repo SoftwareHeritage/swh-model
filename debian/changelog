@@ -1,8 +1,14 @@
-swh-model (0.7.3-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (0.8.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 0.8.0     - (tagged by Antoine R. Dumont
+    (@ardumont) <ardumont@softwareheritage.org> on 2020-11-12 13:09:48
+    +0100)
+  * Upstream changes:     - v0.8.0     - identifiers.parse_swhid: Make
+    SWHIDs with whitespaces invalid     - identifiers.parse_swhid: Check
+    the swhid qualifiers and fail if invalid     - model.identifiers:
+    Improve error messages in case of invalid SWHIDs
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 27 Oct 2020 15:08:32 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 12 Nov 2020 12:10:46 +0000
 
 swh-model (0.7.3-1~swh1) unstable-swh; urgency=medium
 

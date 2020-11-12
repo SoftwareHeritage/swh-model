@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019  The Software Heritage developers
+# Copyright (C) 2015-2020  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -7,6 +7,7 @@ import binascii
 import datetime
 from functools import lru_cache
 import hashlib
+import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import attr
@@ -728,21 +729,23 @@ class SWHID:
     def check_namespace(self, attribute, value):
         if value != SWHID_NAMESPACE:
             raise ValidationError(
-                "Wrong format: only supported namespace is '%s'" % SWHID_NAMESPACE
+                f"Invalid SWHID: namespace is '{value}' but must be '{SWHID_NAMESPACE}'"
             )
 
     @scheme_version.validator
     def check_scheme_version(self, attribute, value):
         if value != SWHID_VERSION:
             raise ValidationError(
-                "Wrong format: only supported version is %d" % SWHID_VERSION
+                f"Invalid SWHID: version is {value} but must be {SWHID_VERSION}"
             )
 
     @object_type.validator
     def check_object_type(self, attribute, value):
         if value not in _object_type_map:
+            supported_types = ", ".join(_object_type_map.keys())
             raise ValidationError(
-                "Wrong input: Supported types are %s" % (list(_object_type_map.keys()))
+                f"Invalid SWHID: object type is {value} but must be "
+                f"one of {supported_types}"
             )
 
     @object_id.validator
@@ -798,6 +801,9 @@ def swhid(
     return str(swhid)
 
 
+CONTEXT_QUALIFIERS = {"origin", "anchor", "visit", "path", "lines"}
+
+
 def parse_swhid(swhid: str) -> SWHID:
     """Parse :ref:`persistent-identifiers`.
 
@@ -818,12 +824,17 @@ def parse_swhid(swhid: str) -> SWHID:
         a named tuple holding the parsing result
 
     """
+    if re.search(r"[ \t\n\r\f\v]", swhid):
+        raise ValidationError("Invalid SwHID: SWHIDs cannot contain whitespaces")
+
     # <swhid>;<contextual-information>
     swhid_parts = swhid.split(SWHID_CTXT_SEP)
     swhid_data = swhid_parts.pop(0).split(":")
 
     if len(swhid_data) != 4:
-        raise ValidationError("Wrong format: There should be 4 mandatory values")
+        raise ValidationError(
+            "Invalid SWHID, format must be 'swh:1:OBJECT_TYPE:OBJECT_ID'"
+        )
 
     # Checking for parsing errors
     _ns, _version, _type, _id = swhid_data
@@ -834,16 +845,29 @@ def parse_swhid(swhid: str) -> SWHID:
             break
 
     if not _id:
-        raise ValidationError("Wrong format: Identifier should be present")
+        raise ValidationError(
+            "Invalid SWHID: missing OBJECT_ID (as a 40 hex digit string)"
+        )
 
     _metadata = {}
     for part in swhid_parts:
         try:
-            key, val = part.split("=")
-            _metadata[key] = val
+            qualifier, val = part.split("=")
+            _metadata[qualifier] = val
         except Exception:
-            msg = "Contextual data is badly formatted, form key=val expected"
-            raise ValidationError(msg)
+            raise ValidationError(
+                "Invalid SWHID: contextual data must be a ;-separated list of "
+                "key=value pairs"
+            )
+
+    wrong_qualifiers = set(_metadata) - set(CONTEXT_QUALIFIERS)
+    if wrong_qualifiers:
+        error_msg = (
+            f"Invalid SWHID: Wrong qualifiers {', '.join(wrong_qualifiers)}. "
+            f"The qualifiers must be one of {', '.join(CONTEXT_QUALIFIERS)}"
+        )
+        raise ValidationError(error_msg)
+
     return SWHID(
         _ns,
         int(_version),
