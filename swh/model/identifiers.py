@@ -857,7 +857,7 @@ def parse_swhid(swhid: str) -> SWHID:
         except Exception:
             raise ValidationError(
                 "Invalid SWHID: contextual data must be a ;-separated list of "
-                " key=value pairs"
+                "key=value pairs"
             )
 
     wrong_qualifiers = set(_metadata) - set(CONTEXT_QUALIFIERS)
