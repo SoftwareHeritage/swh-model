@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019  The Software Heritage developers
+# Copyright (C) 2015-2020  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -7,6 +7,7 @@ import binascii
 import datetime
 from functools import lru_cache
 import hashlib
+import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import attr
@@ -823,6 +824,9 @@ def parse_swhid(swhid: str) -> SWHID:
         a named tuple holding the parsing result
 
     """
+    if re.search(r"[ \t\n\r\f\v]", swhid):
+        raise ValidationError("Invalid SwHID: SWHIDs cannot contain whitespaces")
+
     # <swhid>;<contextual-information>
     swhid_parts = swhid.split(SWHID_CTXT_SEP)
     swhid_data = swhid_parts.pop(0).split(":")
