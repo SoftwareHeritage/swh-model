@@ -1059,6 +1059,16 @@ def test_normalize_timestamp_dict_invalid_timestamp(dict_input):
         "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed",
         "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
         "swh:1:snp:foo",
+        # wrong qualifier: ori should be origin
+        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
+        # wrong qualifier: anc should be anchor
+        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anc=1;visit=1;path=/",  # noqa
+        # wrong qualifier: vis should be visit
+        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=1;vis=1;path=/",  # noqa
+        # wrong qualifier: pa should be path
+        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=1;visit=1;pa=/",  # noqa
+        # wrong qualifier: line should be lines
+        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;line=10;origin=something;anchor=1;visit=1;path=/",  # noqa
     ],
 )
 def test_parse_swhid_parsing_error(invalid_swhid):

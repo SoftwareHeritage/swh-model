@@ -800,6 +800,9 @@ def swhid(
     return str(swhid)
 
 
+CONTEXT_QUALIFIERS = {"origin", "anchor", "visit", "path", "lines"}
+
+
 def parse_swhid(swhid: str) -> SWHID:
     """Parse :ref:`persistent-identifiers`.
 
@@ -845,13 +848,22 @@ def parse_swhid(swhid: str) -> SWHID:
     _metadata = {}
     for part in swhid_parts:
         try:
-            key, val = part.split("=")
-            _metadata[key] = val
+            qualifier, val = part.split("=")
+            _metadata[qualifier] = val
         except Exception:
             raise ValidationError(
                 "Invalid SWHID: contextual data must be a ;-separated list of "
                 " key=value pairs"
             )
+
+    wrong_qualifiers = set(_metadata) - set(CONTEXT_QUALIFIERS)
+    if wrong_qualifiers:
+        error_msg = (
+            f"Invalid SWHID: Wrong qualifiers {', '.join(wrong_qualifiers)}. "
+            f"The qualifiers must be one of {', '.join(CONTEXT_QUALIFIERS)}"
+        )
+        raise ValidationError(error_msg)
+
     return SWHID(
         _ns,
         int(_version),
