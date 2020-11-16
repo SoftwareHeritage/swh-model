@@ -807,9 +807,7 @@ def test_metadata_valid():
     )
 
 
-@pytest.mark.filterwarnings("ignore: RawExtrinsicMetadata `id`")
-@pytest.mark.parametrize("argument_name", ["id", "target"])
-def test_metadata_to_dict(argument_name):
+def test_metadata_to_dict():
     """Checks valid RawExtrinsicMetadata objects don't raise an error."""
 
     common_fields = {
@@ -821,25 +819,23 @@ def test_metadata_to_dict(argument_name):
     }
 
     m = RawExtrinsicMetadata(
-        type=MetadataTargetType.ORIGIN,
-        **{argument_name: _origin_url, **_common_metadata_fields},
+        type=MetadataTargetType.ORIGIN, target=_origin_url, **_common_metadata_fields,
     )
     assert m.to_dict() == {
         "type": "origin",
         "target": _origin_url,
-        "id": _origin_url,
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
 
     m = RawExtrinsicMetadata(
         type=MetadataTargetType.CONTENT,
-        **{argument_name: _content_swhid, **_common_metadata_fields},
+        target=_content_swhid,
+        **_common_metadata_fields,
     )
     assert m.to_dict() == {
         "type": "content",
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-        "id": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -1227,18 +1223,3 @@ def test_metadata_validate_context_directory():
             ),
             **_common_metadata_fields,
         )
-
-
-def test_metadata_id_attr():
-    """Checks the legacy id attribute on RawExtrinsicMetadata objects"""
-    # Simplest case
-    meta = RawExtrinsicMetadata(
-        type=MetadataTargetType.ORIGIN, target=_origin_url, **_common_metadata_fields
-    )
-
-    assert meta is not None
-
-    with pytest.deprecated_call() as messages:
-        assert meta.id == _origin_url
-
-    assert "RawExtrinsicMetadata `id`" in str(messages[0].message)
