@@ -1,3 +1,12 @@
+swh-model (0.9.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.9.0     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2020-11-17 10:12:47 +0100)
+  * Upstream changes:     - Release swh.model v0.9.0     - Drop
+    backwards compatibility for RawExtrinsicMetadata.id
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 17 Nov 2020 09:15:43 +0000
+
 swh-model (0.8.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.8.0     - (tagged by Antoine R. Dumont
