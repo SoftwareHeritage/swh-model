@@ -84,6 +84,8 @@ class BaseModel:
     Provides serialization/deserialization to/from Python dictionaries,
     that are suitable for JSON/msgpack-like formats."""
 
+    __slots__ = ()
+
     def to_dict(self):
         """Wrapper of `attr.asdict` that can be overridden by subclasses
         that have special handling of some of the fields."""
@@ -112,6 +114,8 @@ class HashableObject(metaclass=ABCMeta):
     """Mixin to automatically compute object identifier hash when
     the associated model is instantiated."""
 
+    __slots__ = ()
+
     @abstractmethod
     def compute_hash(self) -> bytes:
         """Derived model classes must implement this to compute
@@ -131,7 +135,7 @@ class HashableObject(metaclass=ABCMeta):
         return self.id  # type: ignore
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
 
@@ -185,7 +189,7 @@ class Person(BaseModel):
         return Person(fullname=sha256(self.fullname).digest(), name=None, email=None,)
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Timestamp(BaseModel):
     """Represents a naive timestamp from a VCS."""
 
@@ -207,7 +211,7 @@ class Timestamp(BaseModel):
             raise ValueError("Microseconds must be in [0, 1000000[.")
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
 
@@ -259,7 +263,7 @@ class TimestampWithTimezone(BaseModel):
         return tstz
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Origin(BaseModel):
     """Represents a software source: a VCS and an URL."""
 
@@ -271,7 +275,7 @@ class Origin(BaseModel):
         return {"url": self.url}
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class OriginVisit(BaseModel):
     """Represents an origin visit with a given type at a given point in time, by a
     SWH loader."""
@@ -302,7 +306,7 @@ class OriginVisit(BaseModel):
         return {"origin": self.origin, "date": str(self.date)}
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class OriginVisitStatus(BaseModel):
     """Represents a visit update of an origin at a given point in time.
 
@@ -358,7 +362,7 @@ class ObjectType(Enum):
     SNAPSHOT = "snapshot"
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class SnapshotBranch(BaseModel):
     """Represents one of the branches of a snapshot."""
 
@@ -380,7 +384,7 @@ class SnapshotBranch(BaseModel):
         return cls(target=d["target"], target_type=TargetType(d["target_type"]))
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Snapshot(HashableObject, BaseModel):
     """Represents the full state of an origin at a given point in time."""
 
@@ -408,7 +412,7 @@ class Snapshot(HashableObject, BaseModel):
         )
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Release(HashableObject, BaseModel):
     object_type: Final = "release"
 
@@ -474,7 +478,7 @@ def tuplify_extra_headers(value: Iterable):
     return tuple((k, v) for k, v in value)
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Revision(HashableObject, BaseModel):
     object_type: Final = "revision"
 
@@ -552,7 +556,7 @@ class Revision(HashableObject, BaseModel):
         )
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class DirectoryEntry(BaseModel):
     object_type: Final = "directory_entry"
 
@@ -584,7 +588,7 @@ class Directory(HashableObject, BaseModel):
         )
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class BaseContent(BaseModel):
     status = attr.ib(
         type=str, validator=attr.validators.in_(["visible", "hidden", "absent"])
@@ -620,7 +624,7 @@ class BaseContent(BaseModel):
         return {algo: getattr(self, algo) for algo in DEFAULT_ALGORITHMS}
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Content(BaseContent):
     object_type: Final = "content"
 
@@ -699,7 +703,7 @@ class Content(BaseContent):
         return self.sha1  # TODO: use a dict of hashes
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class SkippedContent(BaseContent):
     object_type: Final = "skipped_content"
 
@@ -785,7 +789,7 @@ class MetadataAuthorityType(Enum):
     REGISTRY = "registry"
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class MetadataAuthority(BaseModel):
     """Represents an entity that provides metadata about an origin or
     software artifact."""
@@ -816,7 +820,7 @@ class MetadataAuthority(BaseModel):
         return {"type": self.type.value, "url": self.url}
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class MetadataFetcher(BaseModel):
     """Represents a software component used to fetch metadata from a metadata
     authority, and ingest them into the Software Heritage archive."""
@@ -853,7 +857,7 @@ class MetadataTargetType(Enum):
     ORIGIN = "origin"
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class RawExtrinsicMetadata(BaseModel):
     object_type: Final = "raw_extrinsic_metadata"
 
