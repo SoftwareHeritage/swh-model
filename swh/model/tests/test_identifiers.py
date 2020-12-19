@@ -218,6 +218,8 @@ directory_example = {
     ],
 }
 
+dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
+
 
 class DirectoryIdentifier(unittest.TestCase):
     def setUp(self):
@@ -843,7 +845,7 @@ class SnapshotIdentifier(unittest.TestCase):
         for _type, _hash in [
             (SNAPSHOT, _snapshot_id),
             (SNAPSHOT, _snapshot),
-            ("foo", ""),
+            ("lines", "42"),
         ]:
             with self.assertRaises(ValidationError):
                 identifiers.swhid(_type, _hash)
@@ -1117,17 +1119,9 @@ def test_swhid_hash():
     )
 
     assert hash(
-        SWHID(
-            object_type="directory",
-            object_id=object_id,
-            metadata={"foo": "bar", "baz": "qux"},
-        )
+        SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
     ) == hash(
-        SWHID(
-            object_type="directory",
-            object_id=object_id,
-            metadata={"foo": "bar", "baz": "qux"},
-        )
+        SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
     )
 
     # Different order of the dictionary, so the underlying order of the tuple in
@@ -1136,13 +1130,13 @@ def test_swhid_hash():
         SWHID(
             object_type="directory",
             object_id=object_id,
-            metadata={"foo": "bar", "baz": "qux"},
+            metadata={"origin": "https://example.com", "lines": "42"},
         )
     ) == hash(
         SWHID(
             object_type="directory",
             object_id=object_id,
-            metadata={"baz": "qux", "foo": "bar"},
+            metadata={"lines": "42", "origin": "https://example.com"},
         )
     )
 
@@ -1155,21 +1149,9 @@ def test_swhid_eq():
     )
 
     assert SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"foo": "bar", "baz": "qux"},
-    ) == SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"foo": "bar", "baz": "qux"},
-    )
+        object_type="directory", object_id=object_id, metadata=dummy_qualifiers,
+    ) == SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
 
     assert SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"foo": "bar", "baz": "qux"},
-    ) == SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"baz": "qux", "foo": "bar"},
-    )
+        object_type="directory", object_id=object_id, metadata=dummy_qualifiers,
+    ) == SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
