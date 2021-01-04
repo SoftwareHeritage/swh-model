@@ -567,7 +567,7 @@ class DirectoryEntry(BaseModel):
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
 
 
-@attr.s(frozen=True)
+@attr.s(frozen=True, slots=True)
 class Directory(HashableObject, BaseModel):
     object_type: Final = "directory"
 
