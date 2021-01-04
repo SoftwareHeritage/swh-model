@@ -19,6 +19,7 @@ from .collections import ImmutableDict
 from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytes
 from .identifiers import (
     directory_identifier,
+    extid_identifier,
     normalize_timestamp,
     origin_identifier,
     raw_extrinsic_metadata_identifier,
@@ -1096,3 +1097,25 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
                 d[swhid_key] = CoreSWHID.from_string(d[swhid_key])
 
         return super().from_dict(d)
+
+
+@attr.s(frozen=True, slots=True)
+class ExtID(HashableObject, BaseModel):
+    object_type: Final = "extid"
+
+    extid_type = attr.ib(type=str, validator=type_validator())
+    extid = attr.ib(type=bytes, validator=type_validator())
+    target = attr.ib(type=CoreSWHID, validator=type_validator())
+
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            extid=d["extid"],
+            extid_type=d["extid_type"],
+            target=CoreSWHID.from_string(d["target"]),
+        )
+
+    def compute_hash(self) -> bytes:
+        return hash_to_bytes(extid_identifier(self.to_dict()))
