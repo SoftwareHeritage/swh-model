@@ -5,6 +5,7 @@
 
 import binascii
 import datetime
+from typing import Dict
 import unittest
 
 import pytest
@@ -21,6 +22,14 @@ from swh.model.identifiers import (
     SWHID,
     normalize_timestamp,
 )
+
+
+def remove_id(d: Dict) -> Dict:
+    """Returns a (shallow) copy of a dict with the 'id' key removed."""
+    d = d.copy()
+    if "id" in d:
+        del d["id"]
+    return d
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -234,17 +243,21 @@ class DirectoryIdentifier(unittest.TestCase):
         self.assertEqual(
             identifiers.directory_identifier(self.directory), self.directory["id"]
         )
+        self.assertEqual(
+            identifiers.directory_identifier(remove_id(self.directory)),
+            self.directory["id"],
+        )
 
     def test_dir_identifier_entry_order(self):
         # Reverse order of entries, check the id is still the same.
         directory = {"entries": reversed(self.directory["entries"])}
         self.assertEqual(
-            identifiers.directory_identifier(directory), self.directory["id"]
+            identifiers.directory_identifier(remove_id(directory)), self.directory["id"]
         )
 
     def test_dir_identifier_empty_directory(self):
         self.assertEqual(
-            identifiers.directory_identifier(self.empty_directory),
+            identifiers.directory_identifier(remove_id(self.empty_directory)),
             self.empty_directory["id"],
         )
 
@@ -462,46 +475,52 @@ dg1KdHOa34shrKDaOVzW
             identifiers.revision_identifier(self.revision),
             identifiers.identifier_to_str(self.revision["id"]),
         )
+        self.assertEqual(
+            identifiers.revision_identifier(remove_id(self.revision)),
+            identifiers.identifier_to_str(self.revision["id"]),
+        )
 
     def test_revision_identifier_none_metadata(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_none_metadata),
+            identifiers.revision_identifier(remove_id(self.revision_none_metadata)),
             identifiers.identifier_to_str(self.revision_none_metadata["id"]),
         )
 
     def test_revision_identifier_synthetic(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.synthetic_revision),
+            identifiers.revision_identifier(remove_id(self.synthetic_revision)),
             identifiers.identifier_to_str(self.synthetic_revision["id"]),
         )
 
     def test_revision_identifier_with_extra_headers(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_with_extra_headers),
+            identifiers.revision_identifier(
+                remove_id(self.revision_with_extra_headers)
+            ),
             identifiers.identifier_to_str(self.revision_with_extra_headers["id"]),
         )
 
     def test_revision_identifier_with_gpgsig(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_with_gpgsig),
+            identifiers.revision_identifier(remove_id(self.revision_with_gpgsig)),
             identifiers.identifier_to_str(self.revision_with_gpgsig["id"]),
         )
 
     def test_revision_identifier_no_message(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_no_message),
+            identifiers.revision_identifier(remove_id(self.revision_no_message)),
             identifiers.identifier_to_str(self.revision_no_message["id"]),
         )
 
     def test_revision_identifier_empty_message(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_empty_message),
+            identifiers.revision_identifier(remove_id(self.revision_empty_message)),
             identifiers.identifier_to_str(self.revision_empty_message["id"]),
         )
 
     def test_revision_identifier_only_fullname(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_only_fullname),
+            identifiers.revision_identifier(remove_id(self.revision_only_fullname)),
             identifiers.identifier_to_str(self.revision_only_fullname["id"]),
         )
 
@@ -622,34 +641,38 @@ o6X/3T+vm8K3bf3driRr34c=
             identifiers.release_identifier(self.release),
             identifiers.identifier_to_str(self.release["id"]),
         )
+        self.assertEqual(
+            identifiers.release_identifier(remove_id(self.release)),
+            identifiers.identifier_to_str(self.release["id"]),
+        )
 
     def test_release_identifier_no_author(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_no_author),
+            identifiers.release_identifier(remove_id(self.release_no_author)),
             identifiers.identifier_to_str(self.release_no_author["id"]),
         )
 
     def test_release_identifier_no_message(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_no_message),
+            identifiers.release_identifier(remove_id(self.release_no_message)),
             identifiers.identifier_to_str(self.release_no_message["id"]),
         )
 
     def test_release_identifier_empty_message(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_empty_message),
+            identifiers.release_identifier(remove_id(self.release_empty_message)),
             identifiers.identifier_to_str(self.release_empty_message["id"]),
         )
 
     def test_release_identifier_negative_utc(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_negative_utc),
+            identifiers.release_identifier(remove_id(self.release_negative_utc)),
             identifiers.identifier_to_str(self.release_negative_utc["id"]),
         )
 
     def test_release_identifier_newline_in_author(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_newline_in_author),
+            identifiers.release_identifier(remove_id(self.release_newline_in_author)),
             identifiers.identifier_to_str(self.release_newline_in_author["id"]),
         )
 
@@ -712,29 +735,31 @@ class SnapshotIdentifier(unittest.TestCase):
 
     def test_empty_snapshot(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.empty),
+            identifiers.snapshot_identifier(remove_id(self.empty)),
             identifiers.identifier_to_str(self.empty["id"]),
         )
 
     def test_dangling_branch(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.dangling_branch),
+            identifiers.snapshot_identifier(remove_id(self.dangling_branch)),
             identifiers.identifier_to_str(self.dangling_branch["id"]),
         )
 
     def test_unresolved(self):
         with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
-            identifiers.snapshot_identifier(self.unresolved)
+            identifiers.snapshot_identifier(remove_id(self.unresolved))
 
     def test_unresolved_force(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.unresolved, ignore_unresolved=True,),
+            identifiers.snapshot_identifier(
+                remove_id(self.unresolved), ignore_unresolved=True,
+            ),
             identifiers.identifier_to_str(self.unresolved["id"]),
         )
 
     def test_all_types(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.all_types),
+            identifiers.snapshot_identifier(remove_id(self.all_types)),
             identifiers.identifier_to_str(self.all_types["id"]),
         )
 
