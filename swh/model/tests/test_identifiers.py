@@ -5,6 +5,7 @@
 
 import binascii
 import datetime
+from typing import Dict
 import unittest
 
 import pytest
@@ -21,6 +22,14 @@ from swh.model.identifiers import (
     SWHID,
     normalize_timestamp,
 )
+
+
+def remove_id(d: Dict) -> Dict:
+    """Returns a (shallow) copy of a dict with the 'id' key removed."""
+    d = d.copy()
+    if "id" in d:
+        del d["id"]
+    return d
 
 
 class UtilityFunctionsIdentifier(unittest.TestCase):
@@ -218,6 +227,8 @@ directory_example = {
     ],
 }
 
+dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
+
 
 class DirectoryIdentifier(unittest.TestCase):
     def setUp(self):
@@ -232,17 +243,21 @@ class DirectoryIdentifier(unittest.TestCase):
         self.assertEqual(
             identifiers.directory_identifier(self.directory), self.directory["id"]
         )
+        self.assertEqual(
+            identifiers.directory_identifier(remove_id(self.directory)),
+            self.directory["id"],
+        )
 
     def test_dir_identifier_entry_order(self):
         # Reverse order of entries, check the id is still the same.
         directory = {"entries": reversed(self.directory["entries"])}
         self.assertEqual(
-            identifiers.directory_identifier(directory), self.directory["id"]
+            identifiers.directory_identifier(remove_id(directory)), self.directory["id"]
         )
 
     def test_dir_identifier_empty_directory(self):
         self.assertEqual(
-            identifiers.directory_identifier(self.empty_directory),
+            identifiers.directory_identifier(remove_id(self.empty_directory)),
             self.empty_directory["id"],
         )
 
@@ -460,46 +475,52 @@ dg1KdHOa34shrKDaOVzW
             identifiers.revision_identifier(self.revision),
             identifiers.identifier_to_str(self.revision["id"]),
         )
+        self.assertEqual(
+            identifiers.revision_identifier(remove_id(self.revision)),
+            identifiers.identifier_to_str(self.revision["id"]),
+        )
 
     def test_revision_identifier_none_metadata(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_none_metadata),
+            identifiers.revision_identifier(remove_id(self.revision_none_metadata)),
             identifiers.identifier_to_str(self.revision_none_metadata["id"]),
         )
 
     def test_revision_identifier_synthetic(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.synthetic_revision),
+            identifiers.revision_identifier(remove_id(self.synthetic_revision)),
             identifiers.identifier_to_str(self.synthetic_revision["id"]),
         )
 
     def test_revision_identifier_with_extra_headers(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_with_extra_headers),
+            identifiers.revision_identifier(
+                remove_id(self.revision_with_extra_headers)
+            ),
             identifiers.identifier_to_str(self.revision_with_extra_headers["id"]),
         )
 
     def test_revision_identifier_with_gpgsig(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_with_gpgsig),
+            identifiers.revision_identifier(remove_id(self.revision_with_gpgsig)),
             identifiers.identifier_to_str(self.revision_with_gpgsig["id"]),
         )
 
     def test_revision_identifier_no_message(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_no_message),
+            identifiers.revision_identifier(remove_id(self.revision_no_message)),
             identifiers.identifier_to_str(self.revision_no_message["id"]),
         )
 
     def test_revision_identifier_empty_message(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_empty_message),
+            identifiers.revision_identifier(remove_id(self.revision_empty_message)),
             identifiers.identifier_to_str(self.revision_empty_message["id"]),
         )
 
     def test_revision_identifier_only_fullname(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision_only_fullname),
+            identifiers.revision_identifier(remove_id(self.revision_only_fullname)),
             identifiers.identifier_to_str(self.revision_only_fullname["id"]),
         )
 
@@ -620,34 +641,38 @@ o6X/3T+vm8K3bf3driRr34c=
             identifiers.release_identifier(self.release),
             identifiers.identifier_to_str(self.release["id"]),
         )
+        self.assertEqual(
+            identifiers.release_identifier(remove_id(self.release)),
+            identifiers.identifier_to_str(self.release["id"]),
+        )
 
     def test_release_identifier_no_author(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_no_author),
+            identifiers.release_identifier(remove_id(self.release_no_author)),
             identifiers.identifier_to_str(self.release_no_author["id"]),
         )
 
     def test_release_identifier_no_message(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_no_message),
+            identifiers.release_identifier(remove_id(self.release_no_message)),
             identifiers.identifier_to_str(self.release_no_message["id"]),
         )
 
     def test_release_identifier_empty_message(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_empty_message),
+            identifiers.release_identifier(remove_id(self.release_empty_message)),
             identifiers.identifier_to_str(self.release_empty_message["id"]),
         )
 
     def test_release_identifier_negative_utc(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_negative_utc),
+            identifiers.release_identifier(remove_id(self.release_negative_utc)),
             identifiers.identifier_to_str(self.release_negative_utc["id"]),
         )
 
     def test_release_identifier_newline_in_author(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_newline_in_author),
+            identifiers.release_identifier(remove_id(self.release_newline_in_author)),
             identifiers.identifier_to_str(self.release_newline_in_author["id"]),
         )
 
@@ -710,222 +735,33 @@ class SnapshotIdentifier(unittest.TestCase):
 
     def test_empty_snapshot(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.empty),
+            identifiers.snapshot_identifier(remove_id(self.empty)),
             identifiers.identifier_to_str(self.empty["id"]),
         )
 
     def test_dangling_branch(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.dangling_branch),
+            identifiers.snapshot_identifier(remove_id(self.dangling_branch)),
             identifiers.identifier_to_str(self.dangling_branch["id"]),
         )
 
     def test_unresolved(self):
         with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
-            identifiers.snapshot_identifier(self.unresolved)
+            identifiers.snapshot_identifier(remove_id(self.unresolved))
 
     def test_unresolved_force(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.unresolved, ignore_unresolved=True,),
+            identifiers.snapshot_identifier(
+                remove_id(self.unresolved), ignore_unresolved=True,
+            ),
             identifiers.identifier_to_str(self.unresolved["id"]),
         )
 
     def test_all_types(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(self.all_types),
+            identifiers.snapshot_identifier(remove_id(self.all_types)),
             identifiers.identifier_to_str(self.all_types["id"]),
         )
-
-    def test_swhid(self):
-        _snapshot_id = _x("c7c108084bc0bf3d81436bf980b46e98bd338453")
-        _release_id = "22ece559cc7cc2364edc5e5593d63ae8bd229f9f"
-        _revision_id = "309cf2674ee7a0749978cf8265ab91a60aea0f7d"
-        _directory_id = "d198bc9d7a6bcf6db04f476d29314f157507d505"
-        _content_id = "94a9ed024d3859793618152ea559a168bbcbb5e2"
-        _snapshot = {"id": _snapshot_id}
-        _release = {"id": _release_id}
-        _revision = {"id": _revision_id}
-        _directory = {"id": _directory_id}
-        _content = {"sha1_git": _content_id}
-
-        for full_type, _hash, expected_swhid, version, _meta in [
-            (
-                SNAPSHOT,
-                _snapshot_id,
-                "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
-                None,
-                {},
-            ),
-            (
-                RELEASE,
-                _release_id,
-                "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-                1,
-                {},
-            ),
-            (
-                REVISION,
-                _revision_id,
-                "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-                None,
-                {},
-            ),
-            (
-                DIRECTORY,
-                _directory_id,
-                "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
-                None,
-                {},
-            ),
-            (
-                CONTENT,
-                _content_id,
-                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-                1,
-                {},
-            ),
-            (
-                SNAPSHOT,
-                _snapshot,
-                "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
-                None,
-                {},
-            ),
-            (
-                RELEASE,
-                _release,
-                "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-                1,
-                {},
-            ),
-            (
-                REVISION,
-                _revision,
-                "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-                None,
-                {},
-            ),
-            (
-                DIRECTORY,
-                _directory,
-                "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
-                None,
-                {},
-            ),
-            (
-                CONTENT,
-                _content,
-                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-                1,
-                {},
-            ),
-            (
-                CONTENT,
-                _content,
-                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2;origin=1",
-                1,
-                {"origin": "1"},
-            ),
-        ]:
-            if version:
-                actual_value = identifiers.swhid(
-                    full_type, _hash, version, metadata=_meta
-                )
-            else:
-                actual_value = identifiers.swhid(full_type, _hash, metadata=_meta)
-
-            self.assertEqual(actual_value, expected_swhid)
-
-    def test_swhid_wrong_input(self):
-        _snapshot_id = "notahash4bc0bf3d81436bf980b46e98bd338453"
-        _snapshot = {"id": _snapshot_id}
-
-        for _type, _hash in [
-            (SNAPSHOT, _snapshot_id),
-            (SNAPSHOT, _snapshot),
-            ("foo", ""),
-        ]:
-            with self.assertRaises(ValidationError):
-                identifiers.swhid(_type, _hash)
-
-    def test_parse_swhid(self):
-        for swhid, _type, _version, _hash in [
-            (
-                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-                CONTENT,
-                1,
-                "94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
-            (
-                "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
-                DIRECTORY,
-                1,
-                "d198bc9d7a6bcf6db04f476d29314f157507d505",
-            ),
-            (
-                "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-                REVISION,
-                1,
-                "309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-            ),
-            (
-                "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-                RELEASE,
-                1,
-                "22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-            ),
-            (
-                "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
-                SNAPSHOT,
-                1,
-                "c7c108084bc0bf3d81436bf980b46e98bd338453",
-            ),
-        ]:
-            expected_result = SWHID(
-                namespace="swh",
-                scheme_version=_version,
-                object_type=_type,
-                object_id=_hash,
-                metadata={},
-            )
-            actual_result = identifiers.parse_swhid(swhid)
-            self.assertEqual(actual_result, expected_result)
-
-        for swhid, _type, _version, _hash, _metadata in [
-            (
-                "swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython",  # noqa
-                CONTENT,
-                1,
-                "9c95815d9e9d91b8dae8e05d8bbc696fe19f796b",
-                {"lines": "1-18", "origin": "https://github.com/python/cpython"},
-            ),
-            (
-                "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=deb://Debian/packages/linuxdoc-tools",  # noqa
-                DIRECTORY,
-                1,
-                "0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
-                {"origin": "deb://Debian/packages/linuxdoc-tools"},
-            ),
-        ]:
-            expected_result = SWHID(
-                namespace="swh",
-                scheme_version=_version,
-                object_type=_type,
-                object_id=_hash,
-                metadata=_metadata,
-            )
-            actual_result = identifiers.parse_swhid(swhid)
-            self.assertEqual(actual_result, expected_result)
-            self.assertEqual(
-                expected_result.to_dict(),
-                {
-                    "namespace": "swh",
-                    "scheme_version": _version,
-                    "object_type": _type,
-                    "object_id": _hash,
-                    "metadata": _metadata,
-                },
-            )
 
 
 class OriginIdentifier(unittest.TestCase):
@@ -1046,6 +882,199 @@ def test_normalize_timestamp_dict_invalid_timestamp(dict_input):
         normalize_timestamp(dict_input)
 
 
+class TestSwhid(unittest.TestCase):
+    def test_swhid(self):
+        _snapshot_id = _x("c7c108084bc0bf3d81436bf980b46e98bd338453")
+        _release_id = "22ece559cc7cc2364edc5e5593d63ae8bd229f9f"
+        _revision_id = "309cf2674ee7a0749978cf8265ab91a60aea0f7d"
+        _directory_id = "d198bc9d7a6bcf6db04f476d29314f157507d505"
+        _content_id = "94a9ed024d3859793618152ea559a168bbcbb5e2"
+        _snapshot = {"id": _snapshot_id}
+        _release = {"id": _release_id}
+        _revision = {"id": _revision_id}
+        _directory = {"id": _directory_id}
+        _content = {"sha1_git": _content_id}
+
+        for full_type, _hash, expected_swhid, version, _meta in [
+            (
+                SNAPSHOT,
+                _snapshot_id,
+                "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
+                None,
+                {},
+            ),
+            (
+                RELEASE,
+                _release_id,
+                "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
+                1,
+                {},
+            ),
+            (
+                REVISION,
+                _revision_id,
+                "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
+                None,
+                {},
+            ),
+            (
+                DIRECTORY,
+                _directory_id,
+                "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
+                None,
+                {},
+            ),
+            (
+                CONTENT,
+                _content_id,
+                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+                1,
+                {},
+            ),
+            (
+                SNAPSHOT,
+                _snapshot,
+                "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
+                None,
+                {},
+            ),
+            (
+                RELEASE,
+                _release,
+                "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
+                1,
+                {},
+            ),
+            (
+                REVISION,
+                _revision,
+                "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
+                None,
+                {},
+            ),
+            (
+                DIRECTORY,
+                _directory,
+                "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
+                None,
+                {},
+            ),
+            (
+                CONTENT,
+                _content,
+                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+                1,
+                {},
+            ),
+            (
+                CONTENT,
+                _content,
+                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2;origin=1",
+                1,
+                {"origin": "1"},
+            ),
+        ]:
+            if version:
+                actual_value = identifiers.swhid(
+                    full_type, _hash, version, metadata=_meta
+                )
+            else:
+                actual_value = identifiers.swhid(full_type, _hash, metadata=_meta)
+
+            self.assertEqual(actual_value, expected_swhid)
+
+    def test_swhid_wrong_input(self):
+        _snapshot_id = "notahash4bc0bf3d81436bf980b46e98bd338453"
+        _snapshot = {"id": _snapshot_id}
+
+        for _type, _hash in [
+            (SNAPSHOT, _snapshot_id),
+            (SNAPSHOT, _snapshot),
+            ("lines", "42"),
+        ]:
+            with self.assertRaises(ValidationError):
+                identifiers.swhid(_type, _hash)
+
+    def test_parse_swhid(self):
+        for swhid, _type, _version, _hash in [
+            (
+                "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+                CONTENT,
+                1,
+                "94a9ed024d3859793618152ea559a168bbcbb5e2",
+            ),
+            (
+                "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
+                DIRECTORY,
+                1,
+                "d198bc9d7a6bcf6db04f476d29314f157507d505",
+            ),
+            (
+                "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
+                REVISION,
+                1,
+                "309cf2674ee7a0749978cf8265ab91a60aea0f7d",
+            ),
+            (
+                "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
+                RELEASE,
+                1,
+                "22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
+            ),
+            (
+                "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
+                SNAPSHOT,
+                1,
+                "c7c108084bc0bf3d81436bf980b46e98bd338453",
+            ),
+        ]:
+            expected_result = SWHID(
+                namespace="swh",
+                scheme_version=_version,
+                object_type=_type,
+                object_id=_hash,
+                metadata={},
+            )
+            actual_result = identifiers.parse_swhid(swhid)
+            self.assertEqual(actual_result, expected_result)
+
+        for swhid, _type, _version, _hash, _metadata in [
+            (
+                "swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython",  # noqa
+                CONTENT,
+                1,
+                "9c95815d9e9d91b8dae8e05d8bbc696fe19f796b",
+                {"lines": "1-18", "origin": "https://github.com/python/cpython"},
+            ),
+            (
+                "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=deb://Debian/packages/linuxdoc-tools",  # noqa
+                DIRECTORY,
+                1,
+                "0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
+                {"origin": "deb://Debian/packages/linuxdoc-tools"},
+            ),
+        ]:
+            expected_result = SWHID(
+                namespace="swh",
+                scheme_version=_version,
+                object_type=_type,
+                object_id=_hash,
+                metadata=_metadata,
+            )
+            actual_result = identifiers.parse_swhid(swhid)
+            self.assertEqual(actual_result, expected_result)
+            self.assertEqual(
+                expected_result.to_dict(),
+                {
+                    "namespace": "swh",
+                    "scheme_version": _version,
+                    "object_type": _type,
+                    "object_id": _hash,
+                    "metadata": _metadata,
+                },
+            )
+
+
 @pytest.mark.parametrize(
     "invalid_swhid",
     [
@@ -1117,17 +1146,9 @@ def test_swhid_hash():
     )
 
     assert hash(
-        SWHID(
-            object_type="directory",
-            object_id=object_id,
-            metadata={"foo": "bar", "baz": "qux"},
-        )
+        SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
     ) == hash(
-        SWHID(
-            object_type="directory",
-            object_id=object_id,
-            metadata={"foo": "bar", "baz": "qux"},
-        )
+        SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
     )
 
     # Different order of the dictionary, so the underlying order of the tuple in
@@ -1136,13 +1157,13 @@ def test_swhid_hash():
         SWHID(
             object_type="directory",
             object_id=object_id,
-            metadata={"foo": "bar", "baz": "qux"},
+            metadata={"origin": "https://example.com", "lines": "42"},
         )
     ) == hash(
         SWHID(
             object_type="directory",
             object_id=object_id,
-            metadata={"baz": "qux", "foo": "bar"},
+            metadata={"lines": "42", "origin": "https://example.com"},
         )
     )
 
@@ -1155,21 +1176,9 @@ def test_swhid_eq():
     )
 
     assert SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"foo": "bar", "baz": "qux"},
-    ) == SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"foo": "bar", "baz": "qux"},
-    )
+        object_type="directory", object_id=object_id, metadata=dummy_qualifiers,
+    ) == SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
 
     assert SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"foo": "bar", "baz": "qux"},
-    ) == SWHID(
-        object_type="directory",
-        object_id=object_id,
-        metadata={"baz": "qux", "foo": "bar"},
-    )
+        object_type="directory", object_id=object_id, metadata=dummy_qualifiers,
+    ) == SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
