@@ -25,7 +25,7 @@ from .identifiers import identifier_to_str as id_to_str
 from .merkle import MerkleLeaf, MerkleNode
 
 
-@attr.s
+@attr.s(frozen=True, slots=True)
 class DiskBackedContent(model.BaseContent):
     """Content-like class, which allows lazy-loading data from the disk."""
 
