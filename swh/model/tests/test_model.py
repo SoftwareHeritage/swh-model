@@ -782,12 +782,13 @@ _metadata_authority = MetadataAuthority(
 _metadata_fetcher = MetadataFetcher(name="test-fetcher", version="0.0.1",)
 _content_swhid = parse_swhid("swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2")
 _origin_url = "https://forge.softwareheritage.org/source/swh-model.git"
+_dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
 _common_metadata_fields = dict(
     discovery_date=datetime.datetime.now(tz=datetime.timezone.utc),
     authority=_metadata_authority,
     fetcher=_metadata_fetcher,
     format="json",
-    metadata=b'{"foo": "bar"}',
+    metadata=b'{"origin": "https://example.com", "lines": "42"}',
 )
 
 
@@ -815,7 +816,7 @@ def test_metadata_to_dict():
         "fetcher": {"name": "test-fetcher", "version": "0.0.1",},
         "discovery_date": _common_metadata_fields["discovery_date"],
         "format": "json",
-        "metadata": b'{"foo": "bar"}',
+        "metadata": b'{"origin": "https://example.com", "lines": "42"}',
     }
 
     m = RawExtrinsicMetadata(
@@ -893,7 +894,7 @@ def test_metadata_invalid_target():
             target=SWHID(
                 object_type="content",
                 object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata={"foo": "bar"},
+                metadata=_dummy_qualifiers,
             ),
             **_common_metadata_fields,
         )
@@ -1018,7 +1019,7 @@ def test_metadata_validate_context_snapshot():
             snapshot=SWHID(
                 object_type="snapshot",
                 object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata={"foo": "bar"},
+                metadata=_dummy_qualifiers,
             ),
             **_common_metadata_fields,
         )
@@ -1073,7 +1074,7 @@ def test_metadata_validate_context_release():
             release=SWHID(
                 object_type="release",
                 object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata={"foo": "bar"},
+                metadata=_dummy_qualifiers,
             ),
             **_common_metadata_fields,
         )
@@ -1128,7 +1129,7 @@ def test_metadata_validate_context_revision():
             revision=SWHID(
                 object_type="revision",
                 object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata={"foo": "bar"},
+                metadata=_dummy_qualifiers,
             ),
             **_common_metadata_fields,
         )
@@ -1205,7 +1206,7 @@ def test_metadata_validate_context_directory():
             directory=SWHID(
                 object_type="directory",
                 object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata={"foo": "bar"},
+                metadata=_dummy_qualifiers,
             ),
             **_common_metadata_fields,
         )
