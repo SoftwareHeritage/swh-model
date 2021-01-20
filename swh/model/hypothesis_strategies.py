@@ -175,7 +175,9 @@ def origin_visit_statuses_d():
         visit=integers(1, 1000),
         origin=urls(),
         type=optional(sampled_from(["git", "svn", "pypi", "debian"])),
-        status=sampled_from(["created", "ongoing", "full", "partial"]),
+        status=sampled_from(
+            ["created", "ongoing", "full", "partial", "not_found", "failed"]
+        ),
         date=aware_datetimes(),
         snapshot=optional(sha1_git()),
         metadata=optional(metadata_dicts()),
