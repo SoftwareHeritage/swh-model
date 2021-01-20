@@ -320,7 +320,9 @@ class OriginVisitStatus(BaseModel):
     date = attr.ib(type=datetime.datetime, validator=type_validator())
     status = attr.ib(
         type=str,
-        validator=attr.validators.in_(["created", "ongoing", "full", "partial"]),
+        validator=attr.validators.in_(
+            ["created", "ongoing", "full", "partial", "not_found", "failed"]
+        ),
     )
     snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
     # Type is optional be to able to use it before adding it to the database model
