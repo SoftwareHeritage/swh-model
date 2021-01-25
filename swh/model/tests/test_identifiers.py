@@ -5,6 +5,7 @@
 
 import binascii
 import datetime
+import hashlib
 import itertools
 from typing import Dict
 import unittest
@@ -764,6 +765,120 @@ class SnapshotIdentifier(unittest.TestCase):
         self.assertEqual(
             identifiers.snapshot_identifier(remove_id(self.all_types)),
             identifiers.identifier_to_str(self.all_types["id"]),
+        )
+
+
+class RawExtrinsicMetadataIdentifier(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.authority = {
+            "type": "forge",
+            "url": "https://forge.softwareheritage.org/",
+        }
+        self.fetcher = {
+            "name": "swh-phabricator-metadata-fetcher",
+            "version": "0.0.1",
+        }
+
+        self.minimal = {
+            "type": "content",
+            "target": ExtendedSWHID.from_string(
+                "swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d"
+            ),
+            "discovery_date": datetime.datetime(
+                2021, 1, 25, 11, 27, 51, tzinfo=datetime.timezone.utc
+            ),
+            "authority": self.authority,
+            "fetcher": self.fetcher,
+            "format": "json",
+            "metadata": b'{"foo": "bar"}',
+        }
+        self.maximal = {
+            **self.minimal,
+            "origin": "https://forge.softwareheritage.org/source/swh-model/",
+            "visit": 42,
+            "snapshot": CoreSWHID.from_string("swh:1:snp:" + "00" * 20),
+            "release": CoreSWHID.from_string("swh:1:rel:" + "01" * 20),
+            "revision": CoreSWHID.from_string("swh:1:rev:" + "02" * 20),
+            "path": b"/abc/def",
+            "directory": CoreSWHID.from_string("swh:1:dir:" + "03" * 20),
+        }
+
+    def test_minimal(self):
+        manifest = (
+            b"raw_extrinsic_metadata 225\0"
+            b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
+            b"discovery_date 2021-01-25T11:27:51+00:00\n"
+            b"authority forge https://forge.softwareheritage.org/\n"
+            b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
+            b"format json\n"
+            b"\n"
+            b'{"foo": "bar"}'
+        )
+
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
+            hashlib.sha1(manifest).hexdigest(),
+        )
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
+            "df16b5ea35b12f530fb7ecd0eb10b87a8b1fc3d2",
+        )
+
+    def test_maximal(self):
+        manifest = (
+            b"raw_extrinsic_metadata 548\0"
+            b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
+            b"discovery_date 2021-01-25T11:27:51+00:00\n"
+            b"authority forge https://forge.softwareheritage.org/\n"
+            b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
+            b"format json\n"
+            b"origin https://forge.softwareheritage.org/source/swh-model/\n"
+            b"visit 42\n"
+            b"snapshot swh:1:snp:0000000000000000000000000000000000000000\n"
+            b"release swh:1:rel:0101010101010101010101010101010101010101\n"
+            b"revision swh:1:rev:0202020202020202020202020202020202020202\n"
+            b"path /abc/def\n"
+            b"directory swh:1:dir:0303030303030303030303030303030303030303\n"
+            b"\n"
+            b'{"foo": "bar"}'
+        )
+
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(self.maximal),
+            hashlib.sha1(manifest).hexdigest(),
+        )
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(self.maximal),
+            "55563d91a3f9cb41aa36c60c2b518433bf318ae4",
+        )
+
+    def test_nonascii_path(self):
+        metadata = {
+            **self.minimal,
+            "path": b"/ab\nc/d\xf0\x9f\xa4\xb7e\x00f",
+        }
+        manifest = (
+            b"raw_extrinsic_metadata 246\0"
+            b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
+            b"discovery_date 2021-01-25T11:27:51+00:00\n"
+            b"authority forge https://forge.softwareheritage.org/\n"
+            b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
+            b"format json\n"
+            b"path /ab\n"
+            b" c/d\xf0\x9f\xa4\xb7e\x00f\n"
+            b"\n"
+            b'{"foo": "bar"}'
+        )
+
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            hashlib.sha1(manifest).hexdigest(),
+        )
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            "d8e5856601cdae96dfdfb5147235895949c9322d",
         )
 
 
