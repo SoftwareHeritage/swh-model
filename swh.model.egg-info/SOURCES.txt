@@ -61,6 +61,7 @@ swh/model/fields/simple.py
 swh/model/tests/__init__.py
 swh/model/tests/generate_testdata.py
 swh/model/tests/generate_testdata_from_disk.py
+swh/model/tests/swh_model_data.py
 swh/model/tests/test_cli.py
 swh/model/tests/test_collections.py
 swh/model/tests/test_from_disk.py
@@ -70,6 +71,7 @@ swh/model/tests/test_hypothesis_strategies.py
 swh/model/tests/test_identifiers.py
 swh/model/tests/test_merkle.py
 swh/model/tests/test_model.py
+swh/model/tests/test_swh_model_data.py
 swh/model/tests/test_toposort.py
 swh/model/tests/test_validators.py
 swh/model/tests/data/dir-folders/sample-folder.tgz
