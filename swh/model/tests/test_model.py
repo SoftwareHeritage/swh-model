@@ -819,7 +819,9 @@ _origin_swhid = ExtendedSWHID.from_string(
 )
 _dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
 _common_metadata_fields = dict(
-    discovery_date=datetime.datetime.now(tz=datetime.timezone.utc),
+    discovery_date=datetime.datetime(
+        2021, 1, 29, 13, 57, 9, tzinfo=datetime.timezone.utc
+    ),
     authority=_metadata_authority,
     fetcher=_metadata_fetcher,
     format="json",
@@ -853,6 +855,7 @@ def test_metadata_to_dict():
     m = RawExtrinsicMetadata(target=_origin_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
         "target": str(_origin_swhid),
+        "id": b"\xeck\x9cQ\xf1\x1f\xeb\xde\x85{\x7f\xf0\x83\x9c\x8a\xd5\xfb\x8e2\xef",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -860,6 +863,7 @@ def test_metadata_to_dict():
     m = RawExtrinsicMetadata(target=_content_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        "id": b"\x8e:_;eb\xe6\xf1Y\xd9\xa5aG[\rt\x89\xa1\x0b\xe4",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -878,6 +882,7 @@ def test_metadata_to_dict():
     )
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        "id": b"\x07\xf1aS\xbe\xda\xd2\xf2\xd7\xaf:\xc7\xb7\x91C\x87W\x85R\x19",
         **common_fields,
         "origin": "https://example.org/",
         "snapshot": f"swh:1:snp:{hash_hex}",
