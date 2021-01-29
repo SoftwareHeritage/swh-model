@@ -299,7 +299,10 @@ it can be *computed from the object itself*, without having to rely on any
 third party.  An implementation of SWHID that allows to do so locally is the
 `swh identify <https://docs.softwareheritage.org/devel/swh-model/cli.html>`_
 tool, available from the `swh.model <https://pypi.org/project/swh.model/>`_
-Python package under the GPL license.
+Python package under the GPL license. This package can be installed via the ``pip``
+package manager with the one liner ``pip install swh.model`` on any machine with
+Python and ``pip`` installed (on a Debian or Ubuntu system a simple ``apt install python3 python3-pip``
+will suffice, see `the general instructions <https://packaging.python.org/tutorials/installing-packages/>`_ for other platforms).
 
 SWHIDs are also automatically computed by Software Heritage for all archived
 objects as part of its archival activity, and can be looked up via the project
