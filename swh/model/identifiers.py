@@ -759,9 +759,9 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
     $ExtendedSwhid is a core SWHID, with extra types allowed ('ori' for
     origins and 'emd' for raw extrinsic metadata)
 
-    $Timestamp is a decimal representation of the integer number of seconds since
-    the UNIX epoch (1970-01-01 00:00:00 UTC), with no leading '0'
-    (unless the timestamp value is zero) and no timezone.
+    $Timestamp is a decimal representation of the rounded-down integer number of
+    seconds since the UNIX epoch (1970-01-01 00:00:00 UTC),
+    with no leading '0' (unless the timestamp value is zero) and no timezone.
     It may be negative by prefixing it with a '-', which must not be followed
     by a '0'.
 
@@ -772,7 +772,19 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
       str: the intrinsic identifier for `metadata`
 
     """
-    timestamp = metadata["discovery_date"].timestamp()
+    # equivalent to using math.floor(dt.timestamp()) to round down,
+    # as int(dt.timestamp()) rounds toward zero,
+    # which would map two seconds on the 0 timestamp.
+    #
+    # This should never be an issue in practice as Software Heritage didn't
+    # start collecting metadata before 2015.
+    timestamp = (
+        metadata["discovery_date"]
+        .astimezone(datetime.timezone.utc)
+        .replace(microsecond=0)
+        .timestamp()
+    )
+    assert timestamp.is_integer()
 
     headers = [
         (b"target", str(metadata["target"]).encode()),
