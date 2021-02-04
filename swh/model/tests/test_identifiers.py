@@ -807,9 +807,9 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
 
     def test_minimal(self):
         manifest = (
-            b"raw_extrinsic_metadata 225\0"
+            b"raw_extrinsic_metadata 210\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
-            b"discovery_date 2021-01-25T11:27:51+00:00\n"
+            b"discovery_date 1611574071\n"
             b"authority forge https://forge.softwareheritage.org/\n"
             b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
             b"format json\n"
@@ -823,14 +823,14 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            "df16b5ea35b12f530fb7ecd0eb10b87a8b1fc3d2",
+            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
         )
 
     def test_maximal(self):
         manifest = (
-            b"raw_extrinsic_metadata 548\0"
+            b"raw_extrinsic_metadata 533\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
-            b"discovery_date 2021-01-25T11:27:51+00:00\n"
+            b"discovery_date 1611574071\n"
             b"authority forge https://forge.softwareheritage.org/\n"
             b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
             b"format json\n"
@@ -851,7 +851,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.maximal),
-            "55563d91a3f9cb41aa36c60c2b518433bf318ae4",
+            "f96966e1093d15236a31fde07e47d5b1c9428049",
         )
 
     def test_nonascii_path(self):
@@ -860,9 +860,9 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             "path": b"/ab\nc/d\xf0\x9f\xa4\xb7e\x00f",
         }
         manifest = (
-            b"raw_extrinsic_metadata 246\0"
+            b"raw_extrinsic_metadata 231\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
-            b"discovery_date 2021-01-25T11:27:51+00:00\n"
+            b"discovery_date 1611574071\n"
             b"authority forge https://forge.softwareheritage.org/\n"
             b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
             b"format json\n"
@@ -878,7 +878,74 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "d8e5856601cdae96dfdfb5147235895949c9322d",
+            "7cc83fd1912176510c083f5df43f01b09af4b333",
+        )
+
+    def test_timezone_insensitive(self):
+        """Checks the timezone of the datetime.datetime does not affect the
+        hashed manifest."""
+        utc_plus_one = datetime.timezone(datetime.timedelta(hours=1))
+        metadata = {
+            **self.minimal,
+            "discovery_date": datetime.datetime(
+                2021, 1, 25, 12, 27, 51, tzinfo=utc_plus_one,
+            ),
+        }
+
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+        )
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
+        )
+
+    def test_microsecond_insensitive(self):
+        """Checks the microseconds of the datetime.datetime does not affect the
+        hashed manifest."""
+        metadata = {
+            **self.minimal,
+            "discovery_date": datetime.datetime(
+                2021, 1, 25, 11, 27, 51, 123456, tzinfo=datetime.timezone.utc,
+            ),
+        }
+
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+        )
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
+        )
+
+    def test_negative_timestamp(self):
+        metadata = {
+            **self.minimal,
+            "discovery_date": datetime.datetime(
+                1960, 1, 25, 11, 27, 51, tzinfo=datetime.timezone.utc,
+            ),
+        }
+
+        manifest = (
+            b"raw_extrinsic_metadata 210\0"
+            b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
+            b"discovery_date -313504329\n"
+            b"authority forge https://forge.softwareheritage.org/\n"
+            b"fetcher swh-phabricator-metadata-fetcher 0.0.1\n"
+            b"format json\n"
+            b"\n"
+            b'{"foo": "bar"}'
+        )
+
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            hashlib.sha1(manifest).hexdigest(),
+        )
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            "895d0821a2991dd376ddc303424aceb7c68280f9",
         )
 
 

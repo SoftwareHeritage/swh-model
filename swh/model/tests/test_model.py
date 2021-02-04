@@ -855,7 +855,7 @@ def test_metadata_to_dict():
     m = RawExtrinsicMetadata(target=_origin_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
         "target": str(_origin_swhid),
-        "id": b"\xeck\x9cQ\xf1\x1f\xeb\xde\x85{\x7f\xf0\x83\x9c\x8a\xd5\xfb\x8e2\xef",
+        "id": b"@j\xc9\x01\xbc\x1e#p*\xf3q9\xa7u\x97\x00\x14\x02xa",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -863,7 +863,7 @@ def test_metadata_to_dict():
     m = RawExtrinsicMetadata(target=_content_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-        "id": b"\x8e:_;eb\xe6\xf1Y\xd9\xa5aG[\rt\x89\xa1\x0b\xe4",
+        "id": b"\xbc\xa3U\xddf\x19U\xc5\xd2\xd7\xdfK\xd7c\x1f\xa8\xfeh\x992",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -882,7 +882,7 @@ def test_metadata_to_dict():
     )
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-        "id": b"\x07\xf1aS\xbe\xda\xd2\xf2\xd7\xaf:\xc7\xb7\x91C\x87W\x85R\x19",
+        "id": b"\x14l\xb0\x1f\xb9\xc0{)\xc7\x0f\xbd\xc0*,YZ\xf5C\xab\xfc",
         **common_fields,
         "origin": "https://example.org/",
         "snapshot": f"swh:1:snp:{hash_hex}",

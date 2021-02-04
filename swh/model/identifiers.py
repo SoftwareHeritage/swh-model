@@ -733,7 +733,7 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
 
     ```
     target $ExtendedSwhid
-    discovery_date $ISO8601
+    discovery_date $Timestamp
     authority $StrWithoutSpaces $IRI
     fetcher $Str $Version
     format $StrWithoutSpaces
@@ -759,6 +759,12 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
     $ExtendedSwhid is a core SWHID, with extra types allowed ('ori' for
     origins and 'emd' for raw extrinsic metadata)
 
+    $Timestamp is a decimal representation of the integer number of seconds since
+    the UNIX epoch (1970-01-01 00:00:00 UTC), with no leading '0'
+    (unless the timestamp value is zero) and no timezone.
+    It may be negative by prefixing it with a '-', which must not be followed
+    by a '0'.
+
     Newlines in $Bytes, $Str, and $Iri are escaped as with other git fields,
     ie. by adding a space after them.
 
@@ -766,9 +772,11 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
       str: the intrinsic identifier for `metadata`
 
     """
+    timestamp = metadata["discovery_date"].timestamp()
+
     headers = [
         (b"target", str(metadata["target"]).encode()),
-        (b"discovery_date", metadata["discovery_date"].isoformat().encode("ascii")),
+        (b"discovery_date", str(int(timestamp)).encode("ascii")),
         (
             b"authority",
             f"{metadata['authority']['type']} {metadata['authority']['url']}".encode(),
