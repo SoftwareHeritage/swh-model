@@ -768,32 +768,31 @@ class SnapshotIdentifier(unittest.TestCase):
         )
 
 
+authority_example = {
+    "type": "forge",
+    "url": "https://forge.softwareheritage.org/",
+}
+fetcher_example = {
+    "name": "swh-phabricator-metadata-fetcher",
+    "version": "0.0.1",
+}
+metadata_example = {
+    "target": "swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d",
+    "discovery_date": datetime.datetime(
+        2021, 1, 25, 11, 27, 51, tzinfo=datetime.timezone.utc
+    ),
+    "authority": authority_example,
+    "fetcher": fetcher_example,
+    "format": "json",
+    "metadata": b'{"foo": "bar"}',
+}
+
+
 class RawExtrinsicMetadataIdentifier(unittest.TestCase):
     def setUp(self):
         super().setUp()
 
-        self.authority = {
-            "type": "forge",
-            "url": "https://forge.softwareheritage.org/",
-        }
-        self.fetcher = {
-            "name": "swh-phabricator-metadata-fetcher",
-            "version": "0.0.1",
-        }
-
-        self.minimal = {
-            "type": "content",
-            "target": ExtendedSWHID.from_string(
-                "swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d"
-            ),
-            "discovery_date": datetime.datetime(
-                2021, 1, 25, 11, 27, 51, tzinfo=datetime.timezone.utc
-            ),
-            "authority": self.authority,
-            "fetcher": self.fetcher,
-            "format": "json",
-            "metadata": b'{"foo": "bar"}',
-        }
+        self.minimal = metadata_example
         self.maximal = {
             **self.minimal,
             "origin": "https://forge.softwareheritage.org/source/swh-model/",

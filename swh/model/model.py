@@ -1093,13 +1093,3 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
                 d[swhid_key] = CoreSWHID.from_string(d[swhid_key])
 
         return super().from_dict(d)
-
-    def unique_key(self) -> KeyType:
-        return {
-            "target": str(self.target),
-            "authority_type": self.authority.type.value,
-            "authority_url": self.authority.url,
-            "discovery_date": str(self.discovery_date),
-            "fetcher_name": self.fetcher.name,
-            "fetcher_version": self.fetcher.version,
-        }

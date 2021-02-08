@@ -48,6 +48,7 @@ from swh.model.model import (
 from swh.model.tests.test_identifiers import (
     content_example,
     directory_example,
+    metadata_example,
     origin_example,
     release_example,
     revision_example,
@@ -94,6 +95,10 @@ def test_unique_key():
     assert Release.from_dict({**release_example, "id": id_}).unique_key() == id_
     assert Revision.from_dict({**revision_example, "id": id_}).unique_key() == id_
     assert Directory.from_dict({**directory_example, "id": id_}).unique_key() == id_
+    assert (
+        RawExtrinsicMetadata.from_dict({**metadata_example, "id": id_}).unique_key()
+        == id_
+    )
 
     cont = Content.from_data(b"foo")
     assert cont.unique_key().hex() == "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
