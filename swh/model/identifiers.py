@@ -1,22 +1,43 @@
-# Copyright (C) 2015-2020  The Software Heritage developers
+# Copyright (C) 2015-2021  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+from __future__ import annotations
+
 import binascii
 import datetime
+import enum
 from functools import lru_cache
 import hashlib
 import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+import warnings
 
 import attr
+from attrs_strict import type_validator
 
 from .collections import ImmutableDict
 from .exceptions import ValidationError
 from .fields.hashes import validate_sha1
-from .hashutil import MultiHash, hash_git_data, hash_to_hex
+from .hashutil import MultiHash, hash_git_data, hash_to_bytes, hash_to_hex
 
+
+class ObjectType(enum.Enum):
+    """Possible object types of a QualifiedSWHID.
+
+    The values of each variant is what is used in the SWHID's string representation."""
+
+    ORIGIN = "ori"
+    SNAPSHOT = "snp"
+    REVISION = "rev"
+    RELEASE = "rel"
+    DIRECTORY = "dir"
+    CONTENT = "cnt"
+
+
+# The following are deprecated aliases of the variants defined in ObjectType
+# while transitioning from SWHID to QualifiedSWHID
 ORIGIN = "origin"
 SNAPSHOT = "snapshot"
 REVISION = "revision"
@@ -697,11 +718,116 @@ _swhid_type_map = {
 }
 
 
+@attr.s(frozen=True, kw_only=True)
+class QualifiedSWHID:
+    """
+    Dataclass holding the relevant info associated to a SoftWare Heritage
+    persistent IDentifier (SWHID)
+
+    Raises:
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
+
+    To get the raw SWHID string from an instance of this class,
+    use the :func:`str` function:
+
+    >>> swhid = QualifiedSWHID(
+    ...     object_type=ObjectType.CONTENT,
+    ...     object_id=bytes.fromhex('8ff44f081d43176474b267de5451f2c2e88089d0'),
+    ...     qualifiers={"lines": "5-10"},
+    ... )
+    >>> str(swhid)
+    'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0;lines=5-10'
+
+    And vice-versa with :meth:`QualifiedSWHID.from_string`:
+
+    >>> swhid == QualifiedSWHID.from_string(
+    ...     "swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0;lines=5-10"
+    ... )
+    True
+    """
+
+    namespace = attr.ib(type=str, default=SWHID_NAMESPACE)
+    """the namespace of the identifier, defaults to ``swh``"""
+
+    scheme_version = attr.ib(type=int, default=SWHID_VERSION)
+    """the scheme version of the identifier, defaults to 1"""
+
+    object_type = attr.ib(type=ObjectType, validator=type_validator())
+    """the type of object the identifier points to"""
+
+    object_id = attr.ib(type=bytes, validator=type_validator())
+    """object's identifier"""
+
+    qualifiers = attr.ib(
+        type=ImmutableDict[str, Any], converter=ImmutableDict, default=ImmutableDict()
+    )
+    """optional dict filled with metadata related to pointed object"""
+
+    @namespace.validator
+    def check_namespace(self, attribute, value):
+        if value != SWHID_NAMESPACE:
+            raise ValidationError(
+                "Invalid SWHID: invalid namespace: %(namespace)s",
+                params={"namespace": value},
+            )
+
+    @scheme_version.validator
+    def check_scheme_version(self, attribute, value):
+        if value != SWHID_VERSION:
+            raise ValidationError(
+                "Invalid SWHID: invalid version: %(version)s", params={"version": value}
+            )
+
+    @object_id.validator
+    def check_object_id(self, attribute, value):
+        if len(value) != 20:
+            raise ValidationError(
+                "Invalid SWHID: invalid checksum: %(object_id)s",
+                params={"object_id": hash_to_hex(value)},
+            )
+
+    @qualifiers.validator
+    def check_qualifiers(self, attribute, value):
+        for k in value:
+            if k not in SWHID_QUALIFIERS:
+                raise ValidationError(
+                    "Invalid SWHID: unknown qualifier: %(qualifier)s",
+                    params={"qualifier": k},
+                )
+
+    def __str__(self) -> str:
+        swhid = SWHID_SEP.join(
+            [
+                self.namespace,
+                str(self.scheme_version),
+                self.object_type.value,
+                hash_to_hex(self.object_id),
+            ]
+        )
+        if self.qualifiers:
+            for k, v in self.qualifiers.items():
+                swhid += "%s%s=%s" % (SWHID_CTXT_SEP, k, v)
+        return swhid
+
+    @classmethod
+    def from_string(cls, s: str) -> QualifiedSWHID:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            old_swhid = parse_swhid(s)
+        object_type = ObjectType(_object_type_map[old_swhid.object_type]["short_name"])
+        return QualifiedSWHID(
+            namespace=old_swhid.namespace,
+            scheme_version=old_swhid.scheme_version,
+            object_type=object_type,
+            object_id=hash_to_bytes(old_swhid.object_id),
+            qualifiers=old_swhid.metadata,
+        )
+
+
 @attr.s(frozen=True)
 class SWHID:
     """
-    Named tuple holding the relevant info associated to a SoftWare Heritage
-    persistent IDentifier (SWHID)
+    Deprecated alternative to QualifiedSWHID.
 
     Args:
         namespace (str): the namespace of the identifier, defaults to ``swh``
@@ -743,6 +869,13 @@ class SWHID:
     metadata = attr.ib(
         type=ImmutableDict[str, Any], converter=ImmutableDict, default=ImmutableDict()
     )
+
+    def __attrs_post_init__(self):
+        warnings.warn(
+            "swh.model.identifiers.SWHID is deprecated; "
+            "use swh.model.identifiers.QualifiedSWHID instead.",
+            DeprecationWarning,
+        )
 
     @namespace.validator
     def check_namespace(self, attribute, value):
