@@ -719,6 +719,97 @@ _swhid_type_map = {
 
 
 @attr.s(frozen=True, kw_only=True)
+class CoreSWHID:
+    """
+    Dataclass holding the relevant info associated to a SoftWare Heritage
+    persistent IDentifier (SWHID).
+
+    Unlike `QualifiedSWHID`, it is restricted to core SWHIDs, ie. SWHIDs
+    with no qualifiers.
+
+    Raises:
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
+
+    To get the raw SWHID string from an instance of this class,
+    use the :func:`str` function:
+
+    >>> swhid = CoreSWHID(
+    ...     object_type=ObjectType.CONTENT,
+    ...     object_id=bytes.fromhex('8ff44f081d43176474b267de5451f2c2e88089d0'),
+    ... )
+    >>> str(swhid)
+    'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
+
+    And vice-versa with :meth:`CoreSWHID.from_string`:
+
+    >>> swhid == CoreSWHID.from_string(
+    ...     "swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0"
+    ... )
+    True
+    """
+
+    namespace = attr.ib(type=str, default=SWHID_NAMESPACE)
+    """the namespace of the identifier, defaults to ``swh``"""
+
+    scheme_version = attr.ib(type=int, default=SWHID_VERSION)
+    """the scheme version of the identifier, defaults to 1"""
+
+    object_type = attr.ib(type=ObjectType, validator=type_validator())
+    """the type of object the identifier points to"""
+
+    object_id = attr.ib(type=bytes, validator=type_validator())
+    """object's identifier"""
+
+    @namespace.validator
+    def check_namespace(self, attribute, value):
+        if value != SWHID_NAMESPACE:
+            raise ValidationError(
+                "Invalid SWHID: invalid namespace: %(namespace)s",
+                params={"namespace": value},
+            )
+
+    @scheme_version.validator
+    def check_scheme_version(self, attribute, value):
+        if value != SWHID_VERSION:
+            raise ValidationError(
+                "Invalid SWHID: invalid version: %(version)s", params={"version": value}
+            )
+
+    @object_id.validator
+    def check_object_id(self, attribute, value):
+        if len(value) != 20:
+            raise ValidationError(
+                "Invalid SWHID: invalid checksum: %(object_id)s",
+                params={"object_id": hash_to_hex(value)},
+            )
+
+    def __str__(self) -> str:
+        return SWHID_SEP.join(
+            [
+                self.namespace,
+                str(self.scheme_version),
+                self.object_type.value,
+                hash_to_hex(self.object_id),
+            ]
+        )
+
+    @classmethod
+    def from_string(cls, s: str) -> CoreSWHID:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            old_swhid = parse_swhid(s)
+        object_type = ObjectType(_object_type_map[old_swhid.object_type]["short_name"])
+        if old_swhid.metadata:
+            raise ValidationError("CoreSWHID does not support qualifiers.")
+        return CoreSWHID(
+            namespace=old_swhid.namespace,
+            scheme_version=old_swhid.scheme_version,
+            object_type=object_type,
+            object_id=hash_to_bytes(old_swhid.object_id),
+        )
+
+
+@attr.s(frozen=True, kw_only=True)
 class QualifiedSWHID:
     """
     Dataclass holding the relevant info associated to a SoftWare Heritage
