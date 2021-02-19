@@ -1234,7 +1234,6 @@ def test_parse_serialize_qualified_swhid():
             scheme_version=_version,
             object_type=_type,
             object_id=_hash,
-            qualifiers={},
         )
         actual_result = QualifiedSWHID.from_string(swhid)
         assert actual_result == expected_result
@@ -1242,11 +1241,11 @@ def test_parse_serialize_qualified_swhid():
 
     for swhid, _type, _version, _hash, _qualifiers in [
         (
-            "swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;lines=1-18;origin=https://github.com/python/cpython",  # noqa
+            "swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;origin=https://github.com/python/cpython;lines=1-18",  # noqa
             ObjectType.CONTENT,
             1,
             _x("9c95815d9e9d91b8dae8e05d8bbc696fe19f796b"),
-            {"lines": "1-18", "origin": "https://github.com/python/cpython"},
+            {"origin": "https://github.com/python/cpython", "lines": "1-18"},
         ),
         (
             "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=deb://Debian/packages/linuxdoc-tools",  # noqa
@@ -1261,7 +1260,7 @@ def test_parse_serialize_qualified_swhid():
             scheme_version=_version,
             object_type=_type,
             object_id=_hash,
-            qualifiers=_qualifiers,
+            **_qualifiers,
         )
         actual_result = QualifiedSWHID.from_string(swhid)
         assert actual_result == expected_result
@@ -1322,13 +1321,6 @@ def test_parse_qualified_swhid_parsing_error(invalid_swhid):
         ("foo", 1, ObjectType.CONTENT, "abc8bc9d7a6bcf6db04f476d29314f157507d505", {}),
         ("swh", 2, ObjectType.CONTENT, "def8bc9d7a6bcf6db04f476d29314f157507d505", {}),
         ("swh", 1, ObjectType.DIRECTORY, "aaaa", {}),
-        (
-            "swh",
-            1,
-            ObjectType.CONTENT,
-            "abc8bc9d7a6bcf6db04f476d29314f157507d505",
-            {"foo": "bar"},
-        ),
     ],
 )
 def test_QualifiedSWHID_validation_error(ns, version, type, id, qualifiers):
@@ -1338,7 +1330,7 @@ def test_QualifiedSWHID_validation_error(ns, version, type, id, qualifiers):
             scheme_version=version,
             object_type=type,
             object_id=_x(id),
-            qualifiers=qualifiers,
+            **qualifiers,
         )
 
 
@@ -1351,15 +1343,11 @@ def test_QualifiedSWHID_hash():
 
     assert hash(
         QualifiedSWHID(
-            object_type=ObjectType.DIRECTORY,
-            object_id=object_id,
-            qualifiers=dummy_qualifiers,
+            object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
         )
     ) == hash(
         QualifiedSWHID(
-            object_type=ObjectType.DIRECTORY,
-            object_id=object_id,
-            qualifiers=dummy_qualifiers,
+            object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
         )
     )
 
@@ -1369,13 +1357,15 @@ def test_QualifiedSWHID_hash():
         QualifiedSWHID(
             object_type=ObjectType.DIRECTORY,
             object_id=object_id,
-            qualifiers={"origin": "https://example.com", "lines": "42"},
+            origin="https://example.com",
+            lines=(42, None),
         )
     ) == hash(
         QualifiedSWHID(
             object_type=ObjectType.DIRECTORY,
             object_id=object_id,
-            qualifiers={"lines": "42", "origin": "https://example.com"},
+            lines=(42, None),
+            origin="https://example.com",
         )
     )
 
@@ -1388,23 +1378,15 @@ def test_QualifiedSWHID_eq():
     ) == QualifiedSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id)
 
     assert QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY,
-        object_id=object_id,
-        qualifiers=dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
     ) == QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY,
-        object_id=object_id,
-        qualifiers=dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
     )
 
     assert QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY,
-        object_id=object_id,
-        qualifiers=dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
     ) == QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY,
-        object_id=object_id,
-        qualifiers=dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
     )
 
 

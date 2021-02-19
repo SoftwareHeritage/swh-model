@@ -809,6 +809,27 @@ class CoreSWHID:
         )
 
 
+def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]:
+    """Alias of CoreSWHID.from_string to make mypy happy......
+
+    https://github.com/python/mypy/issues/6172"""
+    if swhid is None or isinstance(swhid, CoreSWHID):
+        return swhid
+    else:
+        return CoreSWHID.from_string(swhid)
+
+
+def _parse_lines_qualifier(
+    lines: Union[str, Tuple[int, Optional[int]], None]
+) -> Optional[Tuple[int, Optional[int]]]:
+    if lines is None or isinstance(lines, tuple):
+        return lines
+    elif "-" in lines:
+        return tuple(map(int, lines.split("-", 2)))  # type: ignore
+    else:
+        return (int(lines), None)
+
+
 @attr.s(frozen=True, kw_only=True)
 class QualifiedSWHID:
     """
@@ -824,7 +845,7 @@ class QualifiedSWHID:
     >>> swhid = QualifiedSWHID(
     ...     object_type=ObjectType.CONTENT,
     ...     object_id=bytes.fromhex('8ff44f081d43176474b267de5451f2c2e88089d0'),
-    ...     qualifiers={"lines": "5-10"},
+    ...     lines=(5, 10),
     ... )
     >>> str(swhid)
     'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0;lines=5-10'
@@ -849,10 +870,40 @@ class QualifiedSWHID:
     object_id = attr.ib(type=bytes, validator=type_validator())
     """object's identifier"""
 
-    qualifiers = attr.ib(
-        type=ImmutableDict[str, Any], converter=ImmutableDict, default=ImmutableDict()
+    # qualifiers:
+
+    origin = attr.ib(type=Optional[str], default=None, validator=type_validator())
+    """the software origin where an object has been found or observed in the wild,
+    as an URI"""
+
+    visit = attr.ib(type=Optional[CoreSWHID], default=None, converter=_parse_core_swhid)
+    """the core identifier of a snapshot corresponding to a specific visit
+    of a repository containing the designated object"""
+
+    anchor = attr.ib(
+        type=Optional[CoreSWHID],
+        default=None,
+        validator=type_validator(),
+        converter=_parse_core_swhid,
     )
-    """optional dict filled with metadata related to pointed object"""
+    """a designated node in the Merkle DAG relative to which a path to the object
+    is specified, as the core identifier of a directory, a revision, a release,
+    or a snapshot"""
+
+    path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
+    """the absolute file path, from the root directory associated to the anchor node,
+    to the object; when the anchor denotes a directory or a revision, and almost always
+    when it’s a release, the root directory is uniquely determined;
+    when the anchor denotes a snapshot, the root directory is the one pointed to by HEAD
+    (possibly indirectly), and undefined if such a reference is missing"""
+
+    lines = attr.ib(
+        type=Optional[Tuple[int, Optional[int]]],
+        default=None,
+        validator=type_validator(),
+        converter=_parse_lines_qualifier,
+    )
+    """lines: line number(s) of interest, usually within a content object"""
 
     @namespace.validator
     def check_namespace(self, attribute, value):
@@ -877,14 +928,36 @@ class QualifiedSWHID:
                 params={"object_id": hash_to_hex(value)},
             )
 
-    @qualifiers.validator
-    def check_qualifiers(self, attribute, value):
-        for k in value:
-            if k not in SWHID_QUALIFIERS:
-                raise ValidationError(
-                    "Invalid SWHID: unknown qualifier: %(qualifier)s",
-                    params={"qualifier": k},
-                )
+    @visit.validator
+    def check_visit(self, attribute, value):
+        if value and value.object_type != ObjectType.SNAPSHOT:
+            raise ValidationError(
+                f"The 'visit' qualifier must be a 'snp' SWHID, "
+                f"not '{value.object_type.value}'"
+            )
+
+    @anchor.validator
+    def check_anchor(self, attribute, value):
+        if value and value.object_type not in (
+            ObjectType.DIRECTORY,
+            ObjectType.REVISION,
+            ObjectType.RELEASE,
+            ObjectType.SNAPSHOT,
+        ):
+            raise ValidationError(
+                f"The 'visit' qualifier must be a 'dir', 'rev', 'rel', or 'snp' SWHID, "
+                f"not '{value.object_type.value}'"
+            )
+
+    def qualifiers(self) -> Dict[str, str]:
+        d: Dict[str, Optional[str]] = {
+            "origin": self.origin,
+            "visit": str(self.visit) if self.visit else None,
+            "anchor": str(self.anchor) if self.anchor else None,
+            "path": self.path.decode() if self.path is not None else None,
+            "lines": "-".join(map(str, self.lines)) if self.lines else None,
+        }
+        return {k: v for (k, v) in d.items() if v is not None}
 
     def __str__(self) -> str:
         swhid = SWHID_SEP.join(
@@ -895,8 +968,9 @@ class QualifiedSWHID:
                 hash_to_hex(self.object_id),
             ]
         )
-        if self.qualifiers:
-            for k, v in self.qualifiers.items():
+        qualifiers = self.qualifiers()
+        if qualifiers:
+            for k, v in qualifiers.items():
                 swhid += "%s%s=%s" % (SWHID_CTXT_SEP, k, v)
         return swhid
 
@@ -911,7 +985,7 @@ class QualifiedSWHID:
             scheme_version=old_swhid.scheme_version,
             object_type=object_type,
             object_id=hash_to_bytes(old_swhid.object_id),
-            qualifiers=old_swhid.metadata,
+            **old_swhid.metadata,
         )
 
 
