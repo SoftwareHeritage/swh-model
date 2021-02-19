@@ -53,8 +53,8 @@ SWHID_CTXT_SEP = ";"
 SWHID_QUALIFIERS = {"origin", "anchor", "visit", "path", "lines"}
 
 SWHID_RE_RAW = (
-    f"(?P<scheme>{SWHID_NAMESPACE})"
-    f"{SWHID_SEP}(?P<version>{SWHID_VERSION})"
+    f"(?P<namespace>{SWHID_NAMESPACE})"
+    f"{SWHID_SEP}(?P<scheme_version>{SWHID_VERSION})"
     f"{SWHID_SEP}(?P<object_type>{'|'.join(SWHID_TYPES)})"
     f"{SWHID_SEP}(?P<object_id>[0-9a-f]{{40}})"
     f"({SWHID_CTXT_SEP}(?P<qualifiers>\\S+))?"
@@ -754,7 +754,9 @@ class CoreSWHID:
     scheme_version = attr.ib(type=int, default=SWHID_VERSION)
     """the scheme version of the identifier, defaults to 1"""
 
-    object_type = attr.ib(type=ObjectType, validator=type_validator())
+    object_type = attr.ib(
+        type=ObjectType, validator=type_validator(), converter=ObjectType
+    )
     """the type of object the identifier points to"""
 
     object_id = attr.ib(type=bytes, validator=type_validator())
@@ -795,18 +797,13 @@ class CoreSWHID:
 
     @classmethod
     def from_string(cls, s: str) -> CoreSWHID:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            old_swhid = parse_swhid(s)
-        object_type = ObjectType(_object_type_map[old_swhid.object_type]["short_name"])
-        if old_swhid.metadata:
+        parts = _parse_swhid(s)
+        if parts.pop("qualifiers"):
             raise ValidationError("CoreSWHID does not support qualifiers.")
-        return CoreSWHID(
-            namespace=old_swhid.namespace,
-            scheme_version=old_swhid.scheme_version,
-            object_type=object_type,
-            object_id=hash_to_bytes(old_swhid.object_id),
-        )
+        try:
+            return CoreSWHID(**parts)
+        except ValueError as e:
+            raise ValidationError(*e.args) from None
 
 
 def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]:
@@ -864,7 +861,9 @@ class QualifiedSWHID:
     scheme_version = attr.ib(type=int, default=SWHID_VERSION)
     """the scheme version of the identifier, defaults to 1"""
 
-    object_type = attr.ib(type=ObjectType, validator=type_validator())
+    object_type = attr.ib(
+        type=ObjectType, validator=type_validator(), converter=ObjectType
+    )
     """the type of object the identifier points to"""
 
     object_id = attr.ib(type=bytes, validator=type_validator())
@@ -976,17 +975,17 @@ class QualifiedSWHID:
 
     @classmethod
     def from_string(cls, s: str) -> QualifiedSWHID:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            old_swhid = parse_swhid(s)
-        object_type = ObjectType(_object_type_map[old_swhid.object_type]["short_name"])
-        return QualifiedSWHID(
-            namespace=old_swhid.namespace,
-            scheme_version=old_swhid.scheme_version,
-            object_type=object_type,
-            object_id=hash_to_bytes(old_swhid.object_id),
-            **old_swhid.metadata,
-        )
+        parts = _parse_swhid(s)
+        qualifiers = parts.pop("qualifiers")
+        invalid_qualifiers = set(qualifiers) - SWHID_QUALIFIERS
+        if invalid_qualifiers:
+            raise ValidationError(
+                "Invalid qualifier(s): {', '.join(invalid_qualifiers)}"
+            )
+        try:
+            return QualifiedSWHID(**parts, **qualifiers)
+        except ValueError as e:
+            raise ValidationError(*e.args) from None
 
 
 @attr.s(frozen=True)
@@ -1133,15 +1132,16 @@ def swhid(
     return str(swhid)
 
 
-def parse_swhid(swhid: str) -> SWHID:
+def _parse_swhid(swhid: str) -> Dict[str, Any]:
     """Parse a Software Heritage identifier (SWHID) from string (see:
     :ref:`persistent-identifiers`.)
 
+    This is for internal use; use :meth:`CoreSWHID.from_string`,
+    :meth:`QualifiedSWHID.from_string`, or :meth:`ExtendedSWHID.from_string` instead,
+    as they perform validation and build a dataclass.
+
     Args:
         swhid (str): A persistent identifier
-
-    Returns:
-        a named tuple holding the parsing result
 
     Raises:
         swh.model.exceptions.ValidationError: if passed string is not a valid SWHID
@@ -1152,10 +1152,10 @@ def parse_swhid(swhid: str) -> SWHID:
         raise ValidationError(
             "Invalid SWHID: invalid syntax: %(swhid)s", params={"swhid": swhid}
         )
-    parts = m.groupdict()
+    parts: Dict[str, Any] = m.groupdict()
 
-    _qualifiers = {}
     qualifiers_raw = parts["qualifiers"]
+    parts["qualifiers"] = {}
     if qualifiers_raw:
         for qualifier in qualifiers_raw.split(SWHID_CTXT_SEP):
             try:
@@ -1165,12 +1165,29 @@ def parse_swhid(swhid: str) -> SWHID:
                     "Invalid SWHID: invalid qualifier: %(qualifier)s",
                     params={"qualifier": qualifier},
                 )
-            _qualifiers[k] = v
+            parts["qualifiers"][k] = v
 
+    parts["scheme_version"] = int(parts["scheme_version"])
+    parts["object_id"] = hash_to_bytes(parts["object_id"])
+    return parts
+
+
+def parse_swhid(swhid: str) -> SWHID:
+    """Parse a Software Heritage identifier (SWHID) from string (see:
+    :ref:`persistent-identifiers`.)
+
+    Args:
+        swhid (str): A persistent identifier
+
+    Raises:
+        swh.model.exceptions.ValidationError: if passed string is not a valid SWHID
+
+    """
+    parts = _parse_swhid(swhid)
     return SWHID(
-        parts["scheme"],
-        int(parts["version"]),
+        parts["namespace"],
+        parts["scheme_version"],
         _swhid_type_map[parts["object_type"]],
-        parts["object_id"],
-        _qualifiers,  # type: ignore  # mypy can't properly unify types
+        hash_to_hex(parts["object_id"]),
+        parts["qualifiers"],
     )
