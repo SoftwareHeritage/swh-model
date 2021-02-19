@@ -24,16 +24,29 @@ from .hashutil import MultiHash, hash_git_data, hash_to_bytes, hash_to_hex
 
 
 class ObjectType(enum.Enum):
-    """Possible object types of a QualifiedSWHID.
+    """Possible object types of a QualifiedSWHID or CoreSWHID.
 
     The values of each variant is what is used in the SWHID's string representation."""
 
-    ORIGIN = "ori"
     SNAPSHOT = "snp"
     REVISION = "rev"
     RELEASE = "rel"
     DIRECTORY = "dir"
     CONTENT = "cnt"
+
+
+class ExtendedObjectType(enum.Enum):
+    """Possible object types of an ExtendedSWHID.
+
+    The variants are a superset of :cls:`ObjectType`'s"""
+
+    SNAPSHOT = "snp"
+    REVISION = "rev"
+    RELEASE = "rel"
+    DIRECTORY = "dir"
+    CONTENT = "cnt"
+    ORIGIN = "ori"
+    RAW_EXTRINSIC_METADATA = "emd"
 
 
 # The following are deprecated aliases of the variants defined in ObjectType
@@ -44,10 +57,12 @@ REVISION = "revision"
 RELEASE = "release"
 DIRECTORY = "directory"
 CONTENT = "content"
+RAW_EXTRINSIC_METADATA = "raw_extrinsic_metadata"
 
 SWHID_NAMESPACE = "swh"
 SWHID_VERSION = 1
-SWHID_TYPES = ["ori", "snp", "rel", "rev", "dir", "cnt"]
+SWHID_TYPES = ["snp", "rel", "rev", "dir", "cnt"]
+EXTENDED_SWHID_TYPES = SWHID_TYPES + ["ori", "emd"]
 SWHID_SEP = ":"
 SWHID_CTXT_SEP = ";"
 SWHID_QUALIFIERS = {"origin", "anchor", "visit", "path", "lines"}
@@ -55,7 +70,7 @@ SWHID_QUALIFIERS = {"origin", "anchor", "visit", "path", "lines"}
 SWHID_RE_RAW = (
     f"(?P<namespace>{SWHID_NAMESPACE})"
     f"{SWHID_SEP}(?P<scheme_version>{SWHID_VERSION})"
-    f"{SWHID_SEP}(?P<object_type>{'|'.join(SWHID_TYPES)})"
+    f"{SWHID_SEP}(?P<object_type>{'|'.join(EXTENDED_SWHID_TYPES)})"
     f"{SWHID_SEP}(?P<object_id>[0-9a-f]{{40}})"
     f"({SWHID_CTXT_SEP}(?P<qualifiers>\\S+))?"
 )
@@ -706,6 +721,7 @@ _object_type_map = {
     REVISION: {"short_name": "rev", "key_id": "id"},
     DIRECTORY: {"short_name": "dir", "key_id": "id"},
     CONTENT: {"short_name": "cnt", "key_id": "sha1_git"},
+    RAW_EXTRINSIC_METADATA: {"short_name": "emd", "key_id": "id"},
 }
 
 _swhid_type_map = {
@@ -715,6 +731,7 @@ _swhid_type_map = {
     "rev": REVISION,
     "dir": DIRECTORY,
     "cnt": CONTENT,
+    "emd": RAW_EXTRINSIC_METADATA,
 }
 
 
@@ -986,6 +1003,93 @@ class QualifiedSWHID:
             return QualifiedSWHID(**parts, **qualifiers)
         except ValueError as e:
             raise ValidationError(*e.args) from None
+
+
+@attr.s(frozen=True, kw_only=True)
+class ExtendedSWHID:
+    """
+    Dataclass holding the relevant info associated to a SoftWare Heritage
+    persistent IDentifier (SWHID).
+
+    It extends  `CoreSWHID`, by allowing non-standard object types; and should
+    only be used internally to Software Heritage.
+
+    Raises:
+        swh.model.exceptions.ValidationError: In case of invalid object type or id
+
+    To get the raw SWHID string from an instance of this class,
+    use the :func:`str` function:
+
+    >>> swhid = ExtendedSWHID(
+    ...     object_type=ExtendedObjectType.CONTENT,
+    ...     object_id=bytes.fromhex('8ff44f081d43176474b267de5451f2c2e88089d0'),
+    ... )
+    >>> str(swhid)
+    'swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0'
+
+    And vice-versa with :meth:`CoreSWHID.from_string`:
+
+    >>> swhid == ExtendedSWHID.from_string(
+    ...     "swh:1:cnt:8ff44f081d43176474b267de5451f2c2e88089d0"
+    ... )
+    True
+    """
+
+    namespace = attr.ib(type=str, default=SWHID_NAMESPACE)
+    """the namespace of the identifier, defaults to ``swh``"""
+
+    scheme_version = attr.ib(type=int, default=SWHID_VERSION)
+    """the scheme version of the identifier, defaults to 1"""
+
+    object_type = attr.ib(
+        type=ExtendedObjectType,
+        validator=type_validator(),
+        converter=ExtendedObjectType,
+    )
+    """the type of object the identifier points to"""
+
+    object_id = attr.ib(type=bytes, validator=type_validator())
+    """object's identifier"""
+
+    @namespace.validator
+    def check_namespace(self, attribute, value):
+        if value != SWHID_NAMESPACE:
+            raise ValidationError(
+                "Invalid SWHID: invalid namespace: %(namespace)s",
+                params={"namespace": value},
+            )
+
+    @scheme_version.validator
+    def check_scheme_version(self, attribute, value):
+        if value != SWHID_VERSION:
+            raise ValidationError(
+                "Invalid SWHID: invalid version: %(version)s", params={"version": value}
+            )
+
+    @object_id.validator
+    def check_object_id(self, attribute, value):
+        if len(value) != 20:
+            raise ValidationError(
+                "Invalid SWHID: invalid checksum: %(object_id)s",
+                params={"object_id": hash_to_hex(value)},
+            )
+
+    def __str__(self) -> str:
+        return SWHID_SEP.join(
+            [
+                self.namespace,
+                str(self.scheme_version),
+                self.object_type.value,
+                hash_to_hex(self.object_id),
+            ]
+        )
+
+    @classmethod
+    def from_string(cls, s: str) -> ExtendedSWHID:
+        parts = _parse_swhid(s)
+        if parts.pop("qualifiers"):
+            raise ValidationError("ExtendedSWHID does not support qualifiers.")
+        return ExtendedSWHID(**parts)
 
 
 @attr.s(frozen=True)

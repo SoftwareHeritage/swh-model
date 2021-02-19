@@ -21,6 +21,8 @@ from swh.model.identifiers import (
     SNAPSHOT,
     SWHID,
     CoreSWHID,
+    ExtendedObjectType,
+    ExtendedSWHID,
     ObjectType,
     QualifiedSWHID,
     normalize_timestamp,
@@ -1277,6 +1279,8 @@ def test_parse_serialize_qualified_swhid():
         "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
         "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
         "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:1:ori:fed8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:1:emd:fed8bc9d7a6bcf6db04f476d29314f157507d505",
         "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed",
         "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
         "swh:1:snp:foo",
@@ -1444,6 +1448,8 @@ def test_parse_serialize_core_swhid():
         "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
         "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
         "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:1:ori:fed8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:1:emd:fed8bc9d7a6bcf6db04f476d29314f157507d505",
         "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;visit=swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",  # noqa
         "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
         "swh:1:snp:foo",
@@ -1503,3 +1509,152 @@ def test_CoreSWHID_eq():
     assert CoreSWHID(
         object_type=ObjectType.DIRECTORY, object_id=object_id,
     ) == CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,)
+
+
+def test_parse_serialize_extended_swhid():
+    for swhid, _type, _version, _hash in [
+        (
+            "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+            ExtendedObjectType.CONTENT,
+            1,
+            _x("94a9ed024d3859793618152ea559a168bbcbb5e2"),
+        ),
+        (
+            "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
+            ExtendedObjectType.DIRECTORY,
+            1,
+            _x("d198bc9d7a6bcf6db04f476d29314f157507d505"),
+        ),
+        (
+            "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
+            ExtendedObjectType.REVISION,
+            1,
+            _x("309cf2674ee7a0749978cf8265ab91a60aea0f7d"),
+        ),
+        (
+            "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
+            ExtendedObjectType.RELEASE,
+            1,
+            _x("22ece559cc7cc2364edc5e5593d63ae8bd229f9f"),
+        ),
+        (
+            "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
+            ExtendedObjectType.SNAPSHOT,
+            1,
+            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
+        ),
+        (
+            "swh:1:ori:c7c108084bc0bf3d81436bf980b46e98bd338453",
+            ExtendedObjectType.ORIGIN,
+            1,
+            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
+        ),
+        (
+            "swh:1:emd:c7c108084bc0bf3d81436bf980b46e98bd338453",
+            ExtendedObjectType.RAW_EXTRINSIC_METADATA,
+            1,
+            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
+        ),
+    ]:
+        expected_result = ExtendedSWHID(
+            namespace="swh",
+            scheme_version=_version,
+            object_type=_type,
+            object_id=_hash,
+        )
+        actual_result = ExtendedSWHID.from_string(swhid)
+        assert actual_result == expected_result
+        assert str(expected_result) == str(actual_result) == swhid
+
+
+@pytest.mark.parametrize(
+    "invalid_swhid",
+    [
+        "swh:1:cnt",
+        "swh:1:",
+        "swh:",
+        "swh:1:cnt:",
+        "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
+        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;visit=swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",  # noqa
+        "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
+        "swh:1:snp:foo",
+        "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
+    ],
+)
+def test_parse_extended_swhid_parsing_error(invalid_swhid):
+    with pytest.raises(ValidationError):
+        ExtendedSWHID.from_string(invalid_swhid)
+
+
+@pytest.mark.filterwarnings("ignore:.*SWHID.*:DeprecationWarning")
+@pytest.mark.parametrize(
+    "ns,version,type,id",
+    [
+        (
+            "foo",
+            1,
+            ExtendedObjectType.CONTENT,
+            "abc8bc9d7a6bcf6db04f476d29314f157507d505",
+        ),
+        (
+            "swh",
+            2,
+            ExtendedObjectType.CONTENT,
+            "def8bc9d7a6bcf6db04f476d29314f157507d505",
+        ),
+        ("swh", 1, ExtendedObjectType.DIRECTORY, "aaaa"),
+    ],
+)
+def test_ExtendedSWHID_validation_error(ns, version, type, id):
+    with pytest.raises(ValidationError):
+        ExtendedSWHID(
+            namespace=ns, scheme_version=version, object_type=type, object_id=_x(id),
+        )
+
+
+def test_ExtendedSWHID_hash():
+    object_id = _x("94a9ed024d3859793618152ea559a168bbcbb5e2")
+
+    assert hash(
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id)
+    ) == hash(
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id)
+    )
+
+    assert hash(
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+    ) == hash(
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+    )
+
+    # Different order of the dictionary, so the underlying order of the tuple in
+    # ImmutableDict is different.
+    assert hash(
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+    ) == hash(
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+    )
+
+
+def test_ExtendedSWHID_eq():
+    object_id = _x("94a9ed024d3859793618152ea559a168bbcbb5e2")
+
+    assert ExtendedSWHID(
+        object_type=ExtendedObjectType.DIRECTORY, object_id=object_id
+    ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id)
+
+    assert ExtendedSWHID(
+        object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,
+    ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+
+    assert ExtendedSWHID(
+        object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,
+    ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+
+
+def test_object_types():
+    """Checks ExtendedObjectType is a superset of ObjectType"""
+    for member in ObjectType:
+        assert getattr(ExtendedObjectType, member.name).value == member.value
