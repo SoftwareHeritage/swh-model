@@ -5,6 +5,7 @@
 
 import binascii
 import datetime
+import itertools
 from typing import Dict
 import unittest
 
@@ -1198,127 +1199,161 @@ def test_SWHID_eq():
     ) == SWHID(object_type="directory", object_id=object_id, metadata=dummy_qualifiers,)
 
 
-def test_parse_serialize_qualified_swhid():
-    for swhid, _type, _version, _hash in [
-        (
-            "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ObjectType.CONTENT,
-            1,
-            _x("94a9ed024d3859793618152ea559a168bbcbb5e2"),
-        ),
-        (
-            "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
-            ObjectType.DIRECTORY,
-            1,
-            _x("d198bc9d7a6bcf6db04f476d29314f157507d505"),
-        ),
-        (
-            "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-            ObjectType.REVISION,
-            1,
-            _x("309cf2674ee7a0749978cf8265ab91a60aea0f7d"),
-        ),
-        (
-            "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-            ObjectType.RELEASE,
-            1,
-            _x("22ece559cc7cc2364edc5e5593d63ae8bd229f9f"),
-        ),
-        (
-            "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
-            ObjectType.SNAPSHOT,
-            1,
-            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
-        ),
-    ]:
-        expected_result = QualifiedSWHID(
-            namespace="swh",
-            scheme_version=_version,
-            object_type=_type,
-            object_id=_hash,
-        )
-        actual_result = QualifiedSWHID.from_string(swhid)
-        assert actual_result == expected_result
-        assert str(expected_result) == str(actual_result) == swhid
+# SWHIDs that are outright invalid, no matter the context
+INVALID_SWHIDS = [
+    "swh:1:cnt",
+    "swh:1:",
+    "swh:",
+    "swh:1:cnt:",
+    "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
+    "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
+    "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed",
+    "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
+    "swh:1:snp:foo",
+    # wrong qualifier: ori should be origin
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
+    # wrong qualifier: anc should be anchor
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anc=1;visit=1;path=/",  # noqa
+    # wrong qualifier: vis should be visit
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=1;vis=1;path=/",  # noqa
+    # wrong qualifier: pa should be path
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=1;visit=1;pa=/",  # noqa
+    # wrong qualifier: line should be lines
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;line=10;origin=something;anchor=1;visit=1;path=/",  # noqa
+    # wrong qualifier value: it contains space before of after
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=  https://some-url",  # noqa
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=some-anchor    ",  # noqa
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=some-anchor    ;visit=1",  # noqa
+    # invalid swhid: whitespaces
+    "swh :1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
+    "swh: 1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
+    "swh: 1: dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
+    "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
+    "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d; origin=blah",
+    "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
+    # other whitespaces
+    "swh\t:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
+    "swh:1\n:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
+    "swh:1:\rdir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d\f;lines=12",
+    "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12\v",
+]
 
-    for swhid, _type, _version, _hash, _qualifiers in [
-        (
-            "swh:1:cnt:9c95815d9e9d91b8dae8e05d8bbc696fe19f796b;origin=https://github.com/python/cpython;lines=1-18",  # noqa
-            ObjectType.CONTENT,
-            1,
-            _x("9c95815d9e9d91b8dae8e05d8bbc696fe19f796b"),
-            {"origin": "https://github.com/python/cpython", "lines": "1-18"},
-        ),
-        (
-            "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=deb://Debian/packages/linuxdoc-tools",  # noqa
-            ObjectType.DIRECTORY,
-            1,
-            _x("0b6959356d30f1a4e9b7f6bca59b9a336464c03d"),
-            {"origin": "deb://Debian/packages/linuxdoc-tools"},
-        ),
-    ]:
-        expected_result = QualifiedSWHID(
-            namespace="swh",
-            scheme_version=_version,
-            object_type=_type,
-            object_id=_hash,
-            **_qualifiers,
-        )
-        actual_result = QualifiedSWHID.from_string(swhid)
-        assert actual_result == expected_result
-        assert str(expected_result) == str(actual_result) == swhid
+SWHID_CLASSES = [CoreSWHID, QualifiedSWHID, ExtendedSWHID]
 
 
 @pytest.mark.parametrize(
-    "invalid_swhid",
+    "invalid_swhid,swhid_class", itertools.product(INVALID_SWHIDS, SWHID_CLASSES)
+)
+def test_swhid_parsing_error(invalid_swhid, swhid_class):
+    """Tests SWHID strings that are invalid for all SWHID classes do raise
+    a ValidationError"""
+    with pytest.raises(ValidationError):
+        swhid_class.from_string(invalid_swhid)
+
+
+# string SWHIDs, and how they should be parsed by each of the classes,
+# or None if the class does not support it
+HASH = "94a9ed024d3859793618152ea559a168bbcbb5e2"
+VALID_SWHIDS = [
+    (
+        f"swh:1:cnt:{HASH}",
+        CoreSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH),),
+        QualifiedSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH),),
+        ExtendedSWHID(object_type=ExtendedObjectType.CONTENT, object_id=_x(HASH),),
+    ),
+    (
+        f"swh:1:dir:{HASH}",
+        CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH),),
+        QualifiedSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH),),
+        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=_x(HASH),),
+    ),
+    (
+        f"swh:1:rev:{HASH}",
+        CoreSWHID(object_type=ObjectType.REVISION, object_id=_x(HASH),),
+        QualifiedSWHID(object_type=ObjectType.REVISION, object_id=_x(HASH),),
+        ExtendedSWHID(object_type=ExtendedObjectType.REVISION, object_id=_x(HASH),),
+    ),
+    (
+        f"swh:1:rel:{HASH}",
+        CoreSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH),),
+        QualifiedSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH),),
+        ExtendedSWHID(object_type=ExtendedObjectType.RELEASE, object_id=_x(HASH),),
+    ),
+    (
+        f"swh:1:snp:{HASH}",
+        CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH),),
+        QualifiedSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH),),
+        ExtendedSWHID(object_type=ExtendedObjectType.SNAPSHOT, object_id=_x(HASH),),
+    ),
+    (
+        f"swh:1:cnt:{HASH};origin=https://github.com/python/cpython;lines=1-18",
+        None,  # CoreSWHID does not allow qualifiers
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            origin="https://github.com/python/cpython",
+            lines=(1, 18),
+        ),
+        None,  # Neither does ExtendedSWHID
+    ),
+    (
+        f"swh:1:dir:{HASH};origin=deb://Debian/packages/linuxdoc-tools",
+        None,  # likewise
+        QualifiedSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=_x(HASH),
+            origin="deb://Debian/packages/linuxdoc-tools",
+        ),
+        None,  # likewise
+    ),
+    (
+        f"swh:1:ori:{HASH}",
+        None,  # CoreSWHID does not allow origin pseudo-SWHIDs
+        None,  # Neither does QualifiedSWHID
+        ExtendedSWHID(object_type=ExtendedObjectType.ORIGIN, object_id=_x(HASH),),
+    ),
+    (
+        f"swh:1:emd:{HASH}",
+        None,  # likewise for metadata pseudo-SWHIDs
+        None,  # Neither does QualifiedSWHID
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.RAW_EXTRINSIC_METADATA, object_id=_x(HASH),
+        ),
+    ),
+    (
+        f"swh:1:emd:{HASH};origin=https://github.com/python/cpython",
+        None,  # CoreSWHID does not allow metadata pseudo-SWHIDs or qualifiers
+        None,  # QualifiedSWHID does not allow metadata pseudo-SWHIDs
+        None,  # ExtendedSWHID does not allow qualifiers
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "string,core,qualified,extended",
     [
-        "swh:1:cnt",
-        "swh:1:",
-        "swh:",
-        "swh:1:cnt:",
-        "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:ori:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:emd:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;invalid;malformed",
-        "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
-        "swh:1:snp:foo",
-        # wrong qualifier: ori should be origin
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
-        # wrong qualifier: anc should be anchor
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anc=1;visit=1;path=/",  # noqa
-        # wrong qualifier: vis should be visit
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=1;vis=1;path=/",  # noqa
-        # wrong qualifier: pa should be path
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=1;visit=1;pa=/",  # noqa
-        # wrong qualifier: line should be lines
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;line=10;origin=something;anchor=1;visit=1;path=/",  # noqa
-        # wrong qualifier value: it contains space before of after
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=  https://some-url",  # noqa
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=some-anchor    ",  # noqa
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;origin=something;anchor=some-anchor    ;visit=1",  # noqa
-        # invalid swhid: whitespaces
-        "swh :1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
-        "swh: 1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
-        "swh: 1: dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;ori=something;anchor=1;visit=1;path=/",  # noqa
-        "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
-        "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d; origin=blah",
-        "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
-        # other whitespaces
-        "swh\t:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
-        "swh:1\n:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
-        "swh:1:\rdir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12",
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d\f;lines=12",
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;lines=12\v",
+        pytest.param(string, core, qualified, extended, id=string)
+        for (string, core, qualified, extended) in VALID_SWHIDS
     ],
 )
-def test_parse_qualified_swhid_parsing_error(invalid_swhid):
-    with pytest.raises(ValidationError):
-        QualifiedSWHID.from_string(invalid_swhid)
+def test_parse_unparse_swhids(string, core, qualified, extended):
+    """Tests parsing and serializing valid SWHIDs with the various SWHID classes."""
+    classes = [CoreSWHID, QualifiedSWHID, ExtendedSWHID]
+    for (cls, parsed_swhid) in zip(classes, [core, qualified, extended]):
+        if parsed_swhid is None:
+            # This class should not accept this SWHID
+            with pytest.raises(ValidationError):
+                cls.from_string(string)
+        else:
+            # This class should
+            assert cls.from_string(string) == parsed_swhid
+
+            # Also check serialization
+            assert string == str(parsed_swhid)
 
 
-@pytest.mark.filterwarnings("ignore:.*SWHID.*:DeprecationWarning")
 @pytest.mark.parametrize(
     "ns,version,type,id,qualifiers",
     [
@@ -1394,74 +1429,6 @@ def test_QualifiedSWHID_eq():
     )
 
 
-def test_parse_serialize_core_swhid():
-    for swhid, _type, _version, _hash in [
-        (
-            "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ObjectType.CONTENT,
-            1,
-            _x("94a9ed024d3859793618152ea559a168bbcbb5e2"),
-        ),
-        (
-            "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
-            ObjectType.DIRECTORY,
-            1,
-            _x("d198bc9d7a6bcf6db04f476d29314f157507d505"),
-        ),
-        (
-            "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-            ObjectType.REVISION,
-            1,
-            _x("309cf2674ee7a0749978cf8265ab91a60aea0f7d"),
-        ),
-        (
-            "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-            ObjectType.RELEASE,
-            1,
-            _x("22ece559cc7cc2364edc5e5593d63ae8bd229f9f"),
-        ),
-        (
-            "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
-            ObjectType.SNAPSHOT,
-            1,
-            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
-        ),
-    ]:
-        expected_result = CoreSWHID(
-            namespace="swh",
-            scheme_version=_version,
-            object_type=_type,
-            object_id=_hash,
-        )
-        actual_result = CoreSWHID.from_string(swhid)
-        assert actual_result == expected_result
-        assert str(expected_result) == str(actual_result) == swhid
-
-
-@pytest.mark.parametrize(
-    "invalid_swhid",
-    [
-        "swh:1:cnt",
-        "swh:1:",
-        "swh:",
-        "swh:1:cnt:",
-        "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:ori:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:emd:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;visit=swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",  # noqa
-        "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
-        "swh:1:snp:foo",
-        "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
-    ],
-)
-def test_parse_core_swhid_parsing_error(invalid_swhid):
-    with pytest.raises(ValidationError):
-        CoreSWHID.from_string(invalid_swhid)
-
-
-@pytest.mark.filterwarnings("ignore:.*SWHID.*:DeprecationWarning")
 @pytest.mark.parametrize(
     "ns,version,type,id",
     [
@@ -1511,84 +1478,6 @@ def test_CoreSWHID_eq():
     ) == CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,)
 
 
-def test_parse_serialize_extended_swhid():
-    for swhid, _type, _version, _hash in [
-        (
-            "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ExtendedObjectType.CONTENT,
-            1,
-            _x("94a9ed024d3859793618152ea559a168bbcbb5e2"),
-        ),
-        (
-            "swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505",
-            ExtendedObjectType.DIRECTORY,
-            1,
-            _x("d198bc9d7a6bcf6db04f476d29314f157507d505"),
-        ),
-        (
-            "swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d",
-            ExtendedObjectType.REVISION,
-            1,
-            _x("309cf2674ee7a0749978cf8265ab91a60aea0f7d"),
-        ),
-        (
-            "swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f",
-            ExtendedObjectType.RELEASE,
-            1,
-            _x("22ece559cc7cc2364edc5e5593d63ae8bd229f9f"),
-        ),
-        (
-            "swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453",
-            ExtendedObjectType.SNAPSHOT,
-            1,
-            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
-        ),
-        (
-            "swh:1:ori:c7c108084bc0bf3d81436bf980b46e98bd338453",
-            ExtendedObjectType.ORIGIN,
-            1,
-            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
-        ),
-        (
-            "swh:1:emd:c7c108084bc0bf3d81436bf980b46e98bd338453",
-            ExtendedObjectType.RAW_EXTRINSIC_METADATA,
-            1,
-            _x("c7c108084bc0bf3d81436bf980b46e98bd338453"),
-        ),
-    ]:
-        expected_result = ExtendedSWHID(
-            namespace="swh",
-            scheme_version=_version,
-            object_type=_type,
-            object_id=_hash,
-        )
-        actual_result = ExtendedSWHID.from_string(swhid)
-        assert actual_result == expected_result
-        assert str(expected_result) == str(actual_result) == swhid
-
-
-@pytest.mark.parametrize(
-    "invalid_swhid",
-    [
-        "swh:1:cnt",
-        "swh:1:",
-        "swh:",
-        "swh:1:cnt:",
-        "foo:1:cnt:abc8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:2:dir:def8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:foo:fed8bc9d7a6bcf6db04f476d29314f157507d505",
-        "swh:1:dir:0b6959356d30f1a4e9b7f6bca59b9a336464c03d;visit=swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",  # noqa
-        "swh:1:snp:gh6959356d30f1a4e9b7f6bca59b9a336464c03d",
-        "swh:1:snp:foo",
-        "swh:1: dir: 0b6959356d30f1a4e9b7f6bca59b9a336464c03d",
-    ],
-)
-def test_parse_extended_swhid_parsing_error(invalid_swhid):
-    with pytest.raises(ValidationError):
-        ExtendedSWHID.from_string(invalid_swhid)
-
-
-@pytest.mark.filterwarnings("ignore:.*SWHID.*:DeprecationWarning")
 @pytest.mark.parametrize(
     "ns,version,type,id",
     [
