@@ -1299,6 +1299,17 @@ VALID_SWHIDS = [
         None,  # Neither does ExtendedSWHID
     ),
     (
+        f"swh:1:cnt:{HASH};origin=https://github.com/python/cpython;lines=18",
+        None,  # likewise
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            origin="https://github.com/python/cpython",
+            lines=(18, None),
+        ),
+        None,  # likewise
+    ),
+    (
         f"swh:1:dir:{HASH};origin=deb://Debian/packages/linuxdoc-tools",
         None,  # likewise
         QualifiedSWHID(
@@ -1427,6 +1438,100 @@ def test_QualifiedSWHID_eq():
     ) == QualifiedSWHID(
         object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
     )
+
+
+QUALIFIED_SWHIDS = [
+    # origin:
+    (
+        f"swh:1:cnt:{HASH};origin=https://github.com/python/cpython",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            origin="https://github.com/python/cpython",
+        ),
+    ),
+    # visit:
+    (
+        f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            visit=CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH)),
+        ),
+    ),
+    (f"swh:1:cnt:{HASH};visit=swh:1:rel:{HASH}", None,),
+    # anchor:
+    (
+        f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            anchor=CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH)),
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};anchor=swh:1:rev:{HASH}",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            anchor=CoreSWHID(object_type=ObjectType.REVISION, object_id=_x(HASH)),
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};anchor=swh:1:cnt:{HASH}",
+        None,  # 'cnt' is not valid in anchor
+    ),
+    (
+        f"swh:1:cnt:{HASH};anchor=swh:1:ori:{HASH}",
+        None,  # 'ori' is not valid in a CoreSWHID
+    ),
+    # path:
+    (
+        f"swh:1:cnt:{HASH};path=/foo",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo"
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};path=/foo%3Bbar",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo;bar"
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};path=/foo%25bar",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo%bar"
+        ),
+    ),
+    # lines
+    (
+        f"swh:1:cnt:{HASH};lines=1-18",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), lines=(1, 18),
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};lines=18",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), lines=(18, None),
+        ),
+    ),
+    (f"swh:1:cnt:{HASH};lines=", None,),
+    (f"swh:1:cnt:{HASH};lines=aa", None,),
+    (f"swh:1:cnt:{HASH};lines=18-aa", None,),
+]
+
+
+@pytest.mark.parametrize("string,parsed", QUALIFIED_SWHIDS)
+def test_QualifiedSWHID_parse_qualifiers(string, parsed):
+    """Tests parsing and serializing valid SWHIDs with the various SWHID classes."""
+    if parsed is None:
+        with pytest.raises(ValidationError):
+            print(repr(QualifiedSWHID.from_string(string)))
+    else:
+        assert QualifiedSWHID.from_string(string) == parsed
+        assert str(parsed) == string
 
 
 @pytest.mark.parametrize(

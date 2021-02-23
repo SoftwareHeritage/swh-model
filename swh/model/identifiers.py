@@ -23,6 +23,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import urllib.parse
 import warnings
 
 import attr
@@ -816,7 +817,9 @@ class _BaseSWHID(Generic[_TObjectType]):
         try:
             return cls(**parts)
         except ValueError as e:
-            raise ValidationError(*e.args) from None
+            raise ValidationError(
+                "ValueError: %(args)", params={"args": e.args}
+            ) from None
 
 
 @attr.s(frozen=True, kw_only=True)
@@ -856,9 +859,6 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
 
 
 def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]:
-    """Alias of CoreSWHID.from_string to make mypy happy......
-
-    https://github.com/python/mypy/issues/6172"""
     if swhid is None or isinstance(swhid, CoreSWHID):
         return swhid
     else:
@@ -868,12 +868,25 @@ def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]
 def _parse_lines_qualifier(
     lines: Union[str, Tuple[int, Optional[int]], None]
 ) -> Optional[Tuple[int, Optional[int]]]:
-    if lines is None or isinstance(lines, tuple):
-        return lines
-    elif "-" in lines:
-        return tuple(map(int, lines.split("-", 2)))  # type: ignore
+    try:
+        if lines is None or isinstance(lines, tuple):
+            return lines
+        elif "-" in lines:
+            (from_, to) = lines.split("-", 2)
+            return (int(from_), int(to))
+        else:
+            return (int(lines), None)
+    except ValueError:
+        raise ValidationError(
+            "Invalid format for the lines qualifier: %(lines)", params={"lines": lines}
+        )
+
+
+def _parse_path_qualifier(path: Union[str, bytes, None]) -> Optional[bytes]:
+    if path is None or isinstance(path, bytes):
+        return path
     else:
-        return (int(lines), None)
+        return urllib.parse.unquote_to_bytes(path)
 
 
 @attr.s(frozen=True, kw_only=True)
@@ -929,7 +942,12 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
     is specified, as the core identifier of a directory, a revision, a release,
     or a snapshot"""
 
-    path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
+    path = attr.ib(
+        type=Optional[bytes],
+        default=None,
+        validator=type_validator(),
+        converter=_parse_path_qualifier,
+    )
     """the absolute file path, from the root directory associated to the anchor node,
     to the object; when the anchor denotes a directory or a revision, and almost always
     when it’s a release, the root directory is uniquely determined;
@@ -948,8 +966,8 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
     def check_visit(self, attribute, value):
         if value and value.object_type != ObjectType.SNAPSHOT:
             raise ValidationError(
-                f"The 'visit' qualifier must be a 'snp' SWHID, "
-                f"not '{value.object_type.value}'"
+                "The 'visit' qualifier must be a 'snp' SWHID, not '%(type)s'",
+                params={"type": value.object_type.value},
             )
 
     @anchor.validator
@@ -961,8 +979,9 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
             ObjectType.SNAPSHOT,
         ):
             raise ValidationError(
-                f"The 'visit' qualifier must be a 'dir', 'rev', 'rel', or 'snp' SWHID, "
-                f"not '{value.object_type.value}'"
+                "The 'visit' qualifier must be a 'dir', 'rev', 'rel', or 'snp' SWHID, "
+                "not '%s(type)s'",
+                params={"type": value.object_type.value},
             )
 
     def qualifiers(self) -> Dict[str, str]:
@@ -970,8 +989,16 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
             "origin": self.origin,
             "visit": str(self.visit) if self.visit else None,
             "anchor": str(self.anchor) if self.anchor else None,
-            "path": self.path.decode() if self.path is not None else None,
-            "lines": "-".join(map(str, self.lines)) if self.lines else None,
+            "path": (
+                urllib.parse.quote_from_bytes(self.path)
+                if self.path is not None
+                else None
+            ),
+            "lines": (
+                "-".join(str(line) for line in self.lines if line is not None)
+                if self.lines
+                else None
+            ),
         }
         return {k: v for (k, v) in d.items() if v is not None}
 
@@ -997,12 +1024,15 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
         invalid_qualifiers = set(qualifiers) - SWHID_QUALIFIERS
         if invalid_qualifiers:
             raise ValidationError(
-                "Invalid qualifier(s): {', '.join(invalid_qualifiers)}"
+                "Invalid qualifier(s): %(qualifiers)",
+                params={"qualifiers": ", ".join(invalid_qualifiers)},
             )
         try:
             return QualifiedSWHID(**parts, **qualifiers)
         except ValueError as e:
-            raise ValidationError(*e.args) from None
+            raise ValidationError(
+                "ValueError: %(args)s", params={"args": e.args}
+            ) from None
 
 
 @attr.s(frozen=True, kw_only=True)
