@@ -9,6 +9,7 @@ import itertools
 from typing import Dict
 import unittest
 
+import attr
 import pytest
 
 from swh.model import hashutil, identifiers
@@ -21,6 +22,7 @@ from swh.model.identifiers import (
     REVISION,
     SNAPSHOT,
     SWHID,
+    SWHID_QUALIFIERS,
     CoreSWHID,
     ExtendedObjectType,
     ExtendedSWHID,
@@ -1532,6 +1534,19 @@ def test_QualifiedSWHID_parse_qualifiers(string, parsed):
     else:
         assert QualifiedSWHID.from_string(string) == parsed
         assert str(parsed) == string
+
+
+def test_QualifiedSWHID_attributes():
+    """Checks the set of QualifiedSWHID attributes match the SWHID_QUALIFIERS
+    constant."""
+
+    assert set(attr.fields_dict(QualifiedSWHID)) == {
+        "namespace",
+        "scheme_version",
+        "object_type",
+        "object_id",
+        *SWHID_QUALIFIERS,
+    }
 
 
 @pytest.mark.parametrize(
