@@ -1452,6 +1452,14 @@ QUALIFIED_SWHIDS = [
             origin="https://github.com/python/cpython",
         ),
     ),
+    (
+        f"swh:1:cnt:{HASH};origin=https://example.org/foo%3Bbar%25baz",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            origin="https://example.org/foo%3Bbar%25baz",
+        ),
+    ),
     # visit:
     (
         f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
@@ -1526,7 +1534,7 @@ QUALIFIED_SWHIDS = [
 
 
 @pytest.mark.parametrize("string,parsed", QUALIFIED_SWHIDS)
-def test_QualifiedSWHID_parse_qualifiers(string, parsed):
+def test_QualifiedSWHID_parse_serialize_qualifiers(string, parsed):
     """Tests parsing and serializing valid SWHIDs with the various SWHID classes."""
     if parsed is None:
         with pytest.raises(ValidationError):
@@ -1534,6 +1542,17 @@ def test_QualifiedSWHID_parse_qualifiers(string, parsed):
     else:
         assert QualifiedSWHID.from_string(string) == parsed
         assert str(parsed) == string
+
+
+def test_QualifiedSWHID_serialize_origin():
+    """Checks that semicolon in origins are escaped."""
+    string = f"swh:1:cnt:{HASH};origin=https://example.org/foo%3Bbar%25baz"
+    swhid = QualifiedSWHID(
+        object_type=ObjectType.CONTENT,
+        object_id=_x(HASH),
+        origin="https://example.org/foo;bar%25baz",
+    )
+    assert str(swhid) == string
 
 
 def test_QualifiedSWHID_attributes():

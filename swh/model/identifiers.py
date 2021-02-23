@@ -985,8 +985,18 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
             )
 
     def qualifiers(self) -> Dict[str, str]:
+        origin = self.origin
+        if origin:
+            unescaped_origin = origin
+            origin = origin.replace(";", "%3B")
+            assert urllib.parse.unquote_to_bytes(
+                origin
+            ) == urllib.parse.unquote_to_bytes(
+                unescaped_origin
+            ), "Escaping ';' in the origin qualifier corrupted the origin URL."
+
         d: Dict[str, Optional[str]] = {
-            "origin": self.origin,
+            "origin": origin,
             "visit": str(self.visit) if self.visit else None,
             "anchor": str(self.anchor) if self.anchor else None,
             "path": (
