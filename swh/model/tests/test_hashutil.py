@@ -1,8 +1,9 @@
-# Copyright (C) 2015-2018  The Software Heritage developers
+# Copyright (C) 2015-2021  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import contextlib
 import hashlib
 import io
 import os
@@ -12,6 +13,17 @@ from unittest.mock import patch
 
 from swh.model import hashutil
 from swh.model.hashutil import MultiHash
+
+
+@contextlib.contextmanager
+def patch_blake2(function_name):
+    try:
+        with patch(function_name) as mock:
+            yield mock
+    finally:
+        # mocking blake2 inserts mock objects in the cache; we need
+        # to clean it before the next test runs
+        hashutil._blake2_hash_cache.clear()
 
 
 class BaseHashutil(unittest.TestCase):
@@ -195,7 +207,7 @@ class Hashutil(BaseHashutil):
             if "blake2b" not in hashlib.algorithms_available:
                 self.skipTest("blake2b not built in")
 
-            with patch("hashlib.blake2b") as mock_blake2b:
+            with patch_blake2("hashlib.blake2b") as mock_blake2b:
                 mock_blake2b.return_value = sentinel = object()
 
                 h = hashutil._new_hash("blake2b512")
@@ -216,7 +228,7 @@ class Hashutil(BaseHashutil):
             if "blake2s" not in hashlib.algorithms_available:
                 self.skipTest("blake2s not built in")
 
-            with patch("hashlib.blake2s") as mock_blake2s:
+            with patch_blake2("hashlib.blake2s") as mock_blake2s:
                 mock_blake2s.return_value = sentinel = object()
 
                 h = hashutil._new_hash("blake2s256")
@@ -233,7 +245,7 @@ class Hashutil(BaseHashutil):
         if "blake2b" in hashlib.algorithms_available:
             self.skipTest("blake2b built in")
 
-        with patch("pyblake2.blake2b") as mock_blake2b:
+        with patch_blake2("pyblake2.blake2b") as mock_blake2b:
             mock_blake2b.return_value = sentinel = object()
 
             h = hashutil._new_hash("blake2b512")
@@ -247,7 +259,7 @@ class Hashutil(BaseHashutil):
         if "blake2s" in hashlib.algorithms_available:
             self.skipTest("blake2s built in")
 
-        with patch("pyblake2.blake2s") as mock_blake2s:
+        with patch_blake2("pyblake2.blake2s") as mock_blake2s:
             mock_blake2s.return_value = sentinel = object()
 
             h = hashutil._new_hash("blake2s256")
