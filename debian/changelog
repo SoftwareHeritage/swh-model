@@ -1,3 +1,16 @@
+swh-model (0.13.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 0.13.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-02-25 17:56:31 +0100)
+  * Upstream changes:     - v0.13.0     - * Update persistent
+    identifiers doc with pip install info     - * Make explicit Python 3
+    dependency     - * tests: Clean hashutil._blake2_hash_cache after
+    mocking blake2 functions.     - * Introduce new classes
+    CoreSWHID/QualifiedSWHID/ExtendedSWHID     - * Deprecate SWHID class
+    - * Disallow 'ori' type in SWHID class
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 25 Feb 2021 16:59:26 +0000
+
 swh-model (0.12.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 0.12.0     - (tagged by David Douard
