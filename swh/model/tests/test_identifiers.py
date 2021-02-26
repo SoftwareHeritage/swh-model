@@ -1369,6 +1369,18 @@ def test_parse_unparse_swhids(string, core, qualified, extended):
 
 
 @pytest.mark.parametrize(
+    "core,extended",
+    [
+        pytest.param(core, extended, id=string)
+        for (string, core, qualified, extended) in VALID_SWHIDS
+        if core is not None
+    ],
+)
+def test_core_to_extended(core, extended):
+    assert core.to_extended() == extended
+
+
+@pytest.mark.parametrize(
     "ns,version,type,id,qualifiers",
     [
         ("foo", 1, ObjectType.CONTENT, "abc8bc9d7a6bcf6db04f476d29314f157507d505", {}),

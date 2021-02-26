@@ -857,6 +857,17 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
     )
     """the type of object the identifier points to"""
 
+    def to_extended(self) -> ExtendedSWHID:
+        """Converts this CoreSWHID into an ExtendedSWHID.
+
+        As ExtendedSWHID is a superset of CoreSWHID, this is lossless."""
+        return ExtendedSWHID(
+            namespace=self.namespace,
+            scheme_version=self.scheme_version,
+            object_type=ExtendedObjectType(self.object_type.value),
+            object_id=self.object_id,
+        )
+
 
 def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]:
     if swhid is None or isinstance(swhid, CoreSWHID):
