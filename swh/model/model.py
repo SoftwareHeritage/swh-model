@@ -21,15 +21,14 @@ from .identifiers import (
     directory_identifier,
     normalize_timestamp,
     origin_identifier,
-    parse_swhid,
     release_identifier,
     revision_identifier,
     snapshot_identifier,
 )
+from .identifiers import CoreSWHID
 from .identifiers import ExtendedObjectType as SwhidExtendedObjectType
 from .identifiers import ExtendedSWHID
 from .identifiers import ObjectType as SwhidObjectType
-from .identifiers import SWHID, CoreSWHID
 
 
 class MissingData(Exception):
@@ -67,7 +66,7 @@ def dictify(value):
     "Helper function used by BaseModel.to_dict()"
     if isinstance(value, BaseModel):
         return value.to_dict()
-    elif isinstance(value, (SWHID, ExtendedSWHID)):
+    elif isinstance(value, (CoreSWHID, ExtendedSWHID)):
         return str(value)
     elif isinstance(value, Enum):
         return value.value
@@ -900,11 +899,19 @@ class RawExtrinsicMetadata(BaseModel):
     # context
     origin = attr.ib(type=Optional[str], default=None, validator=type_validator())
     visit = attr.ib(type=Optional[int], default=None, validator=type_validator())
-    snapshot = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
-    release = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
-    revision = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
+    snapshot = attr.ib(
+        type=Optional[CoreSWHID], default=None, validator=type_validator()
+    )
+    release = attr.ib(
+        type=Optional[CoreSWHID], default=None, validator=type_validator()
+    )
+    revision = attr.ib(
+        type=Optional[CoreSWHID], default=None, validator=type_validator()
+    )
     path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
-    directory = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
+    directory = attr.ib(
+        type=Optional[CoreSWHID], default=None, validator=type_validator()
+    )
 
     @discovery_date.validator
     def check_discovery_date(self, attribute, value):
@@ -976,7 +983,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid("snapshot", value)
+        self._check_swhid(SwhidObjectType.SNAPSHOT, value)
 
     @release.validator
     def check_release(self, attribute, value):
@@ -993,7 +1000,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid("release", value)
+        self._check_swhid(SwhidObjectType.RELEASE, value)
 
     @revision.validator
     def check_revision(self, attribute, value):
@@ -1009,7 +1016,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid("revision", value)
+        self._check_swhid(SwhidObjectType.REVISION, value)
 
     @path.validator
     def check_path(self, attribute, value):
@@ -1036,7 +1043,7 @@ class RawExtrinsicMetadata(BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid("directory", value)
+        self._check_swhid(SwhidObjectType.DIRECTORY, value)
 
     def _check_swhid(self, expected_object_type, swhid):
         if isinstance(swhid, str):
@@ -1044,12 +1051,9 @@ class RawExtrinsicMetadata(BaseModel):
 
         if swhid.object_type != expected_object_type:
             raise ValueError(
-                f"Expected SWHID type '{expected_object_type}', "
-                f"got '{swhid.object_type}' in {swhid}"
+                f"Expected SWHID type '{expected_object_type.name.lower()}', "
+                f"got '{swhid.object_type.name.lower()}' in {swhid}"
             )
-
-        if swhid.metadata:
-            raise ValueError(f"Expected core SWHID, but got: {swhid}")
 
     def to_dict(self):
         d = super().to_dict()
@@ -1080,7 +1084,7 @@ class RawExtrinsicMetadata(BaseModel):
         swhid_keys = ("snapshot", "release", "revision", "directory")
         for swhid_key in swhid_keys:
             if d.get(swhid_key):
-                d[swhid_key] = parse_swhid(d[swhid_key])
+                d[swhid_key] = CoreSWHID.from_string(d[swhid_key])
 
         return super().from_dict(d)
 

@@ -15,8 +15,9 @@ import pytest
 from swh.model.hashutil import MultiHash, hash_to_bytes, hash_to_hex
 import swh.model.hypothesis_strategies as strategies
 from swh.model.identifiers import (
-    SWHID,
+    CoreSWHID,
     ExtendedSWHID,
+    ObjectType,
     content_identifier,
     directory_identifier,
     origin_identifier,
@@ -52,6 +53,8 @@ from swh.model.tests.test_identifiers import (
     revision_example,
     snapshot_example,
 )
+
+EXAMPLE_HASH = hash_to_bytes("94a9ed024d3859793618152ea559a168bbcbb5e2")
 
 
 @given(strategies.objects())
@@ -861,6 +864,30 @@ def test_metadata_to_dict():
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
 
+    hash_hex = "6162" * 10
+    hash_bin = b"ab" * 10
+    m = RawExtrinsicMetadata(
+        target=_content_swhid,
+        **_common_metadata_fields,
+        origin="https://example.org/",
+        snapshot=CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=hash_bin),
+        release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=hash_bin),
+        revision=CoreSWHID(object_type=ObjectType.REVISION, object_id=hash_bin),
+        path=b"/foo/bar",
+        directory=CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=hash_bin),
+    )
+    assert m.to_dict() == {
+        "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        **common_fields,
+        "origin": "https://example.org/",
+        "snapshot": f"swh:1:snp:{hash_hex}",
+        "release": f"swh:1:rel:{hash_hex}",
+        "revision": f"swh:1:rev:{hash_hex}",
+        "path": b"/foo/bar",
+        "directory": f"swh:1:dir:{hash_hex}",
+    }
+    assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
+
 
 def test_metadata_invalid_target():
     """Checks various invalid values for the 'target' field."""
@@ -946,9 +973,8 @@ def test_metadata_validate_context_snapshot():
     ):
         RawExtrinsicMetadata(
             target=_origin_swhid,
-            snapshot=SWHID(
-                object_type="snapshot",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            snapshot=CoreSWHID(
+                object_type=ObjectType.SNAPSHOT, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -956,23 +982,9 @@ def test_metadata_validate_context_snapshot():
     # but content can
     RawExtrinsicMetadata(
         target=_content_swhid,
-        snapshot=SWHID(
-            object_type="snapshot", object_id="94a9ed024d3859793618152ea559a168bbcbb5e2"
-        ),
+        snapshot=CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=EXAMPLE_HASH),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            target=_content_swhid,
-            snapshot=SWHID(
-                object_type="snapshot",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
@@ -980,10 +992,7 @@ def test_metadata_validate_context_snapshot():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            snapshot=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            snapshot=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
@@ -997,33 +1006,16 @@ def test_metadata_validate_context_release():
     ):
         RawExtrinsicMetadata(
             target=_origin_swhid,
-            release=SWHID(
-                object_type="release",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
         target=_content_swhid,
-        release=SWHID(
-            object_type="release", object_id="94a9ed024d3859793618152ea559a168bbcbb5e2"
-        ),
+        release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=EXAMPLE_HASH),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            target=_content_swhid,
-            release=SWHID(
-                object_type="release",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
@@ -1031,10 +1023,7 @@ def test_metadata_validate_context_release():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            release=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            release=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
@@ -1048,9 +1037,8 @@ def test_metadata_validate_context_revision():
     ):
         RawExtrinsicMetadata(
             target=_origin_swhid,
-            revision=SWHID(
-                object_type="revision",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            revision=CoreSWHID(
+                object_type=ObjectType.REVISION, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -1058,23 +1046,9 @@ def test_metadata_validate_context_revision():
     # but content can
     RawExtrinsicMetadata(
         target=_content_swhid,
-        revision=SWHID(
-            object_type="revision", object_id="94a9ed024d3859793618152ea559a168bbcbb5e2"
-        ),
+        revision=CoreSWHID(object_type=ObjectType.REVISION, object_id=EXAMPLE_HASH),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            target=_content_swhid,
-            revision=SWHID(
-                object_type="revision",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
@@ -1082,10 +1056,7 @@ def test_metadata_validate_context_revision():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            revision=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            revision=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
@@ -1114,9 +1085,8 @@ def test_metadata_validate_context_directory():
     ):
         RawExtrinsicMetadata(
             target=_origin_swhid,
-            directory=SWHID(
-                object_type="directory",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            directory=CoreSWHID(
+                object_type=ObjectType.DIRECTORY, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -1124,24 +1094,9 @@ def test_metadata_validate_context_directory():
     # but content can
     RawExtrinsicMetadata(
         target=_content_swhid,
-        directory=SWHID(
-            object_type="directory",
-            object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-        ),
+        directory=CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=EXAMPLE_HASH,),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            target=_content_swhid,
-            directory=SWHID(
-                object_type="directory",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
@@ -1149,9 +1104,8 @@ def test_metadata_validate_context_directory():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            directory=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            directory=CoreSWHID(
+                object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
