@@ -8,8 +8,8 @@ from typing import Dict, Sequence
 
 import attr
 
-from swh.model.hashutil import MultiHash, hash_to_bytes, hash_to_hex
-from swh.model.identifiers import SWHID
+from swh.model.hashutil import MultiHash, hash_to_bytes
+from swh.model.identifiers import ExtendedSWHID
 from swh.model.model import (
     BaseModel,
     Content,
@@ -18,7 +18,6 @@ from swh.model.model import (
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
-    MetadataTargetType,
     ObjectType,
     Origin,
     OriginVisit,
@@ -310,8 +309,7 @@ METADATA_FETCHERS = [
 
 RAW_EXTRINSIC_METADATA = [
     RawExtrinsicMetadata(
-        type=MetadataTargetType.ORIGIN,
-        target="http://example.org/foo.git",
+        target=Origin("http://example.org/foo.git").swhid(),
         discovery_date=datetime.datetime(2020, 7, 30, 17, 8, 20, tzinfo=UTC),
         authority=attr.evolve(METADATA_AUTHORITIES[0], metadata=None),
         fetcher=attr.evolve(METADATA_FETCHERS[0], metadata=None),
@@ -319,10 +317,7 @@ RAW_EXTRINSIC_METADATA = [
         metadata=b'{"foo": "bar"}',
     ),
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
-        target=SWHID(
-            object_type="content", object_id=hash_to_hex(CONTENTS[0].sha1_git)
-        ),
+        target=ExtendedSWHID.from_string(str(CONTENTS[0].swhid())),
         discovery_date=datetime.datetime(2020, 7, 30, 17, 8, 20, tzinfo=UTC),
         authority=attr.evolve(METADATA_AUTHORITIES[0], metadata=None),
         fetcher=attr.evolve(METADATA_FETCHERS[0], metadata=None),

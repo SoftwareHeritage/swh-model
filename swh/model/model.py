@@ -67,7 +67,7 @@ def dictify(value):
     "Helper function used by BaseModel.to_dict()"
     if isinstance(value, BaseModel):
         return value.to_dict()
-    elif isinstance(value, SWHID):
+    elif isinstance(value, (SWHID, ExtendedSWHID)):
         return str(value)
     elif isinstance(value, Enum):
         return value.value
@@ -881,25 +881,12 @@ class MetadataFetcher(BaseModel):
         return {"name": self.name, "version": self.version}
 
 
-class MetadataTargetType(Enum):
-    """The type of object extrinsic metadata refer to."""
-
-    CONTENT = "content"
-    DIRECTORY = "directory"
-    REVISION = "revision"
-    RELEASE = "release"
-    SNAPSHOT = "snapshot"
-    ORIGIN = "origin"
-
-
 @attr.s(frozen=True, slots=True)
 class RawExtrinsicMetadata(BaseModel):
     object_type: Final = "raw_extrinsic_metadata"
 
     # target object
-    type = attr.ib(type=MetadataTargetType, validator=type_validator())
-    target = attr.ib(type=Union[str, SWHID], validator=type_validator())
-    """URL if type=MetadataTargetType.ORIGIN, else core SWHID"""
+    target = attr.ib(type=ExtendedSWHID, validator=type_validator())
 
     # source
     discovery_date = attr.ib(type=datetime.datetime, validator=type_validator())
@@ -919,16 +906,6 @@ class RawExtrinsicMetadata(BaseModel):
     path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
     directory = attr.ib(type=Optional[SWHID], default=None, validator=type_validator())
 
-    @target.validator
-    def check_target(self, attribute, value):
-        if self.type == MetadataTargetType.ORIGIN:
-            if isinstance(value, SWHID) or value.startswith("swh:"):
-                raise ValueError(
-                    "Got SWHID as target for origin metadata (expected an URL)."
-                )
-        else:
-            self._check_swhid(self.type.value, value)
-
     @discovery_date.validator
     def check_discovery_date(self, attribute, value):
         """Checks the discovery_date has a timezone."""
@@ -940,15 +917,16 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (
-            MetadataTargetType.SNAPSHOT,
-            MetadataTargetType.RELEASE,
-            MetadataTargetType.REVISION,
-            MetadataTargetType.DIRECTORY,
-            MetadataTargetType.CONTENT,
+        if self.target.object_type not in (
+            SwhidExtendedObjectType.SNAPSHOT,
+            SwhidExtendedObjectType.RELEASE,
+            SwhidExtendedObjectType.REVISION,
+            SwhidExtendedObjectType.DIRECTORY,
+            SwhidExtendedObjectType.CONTENT,
         ):
             raise ValueError(
-                f"Unexpected 'origin' context for {self.type.value} object: {value}"
+                f"Unexpected 'origin' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
         if value.startswith("swh:"):
@@ -964,15 +942,16 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (
-            MetadataTargetType.SNAPSHOT,
-            MetadataTargetType.RELEASE,
-            MetadataTargetType.REVISION,
-            MetadataTargetType.DIRECTORY,
-            MetadataTargetType.CONTENT,
+        if self.target.object_type not in (
+            SwhidExtendedObjectType.SNAPSHOT,
+            SwhidExtendedObjectType.RELEASE,
+            SwhidExtendedObjectType.REVISION,
+            SwhidExtendedObjectType.DIRECTORY,
+            SwhidExtendedObjectType.CONTENT,
         ):
             raise ValueError(
-                f"Unexpected 'visit' context for {self.type.value} object: {value}"
+                f"Unexpected 'visit' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
         if self.origin is None:
@@ -986,14 +965,15 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (
-            MetadataTargetType.RELEASE,
-            MetadataTargetType.REVISION,
-            MetadataTargetType.DIRECTORY,
-            MetadataTargetType.CONTENT,
+        if self.target.object_type not in (
+            SwhidExtendedObjectType.RELEASE,
+            SwhidExtendedObjectType.REVISION,
+            SwhidExtendedObjectType.DIRECTORY,
+            SwhidExtendedObjectType.CONTENT,
         ):
             raise ValueError(
-                f"Unexpected 'snapshot' context for {self.type.value} object: {value}"
+                f"Unexpected 'snapshot' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
         self._check_swhid("snapshot", value)
@@ -1003,13 +983,14 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (
-            MetadataTargetType.REVISION,
-            MetadataTargetType.DIRECTORY,
-            MetadataTargetType.CONTENT,
+        if self.target.object_type not in (
+            SwhidExtendedObjectType.REVISION,
+            SwhidExtendedObjectType.DIRECTORY,
+            SwhidExtendedObjectType.CONTENT,
         ):
             raise ValueError(
-                f"Unexpected 'release' context for {self.type.value} object: {value}"
+                f"Unexpected 'release' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
         self._check_swhid("release", value)
@@ -1019,9 +1000,13 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (MetadataTargetType.DIRECTORY, MetadataTargetType.CONTENT,):
+        if self.target.object_type not in (
+            SwhidExtendedObjectType.DIRECTORY,
+            SwhidExtendedObjectType.CONTENT,
+        ):
             raise ValueError(
-                f"Unexpected 'revision' context for {self.type.value} object: {value}"
+                f"Unexpected 'revision' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
         self._check_swhid("revision", value)
@@ -1031,9 +1016,13 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (MetadataTargetType.DIRECTORY, MetadataTargetType.CONTENT,):
+        if self.target.object_type not in (
+            SwhidExtendedObjectType.DIRECTORY,
+            SwhidExtendedObjectType.CONTENT,
+        ):
             raise ValueError(
-                f"Unexpected 'path' context for {self.type.value} object: {value}"
+                f"Unexpected 'path' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
     @directory.validator
@@ -1041,9 +1030,10 @@ class RawExtrinsicMetadata(BaseModel):
         if value is None:
             return
 
-        if self.type not in (MetadataTargetType.CONTENT,):
+        if self.target.object_type not in (SwhidExtendedObjectType.CONTENT,):
             raise ValueError(
-                f"Unexpected 'directory' context for {self.type.value} object: {value}"
+                f"Unexpected 'directory' context for "
+                f"{self.target.object_type.name.lower()} object: {value}"
             )
 
         self._check_swhid("directory", value)
@@ -1082,13 +1072,10 @@ class RawExtrinsicMetadata(BaseModel):
     def from_dict(cls, d):
         d = {
             **d,
-            "type": MetadataTargetType(d["type"]),
+            "target": ExtendedSWHID.from_string(d["target"]),
             "authority": MetadataAuthority.from_dict(d["authority"]),
             "fetcher": MetadataFetcher.from_dict(d["fetcher"]),
         }
-
-        if d["type"] != MetadataTargetType.ORIGIN:
-            d["target"] = parse_swhid(d["target"])
 
         swhid_keys = ("snapshot", "release", "revision", "directory")
         for swhid_key in swhid_keys:
@@ -1099,7 +1086,6 @@ class RawExtrinsicMetadata(BaseModel):
 
     def unique_key(self) -> KeyType:
         return {
-            "type": self.type.value,
             "target": str(self.target),
             "authority_type": self.authority.type.value,
             "authority_url": self.authority.url,
