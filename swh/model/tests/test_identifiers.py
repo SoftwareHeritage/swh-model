@@ -108,21 +108,22 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
             self.assertEqual(identifiers.format_offset(offset), res)
 
 
+content_example = {
+    "status": "visible",
+    "length": 5,
+    "data": b"1984\n",
+    "ctime": datetime.datetime(2015, 11, 22, 16, 33, 56, tzinfo=datetime.timezone.utc),
+}
+
+
 class ContentIdentifier(unittest.TestCase):
     def setUp(self):
-        self.content = {
-            "status": "visible",
-            "length": 5,
-            "data": b"1984\n",
-            "ctime": datetime.datetime(
-                2015, 11, 22, 16, 33, 56, tzinfo=datetime.timezone.utc
-            ),
-        }
-
-        self.content_id = hashutil.MultiHash.from_data(self.content["data"]).digest()
+        self.content_id = hashutil.MultiHash.from_data(content_example["data"]).digest()
 
     def test_content_identifier(self):
-        self.assertEqual(identifiers.content_identifier(self.content), self.content_id)
+        self.assertEqual(
+            identifiers.content_identifier(content_example), self.content_id
+        )
 
 
 directory_example = {
@@ -772,15 +773,15 @@ class SnapshotIdentifier(unittest.TestCase):
         )
 
 
-class OriginIdentifier(unittest.TestCase):
-    def setUp(self):
-        self.origin = {
-            "url": "https://github.com/torvalds/linux",
-        }
+origin_example = {
+    "url": "https://github.com/torvalds/linux",
+}
 
+
+class OriginIdentifier(unittest.TestCase):
     def test_content_identifier(self):
         self.assertEqual(
-            identifiers.origin_identifier(self.origin),
+            identifiers.origin_identifier(origin_example),
             "b63a575fe3faab7692c9f38fb09d4bb45651bb0f",
         )
 

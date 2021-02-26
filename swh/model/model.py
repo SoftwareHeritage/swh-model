@@ -18,14 +18,18 @@ from typing_extensions import Final
 from .collections import ImmutableDict
 from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytes
 from .identifiers import (
-    SWHID,
     directory_identifier,
     normalize_timestamp,
+    origin_identifier,
     parse_swhid,
     release_identifier,
     revision_identifier,
     snapshot_identifier,
 )
+from .identifiers import ExtendedObjectType as SwhidExtendedObjectType
+from .identifiers import ExtendedSWHID
+from .identifiers import ObjectType as SwhidObjectType
+from .identifiers import SWHID, CoreSWHID
 
 
 class MissingData(Exception):
@@ -274,6 +278,13 @@ class Origin(BaseModel):
     def unique_key(self) -> KeyType:
         return {"url": self.url}
 
+    def swhid(self) -> ExtendedSWHID:
+        """Returns a SWHID representing this origin."""
+        return ExtendedSWHID(
+            object_type=SwhidExtendedObjectType.ORIGIN,
+            object_id=hash_to_bytes(origin_identifier(self.unique_key())),
+        )
+
 
 @attr.s(frozen=True, slots=True)
 class OriginVisit(BaseModel):
@@ -415,6 +426,10 @@ class Snapshot(HashableObject, BaseModel):
             **d,
         )
 
+    def swhid(self) -> CoreSWHID:
+        """Returns a SWHID representing this object."""
+        return CoreSWHID(object_type=SwhidObjectType.SNAPSHOT, object_id=self.id)
+
 
 @attr.s(frozen=True, slots=True)
 class Release(HashableObject, BaseModel):
@@ -460,6 +475,10 @@ class Release(HashableObject, BaseModel):
         if d.get("date"):
             d["date"] = TimestampWithTimezone.from_dict(d["date"])
         return cls(target_type=ObjectType(d.pop("target_type")), **d)
+
+    def swhid(self) -> CoreSWHID:
+        """Returns a SWHID representing this object."""
+        return CoreSWHID(object_type=SwhidObjectType.RELEASE, object_id=self.id)
 
     def anonymize(self) -> "Release":
         """Returns an anonymized version of the Release object.
@@ -549,6 +568,10 @@ class Revision(HashableObject, BaseModel):
             **d,
         )
 
+    def swhid(self) -> CoreSWHID:
+        """Returns a SWHID representing this object."""
+        return CoreSWHID(object_type=SwhidObjectType.REVISION, object_id=self.id)
+
     def anonymize(self) -> "Revision":
         """Returns an anonymized version of the Revision object.
 
@@ -590,6 +613,10 @@ class Directory(HashableObject, BaseModel):
             ),
             **d,
         )
+
+    def swhid(self) -> CoreSWHID:
+        """Returns a SWHID representing this object."""
+        return CoreSWHID(object_type=SwhidObjectType.DIRECTORY, object_id=self.id)
 
 
 @attr.s(frozen=True, slots=True)
@@ -705,6 +732,10 @@ class Content(BaseContent):
 
     def unique_key(self) -> KeyType:
         return self.sha1  # TODO: use a dict of hashes
+
+    def swhid(self) -> CoreSWHID:
+        """Returns a SWHID representing this object."""
+        return CoreSWHID(object_type=SwhidObjectType.CONTENT, object_id=self.sha1_git)
 
 
 @attr.s(frozen=True, slots=True)
