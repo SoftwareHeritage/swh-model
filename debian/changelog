@@ -1,8 +1,15 @@
-swh-model (0.13.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (1.0.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 1.0.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-03-01 18:01:29 +0100)
+  * Upstream changes:     - v1.0.0     - Two breaking changes:     - *
+    RawExtrinsicMetadata: Use ExtendedSWHID as target and remove type
+    - * RawExtrinsicMetadata: Use CoreSWHID instead of SWHID for
+    contexts     - And two minor changes:     - * Add
+    CoreSWHID.to_extended()     - * Add a swhid() method to all hashable
+    objects.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 25 Feb 2021 17:00:37 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 02 Mar 2021 08:18:42 +0000
 
 swh-model (0.13.0-1~swh1) unstable-swh; urgency=medium
 
