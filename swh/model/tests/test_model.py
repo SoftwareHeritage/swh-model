@@ -12,12 +12,15 @@ from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
 
-from swh.model.hashutil import MultiHash, hash_to_bytes
+from swh.model.hashutil import MultiHash, hash_to_bytes, hash_to_hex
 import swh.model.hypothesis_strategies as strategies
 from swh.model.identifiers import (
-    SWHID,
+    CoreSWHID,
+    ExtendedSWHID,
+    ObjectType,
+    content_identifier,
     directory_identifier,
-    parse_swhid,
+    origin_identifier,
     release_identifier,
     revision_identifier,
     snapshot_identifier,
@@ -29,7 +32,6 @@ from swh.model.model import (
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
-    MetadataTargetType,
     MissingData,
     Origin,
     OriginVisit,
@@ -44,11 +46,15 @@ from swh.model.model import (
     TimestampWithTimezone,
 )
 from swh.model.tests.test_identifiers import (
+    content_example,
     directory_example,
+    origin_example,
     release_example,
     revision_example,
     snapshot_example,
 )
+
+EXAMPLE_HASH = hash_to_bytes("94a9ed024d3859793618152ea559a168bbcbb5e2")
 
 
 @given(strategies.objects())
@@ -702,22 +708,34 @@ def test_revision_extra_headers_as_lists_from_dict():
 # ID computation
 
 
+def test_content_model_id_computation():
+    cnt_dict = content_example.copy()
+
+    cnt_id_str = hash_to_hex(content_identifier(cnt_dict)["sha1_git"])
+    cnt_model = Content.from_data(cnt_dict["data"])
+    assert str(cnt_model.swhid()) == "swh:1:cnt:" + cnt_id_str
+
+
 def test_directory_model_id_computation():
     dir_dict = directory_example.copy()
     del dir_dict["id"]
 
-    dir_id = hash_to_bytes(directory_identifier(dir_dict))
+    dir_id_str = directory_identifier(dir_dict)
+    dir_id = hash_to_bytes(dir_id_str)
     dir_model = Directory.from_dict(dir_dict)
     assert dir_model.id == dir_id
+    assert str(dir_model.swhid()) == "swh:1:dir:" + dir_id_str
 
 
 def test_revision_model_id_computation():
     rev_dict = revision_example.copy()
     del rev_dict["id"]
 
-    rev_id = hash_to_bytes(revision_identifier(rev_dict))
+    rev_id_str = revision_identifier(rev_dict)
+    rev_id = hash_to_bytes(rev_id_str)
     rev_model = Revision.from_dict(rev_dict)
     assert rev_model.id == rev_id
+    assert str(rev_model.swhid()) == "swh:1:rev:" + rev_id_str
 
 
 def test_revision_model_id_computation_with_no_date():
@@ -740,19 +758,31 @@ def test_release_model_id_computation():
     rel_dict = release_example.copy()
     del rel_dict["id"]
 
-    rel_id = hash_to_bytes(release_identifier(rel_dict))
+    rel_id_str = release_identifier(rel_dict)
+    rel_id = hash_to_bytes(rel_id_str)
     rel_model = Release.from_dict(rel_dict)
     assert isinstance(rel_model.date, TimestampWithTimezone)
     assert rel_model.id == hash_to_bytes(rel_id)
+    assert str(rel_model.swhid()) == "swh:1:rel:" + rel_id_str
 
 
 def test_snapshot_model_id_computation():
     snp_dict = snapshot_example.copy()
     del snp_dict["id"]
 
-    snp_id = hash_to_bytes(snapshot_identifier(snp_dict))
+    snp_id_str = snapshot_identifier(snp_dict)
+    snp_id = hash_to_bytes(snp_id_str)
     snp_model = Snapshot.from_dict(snp_dict)
     assert snp_model.id == snp_id
+    assert str(snp_model.swhid()) == "swh:1:snp:" + snp_id_str
+
+
+def test_origin_model_id_computation():
+    ori_dict = origin_example.copy()
+
+    ori_id_str = origin_identifier(ori_dict)
+    ori_model = Origin.from_dict(ori_dict)
+    assert str(ori_model.swhid()) == "swh:1:ori:" + ori_id_str
 
 
 @given(strategies.objects(split_content=True))
@@ -780,8 +810,13 @@ _metadata_authority = MetadataAuthority(
     type=MetadataAuthorityType.FORGE, url="https://forge.softwareheritage.org",
 )
 _metadata_fetcher = MetadataFetcher(name="test-fetcher", version="0.0.1",)
-_content_swhid = parse_swhid("swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2")
+_content_swhid = ExtendedSWHID.from_string(
+    "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2"
+)
 _origin_url = "https://forge.softwareheritage.org/source/swh-model.git"
+_origin_swhid = ExtendedSWHID.from_string(
+    "swh:1:ori:94a9ed024d3859793618152ea559a168bbcbb5e2"
+)
 _dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
 _common_metadata_fields = dict(
     discovery_date=datetime.datetime.now(tz=datetime.timezone.utc),
@@ -796,15 +831,11 @@ def test_metadata_valid():
     """Checks valid RawExtrinsicMetadata objects don't raise an error."""
 
     # Simplest case
-    RawExtrinsicMetadata(
-        type=MetadataTargetType.ORIGIN, target=_origin_url, **_common_metadata_fields
-    )
+    RawExtrinsicMetadata(target=_origin_swhid, **_common_metadata_fields)
 
     # Object with an SWHID
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
-        target=_content_swhid,
-        **_common_metadata_fields,
+        target=_content_swhid, **_common_metadata_fields,
     )
 
 
@@ -819,83 +850,51 @@ def test_metadata_to_dict():
         "metadata": b'{"origin": "https://example.com", "lines": "42"}',
     }
 
-    m = RawExtrinsicMetadata(
-        type=MetadataTargetType.ORIGIN, target=_origin_url, **_common_metadata_fields,
-    )
+    m = RawExtrinsicMetadata(target=_origin_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
-        "type": "origin",
-        "target": _origin_url,
+        "target": str(_origin_swhid),
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
 
-    m = RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
-        target=_content_swhid,
-        **_common_metadata_fields,
-    )
+    m = RawExtrinsicMetadata(target=_content_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
-        "type": "content",
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
         **common_fields,
+    }
+    assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
+
+    hash_hex = "6162" * 10
+    hash_bin = b"ab" * 10
+    m = RawExtrinsicMetadata(
+        target=_content_swhid,
+        **_common_metadata_fields,
+        origin="https://example.org/",
+        snapshot=CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=hash_bin),
+        release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=hash_bin),
+        revision=CoreSWHID(object_type=ObjectType.REVISION, object_id=hash_bin),
+        path=b"/foo/bar",
+        directory=CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=hash_bin),
+    )
+    assert m.to_dict() == {
+        "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        **common_fields,
+        "origin": "https://example.org/",
+        "snapshot": f"swh:1:snp:{hash_hex}",
+        "release": f"swh:1:rel:{hash_hex}",
+        "revision": f"swh:1:rev:{hash_hex}",
+        "path": b"/foo/bar",
+        "directory": f"swh:1:dir:{hash_hex}",
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
 
 
 def test_metadata_invalid_target():
     """Checks various invalid values for the 'target' field."""
-
-    # SWHID for an origin
-    with pytest.raises(ValueError, match="expected an URL"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_content_swhid,
-            **_common_metadata_fields,
-        )
-
-    # SWHID for an origin (even when passed as string)
-    with pytest.raises(ValueError, match="expected an URL"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target="swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-            **_common_metadata_fields,
-        )
-
-    # URL for a non-origin
-    with pytest.raises(ValueError, match="Expected SWHID, got a string"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=_origin_url,
-            **_common_metadata_fields,
-        )
-
     # SWHID passed as string instead of SWHID
-    with pytest.raises(ValueError, match="Expected SWHID, got a string"):
+    with pytest.raises(ValueError, match="target must be.*ExtendedSWHID"):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target="swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
-            **_common_metadata_fields,
-        )
-
-    # Object type does not match the SWHID
-    with pytest.raises(
-        ValueError, match="Expected SWHID type 'revision', got 'content'"
-    ):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.REVISION,
-            target=_content_swhid,
-            **_common_metadata_fields,
-        )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
             **_common_metadata_fields,
         )
 
@@ -903,8 +902,7 @@ def test_metadata_invalid_target():
 def test_metadata_naive_datetime():
     with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
+            target=_origin_swhid,
             **{**_common_metadata_fields, "discovery_date": datetime.datetime.now()},
         )
 
@@ -917,24 +915,17 @@ def test_metadata_validate_context_origin():
         ValueError, match="Unexpected 'origin' context for origin object"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            origin=_origin_url,
-            **_common_metadata_fields,
+            target=_origin_swhid, origin=_origin_url, **_common_metadata_fields,
         )
 
     # but all other types can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
-        target=_content_swhid,
-        origin=_origin_url,
-        **_common_metadata_fields,
+        target=_content_swhid, origin=_origin_url, **_common_metadata_fields,
     )
 
     # SWHIDs aren't valid origin URLs
     with pytest.raises(ValueError, match="SWHID used as context origin URL"):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target=_content_swhid,
             origin="swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
             **_common_metadata_fields,
@@ -949,34 +940,23 @@ def test_metadata_validate_context_visit():
         ValueError, match="Unexpected 'visit' context for origin object"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            visit=42,
-            **_common_metadata_fields,
+            target=_origin_swhid, visit=42, **_common_metadata_fields,
         )
 
     # but all other types can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
-        target=_content_swhid,
-        origin=_origin_url,
-        visit=42,
-        **_common_metadata_fields,
+        target=_content_swhid, origin=_origin_url, visit=42, **_common_metadata_fields,
     )
 
     # Missing 'origin'
     with pytest.raises(ValueError, match="'origin' context must be set if 'visit' is"):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=_content_swhid,
-            visit=42,
-            **_common_metadata_fields,
+            target=_content_swhid, visit=42, **_common_metadata_fields,
         )
 
     # visit id must be positive
     with pytest.raises(ValueError, match="Nonpositive visit id"):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target=_content_swhid,
             origin=_origin_url,
             visit=-42,
@@ -992,49 +972,27 @@ def test_metadata_validate_context_snapshot():
         ValueError, match="Unexpected 'snapshot' context for origin object"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            snapshot=SWHID(
-                object_type="snapshot",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            target=_origin_swhid,
+            snapshot=CoreSWHID(
+                object_type=ObjectType.SNAPSHOT, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
         target=_content_swhid,
-        snapshot=SWHID(
-            object_type="snapshot", object_id="94a9ed024d3859793618152ea559a168bbcbb5e2"
-        ),
+        snapshot=CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=EXAMPLE_HASH),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=_content_swhid,
-            snapshot=SWHID(
-                object_type="snapshot",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
         ValueError, match="Expected SWHID type 'snapshot', got 'content'"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target=_content_swhid,
-            snapshot=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            snapshot=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
@@ -1047,49 +1005,25 @@ def test_metadata_validate_context_release():
         ValueError, match="Unexpected 'release' context for origin object"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            release=SWHID(
-                object_type="release",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            target=_origin_swhid,
+            release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
         target=_content_swhid,
-        release=SWHID(
-            object_type="release", object_id="94a9ed024d3859793618152ea559a168bbcbb5e2"
-        ),
+        release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=EXAMPLE_HASH),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=_content_swhid,
-            release=SWHID(
-                object_type="release",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
         ValueError, match="Expected SWHID type 'release', got 'content'"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target=_content_swhid,
-            release=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            release=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
@@ -1102,49 +1036,27 @@ def test_metadata_validate_context_revision():
         ValueError, match="Unexpected 'revision' context for origin object"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            revision=SWHID(
-                object_type="revision",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            target=_origin_swhid,
+            revision=CoreSWHID(
+                object_type=ObjectType.REVISION, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
         target=_content_swhid,
-        revision=SWHID(
-            object_type="revision", object_id="94a9ed024d3859793618152ea559a168bbcbb5e2"
-        ),
+        revision=CoreSWHID(object_type=ObjectType.REVISION, object_id=EXAMPLE_HASH),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=_content_swhid,
-            revision=SWHID(
-                object_type="revision",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
         ValueError, match="Expected SWHID type 'revision', got 'content'"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target=_content_swhid,
-            revision=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-            ),
+            revision=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
             **_common_metadata_fields,
         )
 
@@ -1155,18 +1067,12 @@ def test_metadata_validate_context_path():
     # Origins can't have a 'path' context
     with pytest.raises(ValueError, match="Unexpected 'path' context for origin object"):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            path=b"/foo/bar",
-            **_common_metadata_fields,
+            target=_origin_swhid, path=b"/foo/bar", **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
-        target=_content_swhid,
-        path=b"/foo/bar",
-        **_common_metadata_fields,
+        target=_content_swhid, path=b"/foo/bar", **_common_metadata_fields,
     )
 
 
@@ -1178,49 +1084,28 @@ def test_metadata_validate_context_directory():
         ValueError, match="Unexpected 'directory' context for origin object"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.ORIGIN,
-            target=_origin_url,
-            directory=SWHID(
-                object_type="directory",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            target=_origin_swhid,
+            directory=CoreSWHID(
+                object_type=ObjectType.DIRECTORY, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
-        type=MetadataTargetType.CONTENT,
         target=_content_swhid,
-        directory=SWHID(
-            object_type="directory",
-            object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-        ),
+        directory=CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=EXAMPLE_HASH,),
         **_common_metadata_fields,
     )
-
-    # Non-core SWHID
-    with pytest.raises(ValueError, match="Expected core SWHID"):
-        RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
-            target=_content_swhid,
-            directory=SWHID(
-                object_type="directory",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
-                metadata=_dummy_qualifiers,
-            ),
-            **_common_metadata_fields,
-        )
 
     # SWHID type doesn't match the expected type of this context key
     with pytest.raises(
         ValueError, match="Expected SWHID type 'directory', got 'content'"
     ):
         RawExtrinsicMetadata(
-            type=MetadataTargetType.CONTENT,
             target=_content_swhid,
-            directory=SWHID(
-                object_type="content",
-                object_id="94a9ed024d3859793618152ea559a168bbcbb5e2",
+            directory=CoreSWHID(
+                object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
