@@ -23,7 +23,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         self.runner = CliRunner()
 
     def assertSWHID(self, result, swhid):
-        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.exit_code, 0, result.output)
         self.assertEqual(result.output.split()[0], swhid)
 
     def test_no_args(self):
@@ -127,7 +127,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
     def test_auto_origin(self):
         """automatic object type detection: origin"""
         result = self.runner.invoke(cli.identify, ["https://github.com/torvalds/linux"])
-        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.exit_code, 0, result.output)
         self.assertRegex(result.output, r"^swh:\d+:ori:")
 
     def test_verify_content(self):
@@ -139,7 +139,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
             # match
             path = os.path.join(self.tmpdir_name, filename)
             result = self.runner.invoke(cli.identify, ["--verify", expected_id, path])
-            self.assertEqual(result.exit_code, 0)
+            self.assertEqual(result.exit_code, 0, result.output)
 
             # mismatch
             with open(path, "a") as f:
