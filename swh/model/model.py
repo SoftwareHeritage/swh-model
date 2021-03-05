@@ -21,6 +21,7 @@ from .identifiers import (
     directory_identifier,
     normalize_timestamp,
     origin_identifier,
+    raw_extrinsic_metadata_identifier,
     release_identifier,
     revision_identifier,
     snapshot_identifier,
@@ -881,7 +882,7 @@ class MetadataFetcher(BaseModel):
 
 
 @attr.s(frozen=True, slots=True)
-class RawExtrinsicMetadata(BaseModel):
+class RawExtrinsicMetadata(HashableObject, BaseModel):
     object_type: Final = "raw_extrinsic_metadata"
 
     # target object
@@ -912,6 +913,11 @@ class RawExtrinsicMetadata(BaseModel):
     directory = attr.ib(
         type=Optional[CoreSWHID], default=None, validator=type_validator()
     )
+
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+
+    def compute_hash(self) -> bytes:
+        return hash_to_bytes(raw_extrinsic_metadata_identifier(self.to_dict()))
 
     @discovery_date.validator
     def check_discovery_date(self, attribute, value):
@@ -1087,13 +1093,3 @@ class RawExtrinsicMetadata(BaseModel):
                 d[swhid_key] = CoreSWHID.from_string(d[swhid_key])
 
         return super().from_dict(d)
-
-    def unique_key(self) -> KeyType:
-        return {
-            "target": str(self.target),
-            "authority_type": self.authority.type.value,
-            "authority_url": self.authority.url,
-            "discovery_date": str(self.discovery_date),
-            "fetcher_name": self.fetcher.name,
-            "fetcher_version": self.fetcher.version,
-        }
