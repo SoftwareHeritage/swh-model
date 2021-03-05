@@ -724,6 +724,105 @@ def origin_identifier(origin):
     return hashlib.sha1(origin["url"].encode("utf-8")).hexdigest()
 
 
+def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
+    """Return the intrinsic identifier for a RawExtrinsicMetadata object.
+
+    A raw_extrinsic_metadata identifier is a salted sha1 (using the git
+    hashing algorithm with the ``raw_extrinsic_metadata`` object type) of
+    a manifest following the format:
+
+    ```
+    target $ExtendedSwhid
+    discovery_date $Timestamp
+    authority $StrWithoutSpaces $IRI
+    fetcher $Str $Version
+    format $StrWithoutSpaces
+    origin $IRI                         <- optional
+    visit $IntInDecimal                 <- optional
+    snapshot $CoreSwhid                 <- optional
+    release $CoreSwhid                  <- optional
+    revision $CoreSwhid                 <- optional
+    path $Bytes                         <- optional
+    directory $CoreSwhid                <- optional
+
+    $MetadataBytes
+    ```
+
+    $IRI must be RFC 3987 IRIs (so they may contain newlines, that are escaped as
+    described below)
+
+    $StrWithoutSpaces and $Version are ASCII strings, and may not contain spaces.
+
+    $Str is an UTF-8 string.
+
+    $CoreSwhid are core SWHIDs, as defined in :ref:`persistent-identifiers`.
+    $ExtendedSwhid is a core SWHID, with extra types allowed ('ori' for
+    origins and 'emd' for raw extrinsic metadata)
+
+    $Timestamp is a decimal representation of the rounded-down integer number of
+    seconds since the UNIX epoch (1970-01-01 00:00:00 UTC),
+    with no leading '0' (unless the timestamp value is zero) and no timezone.
+    It may be negative by prefixing it with a '-', which must not be followed
+    by a '0'.
+
+    Newlines in $Bytes, $Str, and $Iri are escaped as with other git fields,
+    ie. by adding a space after them.
+
+    Returns:
+      str: the intrinsic identifier for `metadata`
+
+    """
+    # equivalent to using math.floor(dt.timestamp()) to round down,
+    # as int(dt.timestamp()) rounds toward zero,
+    # which would map two seconds on the 0 timestamp.
+    #
+    # This should never be an issue in practice as Software Heritage didn't
+    # start collecting metadata before 2015.
+    timestamp = (
+        metadata["discovery_date"]
+        .astimezone(datetime.timezone.utc)
+        .replace(microsecond=0)
+        .timestamp()
+    )
+    assert timestamp.is_integer()
+
+    headers = [
+        (b"target", str(metadata["target"]).encode()),
+        (b"discovery_date", str(int(timestamp)).encode("ascii")),
+        (
+            b"authority",
+            f"{metadata['authority']['type']} {metadata['authority']['url']}".encode(),
+        ),
+        (
+            b"fetcher",
+            f"{metadata['fetcher']['name']} {metadata['fetcher']['version']}".encode(),
+        ),
+        (b"format", metadata["format"].encode()),
+    ]
+
+    for key in (
+        "origin",
+        "visit",
+        "snapshot",
+        "release",
+        "revision",
+        "path",
+        "directory",
+    ):
+        if metadata.get(key) is not None:
+            value: bytes
+            if key == "path":
+                value = metadata[key]
+            else:
+                value = str(metadata[key]).encode()
+
+            headers.append((key.encode("ascii"), value))
+
+    return identifier_to_str(
+        hash_manifest("raw_extrinsic_metadata", headers, metadata["metadata"])
+    )
+
+
 # type of the "object_type" attribute of the SWHID class; either
 # ObjectType or ExtendedObjectType
 _TObjectType = TypeVar("_TObjectType", ObjectType, ExtendedObjectType)

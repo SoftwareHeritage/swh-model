@@ -48,6 +48,7 @@ from swh.model.model import (
 from swh.model.tests.test_identifiers import (
     content_example,
     directory_example,
+    metadata_example,
     origin_example,
     release_example,
     revision_example,
@@ -94,6 +95,10 @@ def test_unique_key():
     assert Release.from_dict({**release_example, "id": id_}).unique_key() == id_
     assert Revision.from_dict({**revision_example, "id": id_}).unique_key() == id_
     assert Directory.from_dict({**directory_example, "id": id_}).unique_key() == id_
+    assert (
+        RawExtrinsicMetadata.from_dict({**metadata_example, "id": id_}).unique_key()
+        == id_
+    )
 
     cont = Content.from_data(b"foo")
     assert cont.unique_key().hex() == "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
@@ -819,7 +824,9 @@ _origin_swhid = ExtendedSWHID.from_string(
 )
 _dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
 _common_metadata_fields = dict(
-    discovery_date=datetime.datetime.now(tz=datetime.timezone.utc),
+    discovery_date=datetime.datetime(
+        2021, 1, 29, 13, 57, 9, tzinfo=datetime.timezone.utc
+    ),
     authority=_metadata_authority,
     fetcher=_metadata_fetcher,
     format="json",
@@ -853,6 +860,7 @@ def test_metadata_to_dict():
     m = RawExtrinsicMetadata(target=_origin_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
         "target": str(_origin_swhid),
+        "id": b"@j\xc9\x01\xbc\x1e#p*\xf3q9\xa7u\x97\x00\x14\x02xa",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -860,6 +868,7 @@ def test_metadata_to_dict():
     m = RawExtrinsicMetadata(target=_content_swhid, **_common_metadata_fields,)
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        "id": b"\xbc\xa3U\xddf\x19U\xc5\xd2\xd7\xdfK\xd7c\x1f\xa8\xfeh\x992",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
@@ -878,6 +887,7 @@ def test_metadata_to_dict():
     )
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
+        "id": b"\x14l\xb0\x1f\xb9\xc0{)\xc7\x0f\xbd\xc0*,YZ\xf5C\xab\xfc",
         **common_fields,
         "origin": "https://example.org/",
         "snapshot": f"swh:1:snp:{hash_hex}",
