@@ -45,6 +45,7 @@ from swh.model.model import (
     Timestamp,
     TimestampWithTimezone,
 )
+from swh.model.tests.swh_model_data import TEST_OBJECTS
 from swh.model.tests.test_identifiers import (
     content_example,
     directory_example,
@@ -76,6 +77,17 @@ def test_todict_inverse_fromdict(objtype_and_obj):
 
     # Check the composition of from_dict and to_dict is the identity
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
+
+
+@pytest.mark.parametrize("object_type, objects", TEST_OBJECTS.items())
+def test_swh_model_todict_fromdict(object_type, objects):
+    """checks model objects in swh_model_data are in correct shape"""
+    assert objects
+    for obj in objects:
+        # Check the composition of from_dict and to_dict is the identity
+        obj_as_dict = obj.to_dict()
+        assert obj == type(obj).from_dict(obj_as_dict)
+        assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
 
 
 def test_unique_key():

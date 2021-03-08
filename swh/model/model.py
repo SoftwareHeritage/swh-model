@@ -848,7 +848,10 @@ class MetadataAuthority(BaseModel):
 
     @classmethod
     def from_dict(cls, d):
-        d["type"] = MetadataAuthorityType(d["type"])
+        d = {
+            **d,
+            "type": MetadataAuthorityType(d["type"]),
+        }
         return super().from_dict(d)
 
     def unique_key(self) -> KeyType:
