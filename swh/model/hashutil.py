@@ -296,6 +296,7 @@ def hash_git_data(data, git_type, base_algo="sha1"):
         "tag",
         "snapshot",
         "raw_extrinsic_metadata",
+        "extid",
     }
 
     if git_type not in git_object_types:
