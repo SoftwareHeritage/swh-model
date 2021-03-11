@@ -823,6 +823,37 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
     )
 
 
+def extid_identifier(extid: Dict[str, Any]) -> str:
+    """Return the intrinsic identifier for an ExtID object.
+
+    An ExtID identifier is a salted sha1 (using the git hashing algorithm with
+    the ``extid`` object type) of a manifest following the format:
+
+    ```
+    extid_type $StrWithoutSpaces
+    extid $Bytes
+    target $CoreSwhid
+    ```
+
+    $StrWithoutSpaces is an ASCII string, and may not contain spaces.
+
+    Newlines in $Bytes are escaped as with other git fields, ie. by adding a
+    space after them.
+
+    Returns:
+      str: the intrinsic identifier for `extid`
+
+    """
+
+    headers = [
+        (b"extid_type", extid["extid_type"].encode("ascii")),
+        (b"extid", extid["extid"]),
+        (b"target", str(extid["target"]).encode("ascii")),
+    ]
+
+    return identifier_to_str(hash_manifest("extid", headers))
+
+
 # type of the "object_type" attribute of the SWHID class; either
 # ObjectType or ExtendedObjectType
 _TObjectType = TypeVar("_TObjectType", ObjectType, ExtendedObjectType)

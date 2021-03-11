@@ -15,6 +15,7 @@ from swh.model.model import (
     Content,
     Directory,
     DirectoryEntry,
+    ExtID,
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
@@ -129,6 +130,11 @@ REVISIONS = [
         parents=(),
         extra_headers=((b"foo", b"bar"),),
     ),
+]
+
+EXTIDS = [
+    ExtID(extid_type="git256", extid=b"\x03" * 32, target=REVISIONS[0].swhid(),),
+    ExtID(extid_type="hg", extid=b"\x04" * 20, target=REVISIONS[1].swhid(),),
 ]
 
 RELEASES = [
@@ -330,6 +336,7 @@ RAW_EXTRINSIC_METADATA = [
 TEST_OBJECTS: Dict[str, Sequence[BaseModel]] = {
     "content": CONTENTS,
     "directory": DIRECTORIES,
+    "extid": EXTIDS,
     "metadata_authority": METADATA_AUTHORITIES,
     "metadata_fetcher": METADATA_FETCHERS,
     "origin": ORIGINS,
