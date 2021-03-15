@@ -1098,6 +1098,13 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 
         return super().from_dict(d)
 
+    def swhid(self) -> ExtendedSWHID:
+        """Returns a SWHID representing this RawExtrinsicMetadata object."""
+        return ExtendedSWHID(
+            object_type=SwhidExtendedObjectType.RAW_EXTRINSIC_METADATA,
+            object_id=self.id,
+        )
+
 
 @attr.s(frozen=True, slots=True)
 class ExtID(HashableObject, BaseModel):

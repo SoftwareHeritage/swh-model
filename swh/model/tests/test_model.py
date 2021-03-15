@@ -21,6 +21,7 @@ from swh.model.identifiers import (
     content_identifier,
     directory_identifier,
     origin_identifier,
+    raw_extrinsic_metadata_identifier,
     release_identifier,
     revision_identifier,
     snapshot_identifier,
@@ -800,6 +801,14 @@ def test_origin_model_id_computation():
     ori_id_str = origin_identifier(ori_dict)
     ori_model = Origin.from_dict(ori_dict)
     assert str(ori_model.swhid()) == "swh:1:ori:" + ori_id_str
+
+
+def test_raw_extrinsic_metadata_model_id_computation():
+    emd_dict = metadata_example.copy()
+
+    emd_id_str = raw_extrinsic_metadata_identifier(emd_dict)
+    emd_model = RawExtrinsicMetadata.from_dict(emd_dict)
+    assert str(emd_model.swhid()) == "swh:1:emd:" + emd_id_str
 
 
 @given(strategies.objects(split_content=True))
