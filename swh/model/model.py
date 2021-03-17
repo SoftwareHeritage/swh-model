@@ -885,6 +885,17 @@ class MetadataFetcher(BaseModel):
         return {"name": self.name, "version": self.version}
 
 
+def normalize_discovery_date(value: Any) -> datetime.datetime:
+    if not isinstance(value, datetime.datetime):
+        raise TypeError("discovery_date must be a timezone-aware datetime.")
+
+    if value.tzinfo is None:
+        raise ValueError("discovery_date must be a timezone-aware datetime.")
+
+    # Normalize timezone to utc, and truncate microseconds to 0
+    return value.astimezone(datetime.timezone.utc).replace(microsecond=0)
+
+
 @attr.s(frozen=True, slots=True)
 class RawExtrinsicMetadata(HashableObject, BaseModel):
     object_type: Final = "raw_extrinsic_metadata"
@@ -893,7 +904,7 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
     target = attr.ib(type=ExtendedSWHID, validator=type_validator())
 
     # source
-    discovery_date = attr.ib(type=datetime.datetime, validator=type_validator())
+    discovery_date = attr.ib(type=datetime.datetime, converter=normalize_discovery_date)
     authority = attr.ib(type=MetadataAuthority, validator=type_validator())
     fetcher = attr.ib(type=MetadataFetcher, validator=type_validator())
 
@@ -922,12 +933,6 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 
     def compute_hash(self) -> bytes:
         return hash_to_bytes(raw_extrinsic_metadata_identifier(self.to_dict()))
-
-    @discovery_date.validator
-    def check_discovery_date(self, attribute, value):
-        """Checks the discovery_date has a timezone."""
-        if value is not None and value.tzinfo is None:
-            raise ValueError("discovery_date must be a timezone-aware datetime.")
 
     @origin.validator
     def check_origin(self, attribute, value):

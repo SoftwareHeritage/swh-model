@@ -1140,3 +1140,39 @@ def test_metadata_validate_context_directory():
             ),
             **_common_metadata_fields,
         )
+
+
+def test_metadata_normalize_discovery_date():
+    fields_copy = {**_common_metadata_fields}
+    truncated_date = fields_copy.pop("discovery_date")
+    assert truncated_date.microsecond == 0
+
+    # Check for TypeError on disabled object type: we removed attrs_strict's
+    # type_validator
+    with pytest.raises(TypeError):
+        RawExtrinsicMetadata(
+            target=_content_swhid, discovery_date="not a datetime", **fields_copy
+        )
+
+    # Check for truncation to integral second
+    date_with_us = truncated_date.replace(microsecond=42)
+    md = RawExtrinsicMetadata(
+        target=_content_swhid, discovery_date=date_with_us, **fields_copy,
+    )
+
+    assert md.discovery_date == truncated_date
+    assert md.discovery_date.tzinfo == datetime.timezone.utc
+
+    # Check that the timezone gets normalized. Timezones can be offset by a
+    # non-integral number of seconds, so we need to handle that.
+    timezone = datetime.timezone(offset=datetime.timedelta(hours=2))
+    date_with_tz = truncated_date.astimezone(timezone)
+
+    assert date_with_tz.tzinfo != datetime.timezone.utc
+
+    md = RawExtrinsicMetadata(
+        target=_content_swhid, discovery_date=date_with_tz, **fields_copy,
+    )
+
+    assert md.discovery_date == truncated_date
+    assert md.discovery_date.tzinfo == datetime.timezone.utc
