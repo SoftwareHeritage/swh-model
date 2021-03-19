@@ -1,8 +1,12 @@
-swh-model (2.2.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (2.3.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 2.3.0     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2021-03-19 17:15:00 +0100)
+  * Upstream changes:     - Release swh.model 2.3.0     - Properly
+    truncate RawExtrinsicMetadata objects to a precision of one     -
+    second, as does their unique id.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 15 Mar 2021 09:36:37 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 19 Mar 2021 16:17:48 +0000
 
 swh-model (2.2.0-1~swh1) unstable-swh; urgency=medium
 
