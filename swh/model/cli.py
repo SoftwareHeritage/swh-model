@@ -11,7 +11,12 @@ from typing import Dict, List, Optional
 # control
 import click
 
-from swh.core.cli import swh as swh_cli_group
+try:
+    from swh.core.cli import swh as swh_cli_group
+except ImportError:
+    # stub so that swh-identify can be used when swh-core isn't installed
+    swh_cli_group = click  # type: ignore
+
 from swh.model.identifiers import CoreSWHID, ObjectType
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
