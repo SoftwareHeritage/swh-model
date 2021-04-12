@@ -1228,13 +1228,13 @@ def _parse_swhid(swhid: str) -> Dict[str, Any]:
     if qualifiers_raw:
         for qualifier in qualifiers_raw.split(SWHID_CTXT_SEP):
             try:
-                k, v = qualifier.split("=")
+                k, v = qualifier.split("=", maxsplit=1)
+                parts["qualifiers"][k] = v
             except ValueError:
                 raise ValidationError(
                     "Invalid SWHID: invalid qualifier: %(qualifier)s",
                     params={"qualifier": qualifier},
                 )
-            parts["qualifiers"][k] = v
 
     parts["scheme_version"] = int(parts["scheme_version"])
     parts["object_id"] = hash_to_bytes(parts["object_id"])

@@ -1516,6 +1516,14 @@ QUALIFIED_SWHIDS = [
             origin="https://example.org/foo%3Bbar%25baz",
         ),
     ),
+    (
+        f"swh:1:cnt:{HASH};origin=https://example.org?project=test",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            origin="https://example.org?project=test",
+        ),
+    ),
     # visit:
     (
         f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
@@ -1568,6 +1576,12 @@ QUALIFIED_SWHIDS = [
         f"swh:1:cnt:{HASH};path=/foo%25bar",
         QualifiedSWHID(
             object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo%bar"
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};path=/foo/bar%3Dbaz",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo/bar=baz"
         ),
     ),
     # lines
