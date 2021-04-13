@@ -925,7 +925,7 @@ class _BaseSWHID(Generic[_TObjectType]):
             return cls(**parts)
         except ValueError as e:
             raise ValidationError(
-                "ValueError: %(args)", params={"args": e.args}
+                "ValueError: %(args)s", params={"args": e.args}
             ) from None
 
 
@@ -996,7 +996,7 @@ def _parse_lines_qualifier(
             return (int(lines), None)
     except ValueError:
         raise ValidationError(
-            "Invalid format for the lines qualifier: %(lines)", params={"lines": lines}
+            "Invalid format for the lines qualifier: %(lines)s", params={"lines": lines}
         )
 
 
@@ -1152,7 +1152,7 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
         invalid_qualifiers = set(qualifiers) - SWHID_QUALIFIERS
         if invalid_qualifiers:
             raise ValidationError(
-                "Invalid qualifier(s): %(qualifiers)",
+                "Invalid qualifier(s): %(qualifiers)s",
                 params={"qualifiers": ", ".join(invalid_qualifiers)},
             )
         try:
@@ -1228,13 +1228,13 @@ def _parse_swhid(swhid: str) -> Dict[str, Any]:
     if qualifiers_raw:
         for qualifier in qualifiers_raw.split(SWHID_CTXT_SEP):
             try:
-                k, v = qualifier.split("=")
+                k, v = qualifier.split("=", maxsplit=1)
+                parts["qualifiers"][k] = v
             except ValueError:
                 raise ValidationError(
                     "Invalid SWHID: invalid qualifier: %(qualifier)s",
                     params={"qualifier": qualifier},
                 )
-            parts["qualifiers"][k] = v
 
     parts["scheme_version"] = int(parts["scheme_version"])
     parts["object_id"] = hash_to_bytes(parts["object_id"])

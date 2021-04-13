@@ -16,9 +16,13 @@ dulwich
 
 [testing]
 Click
-dulwich
 pytest
 pytz
 swh.core>=0.3
 Click
 dulwich
+
+[testing-minimal]
+Click
+pytest
+pytz

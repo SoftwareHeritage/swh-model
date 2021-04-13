@@ -9,9 +9,22 @@ from typing import Dict, List, Optional
 
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
-import click
+try:
+    import click
+except ImportError:
+    print(
+        "Cannot run swh-identify; the Click package is not installed."
+        "Please install 'swh.model[cli]' for full functionality.",
+        file=sys.stderr,
+    )
+    exit(1)
 
-from swh.core.cli import swh as swh_cli_group
+try:
+    from swh.core.cli import swh as swh_cli_group
+except ImportError:
+    # stub so that swh-identify can be used when swh-core isn't installed
+    swh_cli_group = click  # type: ignore
+
 from swh.model.identifiers import CoreSWHID, ObjectType
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -96,7 +109,13 @@ def swhid_of_origin(url):
 
 
 def swhid_of_git_repo(path) -> CoreSWHID:
-    import dulwich.repo
+    try:
+        import dulwich.repo
+    except ImportError:
+        raise click.ClickException(
+            "Cannot compute snapshot identifier; the Dulwich package is not installed. "
+            "Please install 'swh.model[cli]' for full functionality.",
+        )
 
     from swh.model import hashutil
     from swh.model.identifiers import snapshot_identifier

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: swh.model
-Version: 2.3.0
+Version: 2.4.0
 Summary: Software Heritage data model
 Home-page: https://forge.softwareheritage.org/diffusion/DMOD/
 Author: Software Heritage developers
@@ -38,4 +38,5 @@ Classifier: Development Status :: 5 - Production/Stable
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 Provides-Extra: cli
+Provides-Extra: testing-minimal
 Provides-Extra: testing

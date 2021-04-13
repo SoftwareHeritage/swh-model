@@ -1242,6 +1242,12 @@ VALID_SWHIDS = [
         None,  # Neither does ExtendedSWHID
     ),
     (
+        f"swh:1:cnt:{HASH};origin=https://github.com/python/cpython;lines=1-18/",
+        None,  # likewise
+        None,
+        None,  # likewise
+    ),
+    (
         f"swh:1:cnt:{HASH};origin=https://github.com/python/cpython;lines=18",
         None,  # likewise
         QualifiedSWHID(
@@ -1298,8 +1304,10 @@ def test_parse_unparse_swhids(string, core, qualified, extended):
     for (cls, parsed_swhid) in zip(classes, [core, qualified, extended]):
         if parsed_swhid is None:
             # This class should not accept this SWHID
-            with pytest.raises(ValidationError):
+            with pytest.raises(ValidationError) as excinfo:
                 cls.from_string(string)
+            # Check string serialization for exception
+            assert str(excinfo.value) is not None
         else:
             # This class should
             assert cls.from_string(string) == parsed_swhid
@@ -1508,6 +1516,14 @@ QUALIFIED_SWHIDS = [
             origin="https://example.org/foo%3Bbar%25baz",
         ),
     ),
+    (
+        f"swh:1:cnt:{HASH};origin=https://example.org?project=test",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            origin="https://example.org?project=test",
+        ),
+    ),
     # visit:
     (
         f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
@@ -1560,6 +1576,12 @@ QUALIFIED_SWHIDS = [
         f"swh:1:cnt:{HASH};path=/foo%25bar",
         QualifiedSWHID(
             object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo%bar"
+        ),
+    ),
+    (
+        f"swh:1:cnt:{HASH};path=/foo/bar%3Dbaz",
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT, object_id=_x(HASH), path=b"/foo/bar=baz"
         ),
     ),
     # lines
