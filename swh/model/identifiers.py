@@ -925,7 +925,7 @@ class _BaseSWHID(Generic[_TObjectType]):
             return cls(**parts)
         except ValueError as e:
             raise ValidationError(
-                "ValueError: %(args)", params={"args": e.args}
+                "ValueError: %(args)s", params={"args": e.args}
             ) from None
 
 
@@ -996,7 +996,7 @@ def _parse_lines_qualifier(
             return (int(lines), None)
     except ValueError:
         raise ValidationError(
-            "Invalid format for the lines qualifier: %(lines)", params={"lines": lines}
+            "Invalid format for the lines qualifier: %(lines)s", params={"lines": lines}
         )
 
 
@@ -1152,7 +1152,7 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
         invalid_qualifiers = set(qualifiers) - SWHID_QUALIFIERS
         if invalid_qualifiers:
             raise ValidationError(
-                "Invalid qualifier(s): %(qualifiers)",
+                "Invalid qualifier(s): %(qualifiers)s",
                 params={"qualifiers": ", ".join(invalid_qualifiers)},
             )
         try:
