@@ -4,9 +4,11 @@
 # See top-level LICENSE file for more information
 
 import os
+import sys
 import tarfile
 import tempfile
 import unittest
+import unittest.mock
 
 from click.testing import CliRunner
 import pytest
@@ -52,6 +54,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
         result = self.runner.invoke(cli.identify, ["--type", "directory", path])
         self.assertSWHID(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")
 
+    @pytest.mark.requires_optional_deps
     def test_snapshot_id(self):
         """identify a snapshot"""
         tarball = os.path.join(
@@ -67,6 +70,18 @@ class TestIdentify(DataMixin, unittest.TestCase):
                 self.assertSWHID(
                     result, "swh:1:snp:abc888898124270905a0ef3c67e872ce08e7e0c1"
                 )
+
+    def test_snapshot_without_dulwich(self):
+        """checks swh-identify returns a 'nice' message instead of a traceback
+        when dulwich is not installed"""
+        with unittest.mock.patch.dict(sys.modules, {"dulwich": None}):
+            with tempfile.TemporaryDirectory(prefix="swh.model.cli") as d:
+                result = self.runner.invoke(
+                    cli.identify, ["--type", "snapshot", d], catch_exceptions=False,
+                )
+
+        assert result.exit_code == 1
+        assert "'swh.model[cli]'" in result.output
 
     def test_origin_id(self):
         """identify an origin URL"""

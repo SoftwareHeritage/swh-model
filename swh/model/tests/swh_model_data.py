@@ -152,6 +152,16 @@ RELEASES = [
         message=b"foo",
         synthetic=False,
     ),
+    Release(
+        id=hash_to_bytes("ee4d20e80af850cc0f417d25dc5073792c5010d2"),
+        name=b"this-is-a/tag/1.0",
+        date=None,
+        author=None,
+        target_type=ObjectType.DIRECTORY,
+        target=b"\x05" * 20,
+        message=b"bar",
+        synthetic=False,
+    ),
 ]
 
 ORIGINS = [
