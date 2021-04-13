@@ -54,6 +54,7 @@ setup(
     ),
     extras_require={
         "cli": parse_requirements("cli"),
+        "testing-minimal": parse_requirements("test"),
         "testing": parse_requirements("test") + parse_requirements("cli"),
     },
     include_package_data=True,
