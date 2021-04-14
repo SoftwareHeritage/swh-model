@@ -104,7 +104,7 @@ DATES = [
 
 REVISIONS = [
     Revision(
-        id=hash_to_bytes("4ca486e65eb68e4986aeef8227d2db1d56ce51b3"),
+        id=hash_to_bytes("66c7c1cd9673275037140f2abff7b7b11fc9439c"),
         message=b"hello",
         date=DATES[0],
         committer=COMMITTERS[0],
@@ -114,7 +114,10 @@ REVISIONS = [
         directory=b"\x01" * 20,
         synthetic=False,
         metadata=None,
-        parents=(),
+        parents=(
+            hash_to_bytes("9b918dd063cec85c2bc63cc7f167e29f5894dcbc"),
+            hash_to_bytes("757f38bdcd8473aaa12df55357f5e2f1a318e672"),
+        ),
     ),
     Revision(
         id=hash_to_bytes("677063f5c405d6fc1781fc56379c9a9adf43d3a0"),
