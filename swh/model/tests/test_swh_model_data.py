@@ -18,6 +18,16 @@ def test_swh_model_data(object_type, objects):
         attr.validate(obj)
 
 
+@pytest.mark.parametrize(
+    "object_type", ("directory", "revision", "release", "snapshot"),
+)
+def test_swh_model_data_hash(object_type):
+    for obj in TEST_OBJECTS[object_type]:
+        assert (
+            obj.compute_hash() == obj.id
+        ), f"{obj.compute_hash().hex()} != {obj.id.hex()}"
+
+
 def test_ensure_visit_visit_status_date_consistency():
     """ensure origin-visit-status dates are more recent than their visit counterpart
 
