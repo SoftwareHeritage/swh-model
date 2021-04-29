@@ -104,7 +104,7 @@ DATES = [
 
 REVISIONS = [
     Revision(
-        id=hash_to_bytes("4ca486e65eb68e4986aeef8227d2db1d56ce51b3"),
+        id=hash_to_bytes("66c7c1cd9673275037140f2abff7b7b11fc9439c"),
         message=b"hello",
         date=DATES[0],
         committer=COMMITTERS[0],
@@ -114,10 +114,13 @@ REVISIONS = [
         directory=b"\x01" * 20,
         synthetic=False,
         metadata=None,
-        parents=(),
+        parents=(
+            hash_to_bytes("9b918dd063cec85c2bc63cc7f167e29f5894dcbc"),
+            hash_to_bytes("757f38bdcd8473aaa12df55357f5e2f1a318e672"),
+        ),
     ),
     Revision(
-        id=hash_to_bytes("677063f5c405d6fc1781fc56379c9a9adf43d3a0"),
+        id=hash_to_bytes("c7f96242d73c267adc77c2908e64e0c1cb6a4431"),
         message=b"hello again",
         date=DATES[1],
         committer=COMMITTERS[1],
@@ -258,7 +261,7 @@ ORIGIN_VISIT_STATUSES = [
 DIRECTORIES = [
     Directory(id=hash_to_bytes("4b825dc642cb6eb9a060e54bf8d69288fbee4904"), entries=()),
     Directory(
-        id=hash_to_bytes("21416d920e0ebf0df4a7888bed432873ed5cb3a7"),
+        id=hash_to_bytes("87b339104f7dc2a8163dec988445e3987995545f"),
         entries=(
             DirectoryEntry(
                 name=b"file1.ext",
@@ -282,7 +285,7 @@ DIRECTORIES = [
 
 SNAPSHOTS = [
     Snapshot(
-        id=hash_to_bytes("17d0066a4a80aba4a0e913532ee8ff2014f006a9"),
+        id=hash_to_bytes("9e78d7105c5e0f886487511e2a92377b4ee4c32a"),
         branches={
             b"master": SnapshotBranch(
                 target_type=TargetType.REVISION, target=REVISIONS[0].id
@@ -290,7 +293,7 @@ SNAPSHOTS = [
         },
     ),
     Snapshot(
-        id=hash_to_bytes("8ce268b87faf03850693673c3eb5c9bb66e1ca38"),
+        id=hash_to_bytes("09efffaaad8d1f9c7f9402db0266dbe28082853f"),
         branches={
             b"target/revision": SnapshotBranch(
                 target_type=TargetType.REVISION, target=REVISIONS[0].id,

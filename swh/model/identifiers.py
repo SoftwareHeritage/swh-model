@@ -47,7 +47,7 @@ class ObjectType(enum.Enum):
 class ExtendedObjectType(enum.Enum):
     """Possible object types of an ExtendedSWHID.
 
-    The variants are a superset of :cls:`ObjectType`'s"""
+    The variants are a superset of :class:`ObjectType`'s"""
 
     SNAPSHOT = "snp"
     REVISION = "rev"
@@ -729,24 +729,22 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
 
     A raw_extrinsic_metadata identifier is a salted sha1 (using the git
     hashing algorithm with the ``raw_extrinsic_metadata`` object type) of
-    a manifest following the format:
+    a manifest following the format::
 
-    ```
-    target $ExtendedSwhid
-    discovery_date $Timestamp
-    authority $StrWithoutSpaces $IRI
-    fetcher $Str $Version
-    format $StrWithoutSpaces
-    origin $IRI                         <- optional
-    visit $IntInDecimal                 <- optional
-    snapshot $CoreSwhid                 <- optional
-    release $CoreSwhid                  <- optional
-    revision $CoreSwhid                 <- optional
-    path $Bytes                         <- optional
-    directory $CoreSwhid                <- optional
+        target $ExtendedSwhid
+        discovery_date $Timestamp
+        authority $StrWithoutSpaces $IRI
+        fetcher $Str $Version
+        format $StrWithoutSpaces
+        origin $IRI                         <- optional
+        visit $IntInDecimal                 <- optional
+        snapshot $CoreSwhid                 <- optional
+        release $CoreSwhid                  <- optional
+        revision $CoreSwhid                 <- optional
+        path $Bytes                         <- optional
+        directory $CoreSwhid                <- optional
 
-    $MetadataBytes
-    ```
+        $MetadataBytes
 
     $IRI must be RFC 3987 IRIs (so they may contain newlines, that are escaped as
     described below)
@@ -769,7 +767,7 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
     ie. by adding a space after them.
 
     Returns:
-      str: the intrinsic identifier for `metadata`
+      str: the intrinsic identifier for ``metadata``
 
     """
     # equivalent to using math.floor(dt.timestamp()) to round down,
