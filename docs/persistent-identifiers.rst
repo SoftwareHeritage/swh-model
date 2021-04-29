@@ -257,34 +257,30 @@ Identifiers with qualifiers
 ---------------------------
 
 * The following `SWHID
-  <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
+  <https://archive.softwareheritage.org/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`__
   denotes the lines 9 to 15 of a file content that can be found at absolute
   path ``/Examples/SimpleFarm/simplefarm.ml`` from the root directory of the
   revision ``swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0`` that is
   contained in the snapshot
   ``swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9`` taken from the origin
-  ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``:
+  ``https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git``::
 
-.. code-block:: url
-
-  swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;
-    origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;
-    visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;
-    anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;
-    path=/Examples/SimpleFarm/simplefarm.ml;
-    lines=9-15
+    swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;
+      origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;
+      visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;
+      anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;
+      path=/Examples/SimpleFarm/simplefarm.ml;
+      lines=9-15
 
 * Here is an example of a `SWHID
-  <https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
-  with a file path that requires percent-escaping:
+  <https://archive.softwareheritage.org/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`__
+  with a file path that requires percent-escaping::
 
-.. code-block:: url
-
-  swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;
-    origin=https://github.com/web-platform-tests/wpt;
-    visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;
-    anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;
-    path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/
+    swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;
+      origin=https://github.com/web-platform-tests/wpt;
+      visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;
+      anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;
+      path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/
 
 
 Implementation
