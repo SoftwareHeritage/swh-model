@@ -7,7 +7,7 @@
 
 import abc
 from collections.abc import Mapping
-from typing import Iterator, List, Set
+from typing import Dict, Iterator, List, Set
 
 
 def deep_update(left, right):
@@ -101,16 +101,18 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
     The collection of updated data from the tree is implemented through the
     :func:`collect` function and associated helpers.
 
-    Attributes:
-      data (dict): data associated to the current node
-      parents (list): known parents of the current node
-      collected (bool): whether the current node has been collected
-
     """
 
     __slots__ = ["parents", "data", "__hash", "collected"]
 
-    """Type of the current node (used as a classifier for :func:`collect`)"""
+    data: Dict
+    """data associated to the current node"""
+
+    parents: List
+    """known parents of the current node"""
+
+    collected: bool
+    """whether the current node has been collected"""
 
     def __init__(self, data=None):
         super().__init__()

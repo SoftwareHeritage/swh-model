@@ -218,7 +218,7 @@ def identify_object(obj_type, follow_symlinks, exclude_patterns, obj) -> str:
     metavar="PATTERN",
     multiple=True,
     help="Exclude directories using glob patterns \
-    (e.g., '*.git' to exclude all .git directories)",
+    (e.g., ``*.git`` to exclude all .git directories)",
 )
 @click.option(
     "--verify",
@@ -242,7 +242,7 @@ def identify(
     Tip: you can pass "-" to identify the content of standard input.
 
     \b
-    Examples:
+    Examples::
 
     \b
       $ swh identify fork.c kmod.c sched/deadline.c
