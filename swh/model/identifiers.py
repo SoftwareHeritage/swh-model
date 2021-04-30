@@ -156,7 +156,7 @@ def identifier_to_str(identifier):
     )
 
 
-def content_identifier(content):
+def content_identifier(content: Dict[str, Any]) -> Dict[str, bytes]:
     """Return the intrinsic identifier for a content.
 
     A content's identifier is the sha1, sha1_git and sha256 checksums of its
@@ -205,7 +205,7 @@ def escape_newlines(snippet):
         return snippet
 
 
-def directory_identifier(directory):
+def directory_identifier(directory: Dict[str, Any]) -> str:
     """Return the intrinsic identifier for a directory.
 
     A directory's identifier is the tree sha1 à la git of a directory listing,
@@ -241,7 +241,11 @@ def directory_identifier(directory):
       (Note that there is no separator between entries)
 
     """
+    manifest = directory_manifest(directory)
+    return identifier_to_str(hash_git_data(manifest, "tree"))
 
+
+def directory_manifest(directory: Dict[str, Any]) -> bytes:
     components = []
 
     for entry in sorted(directory["entries"], key=directory_entry_sort_key):
@@ -255,7 +259,7 @@ def directory_identifier(directory):
             ]
         )
 
-    return identifier_to_str(hash_git_data(b"".join(components), "tree"))
+    return b"".join(components)
 
 
 def format_date(date):
@@ -450,29 +454,6 @@ def format_manifest(
     return b"".join(entries)
 
 
-def hash_manifest(
-    type: str, headers: Iterable[Tuple[bytes, bytes]], message: Optional[bytes] = None,
-):
-    """Hash the manifest of an object of type `type`, comprised of a sequence
-    of `headers` and an optional `message`.
-
-    Before hashing, the manifest is serialized with the :func:`format_manifest`
-    function.
-
-    We then use the git "salted sha1" (:func:`swh.model.hashutil.hash_git_data`)
-    with the given `type` to hash the manifest.
-
-    Args:
-      type: the type of object for which we're computing a manifest (e.g.
-        "tag", "commit", ...)
-      headers: a sequence of key/value headers stored in the manifest;
-      message: an optional message used to trail the manifest.
-
-    """
-    manifest = format_manifest(headers, message)
-    return hash_git_data(manifest, type)
-
-
 def format_author_data(author, date_offset) -> bytes:
     """Format authorship data according to git standards.
 
@@ -519,7 +500,7 @@ def format_author_data(author, date_offset) -> bytes:
     return b"".join(ret)
 
 
-def revision_identifier(revision):
+def revision_identifier(revision: Dict[str, Any]) -> str:
     """Return the intrinsic identifier for a revision.
 
     The fields used for the revision identifier computation are:
@@ -569,6 +550,13 @@ def revision_identifier(revision):
     type.
 
     """
+    manifest = revision_manifest(revision)
+    return identifier_to_str(hash_git_data(manifest, "commit"))
+
+
+def revision_manifest(revision: Dict[str, Any]) -> bytes:
+    """Formats the manifest of a revision. See :func:`revision_identifier` for details
+    on the format."""
     headers = [(b"tree", identifier_to_str(revision["directory"]).encode())]
     for parent in revision["parents"]:
         if parent:
@@ -592,10 +580,10 @@ def revision_identifier(revision):
 
     headers.extend(extra_headers)
 
-    return identifier_to_str(hash_manifest("commit", headers, revision["message"]))
+    return format_manifest(headers, revision["message"])
 
 
-def target_type_to_git(target_type):
+def target_type_to_git(target_type: str) -> bytes:
     """Convert a software heritage target type to a git object type"""
     return {
         "content": b"blob",
@@ -606,8 +594,13 @@ def target_type_to_git(target_type):
     }[target_type]
 
 
-def release_identifier(release):
+def release_identifier(release: Dict[str, Any]) -> str:
     """Return the intrinsic identifier for a release."""
+    manifest = release_manifest(release)
+    return identifier_to_str(hash_git_data(manifest, "tag"))
+
+
+def release_manifest(release: Dict[str, Any]) -> bytes:
     headers = [
         (b"object", identifier_to_str(release["target"]).encode()),
         (b"type", target_type_to_git(release["target_type"])),
@@ -619,10 +612,12 @@ def release_identifier(release):
             (b"tagger", format_author_data(release["author"], release["date"]))
         )
 
-    return identifier_to_str(hash_manifest("tag", headers, release["message"]))
+    return format_manifest(headers, release["message"])
 
 
-def snapshot_identifier(snapshot, *, ignore_unresolved=False):
+def snapshot_identifier(
+    snapshot: Dict[str, Any], *, ignore_unresolved: bool = False
+) -> str:
     """Return the intrinsic identifier for a snapshot.
 
     Snapshots are a set of named branches, which are pointers to objects at any
@@ -677,7 +672,15 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
       str: the intrinsic identifier for `snapshot`
 
     """
+    manifest = snapshot_manifest(snapshot, ignore_unresolved=ignore_unresolved)
+    return identifier_to_str(hash_git_data(manifest, "snapshot"))
 
+
+def snapshot_manifest(
+    snapshot: Dict[str, Any], *, ignore_unresolved: bool = False
+) -> bytes:
+    """Formats the manifest of a revision. See :func:`snapshot_identifier` for details
+    on the format."""
     unresolved = []
     lines = []
 
@@ -708,11 +711,11 @@ def snapshot_identifier(snapshot, *, ignore_unresolved=False):
     if unresolved and not ignore_unresolved:
         raise ValueError(
             "Branch aliases unresolved: %s"
-            % ", ".join("%s -> %s" % x for x in unresolved),
+            % ", ".join("%r -> %r" % x for x in unresolved),
             unresolved,
         )
 
-    return identifier_to_str(hash_git_data(b"".join(lines), "snapshot"))
+    return b"".join(lines)
 
 
 def origin_identifier(origin):
@@ -770,6 +773,14 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
       str: the intrinsic identifier for ``metadata``
 
     """
+    manifest = raw_extrinsic_metadata_manifest(metadata)
+    return identifier_to_str(hash_git_data(manifest, "raw_extrinsic_metadata"))
+
+
+def raw_extrinsic_metadata_manifest(metadata: Dict[str, Any]) -> bytes:
+    """Formats the manifest of a raw_extrinsic_metadata object.
+    See :func:`raw_extrinsic_metadata_identifier` for details
+    on the format."""
     # equivalent to using math.floor(dt.timestamp()) to round down,
     # as int(dt.timestamp()) rounds toward zero,
     # which would map two seconds on the 0 timestamp.
@@ -816,9 +827,7 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
 
             headers.append((key.encode("ascii"), value))
 
-    return identifier_to_str(
-        hash_manifest("raw_extrinsic_metadata", headers, metadata["metadata"])
-    )
+    return format_manifest(headers, metadata["metadata"])
 
 
 def extid_identifier(extid: Dict[str, Any]) -> str:
@@ -849,7 +858,8 @@ def extid_identifier(extid: Dict[str, Any]) -> str:
         (b"target", str(extid["target"]).encode("ascii")),
     ]
 
-    return identifier_to_str(hash_manifest("extid", headers))
+    manifest = format_manifest(headers)
+    return identifier_to_str(hash_git_data(manifest, "extid"))
 
 
 # type of the "object_type" attribute of the SWHID class; either
