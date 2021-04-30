@@ -4,7 +4,7 @@
 SoftWare Heritage persistent IDentifiers (SWHIDs)
 =================================================
 
-**version 1.5, last modified 2020-05-14**
+**version 1.6, last modified 2021-04-30**
 
 .. contents::
    :local:
@@ -226,6 +226,24 @@ snapshot identifiers, as Git does not have a corresponding object type.
 
 Note that Git compatibility is incidental and is not guaranteed to be
 maintained in future versions of this scheme (or Git).
+
+
+Automatically fixing invalid SWHIDs
+-----------------------------------
+
+User interfaces may fix invalid SWHIDs, by lower-casing the
+``<identifier_core>`` part of a SWHID, if it contains upper-case letters
+because of user errors or limitations in software displaying SWHIDs.
+
+However, implementations displaying or generating SWHIDs should not rely
+on this behavior, and must display or generate only valid SWHIDs when
+technically possible.
+
+User interfaces should show an error when such an automatic fix occurs,
+so users have a chance to fix their SWHID before pasting it to an other interface
+that does not perform the same corrections.
+This also makes it easier to understand issues when a case-sensitive
+qualifier has its casing altered.
 
 
 Examples
