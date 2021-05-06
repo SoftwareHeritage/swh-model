@@ -1,8 +1,12 @@
-swh-model (2.4.1-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (2.4.2-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 2.4.2     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-05-06 14:31:04 +0200)
+  * Upstream changes:     - v2.4.2     - * docs/persistent-identifiers:
+    Add guidelines for fixing invalid SWHIDs.     - * Blacklist attr
+    21.1.0
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 29 Apr 2021 12:24:44 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 06 May 2021 12:35:43 +0000
 
 swh-model (2.4.1-1~swh1) unstable-swh; urgency=medium
 
