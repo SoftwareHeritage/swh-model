@@ -56,7 +56,7 @@ import functools
 import hashlib
 from io import BytesIO
 import os
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512"])
 """Hashing algorithms supported by this module"""
@@ -212,12 +212,10 @@ def _new_hashlib_hash(algo):
         return hashlib.new(algo)
 
 
-def _new_git_hash(base_algo, git_type, length):
-    """Initialize a digest object (as returned by python's hashlib) for the
-    requested algorithm, and feed it with the header for a git object of the
-    given type and length.
+def git_object_header(git_type: str, length: int) -> bytes:
+    """Returns the header for a git object of the given type and length.
 
-    The header for hashing a git object consists of:
+    The header of a git object consists of:
      - The type of the object (encoded in ASCII)
      - One ASCII space (\x20)
      - The length of the object (decimal encoded in ASCII)
@@ -232,15 +230,26 @@ def _new_git_hash(base_algo, git_type, length):
     Returns:
         a hashutil.hash object
     """
+    git_object_types = {
+        "blob",
+        "tree",
+        "commit",
+        "tag",
+        "snapshot",
+        "raw_extrinsic_metadata",
+        "extid",
+    }
 
-    h = _new_hashlib_hash(base_algo)
-    git_header = "%s %d\0" % (git_type, length)
-    h.update(git_header.encode("ascii"))
+    if git_type not in git_object_types:
+        raise ValueError(
+            "Unexpected git object type %s, expected one of %s"
+            % (git_type, ", ".join(sorted(git_object_types)))
+        )
 
-    return h
+    return ("%s %d\0" % (git_type, length)).encode("ascii")
 
 
-def _new_hash(algo, length=None):
+def _new_hash(algo: str, length: Optional[int] = None):
     """Initialize a digest object (as returned by python's hashlib) for
     the requested algorithm. See the constant ALGORITHMS for the list
     of supported algorithms. If a git-specific hashing algorithm is
@@ -270,7 +279,9 @@ def _new_hash(algo, length=None):
         if length is None:
             raise ValueError("Missing length for git hashing algorithm")
         base_algo = algo[:-4]
-        return _new_git_hash(base_algo, "blob", length)
+        h = _new_hashlib_hash(base_algo)
+        h.update(git_object_header("blob", length))
+        return h
 
     return _new_hashlib_hash(algo)
 
@@ -288,24 +299,8 @@ def hash_git_data(data, git_type, base_algo="sha1"):
     Raises:
         ValueError if the git_type is unexpected.
     """
-
-    git_object_types = {
-        "blob",
-        "tree",
-        "commit",
-        "tag",
-        "snapshot",
-        "raw_extrinsic_metadata",
-        "extid",
-    }
-
-    if git_type not in git_object_types:
-        raise ValueError(
-            "Unexpected git object type %s, expected one of %s"
-            % (git_type, ", ".join(sorted(git_object_types)))
-        )
-
-    h = _new_git_hash(base_algo, git_type, len(data))
+    h = _new_hashlib_hash(base_algo)
+    h.update(git_object_header(git_type, len(data)))
     h.update(data)
 
     return h.digest()
