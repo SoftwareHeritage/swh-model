@@ -805,7 +805,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         }
 
     def test_minimal(self):
-        manifest = (
+        git_object = (
             b"raw_extrinsic_metadata 210\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
             b"discovery_date 1611574071\n"
@@ -817,8 +817,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(self.minimal), git_object,
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            hashlib.sha1(manifest).hexdigest(),
+            hashlib.sha1(git_object).hexdigest(),
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.minimal),
@@ -826,7 +829,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
     def test_maximal(self):
-        manifest = (
+        git_object = (
             b"raw_extrinsic_metadata 533\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
             b"discovery_date 1611574071\n"
@@ -845,8 +848,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(self.maximal), git_object,
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.maximal),
-            hashlib.sha1(manifest).hexdigest(),
+            hashlib.sha1(git_object).hexdigest(),
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.maximal),
@@ -858,7 +864,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             **self.minimal,
             "path": b"/ab\nc/d\xf0\x9f\xa4\xb7e\x00f",
         }
-        manifest = (
+        git_object = (
             b"raw_extrinsic_metadata 231\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
             b"discovery_date 1611574071\n"
@@ -872,8 +878,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(manifest).hexdigest(),
+            hashlib.sha1(git_object).hexdigest(),
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
@@ -882,7 +891,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
 
     def test_timezone_insensitive(self):
         """Checks the timezone of the datetime.datetime does not affect the
-        hashed manifest."""
+        hashed git_object."""
         utc_plus_one = datetime.timezone(datetime.timedelta(hours=1))
         metadata = {
             **self.minimal,
@@ -891,6 +900,10 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             ),
         }
 
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(self.minimal),
+            identifiers.raw_extrinsic_metadata_git_object(metadata),
+        )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.minimal),
             identifiers.raw_extrinsic_metadata_identifier(metadata),
@@ -910,6 +923,10 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             ),
         }
 
+        self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(self.minimal),
+            identifiers.raw_extrinsic_metadata_git_object(metadata),
+        )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.minimal),
             identifiers.raw_extrinsic_metadata_identifier(metadata),
@@ -931,6 +948,10 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         }
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(self.minimal),
+            identifiers.raw_extrinsic_metadata_git_object(metadata),
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(self.minimal),
             identifiers.raw_extrinsic_metadata_identifier(metadata),
         )
@@ -947,7 +968,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             ),
         }
 
-        manifest = (
+        git_object = (
             b"raw_extrinsic_metadata 210\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
             b"discovery_date -313504329\n"
@@ -959,8 +980,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(manifest).hexdigest(),
+            hashlib.sha1(git_object).hexdigest(),
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
@@ -975,7 +999,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             ),
         }
 
-        manifest = (
+        git_object = (
             b"raw_extrinsic_metadata 201\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
             b"discovery_date 0\n"
@@ -987,8 +1011,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(manifest).hexdigest(),
+            hashlib.sha1(git_object).hexdigest(),
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
@@ -1003,7 +1030,7 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             ),
         }
 
-        manifest = (
+        git_object = (
             b"raw_extrinsic_metadata 202\0"
             b"target swh:1:cnt:568aaf43d83b2c3df8067f3bedbb97d83260be6d\n"
             b"discovery_date -1\n"
@@ -1015,8 +1042,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
+            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+        )
+        self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(manifest).hexdigest(),
+            hashlib.sha1(git_object).hexdigest(),
         )
         self.assertEqual(
             identifiers.raw_extrinsic_metadata_identifier(metadata),
