@@ -1,8 +1,10 @@
-swh-model (2.5.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (2.5.1-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 2.5.1     - (tagged by David Douard
+    <david.douard@sdfa3.org> on 2021-05-20 15:22:50 +0200)
+  * Upstream changes:     - v2.5.1
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 11 May 2021 10:09:03 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 20 May 2021 13:40:27 +0000
 
 swh-model (2.5.0-1~swh1) unstable-swh; urgency=medium
 
