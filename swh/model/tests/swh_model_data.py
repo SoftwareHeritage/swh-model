@@ -243,7 +243,7 @@ ORIGIN_VISIT_STATUSES = [
         visit=3,
         type="git",
         status="full",
-        snapshot=hash_to_bytes("17d0066a4a80aba4a0e913532ee8ff2014f006a9"),
+        snapshot=hash_to_bytes("9e78d7105c5e0f886487511e2a92377b4ee4c32a"),
         metadata=None,
     ),
     OriginVisitStatus(
@@ -252,7 +252,7 @@ ORIGIN_VISIT_STATUSES = [
         visit=2,
         type="hg",
         status="partial",
-        snapshot=hash_to_bytes("8ce268b87faf03850693673c3eb5c9bb66e1ca38"),
+        snapshot=hash_to_bytes("0e7f84ede9a254f2cd55649ad5240783f557e65f"),
         metadata=None,
     ),
 ]
@@ -293,7 +293,7 @@ SNAPSHOTS = [
         },
     ),
     Snapshot(
-        id=hash_to_bytes("09efffaaad8d1f9c7f9402db0266dbe28082853f"),
+        id=hash_to_bytes("0e7f84ede9a254f2cd55649ad5240783f557e65f"),
         branches={
             b"target/revision": SnapshotBranch(
                 target_type=TargetType.REVISION, target=REVISIONS[0].id,
@@ -309,7 +309,7 @@ SNAPSHOTS = [
             ),
             b"target/snapshot": SnapshotBranch(
                 target_type=TargetType.SNAPSHOT,
-                target=hash_to_bytes("17d0066a4a80aba4a0e913532ee8ff2014f006a9"),
+                target=hash_to_bytes("9e78d7105c5e0f886487511e2a92377b4ee4c32a"),
             ),
         },
     ),

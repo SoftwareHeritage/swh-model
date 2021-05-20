@@ -28,7 +28,7 @@ def test_swh_model_data_hash(object_type):
         ), f"{obj.compute_hash().hex()} != {obj.id.hex()}"
 
 
-def test_ensure_visit_visit_status_date_consistency():
+def test_ensure_visit_status_date_consistency():
     """ensure origin-visit-status dates are more recent than their visit counterpart
 
     The origin-visit-status dates needs to be shifted slightly in the future from their
@@ -43,3 +43,12 @@ def test_ensure_visit_visit_status_date_consistency():
         assert visit.origin == visit_status.origin
         assert visit.visit == visit_status.visit
         assert visit.date < visit_status.date
+
+
+def test_ensure_visit_status_snapshot_consistency():
+    """ensure origin-visit-status snapshots exist in the test dataset
+    """
+    snapshots = [snp.id for snp in TEST_OBJECTS["snapshot"]]
+    for visit_status in TEST_OBJECTS["origin_visit_status"]:
+        if visit_status.snapshot:
+            assert visit_status.snapshot in snapshots
