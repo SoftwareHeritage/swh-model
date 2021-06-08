@@ -361,3 +361,19 @@ TEST_OBJECTS: Dict[str, Sequence[BaseModel]] = {
     "snapshot": SNAPSHOTS,
     "skipped_content": SKIPPED_CONTENTS,
 }
+
+SAMPLE_FOLDER_SWHIDS = [
+    "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759",
+    "swh:1:cnt:7d5c08111e21c8a9f71540939998551683375fad",
+    "swh:1:cnt:68769579c3eaadbe555379b9c3538e6628bae1eb",
+    "swh:1:cnt:e86b45e538d9b6888c969c89fbd22a85aa0e0366",
+    "swh:1:dir:3c1f578394f4623f74a0ba7fe761729f59fc6ec4",
+    "swh:1:dir:c3020f6bf135a38c6df3afeb5fb38232c5e07087",
+    "swh:1:cnt:133693b125bad2b4ac318535b84901ebb1f6b638",
+    "swh:1:dir:4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+    "swh:1:cnt:19102815663d23f8b75a47e7a01965dcdc96468c",
+    "swh:1:dir:2b41c40f0d1fbffcba12497db71fba83fcca96e5",
+    "swh:1:cnt:8185dfb2c0c2c597d16f75a8a0c37668567c3d7e",
+    "swh:1:cnt:7c4c57ba9ff496ad179b8f65b1d286edbda34c9a",
+    "swh:1:cnt:acac326ddd63b0bc70840659d4ac43619484e69f",
+]
