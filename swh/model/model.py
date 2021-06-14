@@ -257,6 +257,21 @@ class TimestampWithTimezone(BaseModel):
     def from_datetime(cls, dt: datetime.datetime):
         return cls.from_dict(dt)
 
+    def to_datetime(self) -> datetime.datetime:
+        """Convert to a datetime (with a timezone set to the recorded fixed UTC offset)
+
+        Beware that this conversion can be lossy: the negative_utc flag is not
+        taken into consideration (since it cannot be represented in a
+        datetime). Also note that it may fail due to type overflow.
+
+        """
+        timestamp = datetime.datetime.fromtimestamp(
+            self.timestamp.seconds,
+            datetime.timezone(datetime.timedelta(minutes=self.offset)),
+        )
+        timestamp = timestamp.replace(microsecond=self.timestamp.microseconds)
+        return timestamp
+
     @classmethod
     def from_iso8601(cls, s):
         """Builds a TimestampWithTimezone from an ISO8601-formatted string.
