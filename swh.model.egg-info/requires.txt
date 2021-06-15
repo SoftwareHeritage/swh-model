@@ -15,14 +15,18 @@ Click
 dulwich
 
 [testing]
-Click
+click
 pytest
 pytz
+types-python-dateutil
+types-pytz
 swh.core>=0.3
 Click
 dulwich
 
 [testing-minimal]
-Click
+click
 pytest
 pytz
+types-python-dateutil
+types-pytz

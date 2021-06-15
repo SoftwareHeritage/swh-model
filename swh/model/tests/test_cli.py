@@ -15,6 +15,7 @@ import pytest
 
 from swh.model import cli
 from swh.model.hashutil import hash_to_hex
+from swh.model.tests.swh_model_data import SAMPLE_FOLDER_SWHIDS
 from swh.model.tests.test_from_disk import DataMixin
 
 
@@ -177,3 +178,34 @@ class TestIdentify(DataMixin, unittest.TestCase):
         )
 
         self.assertSWHID(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")
+
+    def test_recursive_directory(self):
+        self.make_from_tarball(self.tmpdir_name)
+        path = os.path.join(self.tmpdir_name, b"sample-folder")
+        result = self.runner.invoke(cli.identify, ["--recursive", path])
+        self.assertEqual(result.exit_code, 0, result.output)
+
+        result = result.output.split()
+        result_swhids = []
+        # get all SWHID from the result
+        for i in range(0, len(result)):
+            if i % 2 == 0:
+                result_swhids.append(result[i])
+
+        assert len(result_swhids) == len(SAMPLE_FOLDER_SWHIDS)
+        for swhid in SAMPLE_FOLDER_SWHIDS:
+            assert swhid in result_swhids
+
+    def test_recursive_directory_no_filename(self):
+        self.make_from_tarball(self.tmpdir_name)
+        path = os.path.join(self.tmpdir_name, b"sample-folder")
+        result = self.runner.invoke(
+            cli.identify, ["--recursive", "--no-filename", path]
+        )
+        self.assertEqual(result.exit_code, 0, result.output)
+
+        result_swhids = result.output.split()
+
+        assert len(result_swhids) == len(SAMPLE_FOLDER_SWHIDS)
+        for swhid in SAMPLE_FOLDER_SWHIDS:
+            assert swhid in result_swhids

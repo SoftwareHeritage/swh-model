@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: swh.model
-Version: 2.5.1
+Version: 2.6.0
 Summary: Software Heritage data model
 Home-page: https://forge.softwareheritage.org/diffusion/DMOD/
 Author: Software Heritage developers
@@ -10,25 +10,6 @@ Project-URL: Bug Reports, https://forge.softwareheritage.org/maniphest
 Project-URL: Funding, https://www.softwareheritage.org/donate
 Project-URL: Source, https://forge.softwareheritage.org/source/swh-model
 Project-URL: Documentation, https://docs.softwareheritage.org/devel/swh-model/
-Description: swh-model
-        =========
-        
-        Implementation of the Data model of the Software Heritage project, used to
-        archive source code artifacts.
-        
-        This module defines the notion of SoftWare Heritage persistent IDentifiers
-        (SWHIDs) and provides tools to compute them:
-        
-        ```sh
-           $ swh-identify fork.c kmod.c sched/deadline.c
-           swh:1:cnt:2e391c754ae730bd2d8520c2ab497c403220c6e3    fork.c
-           swh:1:cnt:0277d1216f80ae1adeed84a686ed34c9b2931fc2    kmod.c
-           swh:1:cnt:57b939c81bce5d06fa587df8915f05affbe22b82    sched/deadline.c
-        
-           $ swh-identify --no-filename /usr/src/linux/kernel/
-           swh:1:dir:f9f858a48d663b3809c9e2f336412717496202ab
-        ```
-        
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Intended Audience :: Developers
@@ -40,3 +21,26 @@ Description-Content-Type: text/markdown
 Provides-Extra: cli
 Provides-Extra: testing-minimal
 Provides-Extra: testing
+License-File: LICENSE
+License-File: AUTHORS
+
+swh-model
+=========
+
+Implementation of the Data model of the Software Heritage project, used to
+archive source code artifacts.
+
+This module defines the notion of SoftWare Heritage persistent IDentifiers
+(SWHIDs) and provides tools to compute them:
+
+```sh
+   $ swh-identify fork.c kmod.c sched/deadline.c
+   swh:1:cnt:2e391c754ae730bd2d8520c2ab497c403220c6e3    fork.c
+   swh:1:cnt:0277d1216f80ae1adeed84a686ed34c9b2931fc2    kmod.c
+   swh:1:cnt:57b939c81bce5d06fa587df8915f05affbe22b82    sched/deadline.c
+
+   $ swh-identify --no-filename /usr/src/linux/kernel/
+   swh:1:dir:f9f858a48d663b3809c9e2f336412717496202ab
+```
+
+

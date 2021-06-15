@@ -429,7 +429,7 @@ class Directory(MerkleNode):
                     if dir_filter(path, name, dirs[path].entries):
                         entries[name] = dirs[path]
 
-            dirs[root] = cls({"name": os.path.basename(root)})
+            dirs[root] = cls({"name": os.path.basename(root), "path": root})
             dirs[root].update(entries)
 
         return dirs[top_path]
