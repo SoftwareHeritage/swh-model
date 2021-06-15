@@ -1172,6 +1172,35 @@ def test_normalize_timestamp_dict_invalid_timestamp(dict_input):
         normalize_timestamp(dict_input)
 
 
+UTC = datetime.timezone.utc
+TS_TIMEZONES = [
+    datetime.timezone.min,
+    datetime.timezone(datetime.timedelta(hours=-1)),
+    UTC,
+    datetime.timezone(datetime.timedelta(minutes=+60)),
+    datetime.timezone.max,
+]
+TS_TZ_EXPECTED = [-1439, -60, 0, 60, 1439]
+TS_DATETIMES = [
+    datetime.datetime(2020, 2, 27, 14, 39, 19, tzinfo=UTC),
+    datetime.datetime(2120, 12, 31, 23, 59, 59, tzinfo=UTC),
+    datetime.datetime(1610, 5, 14, 15, 43, 0, tzinfo=UTC),
+]
+TS_DT_EXPECTED = [1582814359, 4765132799, -11348929020]
+
+
+@pytest.mark.parametrize("date, seconds", zip(TS_DATETIMES, TS_DT_EXPECTED))
+@pytest.mark.parametrize("tz, offset", zip(TS_TIMEZONES, TS_TZ_EXPECTED))
+@pytest.mark.parametrize("microsecond", [0, 1, 10, 100, 1000, 999999])
+def test_normalize_timestamp_datetime(date, seconds, tz, offset, microsecond):
+    date = date.astimezone(tz).replace(microsecond=microsecond)
+    assert normalize_timestamp(date) == {
+        "timestamp": {"seconds": seconds, "microseconds": microsecond},
+        "offset": offset,
+        "negative_utc": False,
+    }
+
+
 # SWHIDs that are outright invalid, no matter the context
 INVALID_SWHIDS = [
     "swh:1:cnt",

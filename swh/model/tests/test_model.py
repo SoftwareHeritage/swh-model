@@ -48,6 +48,8 @@ from swh.model.model import (
 )
 from swh.model.tests.swh_model_data import TEST_OBJECTS
 from swh.model.tests.test_identifiers import (
+    TS_DATETIMES,
+    TS_TIMEZONES,
     content_example,
     directory_example,
     metadata_example,
@@ -327,6 +329,17 @@ def test_timestampwithtimezone_from_iso8601_negative_utc():
         offset=0,
         negative_utc=True,
     )
+
+
+@pytest.mark.parametrize("date", TS_DATETIMES)
+@pytest.mark.parametrize("tz", TS_TIMEZONES)
+@pytest.mark.parametrize("microsecond", [0, 1, 10, 100, 1000, 999999])
+def test_timestampwithtimezone_to_datetime(date, tz, microsecond):
+    date = date.replace(tzinfo=tz, microsecond=microsecond)
+    tstz = TimestampWithTimezone.from_datetime(date)
+
+    assert tstz.to_datetime() == date
+    assert tstz.to_datetime().utcoffset() == date.utcoffset()
 
 
 def test_person_from_fullname():
