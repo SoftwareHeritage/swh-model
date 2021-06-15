@@ -25,6 +25,7 @@ except ImportError:
     # stub so that swh-identify can be used when swh-core isn't installed
     swh_cli_group = click  # type: ignore
 
+from swh.model.from_disk import Directory
 from swh.model.identifiers import CoreSWHID, ObjectType
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -74,13 +75,8 @@ def swhid_of_file_content(data) -> CoreSWHID:
     )
 
 
-def swhid_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> CoreSWHID:
-    from swh.model.from_disk import (
-        Directory,
-        accept_all_directories,
-        ignore_directories_patterns,
-    )
-    from swh.model.hashutil import hash_to_bytes
+def model_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> Directory:
+    from swh.model.from_disk import accept_all_directories, ignore_directories_patterns
 
     dir_filter = (
         ignore_directories_patterns(path, exclude_patterns)
@@ -88,9 +84,16 @@ def swhid_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> CoreSWHID
         else accept_all_directories
     )
 
-    object = Directory.from_disk(path=path, dir_filter=dir_filter).get_data()
+    return Directory.from_disk(path=path, dir_filter=dir_filter)
+
+
+def swhid_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> CoreSWHID:
+    from swh.model.hashutil import hash_to_bytes
+
+    obj = model_of_dir(path, exclude_patterns)
+
     return CoreSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=hash_to_bytes(object["id"])
+        object_type=ObjectType.DIRECTORY, object_id=hash_to_bytes(obj.get_data()["id"])
     )
 
 
@@ -227,9 +230,18 @@ def identify_object(obj_type, follow_symlinks, exclude_patterns, obj) -> str:
     type=CoreSWHIDParamType(),
     help="reference identifier to be compared with computed one",
 )
+@click.option(
+    "-r", "--recursive", is_flag=True, help="compute SWHID recursively",
+)
 @click.argument("objects", nargs=-1, required=True)
 def identify(
-    obj_type, verify, show_filename, follow_symlinks, objects, exclude_patterns,
+    obj_type,
+    verify,
+    show_filename,
+    follow_symlinks,
+    objects,
+    exclude_patterns,
+    recursive,
 ):
     """Compute the Software Heritage persistent identifier (SWHID) for the given
     source code object(s).
@@ -261,32 +273,62 @@ def identify(
 
     """  # NoQA  # overlong lines in shell examples are fine
     from functools import partial
+    import logging
 
     if verify and len(objects) != 1:
         raise click.BadParameter("verification requires a single object")
 
-    results = zip(
-        objects,
-        map(
-            partial(identify_object, obj_type, follow_symlinks, exclude_patterns),
-            objects,
-        ),
-    )
+    if recursive and not os.path.isdir(objects[0]):
+        recursive = False
+        logging.warn("recursive option disabled, input is not a directory object")
 
-    if verify:
-        swhid = next(results)[1]
-        if str(verify) == swhid:
-            click.echo("SWHID match: %s" % swhid)
-            sys.exit(0)
-        else:
-            click.echo("SWHID mismatch: %s != %s" % (verify, swhid))
-            sys.exit(1)
-    else:
-        for (obj, swhid) in results:
-            msg = swhid
-            if show_filename:
-                msg = "%s\t%s" % (swhid, os.fsdecode(obj))
+    if recursive:
+        if verify:
+            raise click.BadParameter(
+                "verification of recursive object identification is not supported"
+            )
+
+        if not obj_type == ("auto" or "directory"):
+            raise click.BadParameter(
+                "recursive identification is supported only for directories"
+            )
+
+        path = os.fsencode(objects[0])
+        dir_obj = model_of_dir(path, exclude_patterns)
+        for sub_obj in dir_obj.iter_tree():
+            path_name = "path" if "path" in sub_obj.data.keys() else "data"
+            path = os.fsdecode(sub_obj.data[path_name])
+            swhid = str(
+                CoreSWHID(
+                    object_type=ObjectType[sub_obj.object_type.upper()],
+                    object_id=sub_obj.hash,
+                )
+            )
+            msg = f"{swhid}\t{path}" if show_filename else f"{swhid}"
             click.echo(msg)
+    else:
+        results = zip(
+            objects,
+            map(
+                partial(identify_object, obj_type, follow_symlinks, exclude_patterns),
+                objects,
+            ),
+        )
+
+        if verify:
+            swhid = next(results)[1]
+            if str(verify) == swhid:
+                click.echo("SWHID match: %s" % swhid)
+                sys.exit(0)
+            else:
+                click.echo("SWHID mismatch: %s != %s" % (verify, swhid))
+                sys.exit(1)
+        else:
+            for (obj, swhid) in results:
+                msg = swhid
+                if show_filename:
+                    msg = "%s\t%s" % (swhid, os.fsdecode(obj))
+                click.echo(msg)
 
 
 if __name__ == "__main__":

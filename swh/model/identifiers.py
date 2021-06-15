@@ -360,8 +360,10 @@ def normalize_timestamp(time_representation):
         if negative_utc is None:
             negative_utc = False
     elif isinstance(time_representation, datetime.datetime):
-        seconds = int(time_representation.timestamp())
         microseconds = time_representation.microsecond
+        if microseconds:
+            time_representation = time_representation.replace(microsecond=0)
+        seconds = int(time_representation.timestamp())
         utcoffset = time_representation.utcoffset()
         if utcoffset is None:
             raise ValueError(
