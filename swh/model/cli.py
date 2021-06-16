@@ -5,7 +5,7 @@
 
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, Optional
 
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
@@ -75,7 +75,7 @@ def swhid_of_file_content(data) -> CoreSWHID:
     )
 
 
-def model_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> Directory:
+def model_of_dir(path: bytes, exclude_patterns: Iterable[bytes] = None) -> Directory:
     from swh.model.from_disk import accept_all_directories, ignore_directories_patterns
 
     dir_filter = (
@@ -87,7 +87,7 @@ def model_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> Directory
     return Directory.from_disk(path=path, dir_filter=dir_filter)
 
 
-def swhid_of_dir(path: bytes, exclude_patterns: List[bytes] = None) -> CoreSWHID:
+def swhid_of_dir(path: bytes, exclude_patterns: Iterable[bytes] = None) -> CoreSWHID:
     from swh.model.hashutil import hash_to_bytes
 
     obj = model_of_dir(path, exclude_patterns)
@@ -150,7 +150,9 @@ def swhid_of_git_repo(path) -> CoreSWHID:
     )
 
 
-def identify_object(obj_type, follow_symlinks, exclude_patterns, obj) -> str:
+def identify_object(
+    obj_type: str, follow_symlinks: bool, exclude_patterns: Iterable[bytes], obj
+) -> str:
     from urllib.parse import urlparse
 
     if obj_type == "auto":
@@ -177,9 +179,7 @@ def identify_object(obj_type, follow_symlinks, exclude_patterns, obj) -> str:
         if obj_type == "content":
             swhid = str(swhid_of_file(path))
         elif obj_type == "directory":
-            swhid = str(
-                swhid_of_dir(path, [pattern.encode() for pattern in exclude_patterns])
-            )
+            swhid = str(swhid_of_dir(path, exclude_patterns))
     elif obj_type == "origin":
         swhid = str(swhid_of_origin(obj))
     elif obj_type == "snapshot":
@@ -274,6 +274,9 @@ def identify(
     """  # NoQA  # overlong lines in shell examples are fine
     from functools import partial
     import logging
+
+    if exclude_patterns:
+        exclude_patterns = set(pattern.encode() for pattern in exclude_patterns)
 
     if verify and len(objects) != 1:
         raise click.BadParameter("verification requires a single object")
