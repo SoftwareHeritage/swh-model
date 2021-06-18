@@ -32,6 +32,7 @@ all_but_skipped_content = (
     "revision",
     "directory",
     "content",
+    "raw_extrinsic_metadata",
 )
 
 

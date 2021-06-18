@@ -28,17 +28,25 @@ from hypothesis.strategies import (
 )
 
 from .from_disk import DentryPerms
-from .identifiers import identifier_to_bytes, snapshot_identifier
+from .identifiers import (
+    ExtendedObjectType,
+    ExtendedSWHID,
+    identifier_to_bytes,
+    snapshot_identifier,
+)
 from .model import (
     BaseContent,
     Content,
     Directory,
     DirectoryEntry,
+    MetadataAuthority,
+    MetadataFetcher,
     ObjectType,
     Origin,
     OriginVisit,
     OriginVisitStatus,
     Person,
+    RawExtrinsicMetadata,
     Release,
     Revision,
     RevisionType,
@@ -69,6 +77,13 @@ def sha1_git():
 
 def sha1():
     return binary(min_size=20, max_size=20)
+
+
+@composite
+def extended_swhids(draw):
+    object_type = draw(sampled_from(ExtendedObjectType))
+    object_id = draw(sha1_git())
+    return ExtendedSWHID(object_type=object_type, object_id=object_id)
 
 
 def aware_datetimes():
@@ -406,6 +421,28 @@ def snapshots(*, min_size=0, max_size=100, only_objects=False):
     ).map(Snapshot.from_dict)
 
 
+def metadata_authorities():
+    return builds(MetadataAuthority, url=urls(), metadata=just({}))
+
+
+def metadata_fetchers():
+    return builds(MetadataFetcher, metadata=just({}))
+
+
+def raw_extrinsic_metadata():
+    return builds(
+        RawExtrinsicMetadata,
+        target=extended_swhids(),
+        discovery_date=aware_datetimes(),
+        authority=metadata_authorities(),
+        fetcher=metadata_fetchers(),
+    )
+
+
+def raw_extrinsic_metadata_d():
+    return raw_extrinsic_metadata().map(RawExtrinsicMetadata.to_dict)
+
+
 def objects(blacklist_types=("origin_visit_status",), split_content=False):
     """generates a random couple (type, obj)
 
@@ -424,6 +461,7 @@ def objects(blacklist_types=("origin_visit_status",), split_content=False):
         ("release", releases),
         ("revision", revisions),
         ("directory", directories),
+        ("raw_extrinsic_metadata", raw_extrinsic_metadata),
     ]
     if split_content:
         strategies.append(("content", present_contents))
@@ -457,6 +495,7 @@ def object_dicts(blacklist_types=("origin_visit_status",), split_content=False):
         ("release", releases_d),
         ("revision", revisions_d),
         ("directory", directories_d),
+        ("raw_extrinsic_metadata", raw_extrinsic_metadata_d),
     ]
     if split_content:
         strategies.append(("content", present_contents_d))
