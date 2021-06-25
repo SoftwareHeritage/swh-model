@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 import datetime
+import string
 
 from hypothesis import assume
 from hypothesis.extra.dateutil import timezones
@@ -426,7 +427,15 @@ def metadata_authorities():
 
 
 def metadata_fetchers():
-    return builds(MetadataFetcher, metadata=just(None))
+    return builds(
+        MetadataFetcher,
+        name=text(min_size=1, alphabet=string.printable),
+        version=text(
+            min_size=1,
+            alphabet=string.ascii_letters + string.digits + string.punctuation,
+        ),
+        metadata=just(None),
+    )
 
 
 def raw_extrinsic_metadata():
@@ -436,6 +445,7 @@ def raw_extrinsic_metadata():
         discovery_date=aware_datetimes(),
         authority=metadata_authorities(),
         fetcher=metadata_fetchers(),
+        format=text(min_size=1, alphabet=string.printable),
     )
 
 
