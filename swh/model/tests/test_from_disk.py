@@ -531,6 +531,22 @@ class TestContent(DataMixin, unittest.TestCase):
             self.assertContentEqual(conv_content, content)
             self.assertIn(hash_to_hex(conv_content.hash), repr(conv_content))
 
+    def test_content_swhid(self):
+        for _, content in self.contents.items():
+            content_res = Content.from_bytes(mode=content["mode"], data=content["data"])
+            content_swhid = "swh:1:cnt:" + hash_to_hex(content["sha1_git"])
+            assert str(content_res.swhid()) == content_swhid
+
+
+class TestDirectory(DataMixin, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+
+    def test_directory_swhid(self):
+        directory_swhid = "swh:1:dir:" + hash_to_hex(self.empty_directory["id"])
+        directory = Directory.from_disk(path=self.tmpdir_name)
+        assert str(directory.swhid()) == directory_swhid
+
 
 class SymlinkToContent(DataMixin, unittest.TestCase):
     def setUp(self):
