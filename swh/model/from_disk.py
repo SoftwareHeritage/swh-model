@@ -19,7 +19,12 @@ from typing_extensions import Final
 from . import model
 from .exceptions import InvalidDirectoryPath
 from .hashutil import MultiHash
-from .identifiers import directory_entry_sort_key, directory_identifier
+from .identifiers import (
+    CoreSWHID,
+    ObjectType,
+    directory_entry_sort_key,
+    directory_identifier,
+)
 from .identifiers import identifier_to_bytes as id_to_bytes
 from .identifiers import identifier_to_str as id_to_str
 from .merkle import MerkleLeaf, MerkleNode
@@ -206,6 +211,13 @@ class Content(MerkleLeaf):
 
         obj = cls(ret)
         return obj
+
+    def swhid(self) -> CoreSWHID:
+        """Return node identifier as a SWHID
+        """
+        return CoreSWHID(
+            object_type=ObjectType.CONTENT, object_id=self.hash
+        )
 
     def __repr__(self):
         return "Content(id=%s)" % id_to_str(self.hash)
@@ -481,6 +493,13 @@ class Directory(MerkleNode):
             )
 
         return self.__entries
+
+    def swhid(self) -> CoreSWHID:
+        """Return node identifier as a SWHID
+        """
+        return CoreSWHID(
+            object_type=ObjectType.DIRECTORY, object_id=self.hash
+        )
 
     def compute_hash(self):
         return id_to_bytes(directory_identifier({"entries": self.entries}))

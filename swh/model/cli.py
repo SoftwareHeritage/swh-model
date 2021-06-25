@@ -57,22 +57,16 @@ class CoreSWHIDParamType(click.ParamType):
 
 def swhid_of_file(path) -> CoreSWHID:
     from swh.model.from_disk import Content
-    from swh.model.hashutil import hash_to_bytes
 
-    object = Content.from_file(path=path).get_data()
-    return CoreSWHID(
-        object_type=ObjectType.CONTENT, object_id=hash_to_bytes(object["sha1_git"])
-    )
+    object = Content.from_file(path=path)
+    return object.swhid()
 
 
 def swhid_of_file_content(data) -> CoreSWHID:
     from swh.model.from_disk import Content
-    from swh.model.hashutil import hash_to_bytes
 
-    object = Content.from_bytes(mode=644, data=data).get_data()
-    return CoreSWHID(
-        object_type=ObjectType.CONTENT, object_id=hash_to_bytes(object["sha1_git"])
-    )
+    object = Content.from_bytes(mode=644, data=data)
+    return object.swhid()
 
 
 def model_of_dir(path: bytes, exclude_patterns: Iterable[bytes] = None) -> Directory:
@@ -88,13 +82,8 @@ def model_of_dir(path: bytes, exclude_patterns: Iterable[bytes] = None) -> Direc
 
 
 def swhid_of_dir(path: bytes, exclude_patterns: Iterable[bytes] = None) -> CoreSWHID:
-    from swh.model.hashutil import hash_to_bytes
-
     obj = model_of_dir(path, exclude_patterns)
-
-    return CoreSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=hash_to_bytes(obj.get_data()["id"])
-    )
+    return obj.swhid()
 
 
 def swhid_of_origin(url):
@@ -301,12 +290,7 @@ def identify(
         for sub_obj in dir_obj.iter_tree():
             path_name = "path" if "path" in sub_obj.data.keys() else "data"
             path = os.fsdecode(sub_obj.data[path_name])
-            swhid = str(
-                CoreSWHID(
-                    object_type=ObjectType[sub_obj.object_type.upper()],
-                    object_id=sub_obj.hash,
-                )
-            )
+            swhid = str(sub_obj.swhid())
             msg = f"{swhid}\t{path}" if show_filename else f"{swhid}"
             click.echo(msg)
     else:
