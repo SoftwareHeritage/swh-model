@@ -1,3 +1,13 @@
+swh-model (2.6.2-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 2.6.2     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-06-25 12:40:45 +0200)
+  * Upstream changes:     - v2.6.2     - * from_disk: get swhid from
+    Content/Directory objects     - * hypothesis_strategies: Add
+    raw_extrinsic_metadata() strategy
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 25 Jun 2021 10:44:34 +0000
+
 swh-model (2.6.1-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 2.6.1     - (tagged by Antoine Lambert
