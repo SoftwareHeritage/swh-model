@@ -422,11 +422,11 @@ def snapshots(*, min_size=0, max_size=100, only_objects=False):
 
 
 def metadata_authorities():
-    return builds(MetadataAuthority, url=urls(), metadata=just({}))
+    return builds(MetadataAuthority, url=urls(), metadata=just(None))
 
 
 def metadata_fetchers():
-    return builds(MetadataFetcher, metadata=just({}))
+    return builds(MetadataFetcher, metadata=just(None))
 
 
 def raw_extrinsic_metadata():
