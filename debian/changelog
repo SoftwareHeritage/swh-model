@@ -1,3 +1,12 @@
+swh-model (2.6.3-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 2.6.3     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-06-25 16:13:53 +0200)
+  * Upstream changes:     - v2.6.3     - * hypothesis_strategies:
+    Generate None metadata instead of {}
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 25 Jun 2021 14:17:34 +0000
+
 swh-model (2.6.2-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 2.6.2     - (tagged by Valentin Lorentz
