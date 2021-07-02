@@ -277,18 +277,20 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         for child in self.values():
             child.reset_collect()
 
-    def iter_tree(self) -> Iterator["MerkleNode"]:
-        """Yields all children nodes, recursively. Common nodes are
-        deduplicated.
+    def iter_tree(self, dedup=True) -> Iterator["MerkleNode"]:
+        """Yields all children nodes, recursively. Common nodes are deduplicated
+           by default (deduplication can be turned off setting the given argument
+           'dedup' to False).
         """
-        yield from self._iter_tree(set())
+        yield from self._iter_tree(set(), dedup)
 
-    def _iter_tree(self, seen: Set[bytes]) -> Iterator["MerkleNode"]:
+    def _iter_tree(self, seen: Set[bytes], dedup) -> Iterator["MerkleNode"]:
         if self.hash not in seen:
-            seen.add(self.hash)
+            if dedup:
+                seen.add(self.hash)
             yield self
             for child in self.values():
-                yield from child._iter_tree(seen=seen)
+                yield from child._iter_tree(seen=seen, dedup=dedup)
 
 
 class MerkleLeaf(MerkleNode):

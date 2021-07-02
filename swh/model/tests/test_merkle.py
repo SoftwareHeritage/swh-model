@@ -172,9 +172,17 @@ class TestMerkleNode(unittest.TestCase):
         collected2 = self.root.collect()
         self.assertEqual(collected2, {})
 
-    def test_iter_tree(self):
+    def test_iter_tree_with_deduplication(self):
         nodes = list(self.root.iter_tree())
         self.assertCountEqual(nodes, self.nodes.values())
+
+    def test_iter_tree_without_deduplication(self):
+        # duplicate existing hash in merkle tree
+        self.root[b"d"] = MerkleTestNode({"value": b"root/c/c/c"})
+        nodes_dedup = list(self.root.iter_tree())
+        nodes = list(self.root.iter_tree(dedup=False))
+        assert nodes != nodes_dedup
+        assert len(nodes) == len(nodes_dedup) + 1
 
     def test_get(self):
         for key in (b"a", b"b", b"c"):
