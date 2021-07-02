@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 import datetime
+import string
 
 from hypothesis import assume
 from hypothesis.extra.dateutil import timezones
@@ -101,9 +102,9 @@ def aware_datetimes():
 
 
 @composite
-def urls(draw):
+def iris(draw):
     protocol = draw(sampled_from(["git", "http", "https", "deb"]))
-    domain = draw(from_regex(r"\A([a-z]([a-z0-9-]*)\.){1,3}[a-z0-9]+\Z"))
+    domain = draw(from_regex(r"\A([a-z]([a-z0-9é🏛️-]*)\.){1,3}([a-z0-9é])+\Z"))
 
     return "%s://%s" % (protocol, domain)
 
@@ -159,7 +160,7 @@ timestamps_with_timezone = timestamps_with_timezone_d().map(
 
 
 def origins_d():
-    return builds(dict, url=urls())
+    return builds(dict, url=iris())
 
 
 def origins():
@@ -170,7 +171,7 @@ def origin_visits_d():
     return builds(
         dict,
         visit=integers(1, 1000),
-        origin=urls(),
+        origin=iris(),
         date=aware_datetimes(),
         type=pgsql_text(),
     )
@@ -188,7 +189,7 @@ def origin_visit_statuses_d():
     return builds(
         dict,
         visit=integers(1, 1000),
-        origin=urls(),
+        origin=iris(),
         type=optional(sampled_from(["git", "svn", "pypi", "debian"])),
         status=sampled_from(
             ["created", "ongoing", "full", "partial", "not_found", "failed"]
@@ -422,11 +423,19 @@ def snapshots(*, min_size=0, max_size=100, only_objects=False):
 
 
 def metadata_authorities():
-    return builds(MetadataAuthority, url=urls(), metadata=just(None))
+    return builds(MetadataAuthority, url=iris(), metadata=just(None))
 
 
 def metadata_fetchers():
-    return builds(MetadataFetcher, metadata=just(None))
+    return builds(
+        MetadataFetcher,
+        name=text(min_size=1, alphabet=string.printable),
+        version=text(
+            min_size=1,
+            alphabet=string.ascii_letters + string.digits + string.punctuation,
+        ),
+        metadata=just(None),
+    )
 
 
 def raw_extrinsic_metadata():
@@ -436,6 +445,7 @@ def raw_extrinsic_metadata():
         discovery_date=aware_datetimes(),
         authority=metadata_authorities(),
         fetcher=metadata_fetchers(),
+        format=text(min_size=1, alphabet=string.printable),
     )
 
 
