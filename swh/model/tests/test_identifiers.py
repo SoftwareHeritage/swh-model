@@ -1811,6 +1811,29 @@ def test_ExtendedSWHID_eq():
     ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
 
 
+def test_extid_identifier_bwcompat():
+    extid_dict = {
+        "extid_type": "test-type",
+        "extid": b"extid",
+        "target": ExtendedSWHID(
+            object_type=ExtendedObjectType.DIRECTORY, object_id=b"\x00" * 20
+        ),
+    }
+
+    assert (
+        identifiers.extid_identifier(extid_dict)
+        == "b9295e1931c31e40a7e3e1e967decd1c89426455"
+    )
+
+    assert identifiers.extid_identifier(
+        {**extid_dict, "extid_version": 0}
+    ) == identifiers.extid_identifier(extid_dict)
+
+    assert identifiers.extid_identifier(
+        {**extid_dict, "extid_version": 1}
+    ) != identifiers.extid_identifier(extid_dict)
+
+
 def test_object_types():
     """Checks ExtendedObjectType is a superset of ObjectType"""
     for member in ObjectType:
