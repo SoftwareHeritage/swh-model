@@ -857,6 +857,7 @@ def extid_identifier(extid: Dict[str, Any]) -> str:
 
     ```
     extid_type $StrWithoutSpaces
+    [extid_version $Str]
     extid $Bytes
     target $CoreSwhid
     ```
@@ -866,6 +867,8 @@ def extid_identifier(extid: Dict[str, Any]) -> str:
     Newlines in $Bytes are escaped as with other git fields, ie. by adding a
     space after them.
 
+    The extid_version line is only generated if the version is non-zero.
+
     Returns:
       str: the intrinsic identifier for `extid`
 
@@ -873,9 +876,14 @@ def extid_identifier(extid: Dict[str, Any]) -> str:
 
     headers = [
         (b"extid_type", extid["extid_type"].encode("ascii")),
-        (b"extid", extid["extid"]),
-        (b"target", str(extid["target"]).encode("ascii")),
     ]
+    extid_version = extid.get("extid_version", 0)
+    if extid_version != 0:
+        headers.append((b"extid_version", str(extid_version).encode("ascii")))
+
+    headers.extend(
+        [(b"extid", extid["extid"]), (b"target", str(extid["target"]).encode("ascii")),]
+    )
 
     git_object = format_git_object_from_headers("extid", headers)
     return hashlib.new("sha1", git_object).hexdigest()
