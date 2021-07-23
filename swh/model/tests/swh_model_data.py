@@ -138,6 +138,12 @@ REVISIONS = [
 EXTIDS = [
     ExtID(extid_type="git256", extid=b"\x03" * 32, target=REVISIONS[0].swhid(),),
     ExtID(extid_type="hg", extid=b"\x04" * 20, target=REVISIONS[1].swhid(),),
+    ExtID(
+        extid_type="hg-nodeid",
+        extid=b"\x05" * 20,
+        target=REVISIONS[1].swhid(),
+        extid_version=1,
+    ),
 ]
 
 RELEASES = [
