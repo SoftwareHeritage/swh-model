@@ -1133,6 +1133,7 @@ class ExtID(HashableObject, BaseModel):
     extid_type = attr.ib(type=str, validator=type_validator())
     extid = attr.ib(type=bytes, validator=type_validator())
     target = attr.ib(type=CoreSWHID, validator=type_validator())
+    extid_version = attr.ib(type=int, validator=type_validator(), default=0)
 
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
@@ -1142,6 +1143,7 @@ class ExtID(HashableObject, BaseModel):
             extid=d["extid"],
             extid_type=d["extid_type"],
             target=CoreSWHID.from_string(d["target"]),
+            extid_version=d.get("extid_version", 0),
         )
 
     def compute_hash(self) -> bytes:
