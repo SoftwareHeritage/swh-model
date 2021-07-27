@@ -1,8 +1,12 @@
-swh-model (2.7.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (2.8.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 2.8.0     - (tagged by Antoine R. Dumont
+    (@ardumont) <ardumont@softwareheritage.org> on 2021-07-27 16:20:14
+    +0200)
+  * Upstream changes:     - v2.8.0     - Add a CVS revision type for use
+    with the CVS loader
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 23 Jul 2021 14:55:04 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 27 Jul 2021 14:26:10 +0000
 
 swh-model (2.7.0-1~swh1) unstable-swh; urgency=medium
 
