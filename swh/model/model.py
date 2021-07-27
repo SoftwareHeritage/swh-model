@@ -511,6 +511,7 @@ class RevisionType(Enum):
     DSC = "dsc"
     SUBVERSION = "svn"
     MERCURIAL = "hg"
+    CVS = "cvs"
 
 
 def tuplify_extra_headers(value: Iterable):
