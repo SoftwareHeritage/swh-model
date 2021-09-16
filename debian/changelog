@@ -1,8 +1,11 @@
-swh-model (2.8.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (2.9.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 2.9.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-09-16 14:21:44 +0200)
+  * Upstream changes:     - v2.9.0     - * HashableObject: Add type
+    annotation for 'id' attribute
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 27 Jul 2021 14:27:26 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 16 Sep 2021 12:24:48 +0000
 
 swh-model (2.8.0-1~swh1) unstable-swh; urgency=medium
 
