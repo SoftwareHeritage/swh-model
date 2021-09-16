@@ -215,9 +215,7 @@ class Content(MerkleLeaf):
     def swhid(self) -> CoreSWHID:
         """Return node identifier as a SWHID
         """
-        return CoreSWHID(
-            object_type=ObjectType.CONTENT, object_id=self.hash
-        )
+        return CoreSWHID(object_type=ObjectType.CONTENT, object_id=self.hash)
 
     def __repr__(self):
         return "Content(id=%s)" % id_to_str(self.hash)
@@ -497,9 +495,7 @@ class Directory(MerkleNode):
     def swhid(self) -> CoreSWHID:
         """Return node identifier as a SWHID
         """
-        return CoreSWHID(
-            object_type=ObjectType.DIRECTORY, object_id=self.hash
-        )
+        return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):
         return id_to_bytes(directory_identifier({"entries": self.entries}))
