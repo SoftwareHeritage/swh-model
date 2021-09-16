@@ -121,6 +121,8 @@ class HashableObject(metaclass=ABCMeta):
 
     __slots__ = ()
 
+    id: Sha1Git
+
     @abstractmethod
     def compute_hash(self) -> bytes:
         """Derived model classes must implement this to compute
@@ -137,7 +139,7 @@ class HashableObject(metaclass=ABCMeta):
             object.__setattr__(self, "id", obj_id)
 
     def unique_key(self) -> KeyType:
-        return self.id  # type: ignore
+        return self.id
 
 
 @attr.s(frozen=True, slots=True)
