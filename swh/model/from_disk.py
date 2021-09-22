@@ -18,15 +18,13 @@ from typing_extensions import Final
 
 from . import model
 from .exceptions import InvalidDirectoryPath
-from .hashutil import MultiHash
+from .hashutil import MultiHash, hash_to_bytes, hash_to_hex
 from .identifiers import (
     CoreSWHID,
     ObjectType,
     directory_entry_sort_key,
     directory_identifier,
 )
-from .identifiers import identifier_to_bytes as id_to_bytes
-from .identifiers import identifier_to_str as id_to_str
 from .merkle import MerkleLeaf, MerkleNode
 
 
@@ -218,7 +216,7 @@ class Content(MerkleLeaf):
         return CoreSWHID(object_type=ObjectType.CONTENT, object_id=self.hash)
 
     def __repr__(self):
-        return "Content(id=%s)" % id_to_str(self.hash)
+        return "Content(id=%s)" % hash_to_hex(self.hash)
 
     def compute_hash(self):
         return self.data["sha1_git"]
@@ -498,7 +496,7 @@ class Directory(MerkleNode):
         return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):
-        return id_to_bytes(directory_identifier({"entries": self.entries}))
+        return hash_to_bytes(directory_identifier({"entries": self.entries}))
 
     def to_model(self) -> model.Directory:
         """Builds a `model.Directory` object based on this node;
@@ -550,6 +548,6 @@ class Directory(MerkleNode):
 
     def __repr__(self):
         return "Directory(id=%s, entries=[%s])" % (
-            id_to_str(self.hash),
+            hash_to_hex(self.hash),
             ", ".join(str(entry) for entry in self),
         )

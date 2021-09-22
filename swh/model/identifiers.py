@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import binascii
-from functools import lru_cache
 from typing import Any, Dict
 
 from . import model
@@ -27,75 +25,6 @@ RELEASE = "release"
 DIRECTORY = "directory"
 CONTENT = "content"
 RAW_EXTRINSIC_METADATA = "raw_extrinsic_metadata"
-
-
-@lru_cache()
-def identifier_to_bytes(identifier):
-    """Convert a text identifier to bytes.
-
-    Args:
-        identifier: an identifier, either a 40-char hexadecimal string or a
-            bytes object of length 20
-    Returns:
-        The length 20 bytestring corresponding to the given identifier
-
-    Raises:
-        ValueError: if the identifier is of an unexpected type or length.
-    """
-
-    if isinstance(identifier, bytes):
-        if len(identifier) != 20:
-            raise ValueError(
-                "Wrong length for bytes identifier %s, expected 20" % len(identifier)
-            )
-        return identifier
-
-    if isinstance(identifier, str):
-        if len(identifier) != 40:
-            raise ValueError(
-                "Wrong length for str identifier %s, expected 40" % len(identifier)
-            )
-        return bytes.fromhex(identifier)
-
-    raise ValueError(
-        "Wrong type for identifier %s, expected bytes or str"
-        % identifier.__class__.__name__
-    )
-
-
-@lru_cache()
-def identifier_to_str(identifier):
-    """Convert an identifier to an hexadecimal string.
-
-    Args:
-        identifier: an identifier, either a 40-char hexadecimal string or a
-            bytes object of length 20
-
-    Returns:
-        The length 40 string corresponding to the given identifier, hex encoded
-
-    Raises:
-        ValueError: if the identifier is of an unexpected type or length.
-    """
-
-    if isinstance(identifier, str):
-        if len(identifier) != 40:
-            raise ValueError(
-                "Wrong length for str identifier %s, expected 40" % len(identifier)
-            )
-        return identifier
-
-    if isinstance(identifier, bytes):
-        if len(identifier) != 20:
-            raise ValueError(
-                "Wrong length for bytes identifier %s, expected 20" % len(identifier)
-            )
-        return binascii.hexlify(identifier).decode()
-
-    raise ValueError(
-        "Wrong type for identifier %s, expected bytes or str"
-        % identifier.__class__.__name__
-    )
 
 
 def content_identifier(content: Dict[str, Any]) -> Dict[str, bytes]:

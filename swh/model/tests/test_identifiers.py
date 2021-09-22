@@ -3,7 +3,6 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import binascii
 import datetime
 import hashlib
 import itertools
@@ -16,6 +15,7 @@ import pytest
 from swh.model import hashutil, identifiers
 from swh.model.exceptions import ValidationError
 from swh.model.hashutil import hash_to_bytes as _x
+from swh.model.hashutil import hash_to_hex
 from swh.model.identifiers import (
     SWHID_QUALIFIERS,
     CoreSWHID,
@@ -33,43 +33,6 @@ def remove_id(d: Dict) -> Dict:
     if "id" in d:
         del d["id"]
     return d
-
-
-class UtilityFunctionsIdentifier(unittest.TestCase):
-    def setUp(self):
-        self.str_id = "c2e41aae41ac17bd4a650770d6ee77f62e52235b"
-        self.bytes_id = binascii.unhexlify(self.str_id)
-        self.bad_type_id = object()
-
-    def test_identifier_to_bytes(self):
-        for id in [self.str_id, self.bytes_id]:
-            self.assertEqual(identifiers.identifier_to_bytes(id), self.bytes_id)
-
-            # wrong length
-            with self.assertRaises(ValueError) as cm:
-                identifiers.identifier_to_bytes(id[:-2])
-
-            self.assertIn("length", str(cm.exception))
-
-        with self.assertRaises(ValueError) as cm:
-            identifiers.identifier_to_bytes(self.bad_type_id)
-
-        self.assertIn("type", str(cm.exception))
-
-    def test_identifier_to_str(self):
-        for id in [self.str_id, self.bytes_id]:
-            self.assertEqual(identifiers.identifier_to_str(id), self.str_id)
-
-            # wrong length
-            with self.assertRaises(ValueError) as cm:
-                identifiers.identifier_to_str(id[:-2])
-
-            self.assertIn("length", str(cm.exception))
-
-        with self.assertRaises(ValueError) as cm:
-            identifiers.identifier_to_str(self.bad_type_id)
-
-        self.assertIn("type", str(cm.exception))
 
 
 class UtilityFunctionsDateOffset(unittest.TestCase):
@@ -482,23 +445,23 @@ dg1KdHOa34shrKDaOVzW
     def test_revision_identifier(self):
         self.assertEqual(
             identifiers.revision_identifier(self.revision),
-            identifiers.identifier_to_str(self.revision["id"]),
+            hash_to_hex(self.revision["id"]),
         )
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.revision)),
-            identifiers.identifier_to_str(self.revision["id"]),
+            hash_to_hex(self.revision["id"]),
         )
 
     def test_revision_identifier_none_metadata(self):
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.revision_none_metadata)),
-            identifiers.identifier_to_str(self.revision_none_metadata["id"]),
+            hash_to_hex(self.revision_none_metadata["id"]),
         )
 
     def test_revision_identifier_synthetic(self):
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.synthetic_revision)),
-            identifiers.identifier_to_str(self.synthetic_revision["id"]),
+            hash_to_hex(self.synthetic_revision["id"]),
         )
 
     def test_revision_identifier_with_extra_headers(self):
@@ -506,31 +469,31 @@ dg1KdHOa34shrKDaOVzW
             identifiers.revision_identifier(
                 remove_id(self.revision_with_extra_headers)
             ),
-            identifiers.identifier_to_str(self.revision_with_extra_headers["id"]),
+            hash_to_hex(self.revision_with_extra_headers["id"]),
         )
 
     def test_revision_identifier_with_gpgsig(self):
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.revision_with_gpgsig)),
-            identifiers.identifier_to_str(self.revision_with_gpgsig["id"]),
+            hash_to_hex(self.revision_with_gpgsig["id"]),
         )
 
     def test_revision_identifier_no_message(self):
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.revision_no_message)),
-            identifiers.identifier_to_str(self.revision_no_message["id"]),
+            hash_to_hex(self.revision_no_message["id"]),
         )
 
     def test_revision_identifier_empty_message(self):
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.revision_empty_message)),
-            identifiers.identifier_to_str(self.revision_empty_message["id"]),
+            hash_to_hex(self.revision_empty_message["id"]),
         )
 
     def test_revision_identifier_only_fullname(self):
         self.assertEqual(
             identifiers.revision_identifier(remove_id(self.revision_only_fullname)),
-            identifiers.identifier_to_str(self.revision_only_fullname["id"]),
+            hash_to_hex(self.revision_only_fullname["id"]),
         )
 
 
@@ -648,47 +611,47 @@ o6X/3T+vm8K3bf3driRr34c=
     def test_release_identifier(self):
         self.assertEqual(
             identifiers.release_identifier(self.release),
-            identifiers.identifier_to_str(self.release["id"]),
+            hash_to_hex(self.release["id"]),
         )
         self.assertEqual(
             identifiers.release_identifier(remove_id(self.release)),
-            identifiers.identifier_to_str(self.release["id"]),
+            hash_to_hex(self.release["id"]),
         )
 
     def test_release_identifier_no_author(self):
         self.assertEqual(
             identifiers.release_identifier(remove_id(self.release_no_author)),
-            identifiers.identifier_to_str(self.release_no_author["id"]),
+            hash_to_hex(self.release_no_author["id"]),
         )
 
     def test_release_identifier_no_message(self):
         self.assertEqual(
             identifiers.release_identifier(remove_id(self.release_no_message)),
-            identifiers.identifier_to_str(self.release_no_message["id"]),
+            hash_to_hex(self.release_no_message["id"]),
         )
 
     def test_release_identifier_empty_message(self):
         self.assertEqual(
             identifiers.release_identifier(remove_id(self.release_empty_message)),
-            identifiers.identifier_to_str(self.release_empty_message["id"]),
+            hash_to_hex(self.release_empty_message["id"]),
         )
 
     def test_release_identifier_negative_utc(self):
         self.assertEqual(
             identifiers.release_identifier(remove_id(self.release_negative_utc)),
-            identifiers.identifier_to_str(self.release_negative_utc["id"]),
+            hash_to_hex(self.release_negative_utc["id"]),
         )
 
     def test_release_identifier_newline_in_author(self):
         self.assertEqual(
             identifiers.release_identifier(remove_id(self.release_newline_in_author)),
-            identifiers.identifier_to_str(self.release_newline_in_author["id"]),
+            hash_to_hex(self.release_newline_in_author["id"]),
         )
 
     def test_release_identifier_snapshot_target(self):
         self.assertEqual(
             identifiers.release_identifier(self.release_snapshot_target),
-            identifiers.identifier_to_str(self.release_snapshot_target["id"]),
+            hash_to_hex(self.release_snapshot_target["id"]),
         )
 
 
@@ -745,13 +708,13 @@ class SnapshotIdentifier(unittest.TestCase):
     def test_empty_snapshot(self):
         self.assertEqual(
             identifiers.snapshot_identifier(remove_id(self.empty)),
-            identifiers.identifier_to_str(self.empty["id"]),
+            hash_to_hex(self.empty["id"]),
         )
 
     def test_dangling_branch(self):
         self.assertEqual(
             identifiers.snapshot_identifier(remove_id(self.dangling_branch)),
-            identifiers.identifier_to_str(self.dangling_branch["id"]),
+            hash_to_hex(self.dangling_branch["id"]),
         )
 
     def test_unresolved(self):
@@ -761,7 +724,7 @@ class SnapshotIdentifier(unittest.TestCase):
     def test_all_types(self):
         self.assertEqual(
             identifiers.snapshot_identifier(remove_id(self.all_types)),
-            identifiers.identifier_to_str(self.all_types["id"]),
+            hash_to_hex(self.all_types["id"]),
         )
 
 

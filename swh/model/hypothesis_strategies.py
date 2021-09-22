@@ -29,12 +29,8 @@ from hypothesis.strategies import (
 )
 
 from .from_disk import DentryPerms
-from .identifiers import (
-    ExtendedObjectType,
-    ExtendedSWHID,
-    identifier_to_bytes,
-    snapshot_identifier,
-)
+from .hashutil import hash_to_bytes
+from .identifiers import ExtendedObjectType, ExtendedSWHID, snapshot_identifier
 from .model import (
     BaseContent,
     Content,
@@ -413,7 +409,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
         else:
             break
 
-    return dict(id=identifier_to_bytes(id_), branches=branches)
+    return dict(id=hash_to_bytes(id_), branches=branches)
 
 
 def snapshots(*, min_size=0, max_size=100, only_objects=False):
