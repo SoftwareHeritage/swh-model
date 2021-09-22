@@ -79,9 +79,6 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
             b"1448210036.002342": {"seconds": 1448210036, "microseconds": 2342,},
             b"1448210036.12": {"seconds": 1448210036, "microseconds": 120000,},
         }
-        self.broken_dates = [
-            1448210036.12,
-        ]
 
         self.offsets = {
             0: b"+0000",
@@ -92,11 +89,6 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
     def test_format_date(self):
         for date_repr, date in self.dates.items():
             self.assertEqual(identifiers.format_date(date), date_repr)
-
-    def test_format_date_fail(self):
-        for date in self.broken_dates:
-            with self.assertRaises(ValueError):
-                identifiers.format_date(date)
 
     def test_format_offset(self):
         for offset, res in self.offsets.items():
@@ -122,7 +114,7 @@ class ContentIdentifier(unittest.TestCase):
 
 
 directory_example = {
-    "id": "d7ed3d2c31d608823be58b1cbe57605310615231",
+    "id": _x("d7ed3d2c31d608823be58b1cbe57605310615231"),
     "entries": [
         {
             "type": "file",
@@ -245,10 +237,10 @@ class DirectoryIdentifier(unittest.TestCase):
 
     def test_dir_identifier(self):
         self.assertEqual(
-            identifiers.directory_identifier(self.directory), self.directory["id"]
+            _x(identifiers.directory_identifier(self.directory)), self.directory["id"]
         )
         self.assertEqual(
-            identifiers.directory_identifier(remove_id(self.directory)),
+            _x(identifiers.directory_identifier(remove_id(self.directory))),
             self.directory["id"],
         )
 
@@ -256,7 +248,8 @@ class DirectoryIdentifier(unittest.TestCase):
         # Reverse order of entries, check the id is still the same.
         directory = {"entries": reversed(self.directory["entries"])}
         self.assertEqual(
-            identifiers.directory_identifier(remove_id(directory)), self.directory["id"]
+            _x(identifiers.directory_identifier(remove_id(directory))),
+            self.directory["id"],
         )
 
     def test_dir_identifier_empty_directory(self):
@@ -269,7 +262,7 @@ class DirectoryIdentifier(unittest.TestCase):
 linus_tz = datetime.timezone(datetime.timedelta(minutes=-420))
 
 revision_example = {
-    "id": "bc0195aad0daa2ad5b0d76cce22b167bc3435590",
+    "id": _x("bc0195aad0daa2ad5b0d76cce22b167bc3435590"),
     "directory": _x("85a74718d377195e1efd0843ba4f3260bad4fe07"),
     "parents": [_x("01e2d0627a9a6edb24c37db45db5ecb31e9de808")],
     "author": {
@@ -330,6 +323,8 @@ dg1KdHOa34shrKDaOVzW
                 2015, 7, 12, 15, 10, 30, tzinfo=linus_tz
             ),
             "message": b"Linux 4.2-rc2\n",
+            "type": "git",
+            "synthetic": False,
             "metadata": None,
         }
 
@@ -352,7 +347,7 @@ dg1KdHOa34shrKDaOVzW
             },
             "committer_date": 1437047495,
             "synthetic": True,
-            "parents": [None],
+            "parents": [],
             "message": b"synthetic revision message\n",
             "directory": b"\xd1\x1f\x00\xa6\xa0\xfe\xa6\x05SA\xd2U\x84\xb5\xa9"
             b"e\x16\xc0\xd2\xb8",
@@ -390,6 +385,8 @@ dg1KdHOa34shrKDaOVzW
                 2015, 7, 12, 15, 10, 30, tzinfo=linus_tz
             ),
             "message": b"Linux 4.2-rc2\n",
+            "type": "git",
+            "synthetic": False,
             "extra_headers": (
                 (b"svn-repo-uuid", b"046f1af7-66c2-d61b-5410-ce57b7db7bff"),
                 (b"svn-revision", b"10"),
@@ -417,6 +414,8 @@ dg1KdHOa34shrKDaOVzW
 * 'master' of git://github.com/alexhenrie/git-po:
   l10n: ca.po: update translation
 """,
+            "type": "git",
+            "synthetic": False,
         }
 
         self.revision_no_message = {
@@ -435,6 +434,8 @@ dg1KdHOa34shrKDaOVzW
             "committer": {"name": b"Jiang Xin", "email": b"worldhello.net@gmail.com",},
             "committer_date": {"timestamp": 1428538899, "offset": 480,},
             "message": None,
+            "type": "git",
+            "synthetic": False,
         }
 
         self.revision_empty_message = {
@@ -453,6 +454,8 @@ dg1KdHOa34shrKDaOVzW
             "committer": {"name": b"Jiang Xin", "email": b"worldhello.net@gmail.com",},
             "committer_date": {"timestamp": 1428538899, "offset": 480,},
             "message": b"",
+            "type": "git",
+            "synthetic": False,
         }
 
         self.revision_only_fullname = {
@@ -468,6 +471,8 @@ dg1KdHOa34shrKDaOVzW
                 2015, 7, 12, 15, 10, 30, tzinfo=linus_tz
             ),
             "message": b"Linux 4.2-rc2\n",
+            "type": "git",
+            "synthetic": False,
             "extra_headers": (
                 (b"svn-repo-uuid", b"046f1af7-66c2-d61b-5410-ce57b7db7bff"),
                 (b"svn-revision", b"10"),
@@ -530,7 +535,7 @@ dg1KdHOa34shrKDaOVzW
 
 
 release_example = {
-    "id": "2b10839e32c4c476e9d94492756bb1a3e1ec4aa8",
+    "id": _x("2b10839e32c4c476e9d94492756bb1a3e1ec4aa8"),
     "target": b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
     "target_type": "revision",
     "name": b"v2.6.14",
@@ -562,7 +567,7 @@ class ReleaseIdentifier(unittest.TestCase):
 
         self.release_no_author = {
             "id": b"&y\x1a\x8b\xcf\x0em3\xf4:\xefv\x82\xbd\xb5U#mV\xde",
-            "target": "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+            "target": _x("9ee1c939d1cb936b1f98e8d81aeffab57bae46ab"),
             "target_type": "revision",
             "name": b"v2.6.12",
             "message": b"""\
@@ -579,40 +584,38 @@ o6X/3T+vm8K3bf3driRr34c=
         }
 
         self.release_no_message = {
-            "id": "b6f4f446715f7d9543ef54e41b62982f0db40045",
-            "target": "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+            "id": _x("b6f4f446715f7d9543ef54e41b62982f0db40045"),
+            "target": _x("9ee1c939d1cb936b1f98e8d81aeffab57bae46ab"),
             "target_type": "revision",
             "name": b"v2.6.12",
             "author": {"name": b"Linus Torvalds", "email": b"torvalds@g5.osdl.org",},
             "date": datetime.datetime(2005, 10, 27, 17, 2, 33, tzinfo=linus_tz),
             "message": None,
+            "synthetic": False,
         }
 
         self.release_empty_message = {
-            "id": "71a0aea72444d396575dc25ac37fec87ee3c6492",
-            "target": "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+            "id": _x("71a0aea72444d396575dc25ac37fec87ee3c6492"),
+            "target": _x("9ee1c939d1cb936b1f98e8d81aeffab57bae46ab"),
             "target_type": "revision",
             "name": b"v2.6.12",
             "author": {"name": b"Linus Torvalds", "email": b"torvalds@g5.osdl.org",},
             "date": datetime.datetime(2005, 10, 27, 17, 2, 33, tzinfo=linus_tz),
             "message": b"",
+            "synthetic": False,
         }
 
         self.release_negative_utc = {
-            "id": "97c8d2573a001f88e72d75f596cf86b12b82fd01",
+            "id": _x("97c8d2573a001f88e72d75f596cf86b12b82fd01"),
             "name": b"20081029",
-            "target": "54e9abca4c77421e2921f5f156c9fe4a9f7441c7",
+            "target": _x("54e9abca4c77421e2921f5f156c9fe4a9f7441c7"),
             "target_type": "revision",
             "date": {
                 "timestamp": {"seconds": 1225281976},
                 "offset": 0,
                 "negative_utc": True,
             },
-            "author": {
-                "name": b"Otavio Salvador",
-                "email": b"otavio@debian.org",
-                "id": 17640,
-            },
+            "author": {"name": b"Otavio Salvador", "email": b"otavio@debian.org",},
             "synthetic": False,
             "message": b"tagging version 20081029\n\nr56558\n",
         }
@@ -638,7 +641,9 @@ o6X/3T+vm8K3bf3driRr34c=
 
         self.release_snapshot_target = dict(self.release)
         self.release_snapshot_target["target_type"] = "snapshot"
-        self.release_snapshot_target["id"] = "c29c3ddcc6769a04e54dd69d63a6fdcbc566f850"
+        self.release_snapshot_target["id"] = _x(
+            "c29c3ddcc6769a04e54dd69d63a6fdcbc566f850"
+        )
 
     def test_release_identifier(self):
         self.assertEqual(
@@ -752,14 +757,6 @@ class SnapshotIdentifier(unittest.TestCase):
     def test_unresolved(self):
         with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
             identifiers.snapshot_identifier(remove_id(self.unresolved))
-
-    def test_unresolved_force(self):
-        self.assertEqual(
-            identifiers.snapshot_identifier(
-                remove_id(self.unresolved), ignore_unresolved=True,
-            ),
-            identifiers.identifier_to_str(self.unresolved["id"]),
-        )
 
     def test_all_types(self):
         self.assertEqual(
