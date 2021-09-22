@@ -27,10 +27,10 @@ from .identifiers import (
     revision_identifier,
     snapshot_identifier,
 )
-from .identifiers import CoreSWHID
-from .identifiers import ExtendedObjectType as SwhidExtendedObjectType
-from .identifiers import ExtendedSWHID
-from .identifiers import ObjectType as SwhidObjectType
+from .swhids import CoreSWHID
+from .swhids import ExtendedObjectType as SwhidExtendedObjectType
+from .swhids import ExtendedSWHID
+from .swhids import ObjectType as SwhidObjectType
 
 
 class MissingData(Exception):
