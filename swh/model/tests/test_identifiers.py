@@ -292,8 +292,7 @@ dg1KdHOa34shrKDaOVzW
         }
 
         self.synthetic_revision = {
-            "id": b"\xb2\xa7\xe1&\x04\x92\xe3D\xfa\xb3\xcb\xf9\x1b\xc1<\x91"
-            b"\xe0T&\xfd",
+            "id": _x("b2a7e1260492e344fab3cbf91bc13c91e05426fd"),
             "author": {
                 "name": b"Software Heritage",
                 "email": b"robot@softwareheritage.org",
@@ -312,8 +311,7 @@ dg1KdHOa34shrKDaOVzW
             "synthetic": True,
             "parents": [],
             "message": b"synthetic revision message\n",
-            "directory": b"\xd1\x1f\x00\xa6\xa0\xfe\xa6\x05SA\xd2U\x84\xb5\xa9"
-            b"e\x16\xc0\xd2\xb8",
+            "directory": _x("d11f00a6a0fea6055341d25584b5a96516c0d2b8"),
             "metadata": {
                 "original_artifact": [
                     {
@@ -499,7 +497,7 @@ dg1KdHOa34shrKDaOVzW
 
 release_example = {
     "id": _x("2b10839e32c4c476e9d94492756bb1a3e1ec4aa8"),
-    "target": b't\x1b"R\xa5\xe1Ml`\xa9\x13\xc7z`\x99\xab\xe7:\x85J',
+    "target": _x("741b2252a5e14d6c60a913c77a6099abe73a854a"),
     "target_type": "revision",
     "name": b"v2.6.14",
     "author": {
@@ -529,7 +527,7 @@ class ReleaseIdentifier(unittest.TestCase):
         self.release = release_example
 
         self.release_no_author = {
-            "id": b"&y\x1a\x8b\xcf\x0em3\xf4:\xefv\x82\xbd\xb5U#mV\xde",
+            "id": _x("26791a8bcf0e6d33f43aef7682bdb555236d56de"),
             "target": _x("9ee1c939d1cb936b1f98e8d81aeffab57bae46ab"),
             "target_type": "revision",
             "name": b"v2.6.12",
@@ -594,11 +592,11 @@ o6X/3T+vm8K3bf3driRr34c=
                 "offset": 600,
                 "timestamp": {"microseconds": 0, "seconds": 1377480558,},
             },
-            "id": b"\\\x98\xf5Y\xd04\x16-\xe2->\xbe\xb9T3\xe6\xf8\x88R1",
+            "id": _x("5c98f559d034162de22d3ebeb95433e6f8885231"),
             "message": b"Release of v0.3.2.",
             "name": b"0.3.2",
             "synthetic": False,
-            "target": (b"\xc0j\xa3\xd9;x\xa2\x86\\I5\x17" b"\x000\xf8\xc2\xd79o\xd3"),
+            "target": _x("c06aa3d93b78a2865c4935170030f8c2d7396fd3"),
             "target_type": "revision",
         }
 
