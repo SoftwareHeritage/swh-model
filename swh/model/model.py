@@ -6,7 +6,7 @@
 from abc import ABCMeta, abstractmethod
 import datetime
 from enum import Enum
-from hashlib import sha256
+import hashlib
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
 
 import attr
@@ -15,18 +15,9 @@ import dateutil.parser
 import iso8601
 from typing_extensions import Final
 
+from . import identifiers
 from .collections import ImmutableDict
-from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytes
-from .identifiers import (
-    directory_identifier,
-    extid_identifier,
-    normalize_timestamp,
-    origin_identifier,
-    raw_extrinsic_metadata_identifier,
-    release_identifier,
-    revision_identifier,
-    snapshot_identifier,
-)
+from .hashutil import DEFAULT_ALGORITHMS, MultiHash
 from .swhids import CoreSWHID
 from .swhids import ExtendedObjectType as SwhidExtendedObjectType
 from .swhids import ExtendedSWHID
@@ -193,7 +184,29 @@ class Person(BaseModel):
         Anonymization is simply a Person which fullname is the hashed, with unset name
         or email.
         """
-        return Person(fullname=sha256(self.fullname).digest(), name=None, email=None,)
+        return Person(
+            fullname=hashlib.sha256(self.fullname).digest(), name=None, email=None,
+        )
+
+    @classmethod
+    def from_dict(cls, d):
+        """
+        If the fullname is missing, construct a fullname
+        using the following heuristics: if the name value is None, we return the
+        email in angle brackets, else, we return the name, a space, and the email
+        in angle brackets.
+        """
+        if "fullname" not in d:
+            parts = []
+            if d["name"] is not None:
+                parts.append(d["name"])
+            if d["email"] is not None:
+                parts.append(b"".join([b"<", d["email"], b">"]))
+
+            fullname = b" ".join(parts)
+            d = {**d, "fullname": fullname}
+        d = {"name": None, "email": None, **d}
+        return super().from_dict(d)
 
 
 @attr.s(frozen=True, slots=True)
@@ -243,16 +256,60 @@ class TimestampWithTimezone(BaseModel):
             raise ValueError("negative_utc can only be True is offset=0")
 
     @classmethod
-    def from_dict(cls, obj: Union[Dict, datetime.datetime, int]):
+    def from_dict(cls, time_representation: Union[Dict, datetime.datetime, int]):
         """Builds a TimestampWithTimezone from any of the formats
         accepted by :func:`swh.model.normalize_timestamp`."""
         # TODO: this accept way more types than just dicts; find a better
         # name
-        d = normalize_timestamp(obj)
+        negative_utc = False
+
+        if isinstance(time_representation, dict):
+            ts = time_representation["timestamp"]
+            if isinstance(ts, dict):
+                seconds = ts.get("seconds", 0)
+                microseconds = ts.get("microseconds", 0)
+            elif isinstance(ts, int):
+                seconds = ts
+                microseconds = 0
+            else:
+                raise ValueError(
+                    f"TimestampWithTimezone.from_dict received non-integer timestamp "
+                    f"member {ts!r}"
+                )
+            offset = time_representation["offset"]
+            if "negative_utc" in time_representation:
+                negative_utc = time_representation["negative_utc"]
+            if negative_utc is None:
+                negative_utc = False
+        elif isinstance(time_representation, datetime.datetime):
+            microseconds = time_representation.microsecond
+            if microseconds:
+                time_representation = time_representation.replace(microsecond=0)
+            seconds = int(time_representation.timestamp())
+            utcoffset = time_representation.utcoffset()
+            if utcoffset is None:
+                raise ValueError(
+                    f"TimestampWithTimezone.from_dict received datetime without "
+                    f"timezone: {time_representation}"
+                )
+
+            # utcoffset is an integer number of minutes
+            seconds_offset = utcoffset.total_seconds()
+            offset = int(seconds_offset) // 60
+        elif isinstance(time_representation, int):
+            seconds = time_representation
+            microseconds = 0
+            offset = 0
+        else:
+            raise ValueError(
+                f"TimestampWithTimezone.from_dict received non-integer timestamp: "
+                f"{time_representation!r}"
+            )
+
         return cls(
-            timestamp=Timestamp.from_dict(d["timestamp"]),
-            offset=d["offset"],
-            negative_utc=d["negative_utc"],
+            timestamp=Timestamp(seconds=seconds, microseconds=microseconds),
+            offset=offset,
+            negative_utc=negative_utc,
         )
 
     @classmethod
@@ -286,21 +343,25 @@ class TimestampWithTimezone(BaseModel):
 
 
 @attr.s(frozen=True, slots=True)
-class Origin(BaseModel):
+class Origin(HashableObject, BaseModel):
     """Represents a software source: a VCS and an URL."""
 
     object_type: Final = "origin"
 
     url = attr.ib(type=str, validator=type_validator())
 
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+
     def unique_key(self) -> KeyType:
         return {"url": self.url}
+
+    def compute_hash(self) -> bytes:
+        return hashlib.sha1(self.url.encode("utf-8")).digest()
 
     def swhid(self) -> ExtendedSWHID:
         """Returns a SWHID representing this origin."""
         return ExtendedSWHID(
-            object_type=SwhidExtendedObjectType.ORIGIN,
-            object_id=hash_to_bytes(origin_identifier(self.unique_key())),
+            object_type=SwhidExtendedObjectType.ORIGIN, object_id=self.id,
         )
 
 
@@ -431,7 +492,8 @@ class Snapshot(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        return hash_to_bytes(snapshot_identifier(self.to_dict()))
+        git_object = identifiers.snapshot_git_object(self)
+        return hashlib.new("sha1", git_object).digest()
 
     @classmethod
     def from_dict(cls, d):
@@ -471,7 +533,8 @@ class Release(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        return hash_to_bytes(release_identifier(self.to_dict()))
+        git_object = identifiers.release_git_object(self)
+        return hashlib.new("sha1", git_object).digest()
 
     @author.validator
     def check_author(self, attribute, value):
@@ -565,7 +628,8 @@ class Revision(HashableObject, BaseModel):
             object.__setattr__(self, "metadata", metadata)
 
     def compute_hash(self) -> bytes:
-        return hash_to_bytes(revision_identifier(self.to_dict()))
+        git_object = identifiers.revision_git_object(self)
+        return hashlib.new("sha1", git_object).digest()
 
     @classmethod
     def from_dict(cls, d):
@@ -622,7 +686,8 @@ class Directory(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        return hash_to_bytes(directory_identifier(self.to_dict()))
+        git_object = identifiers.directory_git_object(self)
+        return hashlib.new("sha1", git_object).digest()
 
     @classmethod
     def from_dict(cls, d):
@@ -951,7 +1016,8 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        return hash_to_bytes(raw_extrinsic_metadata_identifier(self.to_dict()))
+        git_object = identifiers.raw_extrinsic_metadata_git_object(self)
+        return hashlib.new("sha1", git_object).digest()
 
     @origin.validator
     def check_origin(self, attribute, value):
@@ -1151,4 +1217,5 @@ class ExtID(HashableObject, BaseModel):
         )
 
     def compute_hash(self) -> bytes:
-        return hash_to_bytes(extid_identifier(self.to_dict()))
+        git_object = identifiers.extid_git_object(self)
+        return hashlib.new("sha1", git_object).digest()

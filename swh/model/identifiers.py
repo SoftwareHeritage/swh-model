@@ -8,10 +8,11 @@ from __future__ import annotations
 import binascii
 import datetime
 from functools import lru_cache
-import hashlib
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from .hashutil import MultiHash, git_object_header
+from . import model
+from .collections import ImmutableDict
+from .hashutil import MultiHash, git_object_header, hash_to_bytehex, hash_to_hex
 
 # Reexport for backward compatibility
 from .swhids import *  # noqa
@@ -116,12 +117,15 @@ def content_identifier(content: Dict[str, Any]) -> Dict[str, bytes]:
     return MultiHash.from_data(content["data"]).digest()
 
 
-def directory_entry_sort_key(entry):
+def directory_entry_sort_key(entry: model.DirectoryEntry):
     """The sorting key for tree entries"""
-    if entry["type"] == "dir":
-        return entry["name"] + b"/"
+    if isinstance(entry, dict):
+        # For backward compatibility
+        entry = model.DirectoryEntry.from_dict(entry)
+    if entry.type == "dir":
+        return entry.name + b"/"
     else:
-        return entry["name"]
+        return entry.name
 
 
 @lru_cache()
@@ -181,28 +185,25 @@ def directory_identifier(directory: Dict[str, Any]) -> str:
       (Note that there is no separator between entries)
 
     """
-    git_object = directory_git_object(directory)
-    return hashlib.new("sha1", git_object).hexdigest()
+    return hash_to_hex(model.Directory.from_dict(directory).id)
 
 
-def directory_git_object(directory: Dict[str, Any]) -> bytes:
+def directory_git_object(directory: model.Directory) -> bytes:
+    if isinstance(directory, dict):
+        # For backward compatibility
+        directory = model.Directory.from_dict(directory)
+
     components = []
 
-    for entry in sorted(directory["entries"], key=directory_entry_sort_key):
+    for entry in sorted(directory.entries, key=directory_entry_sort_key):
         components.extend(
-            [
-                _perms_to_bytes(entry["perms"]),
-                b"\x20",
-                entry["name"],
-                b"\x00",
-                identifier_to_bytes(entry["target"]),
-            ]
+            [_perms_to_bytes(entry.perms), b"\x20", entry.name, b"\x00", entry.target,]
         )
 
     return format_git_object_from_parts("tree", components)
 
 
-def format_date(date):
+def format_date(date: model.Timestamp) -> bytes:
     """Convert a date object into an UTC timestamp encoded as ascii bytes.
 
     Git stores timestamps as an integer number of seconds since the UNIX epoch.
@@ -216,20 +217,19 @@ def format_date(date):
     representation if we ever need more precision in timestamps.
 
     """
-    if not isinstance(date, dict):
-        raise ValueError("format_date only supports dicts, %r received" % date)
+    if isinstance(date, dict):
+        # For backward compatibility
+        date = model.Timestamp.from_dict(date)
 
-    seconds = date.get("seconds", 0)
-    microseconds = date.get("microseconds", 0)
-    if not microseconds:
-        return str(seconds).encode()
+    if not date.microseconds:
+        return str(date.seconds).encode()
     else:
-        float_value = "%d.%06d" % (seconds, microseconds)
+        float_value = "%d.%06d" % (date.seconds, date.microseconds)
         return float_value.rstrip("0").encode()
 
 
 @lru_cache()
-def format_offset(offset, negative_utc=None):
+def format_offset(offset: int, negative_utc: Optional[bool] = None) -> bytes:
     """Convert an integer number of minutes into an offset representation.
 
     The offset representation is [+-]hhmm where:
@@ -276,86 +276,10 @@ def normalize_timestamp(time_representation):
               when offset = 0.
 
     """
-
     if time_representation is None:
         return None
-
-    negative_utc = False
-
-    if isinstance(time_representation, dict):
-        ts = time_representation["timestamp"]
-        if isinstance(ts, dict):
-            seconds = ts.get("seconds", 0)
-            microseconds = ts.get("microseconds", 0)
-        elif isinstance(ts, int):
-            seconds = ts
-            microseconds = 0
-        else:
-            raise ValueError(
-                "normalize_timestamp received non-integer timestamp member:" " %r" % ts
-            )
-        offset = time_representation["offset"]
-        if "negative_utc" in time_representation:
-            negative_utc = time_representation["negative_utc"]
-        if negative_utc is None:
-            negative_utc = False
-    elif isinstance(time_representation, datetime.datetime):
-        microseconds = time_representation.microsecond
-        if microseconds:
-            time_representation = time_representation.replace(microsecond=0)
-        seconds = int(time_representation.timestamp())
-        utcoffset = time_representation.utcoffset()
-        if utcoffset is None:
-            raise ValueError(
-                "normalize_timestamp received datetime without timezone: %s"
-                % time_representation
-            )
-
-        # utcoffset is an integer number of minutes
-        seconds_offset = utcoffset.total_seconds()
-        offset = int(seconds_offset) // 60
-    elif isinstance(time_representation, int):
-        seconds = time_representation
-        microseconds = 0
-        offset = 0
     else:
-        raise ValueError(
-            "normalize_timestamp received non-integer timestamp:"
-            " %r" % time_representation
-        )
-
-    return {
-        "timestamp": {"seconds": seconds, "microseconds": microseconds,},
-        "offset": offset,
-        "negative_utc": negative_utc,
-    }
-
-
-def format_author(author):
-    """Format the specification of an author.
-
-    An author is either a byte string (passed unchanged), or a dict with three
-    keys, fullname, name and email.
-
-    If the fullname exists, return it; if it doesn't, we construct a fullname
-    using the following heuristics: if the name value is None, we return the
-    email in angle brackets, else, we return the name, a space, and the email
-    in angle brackets.
-
-    """
-    if isinstance(author, bytes) or author is None:
-        return author
-
-    if "fullname" in author:
-        return author["fullname"]
-
-    ret = []
-    if author["name"] is not None:
-        ret.append(author["name"])
-    if author["email"] is not None:
-        ret.append(b"".join([b"<", author["email"], b">"]))
-
-    return b" ".join(ret)
+        return model.TimestampWithTimezone.from_dict(time_representation).to_dict()
 
 
 def format_git_object_from_headers(
@@ -411,7 +335,9 @@ def format_git_object_from_parts(git_type: str, parts: Iterable[bytes]) -> bytes
     return header + concatenated_parts
 
 
-def format_author_data(author, date_offset) -> bytes:
+def format_author_data(
+    author: model.Person, date_offset: Optional[model.TimestampWithTimezone]
+) -> bytes:
     """Format authorship data according to git standards.
 
     Git authorship data has two components:
@@ -433,24 +359,16 @@ def format_author_data(author, date_offset) -> bytes:
     tools can pass a negative offset corresponding to the UTC timezone
     ('-0000'), which is valid and is encoded as such.
 
-    Args:
-        author: an author specification (dict with two bytes values: name and
-            email, or byte value)
-        date_offset: a normalized date/time representation as returned by
-            :func:`normalize_timestamp`.
-
     Returns:
         the byte string containing the authorship data
 
     """
 
-    ret = [format_author(author)]
-
-    date_offset = normalize_timestamp(date_offset)
+    ret = [author.fullname]
 
     if date_offset is not None:
-        date_f = format_date(date_offset["timestamp"])
-        offset_f = format_offset(date_offset["offset"], date_offset["negative_utc"])
+        date_f = format_date(date_offset.timestamp)
+        offset_f = format_offset(date_offset.offset, date_offset.negative_utc)
 
         ret.extend([b" ", date_f, b" ", offset_f])
 
@@ -489,7 +407,7 @@ def revision_identifier(revision: Dict[str, Any]) -> str:
     The directory identifier is the ascii representation of its hexadecimal
     encoding.
 
-    Author and committer are formatted with the :func:`format_author` function.
+    Author and committer are formatted using the :attr:`Person.fullname` attribute only.
     Dates are formatted with the :func:`format_offset` function.
 
     Extra headers are an ordered list of [key, value] pairs. Keys are strings
@@ -507,74 +425,71 @@ def revision_identifier(revision: Dict[str, Any]) -> str:
     type.
 
     """
-    git_object = revision_git_object(revision)
-    return hashlib.new("sha1", git_object).hexdigest()
+    return hash_to_hex(model.Revision.from_dict(revision).id)
 
 
-def revision_git_object(revision: Dict[str, Any]) -> bytes:
+def revision_git_object(revision: model.Revision) -> bytes:
     """Formats the git_object of a revision. See :func:`revision_identifier` for details
     on the format."""
-    headers = [(b"tree", identifier_to_str(revision["directory"]).encode())]
-    for parent in revision["parents"]:
-        if parent:
-            headers.append((b"parent", identifier_to_str(parent).encode()))
+    if isinstance(revision, dict):
+        # For backward compatibility
+        revision = model.Revision.from_dict(revision)
 
+    headers = [(b"tree", hash_to_bytehex(revision.directory))]
+    for parent in revision.parents:
+        if parent:
+            headers.append((b"parent", hash_to_bytehex(parent)))
+
+    headers.append((b"author", format_author_data(revision.author, revision.date)))
     headers.append(
-        (b"author", format_author_data(revision["author"], revision["date"]))
-    )
-    headers.append(
-        (
-            b"committer",
-            format_author_data(revision["committer"], revision["committer_date"]),
-        )
+        (b"committer", format_author_data(revision.committer, revision.committer_date),)
     )
 
     # Handle extra headers
-    metadata = revision.get("metadata") or {}
-    extra_headers = revision.get("extra_headers", ())
+    metadata = revision.metadata or ImmutableDict()
+    extra_headers = revision.extra_headers or ()
     if not extra_headers and "extra_headers" in metadata:
         extra_headers = metadata["extra_headers"]
 
     headers.extend(extra_headers)
 
-    return format_git_object_from_headers("commit", headers, revision["message"])
+    return format_git_object_from_headers("commit", headers, revision.message)
 
 
-def target_type_to_git(target_type: str) -> bytes:
+def target_type_to_git(target_type: model.ObjectType) -> bytes:
     """Convert a software heritage target type to a git object type"""
     return {
-        "content": b"blob",
-        "directory": b"tree",
-        "revision": b"commit",
-        "release": b"tag",
-        "snapshot": b"refs",
+        model.ObjectType.CONTENT: b"blob",
+        model.ObjectType.DIRECTORY: b"tree",
+        model.ObjectType.REVISION: b"commit",
+        model.ObjectType.RELEASE: b"tag",
+        model.ObjectType.SNAPSHOT: b"refs",
     }[target_type]
 
 
 def release_identifier(release: Dict[str, Any]) -> str:
     """Return the intrinsic identifier for a release."""
-    git_object = release_git_object(release)
-    return hashlib.new("sha1", git_object).hexdigest()
+    return hash_to_hex(model.Release.from_dict(release).id)
 
 
-def release_git_object(release: Dict[str, Any]) -> bytes:
+def release_git_object(release: model.Release) -> bytes:
+    if isinstance(release, dict):
+        # For backward compatibility
+        release = model.Release.from_dict(release)
+
     headers = [
-        (b"object", identifier_to_str(release["target"]).encode()),
-        (b"type", target_type_to_git(release["target_type"])),
-        (b"tag", release["name"]),
+        (b"object", hash_to_bytehex(release.target)),
+        (b"type", target_type_to_git(release.target_type)),
+        (b"tag", release.name),
     ]
 
-    if "author" in release and release["author"]:
-        headers.append(
-            (b"tagger", format_author_data(release["author"], release["date"]))
-        )
+    if release.author is not None:
+        headers.append((b"tagger", format_author_data(release.author, release.date)))
 
-    return format_git_object_from_headers("tag", headers, release["message"])
+    return format_git_object_from_headers("tag", headers, release.message)
 
 
-def snapshot_identifier(
-    snapshot: Dict[str, Any], *, ignore_unresolved: bool = False
-) -> str:
+def snapshot_identifier(snapshot: Dict[str, Any]) -> str:
     """Return the intrinsic identifier for a snapshot.
 
     Snapshots are a set of named branches, which are pointers to objects at any
@@ -623,36 +538,36 @@ def snapshot_identifier(
       snapshot (dict): the snapshot of which to compute the identifier. A
         single entry is needed, ``'branches'``, which is itself a :class:`dict`
         mapping each branch to its target
-      ignore_unresolved (bool): if `True`, ignore unresolved branch aliases.
 
     Returns:
       str: the intrinsic identifier for `snapshot`
 
     """
-    git_object = snapshot_git_object(snapshot, ignore_unresolved=ignore_unresolved)
-    return hashlib.new("sha1", git_object).hexdigest()
+    return hash_to_hex(model.Snapshot.from_dict(snapshot).id)
 
 
-def snapshot_git_object(
-    snapshot: Dict[str, Any], *, ignore_unresolved: bool = False
-) -> bytes:
+def snapshot_git_object(snapshot: model.Snapshot) -> bytes:
     """Formats the git_object of a revision. See :func:`snapshot_identifier` for details
     on the format."""
+    if isinstance(snapshot, dict):
+        # For backward compatibility
+        snapshot = model.Snapshot.from_dict(snapshot)
+
     unresolved = []
     lines = []
 
-    for name, target in sorted(snapshot["branches"].items()):
+    for name, target in sorted(snapshot.branches.items()):
         if not target:
             target_type = b"dangling"
             target_id = b""
-        elif target["target_type"] == "alias":
+        elif target.target_type == model.TargetType.ALIAS:
             target_type = b"alias"
-            target_id = target["target"]
-            if target_id not in snapshot["branches"] or target_id == name:
+            target_id = target.target
+            if target_id not in snapshot.branches or target_id == name:
                 unresolved.append((name, target_id))
         else:
-            target_type = target["target_type"].encode()
-            target_id = identifier_to_bytes(target["target"])
+            target_type = target.target_type.value.encode()
+            target_id = target.target
 
         lines.extend(
             [
@@ -665,7 +580,7 @@ def snapshot_git_object(
             ]
         )
 
-    if unresolved and not ignore_unresolved:
+    if unresolved:
         raise ValueError(
             "Branch aliases unresolved: %s"
             % ", ".join("%r -> %r" % x for x in unresolved),
@@ -681,7 +596,7 @@ def origin_identifier(origin):
     An origin's identifier is the sha1 checksum of the entire origin URL
 
     """
-    return hashlib.sha1(origin["url"].encode("utf-8")).hexdigest()
+    return hash_to_hex(model.Origin.from_dict(origin).id)
 
 
 def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
@@ -730,14 +645,17 @@ def raw_extrinsic_metadata_identifier(metadata: Dict[str, Any]) -> str:
       str: the intrinsic identifier for ``metadata``
 
     """
-    git_object = raw_extrinsic_metadata_git_object(metadata)
-    return hashlib.new("sha1", git_object).hexdigest()
+    return hash_to_hex(model.RawExtrinsicMetadata.from_dict(metadata).id)
 
 
-def raw_extrinsic_metadata_git_object(metadata: Dict[str, Any]) -> bytes:
+def raw_extrinsic_metadata_git_object(metadata: model.RawExtrinsicMetadata) -> bytes:
     """Formats the git_object of a raw_extrinsic_metadata object.
     See :func:`raw_extrinsic_metadata_identifier` for details
     on the format."""
+    if isinstance(metadata, dict):
+        # For backward compatibility
+        metadata = model.RawExtrinsicMetadata.from_dict(metadata)
+
     # equivalent to using math.floor(dt.timestamp()) to round down,
     # as int(dt.timestamp()) rounds toward zero,
     # which would map two seconds on the 0 timestamp.
@@ -745,25 +663,21 @@ def raw_extrinsic_metadata_git_object(metadata: Dict[str, Any]) -> bytes:
     # This should never be an issue in practice as Software Heritage didn't
     # start collecting metadata before 2015.
     timestamp = (
-        metadata["discovery_date"]
-        .astimezone(datetime.timezone.utc)
+        metadata.discovery_date.astimezone(datetime.timezone.utc)
         .replace(microsecond=0)
         .timestamp()
     )
     assert timestamp.is_integer()
 
     headers = [
-        (b"target", str(metadata["target"]).encode()),
+        (b"target", str(metadata.target).encode()),
         (b"discovery_date", str(int(timestamp)).encode("ascii")),
         (
             b"authority",
-            f"{metadata['authority']['type']} {metadata['authority']['url']}".encode(),
+            f"{metadata.authority.type.value} {metadata.authority.url}".encode(),
         ),
-        (
-            b"fetcher",
-            f"{metadata['fetcher']['name']} {metadata['fetcher']['version']}".encode(),
-        ),
-        (b"format", metadata["format"].encode()),
+        (b"fetcher", f"{metadata.fetcher.name} {metadata.fetcher.version}".encode(),),
+        (b"format", metadata.format.encode()),
     ]
 
     for key in (
@@ -775,17 +689,17 @@ def raw_extrinsic_metadata_git_object(metadata: Dict[str, Any]) -> bytes:
         "path",
         "directory",
     ):
-        if metadata.get(key) is not None:
+        if getattr(metadata, key, None) is not None:
             value: bytes
             if key == "path":
-                value = metadata[key]
+                value = getattr(metadata, key)
             else:
-                value = str(metadata[key]).encode()
+                value = str(getattr(metadata, key)).encode()
 
             headers.append((key.encode("ascii"), value))
 
     return format_git_object_from_headers(
-        "raw_extrinsic_metadata", headers, metadata["metadata"]
+        "raw_extrinsic_metadata", headers, metadata.metadata
     )
 
 
@@ -814,16 +728,19 @@ def extid_identifier(extid: Dict[str, Any]) -> str:
 
     """
 
+    return hash_to_hex(model.ExtID.from_dict(extid).id)
+
+
+def extid_git_object(extid: model.ExtID) -> bytes:
     headers = [
-        (b"extid_type", extid["extid_type"].encode("ascii")),
+        (b"extid_type", extid.extid_type.encode("ascii")),
     ]
-    extid_version = extid.get("extid_version", 0)
+    extid_version = extid.extid_version
     if extid_version != 0:
         headers.append((b"extid_version", str(extid_version).encode("ascii")))
 
     headers.extend(
-        [(b"extid", extid["extid"]), (b"target", str(extid["target"]).encode("ascii")),]
+        [(b"extid", extid.extid), (b"target", str(extid.target).encode("ascii")),]
     )
 
-    git_object = format_git_object_from_headers("extid", headers)
-    return hashlib.new("sha1", git_object).hexdigest()
+    return format_git_object_from_headers("extid", headers)

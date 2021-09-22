@@ -794,11 +794,11 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
             **self.minimal,
             "origin": "https://forge.softwareheritage.org/source/swh-model/",
             "visit": 42,
-            "snapshot": CoreSWHID.from_string("swh:1:snp:" + "00" * 20),
-            "release": CoreSWHID.from_string("swh:1:rel:" + "01" * 20),
-            "revision": CoreSWHID.from_string("swh:1:rev:" + "02" * 20),
+            "snapshot": "swh:1:snp:" + "00" * 20,
+            "release": "swh:1:rel:" + "01" * 20,
+            "revision": "swh:1:rev:" + "02" * 20,
             "path": b"/abc/def",
-            "directory": CoreSWHID.from_string("swh:1:dir:" + "03" * 20),
+            "directory": "swh:1:dir:" + "03" * 20,
         }
 
     def test_minimal(self):
@@ -1812,9 +1812,7 @@ def test_extid_identifier_bwcompat():
     extid_dict = {
         "extid_type": "test-type",
         "extid": b"extid",
-        "target": ExtendedSWHID(
-            object_type=ExtendedObjectType.DIRECTORY, object_id=b"\x00" * 20
-        ),
+        "target": "swh:1:dir:" + "00" * 20,
     }
 
     assert (
