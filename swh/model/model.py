@@ -15,7 +15,7 @@ import dateutil.parser
 import iso8601
 from typing_extensions import Final
 
-from . import identifiers
+from . import git_objects
 from .collections import ImmutableDict
 from .hashutil import DEFAULT_ALGORITHMS, MultiHash
 from .swhids import CoreSWHID
@@ -492,7 +492,7 @@ class Snapshot(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        git_object = identifiers.snapshot_git_object(self)
+        git_object = git_objects.snapshot_git_object(self)
         return hashlib.new("sha1", git_object).digest()
 
     @classmethod
@@ -533,7 +533,7 @@ class Release(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        git_object = identifiers.release_git_object(self)
+        git_object = git_objects.release_git_object(self)
         return hashlib.new("sha1", git_object).digest()
 
     @author.validator
@@ -628,7 +628,7 @@ class Revision(HashableObject, BaseModel):
             object.__setattr__(self, "metadata", metadata)
 
     def compute_hash(self) -> bytes:
-        git_object = identifiers.revision_git_object(self)
+        git_object = git_objects.revision_git_object(self)
         return hashlib.new("sha1", git_object).digest()
 
     @classmethod
@@ -686,7 +686,7 @@ class Directory(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        git_object = identifiers.directory_git_object(self)
+        git_object = git_objects.directory_git_object(self)
         return hashlib.new("sha1", git_object).digest()
 
     @classmethod
@@ -1016,7 +1016,7 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
 
     def compute_hash(self) -> bytes:
-        git_object = identifiers.raw_extrinsic_metadata_git_object(self)
+        git_object = git_objects.raw_extrinsic_metadata_git_object(self)
         return hashlib.new("sha1", git_object).digest()
 
     @origin.validator
@@ -1217,5 +1217,5 @@ class ExtID(HashableObject, BaseModel):
         )
 
     def compute_hash(self) -> bytes:
-        git_object = identifiers.extid_git_object(self)
+        git_object = git_objects.extid_git_object(self)
         return hashlib.new("sha1", git_object).digest()
