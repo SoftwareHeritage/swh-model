@@ -3,6 +3,18 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""
+Implementation of Software Heritage's data model
+
+See :ref:`data-model` for an overview of the data model.
+
+The classes defined in this module are immutable
+`attrs objects <https://attrs.org/>`__ and enums.
+
+All classes define a ``from_dict`` class method and a ``to_dict``
+method to convert between them and msgpack-serializable objects.
+"""
+
 from abc import ABCMeta, abstractmethod
 import datetime
 from enum import Enum

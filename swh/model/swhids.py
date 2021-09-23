@@ -3,6 +3,15 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""
+Classes to represent :ref:`SWH persistend IDentifiers <persistent-identifiers>`.
+
+:class:`CoreSWHID` represents a SWHID with no qualifier, and :class:`QualifiedSWHID`
+represents a SWHID that may have qualifiers.
+:class:`ExtendedSWHID` extends the definition of SWHID to other object types,
+and is used internally in Software Heritage; it does not support qualifiers.
+"""
+
 from __future__ import annotations
 
 import enum

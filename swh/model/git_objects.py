@@ -3,6 +3,30 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""
+Converts SWH model objects to git(-like) objects
+
+Most of the functions in this module take as argument an object from
+:mod:`swh.model.model`, and format it like a git object.
+
+They are the inverse functions of those in :mod:`swh.loader.git.converters`,
+but with extensions, as SWH's model is a superset of Git's:
+
+* extensions of existing types (eg. revision/commit and release/tag dates
+  can be expressed with precision up to milliseconds, to support formatting
+  Mercurial objects)
+* new types, for SWH's specific needs (:class:`swh.model.model.RawExtrinsicMetadata`
+  and :class:`swh.model.model.ExtID`)
+* support for somewhat corrupted git objects that we need to reproduce
+
+This is used for two purposes:
+
+* Format manifests that can be hashed to produce :ref:`intrinsic identifiers
+  <persistent-identifiers>`
+* Write git objects to reproduce git repositories that were ingested in the archive.
+"""
+
+
 from __future__ import annotations
 
 import datetime

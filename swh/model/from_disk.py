@@ -3,6 +3,13 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""Conversion from filesystem tree to SWH objects.
+
+This module allows reading a tree of directories and files from a local
+filesystem, and convert them to in-memory data structures, which can then
+be exported to SWH data model objects, as defined in :mod:`swh.model.model`.
+"""
+
 import datetime
 import enum
 import fnmatch
