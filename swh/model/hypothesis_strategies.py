@@ -29,8 +29,6 @@ from hypothesis.strategies import (
 )
 
 from .from_disk import DentryPerms
-from .hashutil import hash_to_bytes
-from .identifiers import ExtendedObjectType, ExtendedSWHID, snapshot_identifier
 from .model import (
     BaseContent,
     Content,
@@ -54,6 +52,7 @@ from .model import (
     Timestamp,
     TimestampWithTimezone,
 )
+from .swhids import ExtendedObjectType, ExtendedSWHID
 
 pgsql_alphabet = characters(
     blacklist_categories=("Cs",), blacklist_characters=["\u0000"]
@@ -396,7 +395,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
     # Ensure no cycles between aliases
     while True:
         try:
-            id_ = snapshot_identifier(
+            snapshot = Snapshot.from_dict(
                 {
                     "branches": {
                         name: branch or None for (name, branch) in branches.items()
@@ -409,7 +408,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
         else:
             break
 
-    return dict(id=hash_to_bytes(id_), branches=branches)
+    return snapshot.to_dict()
 
 
 def snapshots(*, min_size=0, max_size=100, only_objects=False):

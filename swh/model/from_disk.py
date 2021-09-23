@@ -18,14 +18,10 @@ from typing_extensions import Final
 
 from . import model
 from .exceptions import InvalidDirectoryPath
-from .hashutil import MultiHash, hash_to_bytes, hash_to_hex
-from .identifiers import (
-    CoreSWHID,
-    ObjectType,
-    directory_entry_sort_key,
-    directory_identifier,
-)
+from .git_objects import directory_entry_sort_key
+from .hashutil import MultiHash, hash_to_hex
 from .merkle import MerkleLeaf, MerkleNode
+from .swhids import CoreSWHID, ObjectType
 
 
 @attr.s(frozen=True, slots=True)
@@ -477,8 +473,8 @@ class Directory(MerkleNode):
 
     @property
     def entries(self):
-        """Child nodes, sorted by name in the same way `directory_identifier`
-        does."""
+        """Child nodes, sorted by name in the same way
+        :func:`swh.model.git_objects.directory_git_object` does."""
         if self.__entries is None:
             self.__entries = sorted(
                 (
@@ -496,7 +492,7 @@ class Directory(MerkleNode):
         return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):
-        return hash_to_bytes(directory_identifier({"entries": self.entries}))
+        return model.Directory.from_dict({"entries": self.entries}).id
 
     def to_model(self) -> model.Directory:
         """Builds a `model.Directory` object based on this node;

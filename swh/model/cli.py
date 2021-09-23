@@ -26,7 +26,7 @@ except ImportError:
     swh_cli_group = click  # type: ignore
 
 from swh.model.from_disk import Directory
-from swh.model.identifiers import CoreSWHID, ObjectType
+from swh.model.swhids import CoreSWHID
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -42,7 +42,7 @@ _DULWICH_TYPES = {
 
 class CoreSWHIDParamType(click.ParamType):
     """Click argument that accepts a core SWHID and returns them as
-    :class:`swh.model.identifiers.CoreSWHID` instances """
+    :class:`swh.model.swhids.CoreSWHID` instances """
 
     name = "SWHID"
 
@@ -87,17 +87,9 @@ def swhid_of_dir(path: bytes, exclude_patterns: Iterable[bytes] = None) -> CoreS
 
 
 def swhid_of_origin(url):
-    from swh.model.hashutil import hash_to_bytes
-    from swh.model.identifiers import (
-        ExtendedObjectType,
-        ExtendedSWHID,
-        origin_identifier,
-    )
+    from swh.model.model import Origin
 
-    return ExtendedSWHID(
-        object_type=ExtendedObjectType.ORIGIN,
-        object_id=hash_to_bytes(origin_identifier({"url": url})),
-    )
+    return Origin(url).swhid()
 
 
 def swhid_of_git_repo(path) -> CoreSWHID:
@@ -110,7 +102,7 @@ def swhid_of_git_repo(path) -> CoreSWHID:
         )
 
     from swh.model import hashutil
-    from swh.model.identifiers import snapshot_identifier
+    from swh.model.model import Snapshot
 
     repo = dulwich.repo.Repo(path)
 
@@ -133,10 +125,7 @@ def swhid_of_git_repo(path) -> CoreSWHID:
 
     snapshot = {"branches": branches}
 
-    return CoreSWHID(
-        object_type=ObjectType.SNAPSHOT,
-        object_id=hashutil.hash_to_bytes(snapshot_identifier(snapshot)),
-    )
+    return Snapshot.from_dict(snapshot).swhid()
 
 
 def identify_object(

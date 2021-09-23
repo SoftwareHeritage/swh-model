@@ -12,18 +12,27 @@ import unittest
 import attr
 import pytest
 
-from swh.model import hashutil, identifiers
+from swh.model import git_objects, hashutil
 from swh.model.exceptions import ValidationError
 from swh.model.hashutil import hash_to_bytes as _x
-from swh.model.hashutil import hash_to_hex
-from swh.model.identifiers import (
+from swh.model.model import (
+    Content,
+    Directory,
+    ExtID,
+    Origin,
+    RawExtrinsicMetadata,
+    Release,
+    Revision,
+    Snapshot,
+    TimestampWithTimezone,
+)
+from swh.model.swhids import (
     SWHID_QUALIFIERS,
     CoreSWHID,
     ExtendedObjectType,
     ExtendedSWHID,
     ObjectType,
     QualifiedSWHID,
-    normalize_timestamp,
 )
 
 
@@ -51,11 +60,11 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
 
     def test_format_date(self):
         for date_repr, date in self.dates.items():
-            self.assertEqual(identifiers.format_date(date), date_repr)
+            self.assertEqual(git_objects.format_date(date), date_repr)
 
     def test_format_offset(self):
         for offset, res in self.offsets.items():
-            self.assertEqual(identifiers.format_offset(offset), res)
+            self.assertEqual(git_objects.format_offset(offset), res)
 
 
 content_example = {
@@ -72,7 +81,7 @@ class ContentIdentifier(unittest.TestCase):
 
     def test_content_identifier(self):
         self.assertEqual(
-            identifiers.content_identifier(content_example), self.content_id
+            Content.from_data(content_example["data"]).hashes(), self.content_id
         )
 
 
@@ -199,26 +208,22 @@ class DirectoryIdentifier(unittest.TestCase):
         }
 
     def test_dir_identifier(self):
+        self.assertEqual(Directory.from_dict(self.directory).id, self.directory["id"])
         self.assertEqual(
-            _x(identifiers.directory_identifier(self.directory)), self.directory["id"]
-        )
-        self.assertEqual(
-            _x(identifiers.directory_identifier(remove_id(self.directory))),
-            self.directory["id"],
+            Directory.from_dict(remove_id(self.directory)).id, self.directory["id"],
         )
 
     def test_dir_identifier_entry_order(self):
         # Reverse order of entries, check the id is still the same.
         directory = {"entries": reversed(self.directory["entries"])}
         self.assertEqual(
-            _x(identifiers.directory_identifier(remove_id(directory))),
-            self.directory["id"],
+            Directory.from_dict(remove_id(directory)).id, self.directory["id"],
         )
 
     def test_dir_identifier_empty_directory(self):
         self.assertEqual(
-            identifiers.directory_identifier(remove_id(self.empty_directory)),
-            self.empty_directory["id"],
+            Directory.from_dict(remove_id(self.empty_directory)).id,
+            _x(self.empty_directory["id"]),
         )
 
 
@@ -270,7 +275,7 @@ dg1KdHOa34shrKDaOVzW
         self.revision = revision_example
 
         self.revision_none_metadata = {
-            "id": "bc0195aad0daa2ad5b0d76cce22b167bc3435590",
+            "id": _x("bc0195aad0daa2ad5b0d76cce22b167bc3435590"),
             "directory": _x("85a74718d377195e1efd0843ba4f3260bad4fe07"),
             "parents": [_x("01e2d0627a9a6edb24c37db45db5ecb31e9de808")],
             "author": {
@@ -328,7 +333,7 @@ dg1KdHOa34shrKDaOVzW
 
         # cat commit.txt | git hash-object -t commit --stdin
         self.revision_with_extra_headers = {
-            "id": "010d34f384fa99d047cdd5e2f41e56e5c2feee45",
+            "id": _x("010d34f384fa99d047cdd5e2f41e56e5c2feee45"),
             "directory": _x("85a74718d377195e1efd0843ba4f3260bad4fe07"),
             "parents": [_x("01e2d0627a9a6edb24c37db45db5ecb31e9de808")],
             "author": {
@@ -355,7 +360,7 @@ dg1KdHOa34shrKDaOVzW
         }
 
         self.revision_with_gpgsig = {
-            "id": "44cc742a8ca17b9c279be4cc195a93a6ef7a320e",
+            "id": _x("44cc742a8ca17b9c279be4cc195a93a6ef7a320e"),
             "directory": _x("b134f9b7dc434f593c0bab696345548b37de0558"),
             "parents": [
                 _x("689664ae944b4692724f13b709a4e4de28b54e57"),
@@ -380,7 +385,7 @@ dg1KdHOa34shrKDaOVzW
         }
 
         self.revision_no_message = {
-            "id": "4cfc623c9238fa92c832beed000ce2d003fd8333",
+            "id": _x("4cfc623c9238fa92c832beed000ce2d003fd8333"),
             "directory": _x("b134f9b7dc434f593c0bab696345548b37de0558"),
             "parents": [
                 _x("689664ae944b4692724f13b709a4e4de28b54e57"),
@@ -400,7 +405,7 @@ dg1KdHOa34shrKDaOVzW
         }
 
         self.revision_empty_message = {
-            "id": "7442cd78bd3b4966921d6a7f7447417b7acb15eb",
+            "id": _x("7442cd78bd3b4966921d6a7f7447417b7acb15eb"),
             "directory": _x("b134f9b7dc434f593c0bab696345548b37de0558"),
             "parents": [
                 _x("689664ae944b4692724f13b709a4e4de28b54e57"),
@@ -420,7 +425,7 @@ dg1KdHOa34shrKDaOVzW
         }
 
         self.revision_only_fullname = {
-            "id": "010d34f384fa99d047cdd5e2f41e56e5c2feee45",
+            "id": _x("010d34f384fa99d047cdd5e2f41e56e5c2feee45"),
             "directory": _x("85a74718d377195e1efd0843ba4f3260bad4fe07"),
             "parents": [_x("01e2d0627a9a6edb24c37db45db5ecb31e9de808")],
             "author": {"fullname": b"Linus Torvalds <torvalds@linux-foundation.org>",},
@@ -442,56 +447,52 @@ dg1KdHOa34shrKDaOVzW
 
     def test_revision_identifier(self):
         self.assertEqual(
-            identifiers.revision_identifier(self.revision),
-            hash_to_hex(self.revision["id"]),
+            Revision.from_dict(self.revision).id, self.revision["id"],
         )
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.revision)),
-            hash_to_hex(self.revision["id"]),
+            Revision.from_dict(remove_id(self.revision)).id, self.revision["id"],
         )
 
     def test_revision_identifier_none_metadata(self):
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.revision_none_metadata)),
-            hash_to_hex(self.revision_none_metadata["id"]),
+            Revision.from_dict(remove_id(self.revision_none_metadata)).id,
+            self.revision_none_metadata["id"],
         )
 
     def test_revision_identifier_synthetic(self):
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.synthetic_revision)),
-            hash_to_hex(self.synthetic_revision["id"]),
+            Revision.from_dict(remove_id(self.synthetic_revision)).id,
+            self.synthetic_revision["id"],
         )
 
     def test_revision_identifier_with_extra_headers(self):
         self.assertEqual(
-            identifiers.revision_identifier(
-                remove_id(self.revision_with_extra_headers)
-            ),
-            hash_to_hex(self.revision_with_extra_headers["id"]),
+            Revision.from_dict(remove_id(self.revision_with_extra_headers)).id,
+            self.revision_with_extra_headers["id"],
         )
 
     def test_revision_identifier_with_gpgsig(self):
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.revision_with_gpgsig)),
-            hash_to_hex(self.revision_with_gpgsig["id"]),
+            Revision.from_dict(remove_id(self.revision_with_gpgsig)).id,
+            self.revision_with_gpgsig["id"],
         )
 
     def test_revision_identifier_no_message(self):
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.revision_no_message)),
-            hash_to_hex(self.revision_no_message["id"]),
+            Revision.from_dict(remove_id(self.revision_no_message)).id,
+            self.revision_no_message["id"],
         )
 
     def test_revision_identifier_empty_message(self):
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.revision_empty_message)),
-            hash_to_hex(self.revision_empty_message["id"]),
+            Revision.from_dict(remove_id(self.revision_empty_message)).id,
+            self.revision_empty_message["id"],
         )
 
     def test_revision_identifier_only_fullname(self):
         self.assertEqual(
-            identifiers.revision_identifier(remove_id(self.revision_only_fullname)),
-            hash_to_hex(self.revision_only_fullname["id"]),
+            Revision.from_dict(remove_id(self.revision_only_fullname)).id,
+            self.revision_only_fullname["id"],
         )
 
 
@@ -608,48 +609,46 @@ o6X/3T+vm8K3bf3driRr34c=
 
     def test_release_identifier(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release),
-            hash_to_hex(self.release["id"]),
+            Release.from_dict(self.release).id, self.release["id"],
         )
         self.assertEqual(
-            identifiers.release_identifier(remove_id(self.release)),
-            hash_to_hex(self.release["id"]),
+            Release.from_dict(remove_id(self.release)).id, self.release["id"],
         )
 
     def test_release_identifier_no_author(self):
         self.assertEqual(
-            identifiers.release_identifier(remove_id(self.release_no_author)),
-            hash_to_hex(self.release_no_author["id"]),
+            Release.from_dict(remove_id(self.release_no_author)).id,
+            self.release_no_author["id"],
         )
 
     def test_release_identifier_no_message(self):
         self.assertEqual(
-            identifiers.release_identifier(remove_id(self.release_no_message)),
-            hash_to_hex(self.release_no_message["id"]),
+            Release.from_dict(remove_id(self.release_no_message)).id,
+            self.release_no_message["id"],
         )
 
     def test_release_identifier_empty_message(self):
         self.assertEqual(
-            identifiers.release_identifier(remove_id(self.release_empty_message)),
-            hash_to_hex(self.release_empty_message["id"]),
+            Release.from_dict(remove_id(self.release_empty_message)).id,
+            self.release_empty_message["id"],
         )
 
     def test_release_identifier_negative_utc(self):
         self.assertEqual(
-            identifiers.release_identifier(remove_id(self.release_negative_utc)),
-            hash_to_hex(self.release_negative_utc["id"]),
+            Release.from_dict(remove_id(self.release_negative_utc)).id,
+            self.release_negative_utc["id"],
         )
 
     def test_release_identifier_newline_in_author(self):
         self.assertEqual(
-            identifiers.release_identifier(remove_id(self.release_newline_in_author)),
-            hash_to_hex(self.release_newline_in_author["id"]),
+            Release.from_dict(remove_id(self.release_newline_in_author)).id,
+            self.release_newline_in_author["id"],
         )
 
     def test_release_identifier_snapshot_target(self):
         self.assertEqual(
-            identifiers.release_identifier(self.release_snapshot_target),
-            hash_to_hex(self.release_snapshot_target["id"]),
+            Release.from_dict(self.release_snapshot_target).id,
+            self.release_snapshot_target["id"],
         )
 
 
@@ -687,17 +686,17 @@ class SnapshotIdentifier(unittest.TestCase):
         super().setUp()
 
         self.empty = {
-            "id": "1a8893e6a86f444e8be8e7bda6cb34fb1735a00e",
+            "id": _x("1a8893e6a86f444e8be8e7bda6cb34fb1735a00e"),
             "branches": {},
         }
 
         self.dangling_branch = {
-            "id": "c84502e821eb21ed84e9fd3ec40973abc8b32353",
+            "id": _x("c84502e821eb21ed84e9fd3ec40973abc8b32353"),
             "branches": {b"HEAD": None,},
         }
 
         self.unresolved = {
-            "id": "84b4548ea486e4b0a7933fa541ff1503a0afe1e0",
+            "id": _x("84b4548ea486e4b0a7933fa541ff1503a0afe1e0"),
             "branches": {b"foo": {"target": b"bar", "target_type": "alias",},},
         }
 
@@ -705,24 +704,22 @@ class SnapshotIdentifier(unittest.TestCase):
 
     def test_empty_snapshot(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(remove_id(self.empty)),
-            hash_to_hex(self.empty["id"]),
+            Snapshot.from_dict(remove_id(self.empty)).id, self.empty["id"],
         )
 
     def test_dangling_branch(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(remove_id(self.dangling_branch)),
-            hash_to_hex(self.dangling_branch["id"]),
+            Snapshot.from_dict(remove_id(self.dangling_branch)).id,
+            self.dangling_branch["id"],
         )
 
     def test_unresolved(self):
         with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
-            identifiers.snapshot_identifier(remove_id(self.unresolved))
+            Snapshot.from_dict(remove_id(self.unresolved))
 
     def test_all_types(self):
         self.assertEqual(
-            identifiers.snapshot_identifier(remove_id(self.all_types)),
-            hash_to_hex(self.all_types["id"]),
+            Snapshot.from_dict(remove_id(self.all_types)).id, self.all_types["id"],
         )
 
 
@@ -775,15 +772,18 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(self.minimal), git_object,
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(self.minimal)
+            ),
+            git_object,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            hashlib.sha1(git_object).hexdigest(),
+            RawExtrinsicMetadata.from_dict(self.minimal).id,
+            hashlib.sha1(git_object).digest(),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
+            RawExtrinsicMetadata.from_dict(self.minimal).id,
+            _x("5c13f20ba336e44549baf3d7b9305b027ec9f43d"),
         )
 
     def test_maximal(self):
@@ -806,15 +806,18 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(self.maximal), git_object,
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(self.maximal)
+            ),
+            git_object,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.maximal),
-            hashlib.sha1(git_object).hexdigest(),
+            RawExtrinsicMetadata.from_dict(self.maximal).id,
+            hashlib.sha1(git_object).digest(),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.maximal),
-            "f96966e1093d15236a31fde07e47d5b1c9428049",
+            RawExtrinsicMetadata.from_dict(self.maximal).id,
+            _x("f96966e1093d15236a31fde07e47d5b1c9428049"),
         )
 
     def test_nonascii_path(self):
@@ -836,15 +839,18 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
+            git_object,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(git_object).hexdigest(),
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            hashlib.sha1(git_object).digest(),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "7cc83fd1912176510c083f5df43f01b09af4b333",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("7cc83fd1912176510c083f5df43f01b09af4b333"),
         )
 
     def test_timezone_insensitive(self):
@@ -859,16 +865,20 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         }
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(self.minimal),
-            identifiers.raw_extrinsic_metadata_git_object(metadata),
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(self.minimal)
+            ),
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            RawExtrinsicMetadata.from_dict(self.minimal).id,
+            RawExtrinsicMetadata.from_dict(metadata).id,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("5c13f20ba336e44549baf3d7b9305b027ec9f43d"),
         )
 
     def test_microsecond_insensitive(self):
@@ -882,16 +892,20 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         }
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(self.minimal),
-            identifiers.raw_extrinsic_metadata_git_object(metadata),
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(self.minimal)
+            ),
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            RawExtrinsicMetadata.from_dict(self.minimal).id,
+            RawExtrinsicMetadata.from_dict(metadata).id,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("5c13f20ba336e44549baf3d7b9305b027ec9f43d"),
         )
 
     def test_noninteger_timezone(self):
@@ -906,16 +920,20 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         }
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(self.minimal),
-            identifiers.raw_extrinsic_metadata_git_object(metadata),
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(self.minimal)
+            ),
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(self.minimal),
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
+            RawExtrinsicMetadata.from_dict(self.minimal).id,
+            RawExtrinsicMetadata.from_dict(metadata).id,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "5c13f20ba336e44549baf3d7b9305b027ec9f43d",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("5c13f20ba336e44549baf3d7b9305b027ec9f43d"),
         )
 
     def test_negative_timestamp(self):
@@ -938,15 +956,18 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
+            git_object,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(git_object).hexdigest(),
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            hashlib.sha1(git_object).digest(),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "895d0821a2991dd376ddc303424aceb7c68280f9",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("895d0821a2991dd376ddc303424aceb7c68280f9"),
         )
 
     def test_epoch(self):
@@ -969,15 +990,18 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
+            git_object,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(git_object).hexdigest(),
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            hashlib.sha1(git_object).digest(),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "27a53df54ace35ebd910493cdc70b334d6b7cb88",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("27a53df54ace35ebd910493cdc70b334d6b7cb88"),
         )
 
     def test_negative_epoch(self):
@@ -1000,15 +1024,18 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         )
 
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_git_object(metadata), git_object,
+            git_objects.raw_extrinsic_metadata_git_object(
+                RawExtrinsicMetadata.from_dict(metadata)
+            ),
+            git_object,
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            hashlib.sha1(git_object).hexdigest(),
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            hashlib.sha1(git_object).digest(),
         )
         self.assertEqual(
-            identifiers.raw_extrinsic_metadata_identifier(metadata),
-            "be7154a8fd49d87f81547ea634d1e2152907d089",
+            RawExtrinsicMetadata.from_dict(metadata).id,
+            _x("be7154a8fd49d87f81547ea634d1e2152907d089"),
         )
 
 
@@ -1020,8 +1047,8 @@ origin_example = {
 class OriginIdentifier(unittest.TestCase):
     def test_content_identifier(self):
         self.assertEqual(
-            identifiers.origin_identifier(origin_example),
-            "b63a575fe3faab7692c9f38fb09d4bb45651bb0f",
+            Origin.from_dict(origin_example).id,
+            _x("b63a575fe3faab7692c9f38fb09d4bb45651bb0f"),
         )
 
 
@@ -1111,7 +1138,7 @@ TS_DICTS = [
 
 @pytest.mark.parametrize("dict_input,expected", TS_DICTS)
 def test_normalize_timestamp_dict(dict_input, expected):
-    assert normalize_timestamp(dict_input) == expected
+    assert TimestampWithTimezone.from_dict(dict_input).to_dict() == expected
 
 
 TS_DICTS_INVALID_TIMESTAMP = [
@@ -1127,7 +1154,7 @@ TS_DICTS_INVALID_TIMESTAMP = [
 @pytest.mark.parametrize("dict_input", TS_DICTS_INVALID_TIMESTAMP)
 def test_normalize_timestamp_dict_invalid_timestamp(dict_input):
     with pytest.raises(ValueError, match="non-integer timestamp"):
-        normalize_timestamp(dict_input)
+        TimestampWithTimezone.from_dict(dict_input)
 
 
 UTC = datetime.timezone.utc
@@ -1152,7 +1179,7 @@ TS_DT_EXPECTED = [1582814359, 4765132799, -11348929020]
 @pytest.mark.parametrize("microsecond", [0, 1, 10, 100, 1000, 999999])
 def test_normalize_timestamp_datetime(date, seconds, tz, offset, microsecond):
     date = date.astimezone(tz).replace(microsecond=microsecond)
-    assert normalize_timestamp(date) == {
+    assert TimestampWithTimezone.from_dict(date).to_dict() == {
         "timestamp": {"seconds": seconds, "microseconds": microsecond},
         "offset": offset,
         "negative_utc": False,
@@ -1776,18 +1803,19 @@ def test_extid_identifier_bwcompat():
         "target": "swh:1:dir:" + "00" * 20,
     }
 
-    assert (
-        identifiers.extid_identifier(extid_dict)
-        == "b9295e1931c31e40a7e3e1e967decd1c89426455"
+    assert ExtID.from_dict(extid_dict).id == _x(
+        "b9295e1931c31e40a7e3e1e967decd1c89426455"
     )
 
-    assert identifiers.extid_identifier(
-        {**extid_dict, "extid_version": 0}
-    ) == identifiers.extid_identifier(extid_dict)
+    assert (
+        ExtID.from_dict({**extid_dict, "extid_version": 0}).id
+        == ExtID.from_dict(extid_dict).id
+    )
 
-    assert identifiers.extid_identifier(
-        {**extid_dict, "extid_version": 1}
-    ) != identifiers.extid_identifier(extid_dict)
+    assert (
+        ExtID.from_dict({**extid_dict, "extid_version": 1}).id
+        != ExtID.from_dict(extid_dict).id
+    )
 
 
 def test_object_types():
