@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import datetime
 from functools import lru_cache
-from typing import Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
+import warnings
 
 from . import model
 from .collections import ImmutableDict
@@ -124,7 +125,7 @@ def normalize_timestamp(time_representation):
         return model.TimestampWithTimezone.from_dict(time_representation).to_dict()
 
 
-def directory_git_object(directory: model.Directory) -> bytes:
+def directory_git_object(directory: Union[Dict, model.Directory]) -> bytes:
     """Formats a directory as a git tree.
 
     A directory's identifier is the tree sha1 à la git of a directory listing,
@@ -162,7 +163,14 @@ def directory_git_object(directory: model.Directory) -> bytes:
     """
     if isinstance(directory, dict):
         # For backward compatibility
+        warnings.warn(
+            "directory_git_object's argument should be a swh.model.model.Directory "
+            "object.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         directory = model.Directory.from_dict(directory)
+    directory = cast(model.Directory, directory)
 
     components = []
 
@@ -266,7 +274,7 @@ def format_author_data(
     return b"".join(ret)
 
 
-def revision_git_object(revision: model.Revision) -> bytes:
+def revision_git_object(revision: Union[Dict, model.Revision]) -> bytes:
     """Formats a revision as a git tree.
 
     The fields used for the revision identifier computation are:
@@ -318,7 +326,14 @@ def revision_git_object(revision: model.Revision) -> bytes:
     """
     if isinstance(revision, dict):
         # For backward compatibility
+        warnings.warn(
+            "revision_git_object's argument should be a swh.model.model.Revision "
+            "object.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         revision = model.Revision.from_dict(revision)
+    revision = cast(model.Revision, revision)
 
     headers = [(b"tree", hash_to_bytehex(revision.directory))]
     for parent in revision.parents:
@@ -352,10 +367,17 @@ def target_type_to_git(target_type: model.ObjectType) -> bytes:
     }[target_type]
 
 
-def release_git_object(release: model.Release) -> bytes:
+def release_git_object(release: Union[Dict, model.Release]) -> bytes:
     if isinstance(release, dict):
         # For backward compatibility
+        warnings.warn(
+            "release_git_object's argument should be a swh.model.model.Directory "
+            "object.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         release = model.Release.from_dict(release)
+    release = cast(model.Release, release)
 
     headers = [
         (b"object", hash_to_bytehex(release.target)),
@@ -369,7 +391,7 @@ def release_git_object(release: model.Release) -> bytes:
     return format_git_object_from_headers("tag", headers, release.message)
 
 
-def snapshot_git_object(snapshot: model.Snapshot) -> bytes:
+def snapshot_git_object(snapshot: Union[Dict, model.Snapshot]) -> bytes:
     """Formats a snapshot as a git-like object.
 
     Snapshots are a set of named branches, which are pointers to objects at any
@@ -416,7 +438,14 @@ def snapshot_git_object(snapshot: model.Snapshot) -> bytes:
     """
     if isinstance(snapshot, dict):
         # For backward compatibility
+        warnings.warn(
+            "snapshot_git_object's argument should be a swh.model.model.Snapshot "
+            "object.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         snapshot = model.Snapshot.from_dict(snapshot)
+    snapshot = cast(model.Snapshot, snapshot)
 
     unresolved = []
     lines = []
@@ -455,7 +484,9 @@ def snapshot_git_object(snapshot: model.Snapshot) -> bytes:
     return format_git_object_from_parts("snapshot", lines)
 
 
-def raw_extrinsic_metadata_git_object(metadata: model.RawExtrinsicMetadata) -> bytes:
+def raw_extrinsic_metadata_git_object(
+    metadata: Union[Dict, model.RawExtrinsicMetadata]
+) -> bytes:
     """Formats RawExtrinsicMetadata as a git-like object.
 
     A raw_extrinsic_metadata identifier is a salted sha1 (using the git
@@ -499,7 +530,14 @@ def raw_extrinsic_metadata_git_object(metadata: model.RawExtrinsicMetadata) -> b
     """
     if isinstance(metadata, dict):
         # For backward compatibility
+        warnings.warn(
+            "raw_extrinsic_metadata_git_object's argument should be a "
+            "swh.model.model.RawExtrinsicMetadata object.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         metadata = model.RawExtrinsicMetadata.from_dict(metadata)
+    metadata = cast(model.RawExtrinsicMetadata, metadata)
 
     # equivalent to using math.floor(dt.timestamp()) to round down,
     # as int(dt.timestamp()) rounds toward zero,
