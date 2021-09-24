@@ -22,7 +22,7 @@ import hashlib
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
 
 import attr
-from attrs_strict import type_validator
+from attrs_strict import AttributeTypeError
 import dateutil.parser
 import iso8601
 from typing_extensions import Final
@@ -81,6 +81,63 @@ def dictify(value):
         return tuple(dictify(v) for v in value)
     else:
         return value
+
+
+def _check_type(type_, value):
+    if type_ is object or type_ is Any:
+        return True
+
+    origin = getattr(type_, "__origin__", None)
+
+    # Non-generic type, check it directly
+    if origin is None:
+        return type(value) == type_
+
+    # Check the type of the value itself
+    if origin is not Union and type(value) != origin:
+        return False
+
+    # Then, if it's a container, check its items.
+    if origin is tuple:
+        args = type_.__args__
+        if len(args) == 2 and args[1] is Ellipsis:
+            # Infinite tuple
+            return all(_check_type(args[0], item) for item in value)
+        else:
+            # Finite tuple
+            if len(args) != len(value):
+                return False
+
+            return all(
+                _check_type(item_type, item) for (item_type, item) in zip(args, value)
+            )
+    elif origin is Union:
+        args = type_.__args__
+        return any(_check_type(variant, value) for variant in args)
+    elif origin is ImmutableDict:
+        (key_type, value_type) = type_.__args__
+        return all(
+            _check_type(key_type, key) and _check_type(value_type, value)
+            for (key, value) in value.items()
+        )
+    else:
+        # No need to check dict or list. because they are converted to ImmutableDict
+        # and tuple respectively.
+        raise NotImplementedError(f"Type-checking {type_}")
+
+
+def type_validator():
+    """Like attrs_strict.type_validator(), but stricter.
+
+    It is an attrs validator, which checks attributes have the specified type,
+    using type equality instead of ``isinstance()``, for improved performance
+    """
+
+    def validator(instance, attribute, value):
+        if not _check_type(attribute.type, value):
+            raise AttributeTypeError(value, attribute)
+
+    return validator
 
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
@@ -686,7 +743,7 @@ class DirectoryEntry(BaseModel):
     name = attr.ib(type=bytes, validator=type_validator())
     type = attr.ib(type=str, validator=attr.validators.in_(["file", "dir", "rev"]))
     target = attr.ib(type=Sha1Git, validator=type_validator())
-    perms = attr.ib(type=int, validator=type_validator())
+    perms = attr.ib(type=int, validator=type_validator(), converter=int)
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
 
 

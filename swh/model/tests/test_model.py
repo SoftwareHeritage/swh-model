@@ -5,6 +5,7 @@
 
 import copy
 import datetime
+from typing import Any, List, Optional, Tuple, Union
 
 import attr
 from attrs_strict import AttributeTypeError
@@ -12,6 +13,8 @@ from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
 
+from swh.model.collections import ImmutableDict
+from swh.model.from_disk import DentryPerms
 from swh.model.hashutil import MultiHash, hash_to_bytes
 import swh.model.hypothesis_strategies as strategies
 from swh.model.model import (
@@ -31,8 +34,10 @@ from swh.model.model import (
     Revision,
     SkippedContent,
     Snapshot,
+    TargetType,
     Timestamp,
     TimestampWithTimezone,
+    type_validator,
 )
 from swh.model.swhids import CoreSWHID, ExtendedSWHID, ObjectType
 from swh.model.tests.swh_model_data import TEST_OBJECTS
@@ -67,6 +72,156 @@ def test_todict_inverse_fromdict(objtype_and_obj):
 
     # Check the composition of from_dict and to_dict is the identity
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
+
+
+# List of (type, valid_values, invalid_values)
+_TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
+    # base types:
+    (
+        bool,
+        [True, False],
+        [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ("foo",), ImmutableDict()],
+    ),
+    (
+        int,
+        [-1, 0, 1, 42, 1000],
+        [True, False, None, "123", 0.0, (), ImmutableDict(), DentryPerms.directory],
+    ),
+    (
+        float,
+        [-1.0, 0.0, 1.0, float("infinity"), float("NaN")],
+        [True, False, None, 1, "1.2", (), ImmutableDict()],
+    ),
+    (
+        bytes,
+        [b"", b"123"],
+        [None, bytearray(b"\x12\x34"), "123", 0, 123, (), (1, 2, 3), ImmutableDict()],
+    ),
+    (str, ["", "123"], [None, b"123", b"", 0, (), (1, 2, 3), ImmutableDict()]),
+    # unions:
+    (
+        Optional[int],
+        [None, -1, 0, 1, 42, 1000],
+        ["123", 0.0, (), ImmutableDict(), DentryPerms.directory],
+    ),
+    (
+        Optional[bytes],
+        [None, b"", b"123"],
+        ["123", "", 0, (), (1, 2, 3), ImmutableDict()],
+    ),
+    (
+        Union[str, bytes],
+        ["", "123", b"123", b""],
+        [None, 0, (), (1, 2, 3), ImmutableDict()],
+    ),
+    (
+        Union[str, bytes, None],
+        ["", "123", b"123", b"", None],
+        [0, (), (1, 2, 3), ImmutableDict()],
+    ),
+    # tuples
+    (
+        Tuple[str, str],
+        [("foo", "bar"), ("", "")],
+        [("foo",), ("foo", "bar", "baz"), ("foo", 42), (42, "foo")],
+    ),
+    (
+        Tuple[str, ...],
+        [("foo",), ("foo", "bar"), ("", ""), ("foo", "bar", "baz")],
+        [("foo", 42), (42, "foo")],
+    ),
+    # composite generic:
+    (
+        Tuple[Union[str, int], Union[str, int]],
+        [("foo", "foo"), ("foo", 42), (42, "foo"), (42, 42)],
+        [("foo", b"bar"), (b"bar", "foo")],
+    ),
+    (
+        Union[Tuple[str, str], Tuple[int, int]],
+        [("foo", "foo"), (42, 42)],
+        [("foo", b"bar"), (b"bar", "foo"), ("foo", 42), (42, "foo")],
+    ),
+    (
+        Tuple[Tuple[bytes, bytes], ...],
+        [(), ((b"foo", b"bar"),), ((b"foo", b"bar"), (b"baz", b"qux"))],
+        [((b"foo", "bar"),), ((b"foo", b"bar"), ("baz", b"qux"))],
+    ),
+    # standard types:
+    (
+        datetime.datetime,
+        [datetime.datetime.now(), datetime.datetime.now(tz=datetime.timezone.utc)],
+        [None, 123],
+    ),
+    # ImmutableDict
+    (
+        ImmutableDict[str, int],
+        [
+            ImmutableDict(),
+            ImmutableDict({"foo": 42}),
+            ImmutableDict({"foo": 42, "bar": 123}),
+        ],
+        [ImmutableDict({"foo": "bar"}), ImmutableDict({42: 123})],
+    ),
+    # Any:
+    (Any, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
+    (
+        ImmutableDict[Any, int],
+        [
+            ImmutableDict(),
+            ImmutableDict({"foo": 42}),
+            ImmutableDict({"foo": 42, "bar": 123}),
+            ImmutableDict({42: 123}),
+        ],
+        [ImmutableDict({"foo": "bar"})],
+    ),
+    (
+        ImmutableDict[str, Any],
+        [
+            ImmutableDict(),
+            ImmutableDict({"foo": 42}),
+            ImmutableDict({"foo": "bar"}),
+            ImmutableDict({"foo": 42, "bar": 123}),
+        ],
+        [ImmutableDict({42: 123})],
+    ),
+    # attr objects:
+    (
+        Timestamp,
+        [Timestamp(seconds=123, microseconds=0)],
+        [None, "2021-09-28T11:27:59", 123],
+    ),
+    # enums:
+    (
+        TargetType,
+        [TargetType.CONTENT, TargetType.ALIAS],
+        ["content", "alias", 123, None],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "type_,value",
+    [
+        (type_, value)
+        for (type_, values, _) in _TYPE_VALIDATOR_PARAMETERS
+        for value in values
+    ],
+)
+def test_type_validator_valid(type_, value):
+    type_validator()(None, attr.ib(type=type_), value)
+
+
+@pytest.mark.parametrize(
+    "type_,value",
+    [
+        (type_, value)
+        for (type_, _, values) in _TYPE_VALIDATOR_PARAMETERS
+        for value in values
+    ],
+)
+def test_type_validator_invalid(type_, value):
+    with pytest.raises(AttributeTypeError):
+        type_validator()(None, attr.ib(type=type_), value)
 
 
 @pytest.mark.parametrize("object_type, objects", TEST_OBJECTS.items())
