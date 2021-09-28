@@ -1,8 +1,16 @@
-swh-model (2.9.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (3.0.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 3.0.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-09-28 15:59:18 +0200)
+  * Upstream changes:     - v3.0.0     - * Add bazaar as supported
+    revision type     - * Move SWHID classes and functions from
+    identifiers.py to swhids.py     - * Refactor identifiers & model to
+    make *_git_object() functions work on model classes instead of dicts
+    - * Move manifest computation functions from identifiers.py to
+    git_objects.py     - * Remove identifier_to_bytes and
+    identifier_to_hex     - * Deprecate identifiers.py
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Thu, 16 Sep 2021 12:26:00 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 28 Sep 2021 14:05:19 +0000
 
 swh-model (2.9.0-1~swh1) unstable-swh; urgency=medium
 

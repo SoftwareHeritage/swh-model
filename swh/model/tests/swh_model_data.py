@@ -9,7 +9,6 @@ from typing import Dict, Sequence
 import attr
 
 from swh.model.hashutil import MultiHash, hash_to_bytes
-from swh.model.identifiers import ExtendedSWHID
 from swh.model.model import (
     BaseModel,
     Content,
@@ -35,6 +34,7 @@ from swh.model.model import (
     Timestamp,
     TimestampWithTimezone,
 )
+from swh.model.swhids import ExtendedSWHID
 
 UTC = datetime.timezone.utc
 
