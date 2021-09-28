@@ -3,6 +3,13 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""Conversion from filesystem tree to SWH objects.
+
+This module allows reading a tree of directories and files from a local
+filesystem, and convert them to in-memory data structures, which can then
+be exported to SWH data model objects, as defined in :mod:`swh.model.model`.
+"""
+
 import datetime
 import enum
 import fnmatch
@@ -18,16 +25,10 @@ from typing_extensions import Final
 
 from . import model
 from .exceptions import InvalidDirectoryPath
-from .hashutil import MultiHash
-from .identifiers import (
-    CoreSWHID,
-    ObjectType,
-    directory_entry_sort_key,
-    directory_identifier,
-)
-from .identifiers import identifier_to_bytes as id_to_bytes
-from .identifiers import identifier_to_str as id_to_str
+from .git_objects import directory_entry_sort_key
+from .hashutil import MultiHash, hash_to_hex
 from .merkle import MerkleLeaf, MerkleNode
+from .swhids import CoreSWHID, ObjectType
 
 
 @attr.s(frozen=True, slots=True)
@@ -218,7 +219,7 @@ class Content(MerkleLeaf):
         return CoreSWHID(object_type=ObjectType.CONTENT, object_id=self.hash)
 
     def __repr__(self):
-        return "Content(id=%s)" % id_to_str(self.hash)
+        return "Content(id=%s)" % hash_to_hex(self.hash)
 
     def compute_hash(self):
         return self.data["sha1_git"]
@@ -479,8 +480,8 @@ class Directory(MerkleNode):
 
     @property
     def entries(self):
-        """Child nodes, sorted by name in the same way `directory_identifier`
-        does."""
+        """Child nodes, sorted by name in the same way
+        :func:`swh.model.git_objects.directory_git_object` does."""
         if self.__entries is None:
             self.__entries = sorted(
                 (
@@ -498,7 +499,7 @@ class Directory(MerkleNode):
         return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):
-        return id_to_bytes(directory_identifier({"entries": self.entries}))
+        return model.Directory.from_dict({"entries": self.entries}).id
 
     def to_model(self) -> model.Directory:
         """Builds a `model.Directory` object based on this node;
@@ -550,6 +551,6 @@ class Directory(MerkleNode):
 
     def __repr__(self):
         return "Directory(id=%s, entries=[%s])" % (
-            id_to_str(self.hash),
+            hash_to_hex(self.hash),
             ", ".join(str(entry) for entry in self),
         )

@@ -3,6 +3,8 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+"""Utility data structures."""
+
 from collections.abc import Mapping
 from typing import Dict, Generic, Iterable, Optional, Tuple, TypeVar, Union
 
@@ -11,6 +13,11 @@ VT = TypeVar("VT")
 
 
 class ImmutableDict(Mapping, Generic[KT, VT]):
+    """A frozen dictionary.
+
+    This class behaves like a dictionary, but internally stores objects in a tuple,
+    so it is both immutable and hashable."""
+
     data: Tuple[Tuple[KT, VT], ...]
 
     def __init__(
