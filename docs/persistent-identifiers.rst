@@ -45,7 +45,7 @@ properties. Together, these identifiers form a `Merkle structure
 
 See the :ref:`Software Heritage data model <data-model>` for an overview of
 object types and how they are linked together. See
-:py:mod:`swh.model.identifiers` for details on how the intrinsic identifiers
+:py:mod:`swh.model.git_objects` for details on how the intrinsic identifiers
 embedded in SWHIDs are computed.
 
 The optional qualifiers are of two kinds:
@@ -141,23 +141,23 @@ The actual object pointed to is identified by the intrinsic identifier
 ``<object_id>``, which is a hex-encoded (using lowercase ASCII characters) SHA1
 computed on the content and metadata of the object itself, as follows:
 
-* for **snapshots**, intrinsic identifiers are computed as per
-  :py:func:`swh.model.identifiers.snapshot_identifier`
+* for **snapshots**, intrinsic identifiers are SHA1 hashes of manifests computed as per
+  :py:func:`swh.model.git_objects.snapshot_git_object`
 
 * for **releases**, as per
-  :py:func:`swh.model.identifiers.release_identifier`
+  :py:func:`swh.model.git_objects.release_git_object`
   that produces the same result as a git release hash
 
 * for **revisions**, as per
-  :py:func:`swh.model.identifiers.revision_identifier`
+  :py:func:`swh.model.git_objects.revision_git_object`
   that produces the same result as a git commit hash
 
 * for **directories**, per
-  :py:func:`swh.model.identifiers.directory_identifier`
+  :py:func:`swh.model.git_objects.directory_git_object`
   that produces the same result as a git tree hash
 
 * for **contents**, the intrinsic identifier is the ``sha1_git`` hash returned by
-  :py:func:`swh.model.identifiers.content_identifier`, i.e., the SHA1 of a byte
+  :py:meth:`swh.hashutil.MultiHash.digest`, i.e., the SHA1 of a byte
   sequence obtained by juxtaposing the ASCII string ``"blob"`` (without
   quotes), a space, the length of the content as decimal digits, a NULL byte,
   and the actual content of the file.

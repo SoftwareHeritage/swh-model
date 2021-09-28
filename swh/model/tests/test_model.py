@@ -12,20 +12,8 @@ from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
 
-from swh.model.hashutil import MultiHash, hash_to_bytes, hash_to_hex
+from swh.model.hashutil import MultiHash, hash_to_bytes
 import swh.model.hypothesis_strategies as strategies
-from swh.model.identifiers import (
-    CoreSWHID,
-    ExtendedSWHID,
-    ObjectType,
-    content_identifier,
-    directory_identifier,
-    origin_identifier,
-    raw_extrinsic_metadata_identifier,
-    release_identifier,
-    revision_identifier,
-    snapshot_identifier,
-)
 from swh.model.model import (
     BaseModel,
     Content,
@@ -46,14 +34,13 @@ from swh.model.model import (
     Timestamp,
     TimestampWithTimezone,
 )
+from swh.model.swhids import CoreSWHID, ExtendedSWHID, ObjectType
 from swh.model.tests.swh_model_data import TEST_OBJECTS
 from swh.model.tests.test_identifiers import (
     TS_DATETIMES,
     TS_TIMEZONES,
-    content_example,
     directory_example,
     metadata_example,
-    origin_example,
     release_example,
     revision_example,
     snapshot_example,
@@ -734,94 +721,6 @@ def test_revision_extra_headers_as_lists_from_dict():
     rev_model = Revision.from_dict(rev_dict)
     assert "extra_headers" not in rev_model.metadata
     assert rev_model.extra_headers == extra_headers
-
-
-# ID computation
-
-
-def test_content_model_id_computation():
-    cnt_dict = content_example.copy()
-
-    cnt_id_str = hash_to_hex(content_identifier(cnt_dict)["sha1_git"])
-    cnt_model = Content.from_data(cnt_dict["data"])
-    assert str(cnt_model.swhid()) == "swh:1:cnt:" + cnt_id_str
-
-
-def test_directory_model_id_computation():
-    dir_dict = directory_example.copy()
-    del dir_dict["id"]
-
-    dir_id_str = directory_identifier(dir_dict)
-    dir_id = hash_to_bytes(dir_id_str)
-    dir_model = Directory.from_dict(dir_dict)
-    assert dir_model.id == dir_id
-    assert str(dir_model.swhid()) == "swh:1:dir:" + dir_id_str
-
-
-def test_revision_model_id_computation():
-    rev_dict = revision_example.copy()
-    del rev_dict["id"]
-
-    rev_id_str = revision_identifier(rev_dict)
-    rev_id = hash_to_bytes(rev_id_str)
-    rev_model = Revision.from_dict(rev_dict)
-    assert rev_model.id == rev_id
-    assert str(rev_model.swhid()) == "swh:1:rev:" + rev_id_str
-
-
-def test_revision_model_id_computation_with_no_date():
-    """We can have revision with date to None
-
-    """
-    rev_dict = revision_example.copy()
-    rev_dict["date"] = None
-    rev_dict["committer_date"] = None
-    del rev_dict["id"]
-
-    rev_id = hash_to_bytes(revision_identifier(rev_dict))
-    rev_model = Revision.from_dict(rev_dict)
-    assert rev_model.date is None
-    assert rev_model.committer_date is None
-    assert rev_model.id == rev_id
-
-
-def test_release_model_id_computation():
-    rel_dict = release_example.copy()
-    del rel_dict["id"]
-
-    rel_id_str = release_identifier(rel_dict)
-    rel_id = hash_to_bytes(rel_id_str)
-    rel_model = Release.from_dict(rel_dict)
-    assert isinstance(rel_model.date, TimestampWithTimezone)
-    assert rel_model.id == hash_to_bytes(rel_id)
-    assert str(rel_model.swhid()) == "swh:1:rel:" + rel_id_str
-
-
-def test_snapshot_model_id_computation():
-    snp_dict = snapshot_example.copy()
-    del snp_dict["id"]
-
-    snp_id_str = snapshot_identifier(snp_dict)
-    snp_id = hash_to_bytes(snp_id_str)
-    snp_model = Snapshot.from_dict(snp_dict)
-    assert snp_model.id == snp_id
-    assert str(snp_model.swhid()) == "swh:1:snp:" + snp_id_str
-
-
-def test_origin_model_id_computation():
-    ori_dict = origin_example.copy()
-
-    ori_id_str = origin_identifier(ori_dict)
-    ori_model = Origin.from_dict(ori_dict)
-    assert str(ori_model.swhid()) == "swh:1:ori:" + ori_id_str
-
-
-def test_raw_extrinsic_metadata_model_id_computation():
-    emd_dict = metadata_example.copy()
-
-    emd_id_str = raw_extrinsic_metadata_identifier(emd_dict)
-    emd_model = RawExtrinsicMetadata.from_dict(emd_dict)
-    assert str(emd_model.swhid()) == "swh:1:emd:" + emd_id_str
 
 
 @given(strategies.objects(split_content=True))
