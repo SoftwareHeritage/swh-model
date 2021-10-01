@@ -91,10 +91,18 @@ def _check_type(type_, value):
 
     # Non-generic type, check it directly
     if origin is None:
-        return type(value) == type_
+        # This is functionally equivalent to using just this:
+        #   return isinstance(value, type)
+        # but using type equality before isinstance allows very quick checks
+        # when the exact class is used (which is the overwhelming majority of cases)
+        # while still allowing subclasses to be used.
+        return type(value) == type_ or isinstance(value, type_)
 
     # Check the type of the value itself
-    if origin is not Union and type(value) != origin:
+    #
+    # For the same reason as above, this condition is functionally equivalent to:
+    #   if origin is not Union and not isinstance(value, origin):
+    if origin is not Union and type(value) != origin and not isinstance(value, origin):
         return False
 
     # Then, if it's a container, check its items.

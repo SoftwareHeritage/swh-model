@@ -3,6 +3,7 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import collections
 import copy
 import datetime
 from typing import Any, List, Optional, Tuple, Union
@@ -74,6 +75,23 @@ def test_todict_inverse_fromdict(objtype_and_obj):
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
 
 
+@attr.s
+class Cls1:
+    pass
+
+
+@attr.s
+class Cls2(Cls1):
+    pass
+
+
+_custom_namedtuple = collections.namedtuple("_custom_namedtuple", "a b")
+
+
+class _custom_tuple(tuple):
+    pass
+
+
 # List of (type, valid_values, invalid_values)
 _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # base types:
@@ -84,8 +102,8 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     ),
     (
         int,
-        [-1, 0, 1, 42, 1000],
-        [True, False, None, "123", 0.0, (), ImmutableDict(), DentryPerms.directory],
+        [-1, 0, 1, 42, 1000, DentryPerms.directory, True, False],
+        [None, "123", 0.0, (), ImmutableDict()],
     ),
     (
         float,
@@ -101,8 +119,8 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # unions:
     (
         Optional[int],
-        [None, -1, 0, 1, 42, 1000],
-        ["123", 0.0, (), ImmutableDict(), DentryPerms.directory],
+        [None, -1, 0, 1, 42, 1000, DentryPerms.directory],
+        ["123", 0.0, (), ImmutableDict()],
     ),
     (
         Optional[bytes],
@@ -122,12 +140,19 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # tuples
     (
         Tuple[str, str],
-        [("foo", "bar"), ("", "")],
+        [("foo", "bar"), ("", ""), _custom_namedtuple("", ""), _custom_tuple(("", ""))],
         [("foo",), ("foo", "bar", "baz"), ("foo", 42), (42, "foo")],
     ),
     (
         Tuple[str, ...],
-        [("foo",), ("foo", "bar"), ("", ""), ("foo", "bar", "baz")],
+        [
+            ("foo",),
+            ("foo", "bar"),
+            ("", ""),
+            ("foo", "bar", "baz"),
+            _custom_namedtuple("", ""),
+            _custom_tuple(("", "")),
+        ],
         [("foo", 42), (42, "foo")],
     ),
     # composite generic:
@@ -163,6 +188,7 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         [ImmutableDict({"foo": "bar"}), ImmutableDict({42: 123})],
     ),
     # Any:
+    (object, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
     (Any, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
     (
         ImmutableDict[Any, int],
@@ -187,9 +213,10 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # attr objects:
     (
         Timestamp,
-        [Timestamp(seconds=123, microseconds=0)],
+        [Timestamp(seconds=123, microseconds=0),],
         [None, "2021-09-28T11:27:59", 123],
     ),
+    (Cls1, [Cls1(), Cls2()], [None, b"abcd"],),
     # enums:
     (
         TargetType,
@@ -202,7 +229,7 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
 @pytest.mark.parametrize(
     "type_,value",
     [
-        (type_, value)
+        pytest.param(type_, value, id=f"type={type_}, value={value}")
         for (type_, values, _) in _TYPE_VALIDATOR_PARAMETERS
         for value in values
     ],
@@ -214,7 +241,7 @@ def test_type_validator_valid(type_, value):
 @pytest.mark.parametrize(
     "type_,value",
     [
-        (type_, value)
+        pytest.param(type_, value, id=f"type={type_}, value={value}")
         for (type_, _, values) in _TYPE_VALIDATOR_PARAMETERS
         for value in values
     ],
