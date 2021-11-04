@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Tuple, Union
 
 import attr
 from attrs_strict import AttributeTypeError
+import dateutil
 from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
@@ -18,6 +19,7 @@ from swh.model.collections import ImmutableDict
 from swh.model.from_disk import DentryPerms
 from swh.model.hashutil import MultiHash, hash_to_bytes
 import swh.model.hypothesis_strategies as strategies
+import swh.model.model
 from swh.model.model import (
     BaseModel,
     Content,
@@ -40,6 +42,7 @@ from swh.model.model import (
     TimestampWithTimezone,
     type_validator,
 )
+import swh.model.swhids
 from swh.model.swhids import CoreSWHID, ExtendedSWHID, ObjectType
 from swh.model.tests.swh_model_data import TEST_OBJECTS
 from swh.model.tests.test_identifiers import (
@@ -73,6 +76,23 @@ def test_todict_inverse_fromdict(objtype_and_obj):
 
     # Check the composition of from_dict and to_dict is the identity
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
+
+
+@given(strategies.objects())
+def test_repr(objtype_and_obj):
+    """Checks every model object has a working repr(), and that it can be eval()uated
+    (so that printed objects can be copy-pasted to write test cases.)"""
+    (obj_type, obj) = objtype_and_obj
+
+    r = repr(obj)
+    env = {
+        "tzutc": lambda: datetime.timezone.utc,
+        "tzfile": dateutil.tz.tzfile,
+        "hash_to_bytes": hash_to_bytes,
+        **swh.model.swhids.__dict__,
+        **swh.model.model.__dict__,
+    }
+    assert eval(r, env) == obj
 
 
 @attr.s
