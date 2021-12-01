@@ -24,6 +24,7 @@ from swh.model.model import (
     BaseModel,
     Content,
     Directory,
+    DirectoryEntry,
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
@@ -735,6 +736,30 @@ def test_skipped_content_naive_datetime():
         SkippedContent(
             **c.to_dict(), ctime=datetime.datetime.now(),
         )
+
+
+# Directory
+
+
+def test_directory_entry_name_validation():
+    with pytest.raises(ValueError, match="valid directory entry name."):
+        DirectoryEntry(name=b"foo/", type="dir", target=b"\x00" * 20, perms=0),
+
+
+def test_directory_duplicate_entry_name():
+    entries = (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
+    )
+    with pytest.raises(ValueError, match="duplicated entry name"):
+        Directory(entries=entries)
+
+    entries = (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+    )
+    with pytest.raises(ValueError, match="duplicated entry name"):
+        Directory(entries=entries)
 
 
 # Revision

@@ -772,6 +772,11 @@ class DirectoryEntry(BaseModel):
     perms = attr.ib(type=int, validator=type_validator(), converter=int, repr=oct)
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
 
+    @name.validator
+    def check_name(self, attribute, value):
+        if b"/" in value:
+            raise ValueError("{value!r} is not a valid directory entry name.")
+
 
 @attr.s(frozen=True, slots=True)
 class Directory(HashableObject, BaseModel):
@@ -783,6 +788,16 @@ class Directory(HashableObject, BaseModel):
     def compute_hash(self) -> bytes:
         git_object = git_objects.directory_git_object(self)
         return hashlib.new("sha1", git_object).digest()
+
+    @entries.validator
+    def check_entries(self, attribute, value):
+        seen = set()
+        for entry in value:
+            if entry.name in seen:
+                raise ValueError(
+                    "{self.swhid()} has duplicated entry name: {entry.name!r}"
+                )
+            seen.add(entry.name)
 
     @classmethod
     def from_dict(cls, d):
