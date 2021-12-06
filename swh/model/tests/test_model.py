@@ -3,21 +3,28 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+import collections
 import copy
 import datetime
+from typing import Any, List, Optional, Tuple, Union
 
 import attr
 from attrs_strict import AttributeTypeError
+import dateutil
 from hypothesis import given
 from hypothesis.strategies import binary
 import pytest
 
+from swh.model.collections import ImmutableDict
+from swh.model.from_disk import DentryPerms
 from swh.model.hashutil import MultiHash, hash_to_bytes
 import swh.model.hypothesis_strategies as strategies
+import swh.model.model
 from swh.model.model import (
     BaseModel,
     Content,
     Directory,
+    DirectoryEntry,
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
@@ -31,9 +38,12 @@ from swh.model.model import (
     Revision,
     SkippedContent,
     Snapshot,
+    TargetType,
     Timestamp,
     TimestampWithTimezone,
+    type_validator,
 )
+import swh.model.swhids
 from swh.model.swhids import CoreSWHID, ExtendedSWHID, ObjectType
 from swh.model.tests.swh_model_data import TEST_OBJECTS
 from swh.model.tests.test_identifiers import (
@@ -67,6 +77,199 @@ def test_todict_inverse_fromdict(objtype_and_obj):
 
     # Check the composition of from_dict and to_dict is the identity
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
+
+
+@given(strategies.objects())
+def test_repr(objtype_and_obj):
+    """Checks every model object has a working repr(), and that it can be eval()uated
+    (so that printed objects can be copy-pasted to write test cases.)"""
+    (obj_type, obj) = objtype_and_obj
+
+    r = repr(obj)
+    env = {
+        "tzutc": lambda: datetime.timezone.utc,
+        "tzfile": dateutil.tz.tzfile,
+        "hash_to_bytes": hash_to_bytes,
+        **swh.model.swhids.__dict__,
+        **swh.model.model.__dict__,
+    }
+    assert eval(r, env) == obj
+
+
+@attr.s
+class Cls1:
+    pass
+
+
+@attr.s
+class Cls2(Cls1):
+    pass
+
+
+_custom_namedtuple = collections.namedtuple("_custom_namedtuple", "a b")
+
+
+class _custom_tuple(tuple):
+    pass
+
+
+# List of (type, valid_values, invalid_values)
+_TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
+    # base types:
+    (
+        bool,
+        [True, False],
+        [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ("foo",), ImmutableDict()],
+    ),
+    (
+        int,
+        [-1, 0, 1, 42, 1000, DentryPerms.directory, True, False],
+        [None, "123", 0.0, (), ImmutableDict()],
+    ),
+    (
+        float,
+        [-1.0, 0.0, 1.0, float("infinity"), float("NaN")],
+        [True, False, None, 1, "1.2", (), ImmutableDict()],
+    ),
+    (
+        bytes,
+        [b"", b"123"],
+        [None, bytearray(b"\x12\x34"), "123", 0, 123, (), (1, 2, 3), ImmutableDict()],
+    ),
+    (str, ["", "123"], [None, b"123", b"", 0, (), (1, 2, 3), ImmutableDict()]),
+    # unions:
+    (
+        Optional[int],
+        [None, -1, 0, 1, 42, 1000, DentryPerms.directory],
+        ["123", 0.0, (), ImmutableDict()],
+    ),
+    (
+        Optional[bytes],
+        [None, b"", b"123"],
+        ["123", "", 0, (), (1, 2, 3), ImmutableDict()],
+    ),
+    (
+        Union[str, bytes],
+        ["", "123", b"123", b""],
+        [None, 0, (), (1, 2, 3), ImmutableDict()],
+    ),
+    (
+        Union[str, bytes, None],
+        ["", "123", b"123", b"", None],
+        [0, (), (1, 2, 3), ImmutableDict()],
+    ),
+    # tuples
+    (
+        Tuple[str, str],
+        [("foo", "bar"), ("", ""), _custom_namedtuple("", ""), _custom_tuple(("", ""))],
+        [("foo",), ("foo", "bar", "baz"), ("foo", 42), (42, "foo")],
+    ),
+    (
+        Tuple[str, ...],
+        [
+            ("foo",),
+            ("foo", "bar"),
+            ("", ""),
+            ("foo", "bar", "baz"),
+            _custom_namedtuple("", ""),
+            _custom_tuple(("", "")),
+        ],
+        [("foo", 42), (42, "foo")],
+    ),
+    # composite generic:
+    (
+        Tuple[Union[str, int], Union[str, int]],
+        [("foo", "foo"), ("foo", 42), (42, "foo"), (42, 42)],
+        [("foo", b"bar"), (b"bar", "foo")],
+    ),
+    (
+        Union[Tuple[str, str], Tuple[int, int]],
+        [("foo", "foo"), (42, 42)],
+        [("foo", b"bar"), (b"bar", "foo"), ("foo", 42), (42, "foo")],
+    ),
+    (
+        Tuple[Tuple[bytes, bytes], ...],
+        [(), ((b"foo", b"bar"),), ((b"foo", b"bar"), (b"baz", b"qux"))],
+        [((b"foo", "bar"),), ((b"foo", b"bar"), ("baz", b"qux"))],
+    ),
+    # standard types:
+    (
+        datetime.datetime,
+        [datetime.datetime.now(), datetime.datetime.now(tz=datetime.timezone.utc)],
+        [None, 123],
+    ),
+    # ImmutableDict
+    (
+        ImmutableDict[str, int],
+        [
+            ImmutableDict(),
+            ImmutableDict({"foo": 42}),
+            ImmutableDict({"foo": 42, "bar": 123}),
+        ],
+        [ImmutableDict({"foo": "bar"}), ImmutableDict({42: 123})],
+    ),
+    # Any:
+    (object, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
+    (Any, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
+    (
+        ImmutableDict[Any, int],
+        [
+            ImmutableDict(),
+            ImmutableDict({"foo": 42}),
+            ImmutableDict({"foo": 42, "bar": 123}),
+            ImmutableDict({42: 123}),
+        ],
+        [ImmutableDict({"foo": "bar"})],
+    ),
+    (
+        ImmutableDict[str, Any],
+        [
+            ImmutableDict(),
+            ImmutableDict({"foo": 42}),
+            ImmutableDict({"foo": "bar"}),
+            ImmutableDict({"foo": 42, "bar": 123}),
+        ],
+        [ImmutableDict({42: 123})],
+    ),
+    # attr objects:
+    (
+        Timestamp,
+        [Timestamp(seconds=123, microseconds=0),],
+        [None, "2021-09-28T11:27:59", 123],
+    ),
+    (Cls1, [Cls1(), Cls2()], [None, b"abcd"],),
+    # enums:
+    (
+        TargetType,
+        [TargetType.CONTENT, TargetType.ALIAS],
+        ["content", "alias", 123, None],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "type_,value",
+    [
+        pytest.param(type_, value, id=f"type={type_}, value={value}")
+        for (type_, values, _) in _TYPE_VALIDATOR_PARAMETERS
+        for value in values
+    ],
+)
+def test_type_validator_valid(type_, value):
+    type_validator()(None, attr.ib(type=type_), value)
+
+
+@pytest.mark.parametrize(
+    "type_,value",
+    [
+        pytest.param(type_, value, id=f"type={type_}, value={value}")
+        for (type_, _, values) in _TYPE_VALIDATOR_PARAMETERS
+        for value in values
+    ],
+)
+def test_type_validator_invalid(type_, value):
+    with pytest.raises(AttributeTypeError):
+        type_validator()(None, attr.ib(type=type_), value)
 
 
 @pytest.mark.parametrize("object_type, objects", TEST_OBJECTS.items())
@@ -533,6 +736,30 @@ def test_skipped_content_naive_datetime():
         SkippedContent(
             **c.to_dict(), ctime=datetime.datetime.now(),
         )
+
+
+# Directory
+
+
+def test_directory_entry_name_validation():
+    with pytest.raises(ValueError, match="valid directory entry name."):
+        DirectoryEntry(name=b"foo/", type="dir", target=b"\x00" * 20, perms=0),
+
+
+def test_directory_duplicate_entry_name():
+    entries = (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
+    )
+    with pytest.raises(ValueError, match="duplicated entry name"):
+        Directory(entries=entries)
+
+    entries = (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+    )
+    with pytest.raises(ValueError, match="duplicated entry name"):
+        Directory(entries=entries)
 
 
 # Revision
