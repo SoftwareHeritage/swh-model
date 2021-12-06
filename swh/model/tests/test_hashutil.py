@@ -13,7 +13,7 @@ from unittest.mock import patch
 import pytest
 
 from swh.model import hashutil
-from swh.model.hashutil import MultiHash
+from swh.model.hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytehex
 
 
 @contextlib.contextmanager
@@ -112,6 +112,36 @@ def test_multi_hash_file_bytehexdigest(hash_test_data):
     assert checksums == hash_test_data.bytehex_checksums
 
 
+def test_multi_hash_file_with_md5(hash_test_data):
+    fobj = io.BytesIO(hash_test_data.data)
+
+    checksums = MultiHash.from_file(
+        fobj, hash_names=DEFAULT_ALGORITHMS | {"md5"}, length=len(hash_test_data.data)
+    ).digest()
+    md5sum = {"md5": hashlib.md5(hash_test_data.data).digest()}
+    assert checksums == {**hash_test_data.checksums, **md5sum}
+
+
+def test_multi_hash_file_hexdigest_with_md5(hash_test_data):
+    fobj = io.BytesIO(hash_test_data.data)
+    length = len(hash_test_data.data)
+    checksums = MultiHash.from_file(
+        fobj, hash_names=DEFAULT_ALGORITHMS | {"md5"}, length=length
+    ).hexdigest()
+    md5sum = {"md5": hashlib.md5(hash_test_data.data).hexdigest()}
+    assert checksums == {**hash_test_data.hex_checksums, **md5sum}
+
+
+def test_multi_hash_file_bytehexdigest_with_md5(hash_test_data):
+    fobj = io.BytesIO(hash_test_data.data)
+    length = len(hash_test_data.data)
+    checksums = MultiHash.from_file(
+        fobj, hash_names=DEFAULT_ALGORITHMS | {"md5"}, length=length
+    ).bytehexdigest()
+    md5sum = {"md5": hash_to_bytehex(hashlib.md5(hash_test_data.data).digest())}
+    assert checksums == {**hash_test_data.bytehex_checksums, **md5sum}
+
+
 def test_multi_hash_file_missing_length(hash_test_data):
     fobj = io.BytesIO(hash_test_data.data)
     with pytest.raises(ValueError, match="Missing length"):
@@ -177,7 +207,7 @@ def test_new_hash_unsupported_hashing_algorithm():
     expected_message = (
         "Unexpected hashing algorithm blake2:10, "
         "expected one of blake2b512, blake2s256, "
-        "sha1, sha1_git, sha256"
+        "md5, sha1, sha1_git, sha256"
     )
     with pytest.raises(ValueError, match=expected_message):
         hashutil._new_hash("blake2:10")
