@@ -79,7 +79,7 @@ _TObjectType = TypeVar("_TObjectType", ObjectType, ExtendedObjectType)
 _TSWHID = TypeVar("_TSWHID", bound="_BaseSWHID")
 
 
-@attr.s(frozen=True, kw_only=True)
+@attr.s(frozen=True, kw_only=True, repr=False)
 class _BaseSWHID(Generic[_TObjectType]):
     """Common base class for CoreSWHID, QualifiedSWHID, and ExtendedSWHID.
 
@@ -132,6 +132,9 @@ class _BaseSWHID(Generic[_TObjectType]):
             ]
         )
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.from_string('{self}')"
+
     @classmethod
     def from_string(cls: Type[_TSWHID], s: str) -> _TSWHID:
         parts = _parse_swhid(s)
@@ -145,7 +148,7 @@ class _BaseSWHID(Generic[_TObjectType]):
             ) from None
 
 
-@attr.s(frozen=True, kw_only=True)
+@attr.s(frozen=True, kw_only=True, repr=False)
 class CoreSWHID(_BaseSWHID[ObjectType]):
     """
     Dataclass holding the relevant info associated to a SoftWare Heritage
@@ -223,7 +226,7 @@ def _parse_path_qualifier(path: Union[str, bytes, None]) -> Optional[bytes]:
         return urllib.parse.unquote_to_bytes(path)
 
 
-@attr.s(frozen=True, kw_only=True)
+@attr.s(frozen=True, kw_only=True, repr=False)
 class QualifiedSWHID(_BaseSWHID[ObjectType]):
     """
     Dataclass holding the relevant info associated to a SoftWare Heritage
@@ -361,6 +364,9 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
                 swhid += "%s%s=%s" % (SWHID_CTXT_SEP, k, v)
         return swhid
 
+    def __repr__(self) -> str:
+        return super().__repr__()
+
     @classmethod
     def from_string(cls, s: str) -> QualifiedSWHID:
         parts = _parse_swhid(s)
@@ -379,7 +385,7 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
             ) from None
 
 
-@attr.s(frozen=True, kw_only=True)
+@attr.s(frozen=True, kw_only=True, repr=False)
 class ExtendedSWHID(_BaseSWHID[ExtendedObjectType]):
     """
     Dataclass holding the relevant info associated to a SoftWare Heritage

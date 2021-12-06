@@ -22,14 +22,14 @@ import hashlib
 from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
 
 import attr
-from attrs_strict import type_validator
+from attrs_strict import AttributeTypeError
 import dateutil.parser
 import iso8601
 from typing_extensions import Final
 
 from . import git_objects
 from .collections import ImmutableDict
-from .hashutil import DEFAULT_ALGORITHMS, MultiHash
+from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_hex
 from .swhids import CoreSWHID
 from .swhids import ExtendedObjectType as SwhidExtendedObjectType
 from .swhids import ExtendedSWHID
@@ -58,6 +58,13 @@ KT = TypeVar("KT")
 VT = TypeVar("VT")
 
 
+def hash_repr(h: bytes) -> str:
+    if h is None:
+        return "None"
+    else:
+        return f"hash_to_bytes('{hash_to_hex(h)}')"
+
+
 def freeze_optional_dict(
     d: Union[None, Dict[KT, VT], ImmutableDict[KT, VT]]  # type: ignore
 ) -> Optional[ImmutableDict[KT, VT]]:
@@ -81,6 +88,71 @@ def dictify(value):
         return tuple(dictify(v) for v in value)
     else:
         return value
+
+
+def _check_type(type_, value):
+    if type_ is object or type_ is Any:
+        return True
+
+    origin = getattr(type_, "__origin__", None)
+
+    # Non-generic type, check it directly
+    if origin is None:
+        # This is functionally equivalent to using just this:
+        #   return isinstance(value, type)
+        # but using type equality before isinstance allows very quick checks
+        # when the exact class is used (which is the overwhelming majority of cases)
+        # while still allowing subclasses to be used.
+        return type(value) == type_ or isinstance(value, type_)
+
+    # Check the type of the value itself
+    #
+    # For the same reason as above, this condition is functionally equivalent to:
+    #   if origin is not Union and not isinstance(value, origin):
+    if origin is not Union and type(value) != origin and not isinstance(value, origin):
+        return False
+
+    # Then, if it's a container, check its items.
+    if origin is tuple:
+        args = type_.__args__
+        if len(args) == 2 and args[1] is Ellipsis:
+            # Infinite tuple
+            return all(_check_type(args[0], item) for item in value)
+        else:
+            # Finite tuple
+            if len(args) != len(value):
+                return False
+
+            return all(
+                _check_type(item_type, item) for (item_type, item) in zip(args, value)
+            )
+    elif origin is Union:
+        args = type_.__args__
+        return any(_check_type(variant, value) for variant in args)
+    elif origin is ImmutableDict:
+        (key_type, value_type) = type_.__args__
+        return all(
+            _check_type(key_type, key) and _check_type(value_type, value)
+            for (key, value) in value.items()
+        )
+    else:
+        # No need to check dict or list. because they are converted to ImmutableDict
+        # and tuple respectively.
+        raise NotImplementedError(f"Type-checking {type_}")
+
+
+def type_validator():
+    """Like attrs_strict.type_validator(), but stricter.
+
+    It is an attrs validator, which checks attributes have the specified type,
+    using type equality instead of ``isinstance()``, for improved performance
+    """
+
+    def validator(instance, attribute, value):
+        if not _check_type(attribute.type, value):
+            raise AttributeTypeError(value, attribute)
+
+    return validator
 
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
@@ -426,7 +498,9 @@ class OriginVisitStatus(BaseModel):
             ["created", "ongoing", "full", "partial", "not_found", "failed"]
         ),
     )
-    snapshot = attr.ib(type=Optional[Sha1Git], validator=type_validator())
+    snapshot = attr.ib(
+        type=Optional[Sha1Git], validator=type_validator(), repr=hash_repr
+    )
     # Type is optional be to able to use it before adding it to the database model
     type = attr.ib(type=Optional[str], validator=type_validator(), default=None)
     metadata = attr.ib(
@@ -457,6 +531,9 @@ class TargetType(Enum):
     SNAPSHOT = "snapshot"
     ALIAS = "alias"
 
+    def __repr__(self):
+        return f"TargetType.{self.name}"
+
 
 class ObjectType(Enum):
     """The type of content pointed to by a release. Usually a revision"""
@@ -467,6 +544,9 @@ class ObjectType(Enum):
     RELEASE = "release"
     SNAPSHOT = "snapshot"
 
+    def __repr__(self):
+        return f"ObjectType.{self.name}"
+
 
 @attr.s(frozen=True, slots=True)
 class SnapshotBranch(BaseModel):
@@ -474,7 +554,7 @@ class SnapshotBranch(BaseModel):
 
     object_type: Final = "snapshot_branch"
 
-    target = attr.ib(type=bytes, validator=type_validator())
+    target = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
     target_type = attr.ib(type=TargetType, validator=type_validator())
 
     @target.validator
@@ -501,7 +581,7 @@ class Snapshot(HashableObject, BaseModel):
         validator=type_validator(),
         converter=freeze_optional_dict,
     )
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
         git_object = git_objects.snapshot_git_object(self)
@@ -529,7 +609,7 @@ class Release(HashableObject, BaseModel):
 
     name = attr.ib(type=bytes, validator=type_validator())
     message = attr.ib(type=Optional[bytes], validator=type_validator())
-    target = attr.ib(type=Optional[Sha1Git], validator=type_validator())
+    target = attr.ib(type=Optional[Sha1Git], validator=type_validator(), repr=hash_repr)
     target_type = attr.ib(type=ObjectType, validator=type_validator())
     synthetic = attr.ib(type=bool, validator=type_validator())
     author = attr.ib(type=Optional[Person], validator=type_validator(), default=None)
@@ -542,7 +622,7 @@ class Release(HashableObject, BaseModel):
         converter=freeze_optional_dict,
         default=None,
     )
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
         git_object = git_objects.release_git_object(self)
@@ -591,6 +671,9 @@ class RevisionType(Enum):
     CVS = "cvs"
     BAZAAR = "bzr"
 
+    def __repr__(self):
+        return f"RevisionType.{self.name}"
+
 
 def tuplify_extra_headers(value: Iterable):
     return tuple((k, v) for k, v in value)
@@ -608,7 +691,7 @@ class Revision(HashableObject, BaseModel):
         type=Optional[TimestampWithTimezone], validator=type_validator()
     )
     type = attr.ib(type=RevisionType, validator=type_validator())
-    directory = attr.ib(type=Sha1Git, validator=type_validator())
+    directory = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
     synthetic = attr.ib(type=bool, validator=type_validator())
     metadata = attr.ib(
         type=Optional[ImmutableDict[str, object]],
@@ -617,7 +700,7 @@ class Revision(HashableObject, BaseModel):
         default=None,
     )
     parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
     extra_headers = attr.ib(
         type=Tuple[Tuple[bytes, bytes], ...],
         validator=type_validator(),
@@ -685,9 +768,14 @@ class DirectoryEntry(BaseModel):
 
     name = attr.ib(type=bytes, validator=type_validator())
     type = attr.ib(type=str, validator=attr.validators.in_(["file", "dir", "rev"]))
-    target = attr.ib(type=Sha1Git, validator=type_validator())
-    perms = attr.ib(type=int, validator=type_validator())
+    target = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
+    perms = attr.ib(type=int, validator=type_validator(), converter=int, repr=oct)
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
+
+    @name.validator
+    def check_name(self, attribute, value):
+        if b"/" in value:
+            raise ValueError("{value!r} is not a valid directory entry name.")
 
 
 @attr.s(frozen=True, slots=True)
@@ -695,11 +783,21 @@ class Directory(HashableObject, BaseModel):
     object_type: Final = "directory"
 
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
         git_object = git_objects.directory_git_object(self)
         return hashlib.new("sha1", git_object).digest()
+
+    @entries.validator
+    def check_entries(self, attribute, value):
+        seen = set()
+        for entry in value:
+            if entry.name in seen:
+                raise ValueError(
+                    "{self.swhid()} has duplicated entry name: {entry.name!r}"
+                )
+            seen.add(entry.name)
 
     @classmethod
     def from_dict(cls, d):
@@ -756,10 +854,10 @@ class BaseContent(BaseModel):
 class Content(BaseContent):
     object_type: Final = "content"
 
-    sha1 = attr.ib(type=bytes, validator=type_validator())
-    sha1_git = attr.ib(type=Sha1Git, validator=type_validator())
-    sha256 = attr.ib(type=bytes, validator=type_validator())
-    blake2s256 = attr.ib(type=bytes, validator=type_validator())
+    sha1 = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
+    sha1_git = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
+    sha256 = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
+    blake2s256 = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
 
     length = attr.ib(type=int, validator=type_validator())
 
@@ -839,10 +937,14 @@ class Content(BaseContent):
 class SkippedContent(BaseContent):
     object_type: Final = "skipped_content"
 
-    sha1 = attr.ib(type=Optional[bytes], validator=type_validator())
-    sha1_git = attr.ib(type=Optional[Sha1Git], validator=type_validator())
-    sha256 = attr.ib(type=Optional[bytes], validator=type_validator())
-    blake2s256 = attr.ib(type=Optional[bytes], validator=type_validator())
+    sha1 = attr.ib(type=Optional[bytes], validator=type_validator(), repr=hash_repr)
+    sha1_git = attr.ib(
+        type=Optional[Sha1Git], validator=type_validator(), repr=hash_repr
+    )
+    sha256 = attr.ib(type=Optional[bytes], validator=type_validator(), repr=hash_repr)
+    blake2s256 = attr.ib(
+        type=Optional[bytes], validator=type_validator(), repr=hash_repr
+    )
 
     length = attr.ib(type=Optional[int], validator=type_validator())
 
@@ -919,6 +1021,9 @@ class MetadataAuthorityType(Enum):
     DEPOSIT_CLIENT = "deposit_client"
     FORGE = "forge"
     REGISTRY = "registry"
+
+    def __repr__(self):
+        return f"MetadataAuthorityType.{self.name}"
 
 
 @attr.s(frozen=True, slots=True)
@@ -1025,7 +1130,7 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
         type=Optional[CoreSWHID], default=None, validator=type_validator()
     )
 
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
         git_object = git_objects.raw_extrinsic_metadata_git_object(self)
@@ -1217,7 +1322,7 @@ class ExtID(HashableObject, BaseModel):
     target = attr.ib(type=CoreSWHID, validator=type_validator())
     extid_version = attr.ib(type=int, validator=type_validator(), default=0)
 
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     @classmethod
     def from_dict(cls, d):
