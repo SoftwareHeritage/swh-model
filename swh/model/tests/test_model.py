@@ -447,21 +447,27 @@ def test_timestampwithtimezone():
     tstz = TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=False)
     attr.validate(tstz)
     assert tstz.negative_utc is False
+    assert tstz.offset_bytes == b"+0000"
 
-    attr.validate(TimestampWithTimezone(timestamp=ts, offset=10, negative_utc=False))
+    tstz = TimestampWithTimezone(timestamp=ts, offset=10, negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.offset_bytes == b"+0010"
 
-    attr.validate(TimestampWithTimezone(timestamp=ts, offset=-10, negative_utc=False))
+    tstz = TimestampWithTimezone(timestamp=ts, offset=-10, negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.offset_bytes == b"-0010"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=True)
     attr.validate(tstz)
     assert tstz.negative_utc is True
+    assert tstz.offset_bytes == b"-0000"
 
     with pytest.raises(AttributeTypeError):
         TimestampWithTimezone(
             timestamp=datetime.datetime.now(), offset=0, negative_utc=False
         )
 
-    with pytest.raises(AttributeTypeError):
+    with pytest.raises((AttributeTypeError, TypeError)):
         TimestampWithTimezone(timestamp=ts, offset="0", negative_utc=False)
 
     with pytest.raises(AttributeTypeError):

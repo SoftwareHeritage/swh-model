@@ -1046,6 +1046,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1054,6 +1055,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1062,6 +1064,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1070,6 +1073,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1078,6 +1082,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1090,6 +1095,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1102,6 +1108,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 100},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1110,6 +1117,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": True,
+            "offset_bytes": b"-0000",
         },
     ),
     (
@@ -1118,6 +1126,7 @@ TS_DICTS = [
             "timestamp": {"seconds": 12345, "microseconds": 0},
             "offset": 0,
             "negative_utc": False,
+            "offset_bytes": b"+0000",
         },
     ),
 ]
@@ -1153,6 +1162,7 @@ TS_TIMEZONES = [
     datetime.timezone.max,
 ]
 TS_TZ_EXPECTED = [-1439, -60, 0, 60, 1439]
+TS_TZ_BYTES_EXPECTED = [b"-2359", b"-0100", b"+0000", b"+0100", b"+2359"]
 TS_DATETIMES = [
     datetime.datetime(2020, 2, 27, 14, 39, 19, tzinfo=UTC),
     datetime.datetime(2120, 12, 31, 23, 59, 59, tzinfo=UTC),
@@ -1162,14 +1172,19 @@ TS_DT_EXPECTED = [1582814359, 4765132799, -11348929020]
 
 
 @pytest.mark.parametrize("date, seconds", zip(TS_DATETIMES, TS_DT_EXPECTED))
-@pytest.mark.parametrize("tz, offset", zip(TS_TIMEZONES, TS_TZ_EXPECTED))
+@pytest.mark.parametrize(
+    "tz, offset, offset_bytes", zip(TS_TIMEZONES, TS_TZ_EXPECTED, TS_TZ_BYTES_EXPECTED)
+)
 @pytest.mark.parametrize("microsecond", [0, 1, 10, 100, 1000, 999999])
-def test_normalize_timestamp_datetime(date, seconds, tz, offset, microsecond):
+def test_normalize_timestamp_datetime(
+    date, seconds, tz, offset, offset_bytes, microsecond
+):
     date = date.astimezone(tz).replace(microsecond=microsecond)
     assert TimestampWithTimezone.from_dict(date).to_dict() == {
         "timestamp": {"seconds": seconds, "microseconds": microsecond},
         "offset": offset,
         "negative_utc": False,
+        "offset_bytes": offset_bytes,
     }
 
 

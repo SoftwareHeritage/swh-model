@@ -49,6 +49,8 @@ KeyType = Union[Dict[str, str], Dict[str, bytes], bytes]
 
 SHA1_SIZE = 20
 
+_OFFSET_CHARS = frozenset(b"+-0123456789")
+
 # TODO: Limit this to 20 bytes
 Sha1Git = bytes
 Sha1 = bytes
@@ -325,6 +327,15 @@ class TimestampWithTimezone(BaseModel):
     offset = attr.ib(type=int, validator=type_validator())
     negative_utc = attr.ib(type=bool, validator=type_validator())
 
+    offset_bytes = attr.ib(type=bytes, validator=type_validator())
+    """Raw git representation of the timezone, as an offset from UTC.
+    It should follow this format: ``+HHMM`` or ``-HHMM`` (including ``+0000`` and
+    ``-0000``).
+
+    However, when created from git objects, it must be the exact bytes used in the
+    original objects, so it may differ from this format when they do.
+    """
+
     @offset.validator
     def check_offset(self, attribute, value):
         """Checks the offset is a 16-bits signed integer (in theory, it
@@ -334,10 +345,46 @@ class TimestampWithTimezone(BaseModel):
             # you'll find in the wild...
             raise ValueError("offset too large: %d minutes" % value)
 
+        self._check_offsets_match()
+
     @negative_utc.validator
     def check_negative_utc(self, attribute, value):
         if self.offset and value:
             raise ValueError("negative_utc can only be True is offset=0")
+
+        self._check_offsets_match()
+
+    @offset_bytes.default
+    def _default_offset_bytes(self):
+        negative = self.offset < 0 or self.negative_utc
+        (hours, minutes) = divmod(abs(self.offset), 60)
+        return f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
+
+    @offset_bytes.validator
+    def check_offset_bytes(self, attribute, value):
+        if not set(value) <= _OFFSET_CHARS:
+            raise ValueError(f"invalid characters in offset_bytes: {value!r}")
+
+        self._check_offsets_match()
+
+    def _check_offsets_match(self):
+        offset_str = self.offset_bytes.decode()
+        assert offset_str[0] in "+-"
+        sign = int(offset_str[0] + "1")
+        hours = int(offset_str[1:-2])
+        minutes = int(offset_str[-2:])
+        offset = sign * (hours * 60 + minutes)
+        if offset != self.offset:
+            raise ValueError(
+                f"offset_bytes ({self.offset_bytes!r}) does not match offset "
+                f"{divmod(self.offset, 60)}"
+            )
+
+        if offset == 0 and self.negative_utc != self.offset_bytes.startswith(b"-"):
+            raise ValueError(
+                f"offset_bytes ({self.offset_bytes!r}) does not match negative_utc "
+                f"({self.negative_utc})"
+            )
 
     @classmethod
     def from_dict(cls, time_representation: Union[Dict, datetime.datetime, int]):
@@ -422,7 +469,8 @@ class TimestampWithTimezone(BaseModel):
         dt = iso8601.parse_date(s)
         tstz = cls.from_datetime(dt)
         if dt.tzname() == "-00:00":
-            tstz = attr.evolve(tstz, negative_utc=True)
+            assert tstz.offset_bytes == b"+0000"
+            tstz = attr.evolve(tstz, negative_utc=True, offset_bytes=b"-0000")
         return tstz
 
 
