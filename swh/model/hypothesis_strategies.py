@@ -54,17 +54,21 @@ from .model import (
 )
 from .swhids import ExtendedObjectType, ExtendedSWHID
 
-pgsql_alphabet = characters(
-    blacklist_categories=("Cs",), blacklist_characters=["\u0000"]
-)  # postgresql does not like these
+
+def pgsql_alphabet(blacklist_chars=[]):
+    pgsql_blacklist_chars = ["\u0000"]  # postgresql does not like these
+    return characters(
+        blacklist_categories=("Cs",),
+        blacklist_characters=pgsql_blacklist_chars + blacklist_chars,
+    )
 
 
 def optional(strategy):
     return one_of(none(), strategy)
 
 
-def pgsql_text():
-    return text(alphabet=pgsql_alphabet)
+def pgsql_text(blacklist_chars=[]):
+    return text(alphabet=pgsql_alphabet(blacklist_chars))
 
 
 def sha1_git():
@@ -274,7 +278,7 @@ def revisions():
 def directory_entries_d():
     return builds(
         dict,
-        name=binary(),
+        name=pgsql_text(blacklist_chars=["/"]).map(str.encode),
         target=sha1_git(),
         type=sampled_from(["file", "dir", "rev"]),
         perms=sampled_from([perm.value for perm in DentryPerms]),
