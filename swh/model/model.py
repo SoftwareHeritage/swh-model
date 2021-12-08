@@ -194,6 +194,10 @@ class BaseModel:
         deduplication."""
         raise NotImplementedError(f"unique_key for {self}")
 
+    def check(self) -> None:
+        """Performs internal consistency checks, and raises an error if one fails."""
+        attr.validate(self)
+
 
 def _compute_hash_from_manifest(manifest: bytes) -> Sha1Git:
     return hashlib.new("sha1", manifest).digest()
@@ -224,6 +228,12 @@ class HashableObject(metaclass=ABCMeta):
 
     def unique_key(self) -> KeyType:
         return self.id
+
+    def check(self) -> None:
+        super().check()  # type: ignore
+
+        if self.id != self.compute_hash():
+            raise ValueError("'id' does not match recomputed hash.")
 
 
 @attr.s(frozen=True, slots=True)

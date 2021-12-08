@@ -17,6 +17,7 @@ import pytest
 
 from swh.model.collections import ImmutableDict
 from swh.model.from_disk import DentryPerms
+import swh.model.git_objects
 from swh.model.hashutil import MultiHash, hash_to_bytes
 import swh.model.hypothesis_strategies as strategies
 import swh.model.model
@@ -748,6 +749,15 @@ def test_skipped_content_naive_datetime():
 # Directory
 
 
+@given(strategies.directories())
+def test_directory_check(directory):
+    directory.check()
+
+    directory2 = attr.evolve(directory, id=b"\x00" * 20)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        directory2.check()
+
+
 def test_directory_entry_name_validation():
     with pytest.raises(ValueError, match="valid directory entry name."):
         DirectoryEntry(name=b"foo/", type="dir", target=b"\x00" * 20, perms=0),
@@ -769,7 +779,28 @@ def test_directory_duplicate_entry_name():
         Directory(entries=entries)
 
 
+# Release
+
+
+@given(strategies.releases())
+def test_release_check(release):
+    release.check()
+
+    release2 = attr.evolve(release, id=b"\x00" * 20)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        release2.check()
+
+
 # Revision
+
+
+@given(strategies.revisions())
+def test_revision_check(revision):
+    revision.check()
+
+    revision2 = attr.evolve(revision, id=b"\x00" * 20)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        revision2.check()
 
 
 def test_revision_extra_headers_no_headers():
