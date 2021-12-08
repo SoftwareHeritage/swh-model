@@ -6,6 +6,7 @@
 import collections
 import copy
 import datetime
+import hashlib
 from typing import Any, List, Optional, Tuple, Union
 
 import attr
@@ -760,6 +761,29 @@ def test_directory_check(directory):
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         directory2.check()
 
+    directory2 = attr.evolve(
+        directory, raw_manifest=swh.model.git_objects.directory_git_object(directory)
+    )
+    with pytest.raises(
+        ValueError, match="non-none raw_manifest attribute, but does not need it."
+    ):
+        directory2.check()
+
+
+@given(strategies.directories())
+def test_directory_raw_manifest(directory):
+    raw_manifest = b"foo"
+    id_ = hashlib.new("sha1", raw_manifest).digest()
+
+    directory2 = attr.evolve(directory, raw_manifest=raw_manifest)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        directory2.check()
+
+    directory2 = attr.evolve(directory, raw_manifest=raw_manifest, id=id_)
+    assert directory2.id is not None
+    assert directory2.id == id_ != directory.id
+    directory2.check()
+
 
 def test_directory_entry_name_validation():
     with pytest.raises(ValueError, match="valid directory entry name."):
@@ -793,6 +817,29 @@ def test_release_check(release):
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         release2.check()
 
+    release2 = attr.evolve(
+        release, raw_manifest=swh.model.git_objects.release_git_object(release)
+    )
+    with pytest.raises(
+        ValueError, match="non-none raw_manifest attribute, but does not need it."
+    ):
+        release2.check()
+
+
+@given(strategies.releases())
+def test_release_raw_manifest(release):
+    raw_manifest = b"foo"
+    id_ = hashlib.new("sha1", raw_manifest).digest()
+
+    release2 = attr.evolve(release, raw_manifest=raw_manifest)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        release2.check()
+
+    release2 = attr.evolve(release, raw_manifest=raw_manifest, id=id_)
+    assert release2.id is not None
+    assert release2.id == id_ != release.id
+    release2.check()
+
 
 # Revision
 
@@ -804,6 +851,29 @@ def test_revision_check(revision):
     revision2 = attr.evolve(revision, id=b"\x00" * 20)
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         revision2.check()
+
+    revision2 = attr.evolve(
+        revision, raw_manifest=swh.model.git_objects.revision_git_object(revision)
+    )
+    with pytest.raises(
+        ValueError, match="non-none raw_manifest attribute, but does not need it."
+    ):
+        revision2.check()
+
+
+@given(strategies.revisions())
+def test_revision_raw_manifest(revision):
+    raw_manifest = b"foo"
+    id_ = hashlib.new("sha1", raw_manifest).digest()
+
+    revision2 = attr.evolve(revision, raw_manifest=raw_manifest)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        revision2.check()
+
+    revision2 = attr.evolve(revision, raw_manifest=raw_manifest, id=id_)
+    assert revision2.id is not None
+    assert revision2.id == id_ != revision.id
+    revision2.check()
 
 
 def test_revision_extra_headers_no_headers():

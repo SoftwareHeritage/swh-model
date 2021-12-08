@@ -211,7 +211,6 @@ class HashableObject(metaclass=ABCMeta):
 
     id: Sha1Git
 
-    @abstractmethod
     def compute_hash(self) -> bytes:
         """Derived model classes must implement this to compute
         the object hash.
@@ -219,7 +218,11 @@ class HashableObject(metaclass=ABCMeta):
         This method is called by the object initialization if the `id`
         attribute is set to an empty value.
         """
-        pass
+        return self._compute_hash_from_attributes()
+
+    @abstractmethod
+    def _compute_hash_from_attributes(self) -> Sha1Git:
+        raise NotImplementedError(f"_compute_hash_from_attributes for {self}")
 
     def __attrs_post_init__(self):
         if not self.id:
@@ -234,6 +237,41 @@ class HashableObject(metaclass=ABCMeta):
 
         if self.id != self.compute_hash():
             raise ValueError("'id' does not match recomputed hash.")
+
+
+class HashableObjectWithManifest(HashableObject):
+    """Derived class of HashableObject, for objects that may need to store
+    verbatim git objects as ``raw_manifest`` to preserve original hashes."""
+
+    raw_manifest: Optional[bytes] = None
+    """Stores the original content of git objects when they cannot be faithfully
+    represented using only the other attributes.
+
+    This should only be used as a last resort, and only set in the Git loader,
+    for objects too corrupt to fit the data model."""
+
+    def compute_hash(self) -> bytes:
+        """Derived model classes must implement this to compute
+        the object hash.
+
+        This method is called by the object initialization if the `id`
+        attribute is set to an empty value.
+        """
+        if self.raw_manifest is None:
+            return super().compute_hash()
+        else:
+            return _compute_hash_from_manifest(self.raw_manifest)
+
+    def check(self) -> None:
+        super().check()
+
+        if (
+            self.raw_manifest is not None
+            and self.id == self._compute_hash_from_attributes()
+        ):
+            raise ValueError(
+                f"{self} has a non-none raw_manifest attribute, but does not need it."
+            )
 
 
 @attr.s(frozen=True, slots=True)
@@ -504,7 +542,7 @@ class Origin(HashableObject, BaseModel):
     def unique_key(self) -> KeyType:
         return {"url": self.url}
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(self.url.encode("utf-8"))
 
     def swhid(self) -> ExtendedSWHID:
@@ -648,7 +686,7 @@ class Snapshot(HashableObject, BaseModel):
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.snapshot_git_object(self))
 
     @classmethod
@@ -668,7 +706,7 @@ class Snapshot(HashableObject, BaseModel):
 
 
 @attr.s(frozen=True, slots=True)
-class Release(HashableObject, BaseModel):
+class Release(HashableObjectWithManifest, BaseModel):
     object_type: Final = "release"
 
     name = attr.ib(type=bytes, validator=type_validator())
@@ -687,8 +725,9 @@ class Release(HashableObject, BaseModel):
         default=None,
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.release_git_object(self))
 
     @author.validator
@@ -743,7 +782,7 @@ def tuplify_extra_headers(value: Iterable):
 
 
 @attr.s(frozen=True, slots=True)
-class Revision(HashableObject, BaseModel):
+class Revision(HashableObjectWithManifest, BaseModel):
     object_type: Final = "revision"
 
     message = attr.ib(type=Optional[bytes], validator=type_validator())
@@ -770,6 +809,7 @@ class Revision(HashableObject, BaseModel):
         converter=tuplify_extra_headers,
         default=(),
     )
+    raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -785,7 +825,7 @@ class Revision(HashableObject, BaseModel):
                 attr.validate(self)
             object.__setattr__(self, "metadata", metadata)
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.revision_git_object(self))
 
     @classmethod
@@ -837,17 +877,18 @@ class DirectoryEntry(BaseModel):
     @name.validator
     def check_name(self, attribute, value):
         if b"/" in value:
-            raise ValueError("{value!r} is not a valid directory entry name.")
+            raise ValueError(f"{value!r} is not a valid directory entry name.")
 
 
 @attr.s(frozen=True, slots=True)
-class Directory(HashableObject, BaseModel):
+class Directory(HashableObjectWithManifest, BaseModel):
     object_type: Final = "directory"
 
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.directory_git_object(self))
 
     @entries.validator
@@ -1193,7 +1234,7 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(
             git_objects.raw_extrinsic_metadata_git_object(self)
         )
@@ -1395,5 +1436,5 @@ class ExtID(HashableObject, BaseModel):
             extid_version=d.get("extid_version", 0),
         )
 
-    def compute_hash(self) -> bytes:
+    def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.extid_git_object(self))
