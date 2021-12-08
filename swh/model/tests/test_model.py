@@ -137,6 +137,7 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         [None, bytearray(b"\x12\x34"), "123", 0, 123, (), (1, 2, 3), ImmutableDict()],
     ),
     (str, ["", "123"], [None, b"123", b"", 0, (), (1, 2, 3), ImmutableDict()]),
+    (None, [None], [b"", b"123", "", "foo", 0, 123, ImmutableDict(), float("NaN")]),
     # unions:
     (
         Optional[int],

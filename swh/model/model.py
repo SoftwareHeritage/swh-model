@@ -96,6 +96,9 @@ def _check_type(type_, value):
     if type_ is object or type_ is Any:
         return True
 
+    if type_ is None:
+        return value is None
+
     origin = getattr(type_, "__origin__", None)
 
     # Non-generic type, check it directly
