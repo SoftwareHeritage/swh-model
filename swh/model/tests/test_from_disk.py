@@ -978,3 +978,19 @@ class DirectoryManipulation(DataMixin, unittest.TestCase):
             del d["foo"]
         with self.assertRaisesRegex(ValueError, "bytes Directory entry"):
             del d[42]
+
+    def test_directory_contains(self):
+        d = Directory()
+        d[b"a"] = Directory()
+        d[b"a/b"] = Directory()
+        d[b"a/b/c"] = Directory()
+        d[b"a/b/c/d"] = Content()
+
+        self.assertIn(b"a", d)
+        self.assertIn(b"a/b", d)
+        self.assertIn(b"a/b/c", d)
+        self.assertIn(b"a/b/c/d", d)
+
+        self.assertNotIn(b"b", d)
+        self.assertNotIn(b"b/c", d)
+        self.assertNotIn(b"b/c/d", d)
