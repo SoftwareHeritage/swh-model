@@ -195,6 +195,10 @@ class BaseModel:
         raise NotImplementedError(f"unique_key for {self}")
 
 
+def _compute_hash_from_manifest(manifest: bytes) -> Sha1Git:
+    return hashlib.new("sha1", manifest).digest()
+
+
 class HashableObject(metaclass=ABCMeta):
     """Mixin to automatically compute object identifier hash when
     the associated model is instantiated."""
@@ -491,7 +495,7 @@ class Origin(HashableObject, BaseModel):
         return {"url": self.url}
 
     def compute_hash(self) -> bytes:
-        return hashlib.sha1(self.url.encode("utf-8")).digest()
+        return _compute_hash_from_manifest(self.url.encode("utf-8"))
 
     def swhid(self) -> ExtendedSWHID:
         """Returns a SWHID representing this origin."""
@@ -635,8 +639,7 @@ class Snapshot(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
-        git_object = git_objects.snapshot_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+        return _compute_hash_from_manifest(git_objects.snapshot_git_object(self))
 
     @classmethod
     def from_dict(cls, d):
@@ -676,8 +679,7 @@ class Release(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
-        git_object = git_objects.release_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+        return _compute_hash_from_manifest(git_objects.release_git_object(self))
 
     @author.validator
     def check_author(self, attribute, value):
@@ -774,8 +776,7 @@ class Revision(HashableObject, BaseModel):
             object.__setattr__(self, "metadata", metadata)
 
     def compute_hash(self) -> bytes:
-        git_object = git_objects.revision_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+        return _compute_hash_from_manifest(git_objects.revision_git_object(self))
 
     @classmethod
     def from_dict(cls, d):
@@ -837,8 +838,7 @@ class Directory(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
-        git_object = git_objects.directory_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+        return _compute_hash_from_manifest(git_objects.directory_git_object(self))
 
     @entries.validator
     def check_entries(self, attribute, value):
@@ -1184,8 +1184,9 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def compute_hash(self) -> bytes:
-        git_object = git_objects.raw_extrinsic_metadata_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+        return _compute_hash_from_manifest(
+            git_objects.raw_extrinsic_metadata_git_object(self)
+        )
 
     @origin.validator
     def check_origin(self, attribute, value):
@@ -1385,5 +1386,4 @@ class ExtID(HashableObject, BaseModel):
         )
 
     def compute_hash(self) -> bytes:
-        git_object = git_objects.extid_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+        return _compute_hash_from_manifest(git_objects.extid_git_object(self))
