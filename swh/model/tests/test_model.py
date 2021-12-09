@@ -772,16 +772,20 @@ def test_directory_check(directory):
 
 @given(strategies.directories())
 def test_directory_raw_manifest(directory):
+    assert "raw_manifest" not in directory.to_dict()
+
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
 
     directory2 = attr.evolve(directory, raw_manifest=raw_manifest)
+    assert directory2.to_dict()["raw_manifest"] == raw_manifest
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         directory2.check()
 
     directory2 = attr.evolve(directory, raw_manifest=raw_manifest, id=id_)
     assert directory2.id is not None
     assert directory2.id == id_ != directory.id
+    assert directory2.to_dict()["raw_manifest"] == raw_manifest
     directory2.check()
 
 
@@ -828,16 +832,20 @@ def test_release_check(release):
 
 @given(strategies.releases())
 def test_release_raw_manifest(release):
+    assert "raw_manifest" not in release.to_dict()
+
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
 
     release2 = attr.evolve(release, raw_manifest=raw_manifest)
+    assert release2.to_dict()["raw_manifest"] == raw_manifest
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         release2.check()
 
     release2 = attr.evolve(release, raw_manifest=raw_manifest, id=id_)
     assert release2.id is not None
     assert release2.id == id_ != release.id
+    assert release2.to_dict()["raw_manifest"] == raw_manifest
     release2.check()
 
 
@@ -863,16 +871,20 @@ def test_revision_check(revision):
 
 @given(strategies.revisions())
 def test_revision_raw_manifest(revision):
+    assert "raw_manifest" not in revision.to_dict()
+
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
 
     revision2 = attr.evolve(revision, raw_manifest=raw_manifest)
+    assert revision2.to_dict()["raw_manifest"] == raw_manifest
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         revision2.check()
 
     revision2 = attr.evolve(revision, raw_manifest=raw_manifest, id=id_)
     assert revision2.id is not None
     assert revision2.id == id_ != revision.id
+    assert revision2.to_dict()["raw_manifest"] == raw_manifest
     revision2.check()
 
 
