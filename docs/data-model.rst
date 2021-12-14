@@ -74,8 +74,7 @@ synonyms.
 **directories**
   a list of named directory entries, each of which pointing to other artifacts,
   usually file contents or sub-directories. Directory entries are also
-  associated to arbitrary metadata, which vary with technologies, but usually
-  includes permission bits, modification timestamps, etc.
+  associated to some metadata: permission bits and modification timestamps
 
 **revisions** (AKA "commits")
   software development within a specific project is essentially a time-indexed
@@ -92,8 +91,8 @@ synonyms.
   some revisions are more equals than others and get selected by developers as
   denoting important project milestones known as "releases". Each release
   points to the last commit in project history corresponding to the release and
-  might carry arbitrary metadata—e.g., release name and version, release
-  message, cryptographic signatures, etc.
+  carries metadata: release name and version, release message, cryptographic
+  signatures, etc.
 
 
 Additionally, the following crawling-related information are stored as
@@ -260,3 +259,32 @@ making emergent structures such as code reuse across different projects or
 software origins, readily available. Further reinforcing the Software Heritage
 use cases, this object could become a veritable "map of the stars" of our
 entire software commons.
+
+
+Extended data model
+-------------------
+
+In addition to the artifacts detailed above used to represent original software
+artifacts, the Software Heritage archive stores information about these
+artifacts.
+
+**extid**
+  a relationship between an original identifier of an artifact, in its
+  native/upstream environment, and a `core SWHID <persistent-identifiers>`,
+  which is specific to Software Heritage. As such, it is a triple made of:
+
+  * the external identifier, stored as bytes whose format is opaque to the
+    data model
+  * a type (a simple name and a version), to identify the type of relationship
+  * the "target", which is a core SWHID
+
+**raw extrinsic metadata**
+  an opaque bytestring, along with its format (a simple name), an identifier
+  of the object the metadata is about and in which context (similar to a
+  `qualified SWHID <persistent-identifiers>`), and provenance information
+  (the authority who provided it, the fetcher tool used to get it, and the
+  data it was discovered at).
+
+  It provides both a way to store information about an artifact contributed by
+  external entities, after the artifact was created, and an escape hatch to
+  store metadata that would not otherwise fit in the data model.
