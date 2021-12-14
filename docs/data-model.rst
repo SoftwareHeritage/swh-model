@@ -74,7 +74,7 @@ synonyms.
 **directories**
   a list of named directory entries, each of which pointing to other artifacts,
   usually file contents or sub-directories. Directory entries are also
-  associated to some metadata: permission bits and modification timestamps
+  associated to some metadata stored as permission bits.
 
 **revisions** (AKA "commits")
   software development within a specific project is essentially a time-indexed
