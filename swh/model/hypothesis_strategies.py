@@ -279,12 +279,36 @@ def revisions():
 
 
 def directory_entries_d():
-    return builds(
-        dict,
-        name=binaries_without_bytes(b"/"),
-        target=sha1_git(),
-        type=sampled_from(["file", "dir", "rev"]),
-        perms=sampled_from([perm.value for perm in DentryPerms]),
+    return one_of(
+        builds(
+            dict,
+            name=binaries_without_bytes(b"/"),
+            target=sha1_git(),
+            type=just("file"),
+            perms=one_of(
+                integers(min_value=0o100000, max_value=0o100777),  # regular file
+                integers(min_value=0o120000, max_value=0o120777),  # symlink
+            ),
+        ),
+        builds(
+            dict,
+            name=binaries_without_bytes(b"/"),
+            target=sha1_git(),
+            type=just("dir"),
+            perms=integers(
+                min_value=DentryPerms.directory,
+                max_value=DentryPerms.directory + 0o777,
+            ),
+        ),
+        builds(
+            dict,
+            name=binaries_without_bytes(b"/"),
+            target=sha1_git(),
+            type=just("rev"),
+            perms=integers(
+                min_value=DentryPerms.revision, max_value=DentryPerms.revision + 0o777,
+            ),
+        ),
     )
 
 
