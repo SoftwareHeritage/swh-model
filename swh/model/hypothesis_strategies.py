@@ -1,10 +1,11 @@
-# Copyright (C) 2019-2020 The Software Heritage developers
+# Copyright (C) 2019-2021 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 import datetime
 import string
+from typing import Sequence
 
 from hypothesis import assume
 from hypothesis.extra.dateutil import timezones
@@ -73,6 +74,12 @@ def sha1_git():
 
 def sha1():
     return binary(min_size=20, max_size=20)
+
+
+def binaries_without_bytes(blacklist: Sequence[int]):
+    """Like hypothesis.strategies.binary, but takes a sequence of bytes that
+    should not be included."""
+    return lists(sampled_from([i for i in range(256) if i not in blacklist])).map(bytes)
 
 
 @composite
@@ -274,7 +281,7 @@ def revisions():
 def directory_entries_d():
     return builds(
         dict,
-        name=binary(),
+        name=binaries_without_bytes(b"/"),
         target=sha1_git(),
         type=sampled_from(["file", "dir", "rev"]),
         perms=sampled_from([perm.value for perm in DentryPerms]),
