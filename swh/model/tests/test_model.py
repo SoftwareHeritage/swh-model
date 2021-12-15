@@ -197,7 +197,10 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # standard types:
     (
         datetime.datetime,
-        [datetime.datetime.now(), datetime.datetime.now(tz=datetime.timezone.utc)],
+        [
+            datetime.datetime(2021, 12, 15, 12, 59, 27),
+            datetime.datetime(2021, 12, 15, 12, 59, 27, tzinfo=datetime.timezone.utc),
+        ],
         [None, 123],
     ),
     # ImmutableDict
