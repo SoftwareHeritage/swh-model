@@ -549,6 +549,13 @@ class Directory(MerkleNode):
             key1, key2 = key.rsplit(b"/", 1)
             del self[key1][key2]
 
+    def __contains__(self, key):
+        if b"/" not in key:
+            return super().__contains__(key)
+        else:
+            key1, key2 = key.split(b"/", 1)
+            return super().__contains__(key1) and self[key1].__contains__(key2)
+
     def __repr__(self):
         return "Directory(id=%s, entries=[%s])" % (
             hash_to_hex(self.hash),
