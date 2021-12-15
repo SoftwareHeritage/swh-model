@@ -753,7 +753,7 @@ def test_skipped_content_naive_datetime():
 # Directory
 
 
-@given(strategies.directories())
+@given(strategies.directories().filter(lambda d: d.raw_manifest is None))
 def test_directory_check(directory):
     directory.check()
 
@@ -770,7 +770,7 @@ def test_directory_check(directory):
         directory2.check()
 
 
-@given(strategies.directories())
+@given(strategies.directories().filter(lambda d: d.raw_manifest is None))
 def test_directory_raw_manifest(directory):
     assert "raw_manifest" not in directory.to_dict()
 
@@ -813,7 +813,7 @@ def test_directory_duplicate_entry_name():
 # Release
 
 
-@given(strategies.releases())
+@given(strategies.releases().filter(lambda rel: rel.raw_manifest is None))
 def test_release_check(release):
     release.check()
 
@@ -830,10 +830,8 @@ def test_release_check(release):
         release2.check()
 
 
-@given(strategies.releases())
+@given(strategies.releases().filter(lambda rev: rev.raw_manifest is None))
 def test_release_raw_manifest(release):
-    assert "raw_manifest" not in release.to_dict()
-
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
 
@@ -852,7 +850,7 @@ def test_release_raw_manifest(release):
 # Revision
 
 
-@given(strategies.revisions())
+@given(strategies.revisions().filter(lambda rev: rev.raw_manifest is None))
 def test_revision_check(revision):
     revision.check()
 
@@ -869,9 +867,8 @@ def test_revision_check(revision):
         revision2.check()
 
 
-@given(strategies.revisions())
+@given(strategies.revisions().filter(lambda rev: rev.raw_manifest is None))
 def test_revision_raw_manifest(revision):
-    assert "raw_manifest" not in revision.to_dict()
 
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
