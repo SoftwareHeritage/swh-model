@@ -49,6 +49,8 @@ KeyType = Union[Dict[str, str], Dict[str, bytes], bytes]
 
 SHA1_SIZE = 20
 
+_OFFSET_CHARS = frozenset(b"+-0123456789")
+
 # TODO: Limit this to 20 bytes
 Sha1Git = bytes
 Sha1 = bytes
@@ -93,6 +95,9 @@ def dictify(value):
 def _check_type(type_, value):
     if type_ is object or type_ is Any:
         return True
+
+    if type_ is None:
+        return value is None
 
     origin = getattr(type_, "__origin__", None)
 
@@ -189,6 +194,14 @@ class BaseModel:
         deduplication."""
         raise NotImplementedError(f"unique_key for {self}")
 
+    def check(self) -> None:
+        """Performs internal consistency checks, and raises an error if one fails."""
+        attr.validate(self)
+
+
+def _compute_hash_from_manifest(manifest: bytes) -> Sha1Git:
+    return hashlib.new("sha1", manifest).digest()
+
 
 class HashableObject(metaclass=ABCMeta):
     """Mixin to automatically compute object identifier hash when
@@ -198,7 +211,6 @@ class HashableObject(metaclass=ABCMeta):
 
     id: Sha1Git
 
-    @abstractmethod
     def compute_hash(self) -> bytes:
         """Derived model classes must implement this to compute
         the object hash.
@@ -206,7 +218,11 @@ class HashableObject(metaclass=ABCMeta):
         This method is called by the object initialization if the `id`
         attribute is set to an empty value.
         """
-        pass
+        return self._compute_hash_from_attributes()
+
+    @abstractmethod
+    def _compute_hash_from_attributes(self) -> Sha1Git:
+        raise NotImplementedError(f"_compute_hash_from_attributes for {self}")
 
     def __attrs_post_init__(self):
         if not self.id:
@@ -215,6 +231,53 @@ class HashableObject(metaclass=ABCMeta):
 
     def unique_key(self) -> KeyType:
         return self.id
+
+    def check(self) -> None:
+        super().check()  # type: ignore
+
+        if self.id != self.compute_hash():
+            raise ValueError("'id' does not match recomputed hash.")
+
+
+class HashableObjectWithManifest(HashableObject):
+    """Derived class of HashableObject, for objects that may need to store
+    verbatim git objects as ``raw_manifest`` to preserve original hashes."""
+
+    raw_manifest: Optional[bytes] = None
+    """Stores the original content of git objects when they cannot be faithfully
+    represented using only the other attributes.
+
+    This should only be used as a last resort, and only set in the Git loader,
+    for objects too corrupt to fit the data model."""
+
+    def to_dict(self):
+        d = super().to_dict()
+        if d["raw_manifest"] is None:
+            del d["raw_manifest"]
+        return d
+
+    def compute_hash(self) -> bytes:
+        """Derived model classes must implement this to compute
+        the object hash.
+
+        This method is called by the object initialization if the `id`
+        attribute is set to an empty value.
+        """
+        if self.raw_manifest is None:
+            return super().compute_hash()
+        else:
+            return _compute_hash_from_manifest(self.raw_manifest)
+
+    def check(self) -> None:
+        super().check()
+
+        if (
+            self.raw_manifest is not None
+            and self.id == self._compute_hash_from_attributes()
+        ):
+            raise ValueError(
+                f"{self} has a non-none raw_manifest attribute, but does not need it."
+            )
 
 
 @attr.s(frozen=True, slots=True)
@@ -325,6 +388,15 @@ class TimestampWithTimezone(BaseModel):
     offset = attr.ib(type=int, validator=type_validator())
     negative_utc = attr.ib(type=bool, validator=type_validator())
 
+    offset_bytes = attr.ib(type=bytes, validator=type_validator())
+    """Raw git representation of the timezone, as an offset from UTC.
+    It should follow this format: ``+HHMM`` or ``-HHMM`` (including ``+0000`` and
+    ``-0000``).
+
+    However, when created from git objects, it must be the exact bytes used in the
+    original objects, so it may differ from this format when they do.
+    """
+
     @offset.validator
     def check_offset(self, attribute, value):
         """Checks the offset is a 16-bits signed integer (in theory, it
@@ -334,10 +406,46 @@ class TimestampWithTimezone(BaseModel):
             # you'll find in the wild...
             raise ValueError("offset too large: %d minutes" % value)
 
+        self._check_offsets_match()
+
     @negative_utc.validator
     def check_negative_utc(self, attribute, value):
         if self.offset and value:
             raise ValueError("negative_utc can only be True is offset=0")
+
+        self._check_offsets_match()
+
+    @offset_bytes.default
+    def _default_offset_bytes(self):
+        negative = self.offset < 0 or self.negative_utc
+        (hours, minutes) = divmod(abs(self.offset), 60)
+        return f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
+
+    @offset_bytes.validator
+    def check_offset_bytes(self, attribute, value):
+        if not set(value) <= _OFFSET_CHARS:
+            raise ValueError(f"invalid characters in offset_bytes: {value!r}")
+
+        self._check_offsets_match()
+
+    def _check_offsets_match(self):
+        offset_str = self.offset_bytes.decode()
+        assert offset_str[0] in "+-"
+        sign = int(offset_str[0] + "1")
+        hours = int(offset_str[1:-2])
+        minutes = int(offset_str[-2:])
+        offset = sign * (hours * 60 + minutes)
+        if offset != self.offset:
+            raise ValueError(
+                f"offset_bytes ({self.offset_bytes!r}) does not match offset "
+                f"{divmod(self.offset, 60)}"
+            )
+
+        if offset == 0 and self.negative_utc != self.offset_bytes.startswith(b"-"):
+            raise ValueError(
+                f"offset_bytes ({self.offset_bytes!r}) does not match negative_utc "
+                f"({self.negative_utc})"
+            )
 
     @classmethod
     def from_dict(cls, time_representation: Union[Dict, datetime.datetime, int]):
@@ -422,7 +530,8 @@ class TimestampWithTimezone(BaseModel):
         dt = iso8601.parse_date(s)
         tstz = cls.from_datetime(dt)
         if dt.tzname() == "-00:00":
-            tstz = attr.evolve(tstz, negative_utc=True)
+            assert tstz.offset_bytes == b"+0000"
+            tstz = attr.evolve(tstz, negative_utc=True, offset_bytes=b"-0000")
         return tstz
 
 
@@ -439,8 +548,8 @@ class Origin(HashableObject, BaseModel):
     def unique_key(self) -> KeyType:
         return {"url": self.url}
 
-    def compute_hash(self) -> bytes:
-        return hashlib.sha1(self.url.encode("utf-8")).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(self.url.encode("utf-8"))
 
     def swhid(self) -> ExtendedSWHID:
         """Returns a SWHID representing this origin."""
@@ -583,9 +692,8 @@ class Snapshot(HashableObject, BaseModel):
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
-    def compute_hash(self) -> bytes:
-        git_object = git_objects.snapshot_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(git_objects.snapshot_git_object(self))
 
     @classmethod
     def from_dict(cls, d):
@@ -604,7 +712,7 @@ class Snapshot(HashableObject, BaseModel):
 
 
 @attr.s(frozen=True, slots=True)
-class Release(HashableObject, BaseModel):
+class Release(HashableObjectWithManifest, BaseModel):
     object_type: Final = "release"
 
     name = attr.ib(type=bytes, validator=type_validator())
@@ -623,10 +731,10 @@ class Release(HashableObject, BaseModel):
         default=None,
     )
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
-    def compute_hash(self) -> bytes:
-        git_object = git_objects.release_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(git_objects.release_git_object(self))
 
     @author.validator
     def check_author(self, attribute, value):
@@ -680,7 +788,7 @@ def tuplify_extra_headers(value: Iterable):
 
 
 @attr.s(frozen=True, slots=True)
-class Revision(HashableObject, BaseModel):
+class Revision(HashableObjectWithManifest, BaseModel):
     object_type: Final = "revision"
 
     message = attr.ib(type=Optional[bytes], validator=type_validator())
@@ -707,6 +815,7 @@ class Revision(HashableObject, BaseModel):
         converter=tuplify_extra_headers,
         default=(),
     )
+    raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -722,9 +831,8 @@ class Revision(HashableObject, BaseModel):
                 attr.validate(self)
             object.__setattr__(self, "metadata", metadata)
 
-    def compute_hash(self) -> bytes:
-        git_object = git_objects.revision_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(git_objects.revision_git_object(self))
 
     @classmethod
     def from_dict(cls, d):
@@ -775,19 +883,19 @@ class DirectoryEntry(BaseModel):
     @name.validator
     def check_name(self, attribute, value):
         if b"/" in value:
-            raise ValueError("{value!r} is not a valid directory entry name.")
+            raise ValueError(f"{value!r} is not a valid directory entry name.")
 
 
 @attr.s(frozen=True, slots=True)
-class Directory(HashableObject, BaseModel):
+class Directory(HashableObjectWithManifest, BaseModel):
     object_type: Final = "directory"
 
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
-    def compute_hash(self) -> bytes:
-        git_object = git_objects.directory_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(git_objects.directory_git_object(self))
 
     @entries.validator
     def check_entries(self, attribute, value):
@@ -1132,9 +1240,10 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
-    def compute_hash(self) -> bytes:
-        git_object = git_objects.raw_extrinsic_metadata_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(
+            git_objects.raw_extrinsic_metadata_git_object(self)
+        )
 
     @origin.validator
     def check_origin(self, attribute, value):
@@ -1333,6 +1442,5 @@ class ExtID(HashableObject, BaseModel):
             extid_version=d.get("extid_version", 0),
         )
 
-    def compute_hash(self) -> bytes:
-        git_object = git_objects.extid_git_object(self)
-        return hashlib.new("sha1", git_object).digest()
+    def _compute_hash_from_attributes(self) -> bytes:
+        return _compute_hash_from_manifest(git_objects.extid_git_object(self))
