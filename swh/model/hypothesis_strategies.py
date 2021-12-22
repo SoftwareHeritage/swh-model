@@ -1,10 +1,11 @@
-# Copyright (C) 2019-2020 The Software Heritage developers
+# Copyright (C) 2019-2021 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 import datetime
 import string
+from typing import Sequence
 
 from hypothesis import assume
 from hypothesis.extra.dateutil import timezones
@@ -73,6 +74,12 @@ def sha1_git():
 
 def sha1():
     return binary(min_size=20, max_size=20)
+
+
+def binaries_without_bytes(blacklist: Sequence[int]):
+    """Like hypothesis.strategies.binary, but takes a sequence of bytes that
+    should not be included."""
+    return lists(sampled_from([i for i in range(256) if i not in blacklist])).map(bytes)
 
 
 @composite
@@ -208,7 +215,7 @@ def releases_d(draw):
     target = sha1_git()
     metadata = optional(revision_metadata())
 
-    return draw(
+    d = draw(
         one_of(
             builds(
                 dict,
@@ -235,6 +242,11 @@ def releases_d(draw):
         )
     )
 
+    raw_manifest = draw(optional(binary()))
+    if raw_manifest:
+        d["raw_manifest"] = raw_manifest
+    return d
+
 
 def releases():
     return releases_d().map(Release.from_dict)
@@ -249,22 +261,30 @@ def extra_headers():
     ).map(tuple)
 
 
-def revisions_d():
-    return builds(
-        dict,
-        message=optional(binary()),
-        synthetic=booleans(),
-        author=persons_d(),
-        committer=persons_d(),
-        date=timestamps_with_timezone_d(),
-        committer_date=timestamps_with_timezone_d(),
-        parents=tuples(sha1_git()),
-        directory=sha1_git(),
-        type=sampled_from([x.value for x in RevisionType]),
-        metadata=optional(revision_metadata()),
-        extra_headers=extra_headers(),
+@composite
+def revisions_d(draw):
+    d = draw(
+        builds(
+            dict,
+            message=optional(binary()),
+            synthetic=booleans(),
+            author=persons_d(),
+            committer=persons_d(),
+            date=timestamps_with_timezone_d(),
+            committer_date=timestamps_with_timezone_d(),
+            parents=tuples(sha1_git()),
+            directory=sha1_git(),
+            type=sampled_from([x.value for x in RevisionType]),
+            metadata=optional(revision_metadata()),
+            extra_headers=extra_headers(),
+        )
     )
     # TODO: metadata['extra_headers'] can have binary keys and values
+
+    raw_manifest = draw(optional(binary()))
+    if raw_manifest:
+        d["raw_manifest"] = raw_manifest
+    return d
 
 
 def revisions():
@@ -272,12 +292,36 @@ def revisions():
 
 
 def directory_entries_d():
-    return builds(
-        dict,
-        name=binary(),
-        target=sha1_git(),
-        type=sampled_from(["file", "dir", "rev"]),
-        perms=sampled_from([perm.value for perm in DentryPerms]),
+    return one_of(
+        builds(
+            dict,
+            name=binaries_without_bytes(b"/"),
+            target=sha1_git(),
+            type=just("file"),
+            perms=one_of(
+                integers(min_value=0o100000, max_value=0o100777),  # regular file
+                integers(min_value=0o120000, max_value=0o120777),  # symlink
+            ),
+        ),
+        builds(
+            dict,
+            name=binaries_without_bytes(b"/"),
+            target=sha1_git(),
+            type=just("dir"),
+            perms=integers(
+                min_value=DentryPerms.directory,
+                max_value=DentryPerms.directory + 0o777,
+            ),
+        ),
+        builds(
+            dict,
+            name=binaries_without_bytes(b"/"),
+            target=sha1_git(),
+            type=just("rev"),
+            perms=integers(
+                min_value=DentryPerms.revision, max_value=DentryPerms.revision + 0o777,
+            ),
+        ),
     )
 
 
@@ -285,8 +329,14 @@ def directory_entries():
     return directory_entries_d().map(DirectoryEntry)
 
 
-def directories_d():
-    return builds(dict, entries=tuples(directory_entries_d()))
+@composite
+def directories_d(draw):
+    d = draw(builds(dict, entries=tuples(directory_entries_d())))
+
+    raw_manifest = draw(optional(binary()))
+    if raw_manifest:
+        d["raw_manifest"] = raw_manifest
+    return d
 
 
 def directories():

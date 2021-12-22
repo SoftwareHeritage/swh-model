@@ -6,6 +6,7 @@
 import collections
 import copy
 import datetime
+import hashlib
 from typing import Any, List, Optional, Tuple, Union
 
 import attr
@@ -17,6 +18,7 @@ import pytest
 
 from swh.model.collections import ImmutableDict
 from swh.model.from_disk import DentryPerms
+import swh.model.git_objects
 from swh.model.hashutil import MultiHash, hash_to_bytes
 import swh.model.hypothesis_strategies as strategies
 import swh.model.model
@@ -137,6 +139,7 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         [None, bytearray(b"\x12\x34"), "123", 0, 123, (), (1, 2, 3), ImmutableDict()],
     ),
     (str, ["", "123"], [None, b"123", b"", 0, (), (1, 2, 3), ImmutableDict()]),
+    (None, [None], [b"", b"123", "", "foo", 0, 123, ImmutableDict(), float("NaN")]),
     # unions:
     (
         Optional[int],
@@ -195,7 +198,10 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # standard types:
     (
         datetime.datetime,
-        [datetime.datetime.now(), datetime.datetime.now(tz=datetime.timezone.utc)],
+        [
+            datetime.datetime(2021, 12, 15, 12, 59, 27),
+            datetime.datetime(2021, 12, 15, 12, 59, 27, tzinfo=datetime.timezone.utc),
+        ],
         [None, 123],
     ),
     # ImmutableDict
@@ -447,21 +453,27 @@ def test_timestampwithtimezone():
     tstz = TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=False)
     attr.validate(tstz)
     assert tstz.negative_utc is False
+    assert tstz.offset_bytes == b"+0000"
 
-    attr.validate(TimestampWithTimezone(timestamp=ts, offset=10, negative_utc=False))
+    tstz = TimestampWithTimezone(timestamp=ts, offset=10, negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.offset_bytes == b"+0010"
 
-    attr.validate(TimestampWithTimezone(timestamp=ts, offset=-10, negative_utc=False))
+    tstz = TimestampWithTimezone(timestamp=ts, offset=-10, negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.offset_bytes == b"-0010"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=True)
     attr.validate(tstz)
     assert tstz.negative_utc is True
+    assert tstz.offset_bytes == b"-0000"
 
     with pytest.raises(AttributeTypeError):
         TimestampWithTimezone(
             timestamp=datetime.datetime.now(), offset=0, negative_utc=False
         )
 
-    with pytest.raises(AttributeTypeError):
+    with pytest.raises((AttributeTypeError, TypeError)):
         TimestampWithTimezone(timestamp=ts, offset="0", negative_utc=False)
 
     with pytest.raises(AttributeTypeError):
@@ -741,6 +753,42 @@ def test_skipped_content_naive_datetime():
 # Directory
 
 
+@given(strategies.directories().filter(lambda d: d.raw_manifest is None))
+def test_directory_check(directory):
+    directory.check()
+
+    directory2 = attr.evolve(directory, id=b"\x00" * 20)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        directory2.check()
+
+    directory2 = attr.evolve(
+        directory, raw_manifest=swh.model.git_objects.directory_git_object(directory)
+    )
+    with pytest.raises(
+        ValueError, match="non-none raw_manifest attribute, but does not need it."
+    ):
+        directory2.check()
+
+
+@given(strategies.directories().filter(lambda d: d.raw_manifest is None))
+def test_directory_raw_manifest(directory):
+    assert "raw_manifest" not in directory.to_dict()
+
+    raw_manifest = b"foo"
+    id_ = hashlib.new("sha1", raw_manifest).digest()
+
+    directory2 = attr.evolve(directory, raw_manifest=raw_manifest)
+    assert directory2.to_dict()["raw_manifest"] == raw_manifest
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        directory2.check()
+
+    directory2 = attr.evolve(directory, raw_manifest=raw_manifest, id=id_)
+    assert directory2.id is not None
+    assert directory2.id == id_ != directory.id
+    assert directory2.to_dict()["raw_manifest"] == raw_manifest
+    directory2.check()
+
+
 def test_directory_entry_name_validation():
     with pytest.raises(ValueError, match="valid directory entry name."):
         DirectoryEntry(name=b"foo/", type="dir", target=b"\x00" * 20, perms=0),
@@ -762,7 +810,79 @@ def test_directory_duplicate_entry_name():
         Directory(entries=entries)
 
 
+# Release
+
+
+@given(strategies.releases().filter(lambda rel: rel.raw_manifest is None))
+def test_release_check(release):
+    release.check()
+
+    release2 = attr.evolve(release, id=b"\x00" * 20)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        release2.check()
+
+    release2 = attr.evolve(
+        release, raw_manifest=swh.model.git_objects.release_git_object(release)
+    )
+    with pytest.raises(
+        ValueError, match="non-none raw_manifest attribute, but does not need it."
+    ):
+        release2.check()
+
+
+@given(strategies.releases().filter(lambda rev: rev.raw_manifest is None))
+def test_release_raw_manifest(release):
+    raw_manifest = b"foo"
+    id_ = hashlib.new("sha1", raw_manifest).digest()
+
+    release2 = attr.evolve(release, raw_manifest=raw_manifest)
+    assert release2.to_dict()["raw_manifest"] == raw_manifest
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        release2.check()
+
+    release2 = attr.evolve(release, raw_manifest=raw_manifest, id=id_)
+    assert release2.id is not None
+    assert release2.id == id_ != release.id
+    assert release2.to_dict()["raw_manifest"] == raw_manifest
+    release2.check()
+
+
 # Revision
+
+
+@given(strategies.revisions().filter(lambda rev: rev.raw_manifest is None))
+def test_revision_check(revision):
+    revision.check()
+
+    revision2 = attr.evolve(revision, id=b"\x00" * 20)
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        revision2.check()
+
+    revision2 = attr.evolve(
+        revision, raw_manifest=swh.model.git_objects.revision_git_object(revision)
+    )
+    with pytest.raises(
+        ValueError, match="non-none raw_manifest attribute, but does not need it."
+    ):
+        revision2.check()
+
+
+@given(strategies.revisions().filter(lambda rev: rev.raw_manifest is None))
+def test_revision_raw_manifest(revision):
+
+    raw_manifest = b"foo"
+    id_ = hashlib.new("sha1", raw_manifest).digest()
+
+    revision2 = attr.evolve(revision, raw_manifest=raw_manifest)
+    assert revision2.to_dict()["raw_manifest"] == raw_manifest
+    with pytest.raises(ValueError, match="does not match recomputed hash"):
+        revision2.check()
+
+    revision2 = attr.evolve(revision, raw_manifest=raw_manifest, id=id_)
+    assert revision2.id is not None
+    assert revision2.id == id_ != revision.id
+    assert revision2.to_dict()["raw_manifest"] == raw_manifest
+    revision2.check()
 
 
 def test_revision_extra_headers_no_headers():

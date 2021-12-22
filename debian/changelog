@@ -1,8 +1,36 @@
-swh-model (3.1.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (4.1.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 4.1.0     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2021-12-22 15:58:36 +0100)
+  * Upstream changes:     - Release swh.model v4.1.0     - Drop pre-3.6
+    blake2 compatibility, which hasn't been in use since     - we've
+    mandated python3.7 anyway.
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 06 Dec 2021 18:55:43 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 22 Dec 2021 15:01:40 +0000
+
+swh-model (4.0.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 4.0.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-12-22 13:24:58 +0100)
+  * Upstream changes:     - v4.0.0     - * Add attribute
+    TimestampWithTimezone.offset_bytes, to store raw Git offsets     - *
+    model: Add a check() method to model objects     - * test_model: Fix
+    compatibility with pytest-xdist     - * docs: Update the data model
+    description     - * hypothesis_strategies: Generate only consistent
+    directory entry permissions.     - * model: Add a raw_manifest
+    attribute
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 22 Dec 2021 12:28:54 +0000
+
+swh-model (3.2.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 3.2.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2021-12-15 13:36:48 +0100)
+  * Upstream changes:     - v3.2.0     - * hypothesis_strategies: Ensure
+    to generate valid directory entry name     - * from_disk: Implement
+    Directory.__contains__
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 15 Dec 2021 12:39:37 +0000
 
 swh-model (3.1.0-1~swh1) unstable-swh; urgency=medium
 

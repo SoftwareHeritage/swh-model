@@ -35,8 +35,6 @@ def parse_requirements(name=None):
     return requirements
 
 
-blake2_requirements = ['pyblake2;python_version<"3.6"']
-
 setup(
     name="swh.model",
     description="Software Heritage data model",
@@ -49,9 +47,7 @@ setup(
     packages=find_packages(),
     setup_requires=["setuptools-scm"],
     use_scm_version=True,
-    install_requires=(
-        parse_requirements() + parse_requirements("swh") + blake2_requirements
-    ),
+    install_requires=parse_requirements() + parse_requirements("swh"),
     extras_require={
         "cli": parse_requirements("cli"),
         "testing-minimal": parse_requirements("test"),

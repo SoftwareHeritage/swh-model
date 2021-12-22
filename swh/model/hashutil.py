@@ -183,20 +183,8 @@ def _new_blake2_hash(algo):
                 "Digest size for algorithm %s must be a multiple of 8" % algo
             )
 
-    if lalgo in hashlib.algorithms_available:
-        # Handle the case where OpenSSL ships the given algorithm
-        # (e.g. Python 3.5 on Debian 9 stretch)
-        _blake2_hash_cache[algo] = lambda: hashlib.new(lalgo)
-    else:
-        # Try using the built-in implementation for Python 3.6+
-        if blake_family in hashlib.algorithms_available:
-            blake2 = getattr(hashlib, blake_family)
-        else:
-            import pyblake2
-
-            blake2 = getattr(pyblake2, blake_family)
-
-        _blake2_hash_cache[algo] = lambda: blake2(digest_size=digest_size)
+    blake2 = getattr(hashlib, blake_family)
+    _blake2_hash_cache[algo] = lambda: blake2(digest_size=digest_size)
 
     return _blake2_hash_cache[algo]()
 

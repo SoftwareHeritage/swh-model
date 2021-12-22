@@ -6,9 +6,6 @@ iso8601
 python-dateutil
 typing_extensions
 
-[:python_version < "3.6"]
-pyblake2
-
 [cli]
 swh.core>=0.3
 Click

@@ -213,86 +213,8 @@ def test_new_hash_unsupported_hashing_algorithm():
         hashutil._new_hash("blake2:10")
 
 
-@pytest.mark.skipif(
-    "blake2b512" not in hashlib.algorithms_available, reason="blake2b512 not built-in"
-)
-@patch("hashlib.new")
-def test_new_hash_blake2b_blake2b512_builtin(mock_hashlib_new):
-    mock_hashlib_new.return_value = sentinel = object()
-
-    h = hashutil._new_hash("blake2b512")
-
-    assert h is sentinel
-    mock_hashlib_new.assert_called_with("blake2b512")
-
-
-@pytest.mark.skipif(
-    "blake2s256" not in hashlib.algorithms_available, reason="blake2s256 not built-in"
-)
-@patch("hashlib.new")
-def test_new_hash_blake2s_blake2s256_builtin(mock_hashlib_new):
-    mock_hashlib_new.return_value = sentinel = object()
-
-    h = hashutil._new_hash("blake2s256")
-
-    assert h is sentinel
-    mock_hashlib_new.assert_called_with("blake2s256")
-
-
-@pytest.mark.skipif(
-    "blake2b" not in hashlib.algorithms_available, reason="blake2b not built-in"
-)
 def test_new_hash_blake2b_builtin():
-    removed_hash = False
-
-    try:
-        if "blake2b512" in hashlib.algorithms_available:
-            removed_hash = True
-            hashlib.algorithms_available.remove("blake2b512")
-
-        with patch_blake2("hashlib.blake2b") as mock_blake2b:
-            mock_blake2b.return_value = sentinel = object()
-
-            h = hashutil._new_hash("blake2b512")
-
-            assert h is sentinel
-            mock_blake2b.assert_called_with(digest_size=512 // 8)
-    finally:
-        if removed_hash:
-            hashlib.algorithms_available.add("blake2b512")
-
-
-@pytest.mark.skipif(
-    "blake2s" not in hashlib.algorithms_available, reason="blake2s not built-in"
-)
-def test_new_hash_blake2s_builtin():
-    removed_hash = False
-
-    try:
-        if "blake2s256" in hashlib.algorithms_available:
-            removed_hash = True
-            hashlib.algorithms_available.remove("blake2s256")
-
-        with patch_blake2("hashlib.blake2s") as mock_blake2s:
-            mock_blake2s.return_value = sentinel = object()
-
-            h = hashutil._new_hash("blake2s256")
-
-            assert h is sentinel
-            mock_blake2s.assert_called_with(digest_size=256 // 8)
-    finally:
-        if removed_hash:
-            hashlib.algorithms_available.add("blake2s256")
-
-
-@pytest.mark.skipif(
-    "blake2b512" in hashlib.algorithms_available, reason="blake2b512 built-in"
-)
-@pytest.mark.skipif(
-    "blake2b" in hashlib.algorithms_available, reason="blake2b built-in"
-)
-def test_new_hash_blake2b_pyblake2():
-    with patch_blake2("pyblake2.blake2b") as mock_blake2b:
+    with patch_blake2("hashlib.blake2b") as mock_blake2b:
         mock_blake2b.return_value = sentinel = object()
 
         h = hashutil._new_hash("blake2b512")
@@ -301,14 +223,8 @@ def test_new_hash_blake2b_pyblake2():
         mock_blake2b.assert_called_with(digest_size=512 // 8)
 
 
-@pytest.mark.skipif(
-    "blake2s256" in hashlib.algorithms_available, reason="blake2s256 built-in"
-)
-@pytest.mark.skipif(
-    "blake2s" in hashlib.algorithms_available, reason="blake2s built-in"
-)
-def test_new_hash_blake2s_pyblake2():
-    with patch_blake2("pyblake2.blake2s") as mock_blake2s:
+def test_new_hash_blake2s_builtin():
+    with patch_blake2("hashlib.blake2s") as mock_blake2s:
         mock_blake2s.return_value = sentinel = object()
 
         h = hashutil._new_hash("blake2s256")
