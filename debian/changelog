@@ -1,3 +1,13 @@
+swh-model (4.1.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 4.1.0     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2021-12-22 15:58:36 +0100)
+  * Upstream changes:     - Release swh.model v4.1.0     - Drop pre-3.6
+    blake2 compatibility, which hasn't been in use since     - we've
+    mandated python3.7 anyway.
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 22 Dec 2021 15:01:40 +0000
+
 swh-model (4.0.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 4.0.0     - (tagged by Valentin Lorentz
