@@ -468,6 +468,16 @@ def test_timestampwithtimezone():
     assert tstz.negative_utc is True
     assert tstz.offset_bytes == b"-0000"
 
+    tstz = TimestampWithTimezone(timestamp=ts, offset=-630, negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.negative_utc is False
+    assert tstz.offset_bytes == b"-1030"
+
+    tstz = TimestampWithTimezone(timestamp=ts, offset=800, negative_utc=False)
+    attr.validate(tstz)
+    assert tstz.negative_utc is False
+    assert tstz.offset_bytes == b"+1320"
+
     with pytest.raises(AttributeTypeError):
         TimestampWithTimezone(
             timestamp=datetime.datetime.now(), offset=0, negative_utc=False
