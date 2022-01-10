@@ -41,19 +41,9 @@ class UtilityFunctionsDateOffset(unittest.TestCase):
             b"1448210036.12": {"seconds": 1448210036, "microseconds": 120000,},
         }
 
-        self.offsets = {
-            0: b"+0000",
-            -630: b"-1030",
-            800: b"+1320",
-        }
-
     def test_format_date(self):
         for date_repr, date in self.dates.items():
             self.assertEqual(git_objects.format_date(date), date_repr)
-
-    def test_format_offset(self):
-        for offset, res in self.offsets.items():
-            self.assertEqual(git_objects.format_offset(offset), res)
 
 
 content_example = {
