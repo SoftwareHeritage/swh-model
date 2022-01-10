@@ -96,29 +96,6 @@ def format_date(date: model.Timestamp) -> bytes:
         return float_value.rstrip("0").encode()
 
 
-@lru_cache()
-def format_offset(offset: int, negative_utc: Optional[bool] = None) -> bytes:
-    """Convert an integer number of minutes into an offset representation.
-
-    The offset representation is [+-]hhmm where:
-
-    - hh is the number of hours;
-    - mm is the number of minutes.
-
-    A null offset is represented as +0000.
-    """
-    if offset < 0 or offset == 0 and negative_utc:
-        sign = "-"
-    else:
-        sign = "+"
-
-    hours = abs(offset) // 60
-    minutes = abs(offset) % 60
-
-    t = "%s%02d%02d" % (sign, hours, minutes)
-    return t.encode()
-
-
 def normalize_timestamp(time_representation):
     """Normalize a time representation for processing by Software Heritage
 
@@ -291,9 +268,8 @@ def format_author_data(
 
     if date_offset is not None:
         date_f = format_date(date_offset.timestamp)
-        offset_f = format_offset(date_offset.offset, date_offset.negative_utc)
 
-        ret.extend([b" ", date_f, b" ", offset_f])
+        ret.extend([b" ", date_f, b" ", date_offset.offset_bytes])
 
     return b"".join(ret)
 
