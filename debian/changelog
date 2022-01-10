@@ -1,3 +1,12 @@
+swh-model (4.2.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 4.2.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2022-01-10 15:56:36 +0100)
+  * Upstream changes:     - v4.2.0     - * git_objects: Use raw
+    offset_bytes to format dates, and remove format_offset()
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 10 Jan 2022 14:59:18 +0000
+
 swh-model (4.1.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 4.1.0     - (tagged by Nicolas Dandrimont
