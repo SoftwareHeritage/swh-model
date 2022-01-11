@@ -1,4 +1,5 @@
 .. _persistent-identifiers:
+.. _swhids:
 
 =================================================
 SoftWare Heritage persistent IDentifiers (SWHIDs)
@@ -57,6 +58,7 @@ The optional qualifiers are of two kinds:
   from different *origins*, that may evolve between different *visits*
 * **fragment qualifiers:** allow to pinpoint specific subparts of an object
 
+.. _swhids-syntax:
 
 Syntax
 ======
@@ -113,10 +115,12 @@ embeddability of SWHID in other contexts.
 
 .. _RFC 3987: https://tools.ietf.org/html/rfc3987
 
+.. _swhids-semantics:
 
 Semantics
 =========
 
+.. _swhids-core:
 
 Core identifiers
 ----------------
@@ -162,6 +166,7 @@ computed on the content and metadata of the object itself, as follows:
   quotes), a space, the length of the content as decimal digits, a NULL byte,
   and the actual content of the file.
 
+.. _swhids-qualifiers:
 
 Qualifiers
 ----------
