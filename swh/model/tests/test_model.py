@@ -500,14 +500,54 @@ def test_timestampwithtimezone():
 
 
 def test_timestampwithtimezone_from_datetime():
+    # Typical case
     tz = datetime.timezone(datetime.timedelta(minutes=+60))
     date = datetime.datetime(2020, 2, 27, 14, 39, 19, tzinfo=tz)
-
     tstz = TimestampWithTimezone.from_datetime(date)
-
     assert tstz == TimestampWithTimezone(
         timestamp=Timestamp(seconds=1582810759, microseconds=0,),
         offset=60,
+        negative_utc=False,
+    )
+
+    # Typical case (close to epoch)
+    tz = datetime.timezone(datetime.timedelta(minutes=+60))
+    date = datetime.datetime(1970, 1, 1, 1, 0, 5, tzinfo=tz)
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=5, microseconds=0,), offset=60, negative_utc=False,
+    )
+
+    # non-integer number of seconds before UNIX epoch
+    date = datetime.datetime(
+        1969, 12, 31, 23, 59, 59, 100000, tzinfo=datetime.timezone.utc
+    )
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=-1, microseconds=100000,),
+        offset=0,
+        negative_utc=False,
+    )
+
+    # non-integer number of seconds in both the timestamp and the offset
+    tz = datetime.timezone(datetime.timedelta(microseconds=-600000))
+    date = datetime.datetime(1969, 12, 31, 23, 59, 59, 600000, tzinfo=tz)
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=0, microseconds=200000,),
+        offset=0,
+        negative_utc=False,
+    )
+
+    # timezone offset with non-integer number of seconds, for dates before epoch
+    # we round down to the previous second, so it should be the same as
+    # 1969-01-01T23:59:59Z
+    tz = datetime.timezone(datetime.timedelta(microseconds=900000))
+    date = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=tz)
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=-1, microseconds=100000,),
+        offset=0,
         negative_utc=False,
     )
 

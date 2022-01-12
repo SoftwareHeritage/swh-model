@@ -474,11 +474,12 @@ class TimestampWithTimezone(BaseModel):
             if negative_utc is None:
                 negative_utc = False
         elif isinstance(time_representation, datetime.datetime):
+            utcoffset = time_representation.utcoffset()
+            time_representation = time_representation.astimezone(datetime.timezone.utc)
             microseconds = time_representation.microsecond
             if microseconds:
                 time_representation = time_representation.replace(microsecond=0)
             seconds = int(time_representation.timestamp())
-            utcoffset = time_representation.utcoffset()
             if utcoffset is None:
                 raise ValueError(
                     f"TimestampWithTimezone.from_dict received datetime without "
