@@ -1,3 +1,15 @@
+swh-model (4.3.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 4.3.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2022-01-14 15:10:34 +0100)
+  * Upstream changes:     - v4.3.0     - * docs: Add anchors to
+    important sections of persistent-identifiers.rst     - * Fix
+    TimestampWithTimezone.from_dict() on datetimes before 1970 with non-
+    integer seconds     - * TimestampWithTimezone: Make 'offset' and
+    'negative_utc' optional
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 14 Jan 2022 14:13:48 +0000
+
 swh-model (4.2.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 4.2.0     - (tagged by Valentin Lorentz
