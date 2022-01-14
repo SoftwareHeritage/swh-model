@@ -378,13 +378,14 @@ class Timestamp(BaseModel):
             raise ValueError("Microseconds must be in [0, 1000000[.")
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, init=False)
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
 
     object_type: Final = "timestamp_with_timezone"
 
     timestamp = attr.ib(type=Timestamp, validator=type_validator())
+
     offset = attr.ib(type=int, validator=type_validator())
     negative_utc = attr.ib(type=bool, validator=type_validator())
 
@@ -396,6 +397,34 @@ class TimestampWithTimezone(BaseModel):
     However, when created from git objects, it must be the exact bytes used in the
     original objects, so it may differ from this format when they do.
     """
+
+    def __init__(
+        self,
+        timestamp: Timestamp,
+        offset: int = None,
+        negative_utc: bool = None,
+        offset_bytes: bytes = None,
+    ):
+        if offset_bytes is None:
+            if offset is None:
+                raise AttributeError("Neither 'offset' nor 'offset_bytes' was passed.")
+            if negative_utc is None:
+                raise AttributeError(
+                    "Neither 'negative_utc' nor 'offset_bytes' was passed."
+                )
+            negative = offset < 0 or negative_utc
+            (hours, minutes) = divmod(abs(offset), 60)
+            offset_bytes = f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
+        else:
+            offset = self._parse_offset_bytes(offset_bytes)
+            negative_utc = offset == 0 and offset_bytes.startswith(b"-")
+
+        self.__attrs_init__(  # type: ignore
+            timestamp=timestamp,
+            offset=offset,
+            negative_utc=negative_utc,
+            offset_bytes=offset_bytes,
+        )
 
     @offset.validator
     def check_offset(self, attribute, value):
@@ -415,12 +444,6 @@ class TimestampWithTimezone(BaseModel):
 
         self._check_offsets_match()
 
-    @offset_bytes.default
-    def _default_offset_bytes(self):
-        negative = self.offset < 0 or self.negative_utc
-        (hours, minutes) = divmod(abs(self.offset), 60)
-        return f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
-
     @offset_bytes.validator
     def check_offset_bytes(self, attribute, value):
         if not set(value) <= _OFFSET_CHARS:
@@ -428,13 +451,18 @@ class TimestampWithTimezone(BaseModel):
 
         self._check_offsets_match()
 
-    def _check_offsets_match(self):
-        offset_str = self.offset_bytes.decode()
+    @staticmethod
+    def _parse_offset_bytes(offset_bytes: bytes):
+        offset_str = offset_bytes.decode()
         assert offset_str[0] in "+-"
         sign = int(offset_str[0] + "1")
         hours = int(offset_str[1:-2])
         minutes = int(offset_str[-2:])
         offset = sign * (hours * 60 + minutes)
+        return offset
+
+    def _check_offsets_match(self):
+        offset = self._parse_offset_bytes(self.offset_bytes)
         if offset != self.offset:
             raise ValueError(
                 f"offset_bytes ({self.offset_bytes!r}) does not match offset "
@@ -448,13 +476,32 @@ class TimestampWithTimezone(BaseModel):
             )
 
     @classmethod
-    def from_dict(cls, time_representation: Union[Dict, datetime.datetime, int]):
+    def from_numeric_offset(
+        cls, timestamp: Timestamp, offset: int, negative_utc: bool
+    ) -> "TimestampWithTimezone":
+        """Returns a :class:`TimestampWithTimezone` instance from the old dictionary
+        format (with ``offset`` and ``negative_utc`` instead of ``offset_bytes``).
+        """
+        negative = offset < 0 or negative_utc
+        (hours, minutes) = divmod(abs(offset), 60)
+        offset_bytes = f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
+        tstz = TimestampWithTimezone(
+            timestamp=timestamp,
+            offset_bytes=offset_bytes,
+            offset=offset,
+            negative_utc=negative_utc,
+        )
+        assert tstz.offset == offset, (tstz.offset, offset)
+        return tstz
+
+    @classmethod
+    def from_dict(
+        cls, time_representation: Union[Dict, datetime.datetime, int]
+    ) -> "TimestampWithTimezone":
         """Builds a TimestampWithTimezone from any of the formats
         accepted by :func:`swh.model.normalize_timestamp`."""
         # TODO: this accept way more types than just dicts; find a better
         # name
-        negative_utc = False
-
         if isinstance(time_representation, dict):
             ts = time_representation["timestamp"]
             if isinstance(ts, dict):
@@ -468,17 +515,27 @@ class TimestampWithTimezone(BaseModel):
                     f"TimestampWithTimezone.from_dict received non-integer timestamp "
                     f"member {ts!r}"
                 )
-            offset = time_representation["offset"]
-            if "negative_utc" in time_representation:
-                negative_utc = time_representation["negative_utc"]
-            if negative_utc is None:
-                negative_utc = False
+
+            timestamp = Timestamp(seconds=seconds, microseconds=microseconds)
+
+            if "offset_bytes" in time_representation:
+                return TimestampWithTimezone(
+                    timestamp=timestamp,
+                    offset_bytes=time_representation["offset_bytes"],
+                )
+            else:
+                # old format
+                offset = time_representation["offset"]
+                negative_utc = time_representation.get("negative_utc") or False
+                return cls.from_numeric_offset(timestamp, offset, negative_utc)
         elif isinstance(time_representation, datetime.datetime):
+            # TODO: warn when using from_dict() on a datetime
+            utcoffset = time_representation.utcoffset()
+            time_representation = time_representation.astimezone(datetime.timezone.utc)
             microseconds = time_representation.microsecond
             if microseconds:
                 time_representation = time_representation.replace(microsecond=0)
             seconds = int(time_representation.timestamp())
-            utcoffset = time_representation.utcoffset()
             if utcoffset is None:
                 raise ValueError(
                     f"TimestampWithTimezone.from_dict received datetime without "
@@ -488,33 +545,30 @@ class TimestampWithTimezone(BaseModel):
             # utcoffset is an integer number of minutes
             seconds_offset = utcoffset.total_seconds()
             offset = int(seconds_offset) // 60
+            # TODO: warn if remainder is not zero
+            return cls.from_numeric_offset(
+                Timestamp(seconds=seconds, microseconds=microseconds), offset, False
+            )
         elif isinstance(time_representation, int):
+            # TODO: warn when using from_dict() on an int
             seconds = time_representation
-            microseconds = 0
-            offset = 0
+            timestamp = Timestamp(seconds=time_representation, microseconds=0)
+            return TimestampWithTimezone(timestamp=timestamp, offset_bytes=b"+0000")
         else:
             raise ValueError(
                 f"TimestampWithTimezone.from_dict received non-integer timestamp: "
                 f"{time_representation!r}"
             )
 
-        return cls(
-            timestamp=Timestamp(seconds=seconds, microseconds=microseconds),
-            offset=offset,
-            negative_utc=negative_utc,
-        )
-
     @classmethod
-    def from_datetime(cls, dt: datetime.datetime):
+    def from_datetime(cls, dt: datetime.datetime) -> "TimestampWithTimezone":
         return cls.from_dict(dt)
 
     def to_datetime(self) -> datetime.datetime:
         """Convert to a datetime (with a timezone set to the recorded fixed UTC offset)
 
-        Beware that this conversion can be lossy: the negative_utc flag is not
-        taken into consideration (since it cannot be represented in a
-        datetime). Also note that it may fail due to type overflow.
-
+        Beware that this conversion can be lossy: ``-0000`` and 'weird' offsets
+        cannot be represented. Also note that it may fail due to type overflow.
         """
         timestamp = datetime.datetime.fromtimestamp(
             self.timestamp.seconds,
@@ -531,7 +585,7 @@ class TimestampWithTimezone(BaseModel):
         tstz = cls.from_datetime(dt)
         if dt.tzname() == "-00:00":
             assert tstz.offset_bytes == b"+0000"
-            tstz = attr.evolve(tstz, negative_utc=True, offset_bytes=b"-0000")
+            tstz = attr.evolve(tstz, offset_bytes=b"-0000", negative_utc=True)
         return tstz
 
 
