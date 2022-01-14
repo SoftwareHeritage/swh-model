@@ -483,7 +483,7 @@ def test_timestampwithtimezone():
     with pytest.raises(AttributeTypeError):
         TimestampWithTimezone(timestamp=datetime.datetime.now(), offset_bytes=b"+0000")
 
-    with pytest.raises((AttributeTypeError, TypeError)):
+    with pytest.raises((AttributeTypeError, AttributeError, TypeError)):
         TimestampWithTimezone(timestamp=ts, offset_bytes=0)
 
 

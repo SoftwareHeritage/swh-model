@@ -378,13 +378,16 @@ class Timestamp(BaseModel):
             raise ValueError("Microseconds must be in [0, 1000000[.")
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, init=False)
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
 
     object_type: Final = "timestamp_with_timezone"
 
     timestamp = attr.ib(type=Timestamp, validator=type_validator())
+
+    offset = attr.ib(type=int, validator=type_validator())
+    negative_utc = attr.ib(type=bool, validator=type_validator())
 
     offset_bytes = attr.ib(type=bytes, validator=type_validator())
     """Raw git representation of the timezone, as an offset from UTC.
@@ -395,17 +398,82 @@ class TimestampWithTimezone(BaseModel):
     original objects, so it may differ from this format when they do.
     """
 
-    @property
-    def offset(self) -> int:
-        """Parsed value of :attr:`offset_bytes` as a number of minutes,
-        or ``0`` if it cannot be parsed.
-        """
-        offset_str = self.offset_bytes.decode()
+    def __init__(
+        self,
+        timestamp: Timestamp,
+        offset: int = None,
+        negative_utc: bool = None,
+        offset_bytes: bytes = None,
+    ):
+        if offset_bytes is None:
+            if offset is None:
+                raise AttributeError("Neither 'offset' nor 'offset_bytes' was passed.")
+            if negative_utc is None:
+                raise AttributeError(
+                    "Neither 'negative_utc' nor 'offset_bytes' was passed."
+                )
+            negative = offset < 0 or negative_utc
+            (hours, minutes) = divmod(abs(offset), 60)
+            offset_bytes = f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
+        else:
+            offset = self._parse_offset_bytes(offset_bytes)
+            negative_utc = offset == 0 and offset_bytes.startswith(b"-")
+
+        self.__attrs_init__(  # type: ignore
+            timestamp=timestamp,
+            offset=offset,
+            negative_utc=negative_utc,
+            offset_bytes=offset_bytes,
+        )
+
+    @offset.validator
+    def check_offset(self, attribute, value):
+        """Checks the offset is a 16-bits signed integer (in theory, it
+        should always be between -14 and +14 hours)."""
+        if not (-(2 ** 15) <= value < 2 ** 15):
+            # max 14 hours offset in theory, but you never know what
+            # you'll find in the wild...
+            raise ValueError("offset too large: %d minutes" % value)
+
+        self._check_offsets_match()
+
+    @negative_utc.validator
+    def check_negative_utc(self, attribute, value):
+        if self.offset and value:
+            raise ValueError("negative_utc can only be True is offset=0")
+
+        self._check_offsets_match()
+
+    @offset_bytes.validator
+    def check_offset_bytes(self, attribute, value):
+        if not set(value) <= _OFFSET_CHARS:
+            raise ValueError(f"invalid characters in offset_bytes: {value!r}")
+
+        self._check_offsets_match()
+
+    @staticmethod
+    def _parse_offset_bytes(offset_bytes: bytes):
+        offset_str = offset_bytes.decode()
         assert offset_str[0] in "+-"
         sign = int(offset_str[0] + "1")
         hours = int(offset_str[1:-2])
         minutes = int(offset_str[-2:])
-        return sign * (hours * 60 + minutes)
+        offset = sign * (hours * 60 + minutes)
+        return offset
+
+    def _check_offsets_match(self):
+        offset = self._parse_offset_bytes(self.offset_bytes)
+        if offset != self.offset:
+            raise ValueError(
+                f"offset_bytes ({self.offset_bytes!r}) does not match offset "
+                f"{divmod(self.offset, 60)}"
+            )
+
+        if offset == 0 and self.negative_utc != self.offset_bytes.startswith(b"-"):
+            raise ValueError(
+                f"offset_bytes ({self.offset_bytes!r}) does not match negative_utc "
+                f"({self.negative_utc})"
+            )
 
     @classmethod
     def from_numeric_offset(
@@ -417,7 +485,12 @@ class TimestampWithTimezone(BaseModel):
         negative = offset < 0 or negative_utc
         (hours, minutes) = divmod(abs(offset), 60)
         offset_bytes = f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
-        tstz = TimestampWithTimezone(timestamp=timestamp, offset_bytes=offset_bytes)
+        tstz = TimestampWithTimezone(
+            timestamp=timestamp,
+            offset_bytes=offset_bytes,
+            offset=offset,
+            negative_utc=negative_utc,
+        )
         assert tstz.offset == offset, (tstz.offset, offset)
         return tstz
 
@@ -446,7 +519,7 @@ class TimestampWithTimezone(BaseModel):
             timestamp = Timestamp(seconds=seconds, microseconds=microseconds)
 
             if "offset_bytes" in time_representation:
-                return cls(
+                return TimestampWithTimezone(
                     timestamp=timestamp,
                     offset_bytes=time_representation["offset_bytes"],
                 )
@@ -480,7 +553,7 @@ class TimestampWithTimezone(BaseModel):
             # TODO: warn when using from_dict() on an int
             seconds = time_representation
             timestamp = Timestamp(seconds=time_representation, microseconds=0)
-            return cls(timestamp=timestamp, offset_bytes=b"+0000")
+            return TimestampWithTimezone(timestamp=timestamp, offset_bytes=b"+0000")
         else:
             raise ValueError(
                 f"TimestampWithTimezone.from_dict received non-integer timestamp: "
@@ -512,7 +585,7 @@ class TimestampWithTimezone(BaseModel):
         tstz = cls.from_datetime(dt)
         if dt.tzname() == "-00:00":
             assert tstz.offset_bytes == b"+0000"
-            tstz = attr.evolve(tstz, offset_bytes=b"-0000")
+            tstz = attr.evolve(tstz, offset_bytes=b"-0000", negative_utc=True)
         return tstz
 
 
