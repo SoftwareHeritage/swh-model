@@ -21,6 +21,7 @@ from swh.model.model import (
     Release,
     Revision,
     Snapshot,
+    Timestamp,
     TimestampWithTimezone,
 )
 
@@ -279,11 +280,7 @@ dg1KdHOa34shrKDaOVzW
                 "name": b"Software Heritage",
                 "email": b"robot@softwareheritage.org",
             },
-            "date": {
-                "timestamp": {"seconds": 1437047495},
-                "offset": 0,
-                "negative_utc": False,
-            },
+            "date": {"timestamp": {"seconds": 1437047495}, "offset_bytes": b"+0000",},
             "type": "tar",
             "committer": {
                 "name": b"Software Heritage",
@@ -549,11 +546,7 @@ o6X/3T+vm8K3bf3driRr34c=
             "name": b"20081029",
             "target": _x("54e9abca4c77421e2921f5f156c9fe4a9f7441c7"),
             "target_type": "revision",
-            "date": {
-                "timestamp": {"seconds": 1225281976},
-                "offset": 0,
-                "negative_utc": True,
-            },
+            "date": {"timestamp": {"seconds": 1225281976}, "offset_bytes": b"-0000",},
             "author": {"name": b"Otavio Salvador", "email": b"otavio@debian.org",},
             "synthetic": False,
             "message": b"tagging version 20081029\n\nr56558\n",
@@ -566,8 +559,7 @@ o6X/3T+vm8K3bf3driRr34c=
                 "name": b"Eugene Janusov\n",
             },
             "date": {
-                "negative_utc": None,
-                "offset": 600,
+                "offset_bytes": b"+1000",
                 "timestamp": {"microseconds": 0, "seconds": 1377480558,},
             },
             "id": _x("5c98f559d034162de22d3ebeb95433e6f8885231"),
@@ -1029,50 +1021,118 @@ class OriginIdentifier(unittest.TestCase):
         )
 
 
+# Format: [
+#   (
+#       input1,
+#       expected_output1,
+#   ),
+#   (
+#       input2,
+#       expected_output2,
+#   ),
+#   ...
+# ]
 TS_DICTS = [
+    # with current input dict format (offset_bytes)
+    (
+        {"timestamp": 12345, "offset_bytes": b"+0000"},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+            "offset": 0,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset_bytes": b"-0000"},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"-0000",
+            "offset": 0,
+            "negative_utc": True,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset_bytes": b"+0200"},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0200",
+            "offset": 120,
+            "negative_utc": False,
+        },
+    ),
+    (
+        {"timestamp": 12345, "offset_bytes": b"-0200"},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"-0200",
+            "offset": -120,
+            "negative_utc": False,
+        },
+    ),
+    # not working yet:
+    # (
+    #     {"timestamp": 12345, "offset_bytes": b"--700"},
+    #     {
+    #         "timestamp": {"seconds": 12345, "microseconds": 0},
+    #         "offset_bytes": b"--700",
+    #         "offset": 0,
+    #         "negative_utc": False,
+    #     },
+    # ),
+    # (
+    #     {"timestamp": 12345, "offset_bytes": b"1234567"},
+    #     {
+    #         "timestamp": {"seconds": 12345, "microseconds": 0},
+    #         "offset_bytes": b"1234567",
+    #         "offset": 0,
+    #         "negative_utc": False,
+    #     },
+    # ),
+    # with old-style input dicts (numeric offset + optional negative_utc):
     (
         {"timestamp": 12345, "offset": 0},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": False},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": False},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": None},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
         {"timestamp": {"seconds": 12345}, "offset": 0, "negative_utc": None},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1083,9 +1143,9 @@ TS_DICTS = [
         },
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
@@ -1096,27 +1156,27 @@ TS_DICTS = [
         },
         {
             "timestamp": {"seconds": 12345, "microseconds": 100},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": True},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"-0000",
             "offset": 0,
             "negative_utc": True,
-            "offset_bytes": b"-0000",
         },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": None},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
             "offset": 0,
             "negative_utc": False,
-            "offset_bytes": b"+0000",
         },
     ),
 ]
@@ -1125,6 +1185,35 @@ TS_DICTS = [
 @pytest.mark.parametrize("dict_input,expected", TS_DICTS)
 def test_normalize_timestamp_dict(dict_input, expected):
     assert TimestampWithTimezone.from_dict(dict_input).to_dict() == expected
+
+
+def test_timestampwithtimezone_init():
+    ts = Timestamp(seconds=1234567, microseconds=0)
+    tstz = TimestampWithTimezone(
+        timestamp=ts, offset=120, negative_utc=False, offset_bytes=b"+0200"
+    )
+    assert tstz.timestamp == ts
+    assert tstz.offset == 120
+    assert tstz.negative_utc is False
+    assert tstz.offset_bytes == b"+0200"
+
+    assert tstz == TimestampWithTimezone(timestamp=ts, offset=120, negative_utc=False)
+    assert tstz == TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0200")
+
+    assert tstz != TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0100")
+
+    tstz = TimestampWithTimezone(
+        timestamp=ts, offset=0, negative_utc=True, offset_bytes=b"-0000"
+    )
+    assert tstz.timestamp == ts
+    assert tstz.offset == 0
+    assert tstz.negative_utc is True
+    assert tstz.offset_bytes == b"-0000"
+
+    assert tstz == TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=True)
+    assert tstz == TimestampWithTimezone(timestamp=ts, offset_bytes=b"-0000")
+
+    assert tstz != TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0000")
 
 
 TS_DICTS_INVALID_TIMESTAMP = [
@@ -1172,9 +1261,9 @@ def test_normalize_timestamp_datetime(
     date = date.astimezone(tz).replace(microsecond=microsecond)
     assert TimestampWithTimezone.from_dict(date).to_dict() == {
         "timestamp": {"seconds": seconds, "microseconds": microsecond},
+        "offset_bytes": offset_bytes,
         "offset": offset,
         "negative_utc": False,
-        "offset_bytes": offset_bytes,
     }
 
 

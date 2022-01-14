@@ -91,14 +91,10 @@ COMMITTERS = [
 
 DATES = [
     TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1234567891, microseconds=0,),
-        offset=120,
-        negative_utc=False,
+        timestamp=Timestamp(seconds=1234567891, microseconds=0,), offset_bytes=b"+0200",
     ),
     TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1234567892, microseconds=0,),
-        offset=120,
-        negative_utc=False,
+        timestamp=Timestamp(seconds=1234567892, microseconds=0,), offset_bytes=b"+0200",
     ),
 ]
 
@@ -152,8 +148,7 @@ RELEASES = [
         name=b"v0.0.1",
         date=TimestampWithTimezone(
             timestamp=Timestamp(seconds=1234567890, microseconds=0,),
-            offset=120,
-            negative_utc=False,
+            offset_bytes=b"+0200",
         ),
         author=COMMITTERS[0],
         target_type=ObjectType.REVISION,
