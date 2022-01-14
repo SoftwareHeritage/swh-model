@@ -450,65 +450,85 @@ def test_timestamp_from_dict():
 
 def test_timestampwithtimezone():
     ts = Timestamp(seconds=0, microseconds=0)
-    tstz = TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=False)
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0000")
     attr.validate(tstz)
-    assert tstz.negative_utc is False
+    assert tstz.offset == 0
     assert tstz.offset_bytes == b"+0000"
 
-    tstz = TimestampWithTimezone(timestamp=ts, offset=10, negative_utc=False)
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0010")
     attr.validate(tstz)
+    assert tstz.offset == 10
     assert tstz.offset_bytes == b"+0010"
 
-    tstz = TimestampWithTimezone(timestamp=ts, offset=-10, negative_utc=False)
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"-0010")
     attr.validate(tstz)
+    assert tstz.offset == -10
     assert tstz.offset_bytes == b"-0010"
 
-    tstz = TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=True)
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"-0000")
     attr.validate(tstz)
-    assert tstz.negative_utc is True
+    assert tstz.offset == 0
     assert tstz.offset_bytes == b"-0000"
 
-    tstz = TimestampWithTimezone(timestamp=ts, offset=-630, negative_utc=False)
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"-1030")
     attr.validate(tstz)
-    assert tstz.negative_utc is False
+    assert tstz.offset == -630
     assert tstz.offset_bytes == b"-1030"
 
-    tstz = TimestampWithTimezone(timestamp=ts, offset=800, negative_utc=False)
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+1320")
     attr.validate(tstz)
-    assert tstz.negative_utc is False
+    assert tstz.offset == 800
     assert tstz.offset_bytes == b"+1320"
 
     with pytest.raises(AttributeTypeError):
-        TimestampWithTimezone(
-            timestamp=datetime.datetime.now(), offset=0, negative_utc=False
-        )
+        TimestampWithTimezone(timestamp=datetime.datetime.now(), offset_bytes=b"+0000")
 
-    with pytest.raises((AttributeTypeError, TypeError)):
-        TimestampWithTimezone(timestamp=ts, offset="0", negative_utc=False)
-
-    with pytest.raises(AttributeTypeError):
-        TimestampWithTimezone(timestamp=ts, offset=1.0, negative_utc=False)
-
-    with pytest.raises(AttributeTypeError):
-        TimestampWithTimezone(timestamp=ts, offset=1, negative_utc=0)
-
-    with pytest.raises(ValueError):
-        TimestampWithTimezone(timestamp=ts, offset=1, negative_utc=True)
-
-    with pytest.raises(ValueError):
-        TimestampWithTimezone(timestamp=ts, offset=-1, negative_utc=True)
+    with pytest.raises((AttributeTypeError, AttributeError, TypeError)):
+        TimestampWithTimezone(timestamp=ts, offset_bytes=0)
 
 
 def test_timestampwithtimezone_from_datetime():
+    # Typical case
     tz = datetime.timezone(datetime.timedelta(minutes=+60))
     date = datetime.datetime(2020, 2, 27, 14, 39, 19, tzinfo=tz)
-
     tstz = TimestampWithTimezone.from_datetime(date)
-
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1582810759, microseconds=0,),
-        offset=60,
-        negative_utc=False,
+        timestamp=Timestamp(seconds=1582810759, microseconds=0,), offset_bytes=b"+0100"
+    )
+
+    # Typical case (close to epoch)
+    tz = datetime.timezone(datetime.timedelta(minutes=+60))
+    date = datetime.datetime(1970, 1, 1, 1, 0, 5, tzinfo=tz)
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=5, microseconds=0,), offset_bytes=b"+0100"
+    )
+
+    # non-integer number of seconds before UNIX epoch
+    date = datetime.datetime(
+        1969, 12, 31, 23, 59, 59, 100000, tzinfo=datetime.timezone.utc
+    )
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=-1, microseconds=100000,), offset_bytes=b"+0000"
+    )
+
+    # non-integer number of seconds in both the timestamp and the offset
+    tz = datetime.timezone(datetime.timedelta(microseconds=-600000))
+    date = datetime.datetime(1969, 12, 31, 23, 59, 59, 600000, tzinfo=tz)
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=0, microseconds=200000,), offset_bytes=b"+0000"
+    )
+
+    # timezone offset with non-integer number of seconds, for dates before epoch
+    # we round down to the previous second, so it should be the same as
+    # 1969-01-01T23:59:59Z
+    tz = datetime.timezone(datetime.timedelta(microseconds=900000))
+    date = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=tz)
+    tstz = TimestampWithTimezone.from_datetime(date)
+    assert tstz == TimestampWithTimezone(
+        timestamp=Timestamp(seconds=-1, microseconds=100000,), offset_bytes=b"+0000"
     )
 
 
@@ -526,8 +546,7 @@ def test_timestampwithtimezone_from_iso8601():
 
     assert tstz == TimestampWithTimezone(
         timestamp=Timestamp(seconds=1582810759, microseconds=123456,),
-        offset=60,
-        negative_utc=False,
+        offset_bytes=b"+0100",
     )
 
 
@@ -537,9 +556,7 @@ def test_timestampwithtimezone_from_iso8601_negative_utc():
     tstz = TimestampWithTimezone.from_iso8601(date)
 
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1582810759, microseconds=0,),
-        offset=0,
-        negative_utc=True,
+        timestamp=Timestamp(seconds=1582810759, microseconds=0,), offset_bytes=b"-0000"
     )
 
 
