@@ -480,6 +480,21 @@ def test_timestampwithtimezone():
     assert tstz.offset == 800
     assert tstz.offset_bytes == b"+1320"
 
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+200")
+    attr.validate(tstz)
+    assert tstz.offset == 120
+    assert tstz.offset_bytes == b"+200"
+
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+02")
+    attr.validate(tstz)
+    assert tstz.offset == 120
+    assert tstz.offset_bytes == b"+02"
+
+    tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+2000000000")
+    attr.validate(tstz)
+    assert tstz.offset == 0
+    assert tstz.offset_bytes == b"+2000000000"
+
     with pytest.raises(AttributeTypeError):
         TimestampWithTimezone(timestamp=datetime.datetime.now(), offset_bytes=b"+0000")
 
