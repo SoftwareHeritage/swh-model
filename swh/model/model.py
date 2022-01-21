@@ -628,6 +628,28 @@ class TimestampWithTimezone(BaseModel):
             tstz = attr.evolve(tstz, offset_bytes=b"-0000", negative_utc=True)
         return tstz
 
+    def offset_minutes(self):
+        """Returns the offset, as a number of minutes since UTC.
+
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"+0000"
+        ... ).offset_minutes()
+        0
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"+0200"
+        ... ).offset_minutes()
+        120
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"-0200"
+        ... ).offset_minutes()
+        -120
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"+0530"
+        ... ).offset_minutes()
+        330
+        """
+        return self.offset
+
 
 @attr.s(frozen=True, slots=True)
 class Origin(HashableObject, BaseModel):
