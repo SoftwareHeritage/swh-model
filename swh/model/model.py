@@ -408,7 +408,7 @@ class TimestampWithTimezone(BaseModel):
         (hours, minutes) = divmod(abs(offset), 60)
         offset_bytes = f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
         tstz = TimestampWithTimezone(timestamp=timestamp, offset_bytes=offset_bytes)
-        assert tstz.offset == offset, (tstz.offset, offset)
+        assert tstz.offset_minutes() == offset, (tstz.offset_minutes(), offset)
         return tstz
 
     @classmethod
@@ -489,7 +489,7 @@ class TimestampWithTimezone(BaseModel):
         """
         timestamp = datetime.datetime.fromtimestamp(
             self.timestamp.seconds,
-            datetime.timezone(datetime.timedelta(minutes=self.offset)),
+            datetime.timezone(datetime.timedelta(minutes=self.offset_minutes())),
         )
         timestamp = timestamp.replace(microsecond=self.timestamp.microseconds)
         return timestamp
@@ -576,11 +576,6 @@ class TimestampWithTimezone(BaseModel):
         330
         """
         return self._parse_offset_bytes(self.offset_bytes)
-
-    @property
-    def offset(self):
-        """Deprecated alias of :meth:`offset_minutes`."""
-        return self.offset_minutes()
 
 
 @attr.s(frozen=True, slots=True)
