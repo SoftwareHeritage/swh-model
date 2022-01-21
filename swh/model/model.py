@@ -452,14 +452,54 @@ class TimestampWithTimezone(BaseModel):
         self._check_offsets_match()
 
     @staticmethod
-    def _parse_offset_bytes(offset_bytes: bytes):
+    def _parse_offset_bytes(offset_bytes: bytes) -> int:
+        """Parses an ``offset_bytes`` value (in Git's ``[+-]HHMM`` format),
+        and returns the corresponding numeric values (in number of minutes).
+
+        Tries to account for some mistakes in the format, to support incorrect
+        Git implementations.
+
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+0000")
+        0
+        >>> TimestampWithTimezone._parse_offset_bytes(b"-0000")
+        0
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+0200")
+        120
+        >>> TimestampWithTimezone._parse_offset_bytes(b"-0200")
+        -120
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+200")
+        120
+        >>> TimestampWithTimezone._parse_offset_bytes(b"-200")
+        -120
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+02")
+        120
+        >>> TimestampWithTimezone._parse_offset_bytes(b"-02")
+        -120
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+0010")
+        10
+        >>> TimestampWithTimezone._parse_offset_bytes(b"-0010")
+        -10
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+200000000000000000")
+        0
+        >>> TimestampWithTimezone._parse_offset_bytes(b"+0160")  # 60 minutes...
+        0
+        """
         offset_str = offset_bytes.decode()
         assert offset_str[0] in "+-"
         sign = int(offset_str[0] + "1")
-        hours = int(offset_str[1:-2])
-        minutes = int(offset_str[-2:])
+        if len(offset_str) <= 3:
+            hours = int(offset_str[1:])
+            minutes = 0
+        else:
+            hours = int(offset_str[1:-2])
+            minutes = int(offset_str[-2:])
+
         offset = sign * (hours * 60 + minutes)
-        return offset
+        if (0 <= minutes <= 59) and (-(2 ** 15) <= offset < 2 ** 15):
+            return offset
+        else:
+            # can't parse it to a reasonable value; give up and pretend it's UTC.
+            return 0
 
     def _check_offsets_match(self):
         offset = self._parse_offset_bytes(self.offset_bytes)
@@ -587,6 +627,28 @@ class TimestampWithTimezone(BaseModel):
             assert tstz.offset_bytes == b"+0000"
             tstz = attr.evolve(tstz, offset_bytes=b"-0000", negative_utc=True)
         return tstz
+
+    def offset_minutes(self):
+        """Returns the offset, as a number of minutes since UTC.
+
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"+0000"
+        ... ).offset_minutes()
+        0
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"+0200"
+        ... ).offset_minutes()
+        120
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"-0200"
+        ... ).offset_minutes()
+        -120
+        >>> TimestampWithTimezone(
+        ...     Timestamp(seconds=1642765364, microseconds=0), offset_bytes=b"+0530"
+        ... ).offset_minutes()
+        330
+        """
+        return self.offset
 
 
 @attr.s(frozen=True, slots=True)
