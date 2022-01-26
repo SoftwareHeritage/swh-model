@@ -1019,7 +1019,7 @@ class Directory(HashableObjectWithManifest, BaseModel):
         for entry in value:
             if entry.name in seen:
                 raise ValueError(
-                    "{self.swhid()} has duplicated entry name: {entry.name!r}"
+                    f"{self.swhid()} has duplicated entry name: {entry.name!r}"
                 )
             seen.add(entry.name)
 
