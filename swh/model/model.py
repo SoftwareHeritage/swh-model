@@ -1018,8 +1018,10 @@ class Directory(HashableObjectWithManifest, BaseModel):
         seen = set()
         for entry in value:
             if entry.name in seen:
+                # Cannot use self.swhid() here, self.id may be None
                 raise ValueError(
-                    f"{self.swhid()} has duplicated entry name: {entry.name!r}"
+                    f"swh:1:dir:{hash_to_hex(self.id)} has duplicated entry name: "
+                    f"{entry.name!r}"
                 )
             seen.add(entry.name)
 
