@@ -243,6 +243,8 @@ class HashableObjectWithManifest(HashableObject):
     """Derived class of HashableObject, for objects that may need to store
     verbatim git objects as ``raw_manifest`` to preserve original hashes."""
 
+    __slots__ = ()
+
     raw_manifest: Optional[bytes] = None
     """Stores the original content of git objects when they cannot be faithfully
     represented using only the other attributes.
