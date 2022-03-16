@@ -21,7 +21,6 @@ from swh.model.model import (
     Release,
     Revision,
     Snapshot,
-    Timestamp,
     TimestampWithTimezone,
 )
 
@@ -1036,104 +1035,51 @@ TS_DICTS = [
     # with current input dict format (offset_bytes)
     (
         {"timestamp": 12345, "offset_bytes": b"+0000"},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"-0000"},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"-0000",
-            "offset": 0,
-            "negative_utc": True,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"-0000",},
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"+0200"},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0200",
-            "offset": 120,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0200",},
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"-0200"},
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"-0200",},
+    ),
+    (
+        {"timestamp": 12345, "offset_bytes": b"--700"},
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"--700",},
+    ),
+    (
+        {"timestamp": 12345, "offset_bytes": b"1234567"},
         {
             "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"-0200",
-            "offset": -120,
-            "negative_utc": False,
+            "offset_bytes": b"1234567",
         },
     ),
-    # not working yet:
-    # (
-    #     {"timestamp": 12345, "offset_bytes": b"--700"},
-    #     {
-    #         "timestamp": {"seconds": 12345, "microseconds": 0},
-    #         "offset_bytes": b"--700",
-    #         "offset": 0,
-    #         "negative_utc": False,
-    #     },
-    # ),
-    # (
-    #     {"timestamp": 12345, "offset_bytes": b"1234567"},
-    #     {
-    #         "timestamp": {"seconds": 12345, "microseconds": 0},
-    #         "offset_bytes": b"1234567",
-    #         "offset": 0,
-    #         "negative_utc": False,
-    #     },
-    # ),
     # with old-style input dicts (numeric offset + optional negative_utc):
     (
         {"timestamp": 12345, "offset": 0},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": False},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": False},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": None},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {"timestamp": {"seconds": 12345}, "offset": 0, "negative_utc": None},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {
@@ -1141,12 +1087,7 @@ TS_DICTS = [
             "offset": 0,
             "negative_utc": None,
         },
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
     (
         {
@@ -1157,27 +1098,15 @@ TS_DICTS = [
         {
             "timestamp": {"seconds": 12345, "microseconds": 100},
             "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
         },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": True},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"-0000",
-            "offset": 0,
-            "negative_utc": True,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"-0000",},
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": None},
-        {
-            "timestamp": {"seconds": 12345, "microseconds": 0},
-            "offset_bytes": b"+0000",
-            "offset": 0,
-            "negative_utc": False,
-        },
+        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
     ),
 ]
 
@@ -1185,35 +1114,6 @@ TS_DICTS = [
 @pytest.mark.parametrize("dict_input,expected", TS_DICTS)
 def test_normalize_timestamp_dict(dict_input, expected):
     assert TimestampWithTimezone.from_dict(dict_input).to_dict() == expected
-
-
-def test_timestampwithtimezone_init():
-    ts = Timestamp(seconds=1234567, microseconds=0)
-    tstz = TimestampWithTimezone(
-        timestamp=ts, offset=120, negative_utc=False, offset_bytes=b"+0200"
-    )
-    assert tstz.timestamp == ts
-    assert tstz.offset == 120
-    assert tstz.negative_utc is False
-    assert tstz.offset_bytes == b"+0200"
-
-    assert tstz == TimestampWithTimezone(timestamp=ts, offset=120, negative_utc=False)
-    assert tstz == TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0200")
-
-    assert tstz != TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0100")
-
-    tstz = TimestampWithTimezone(
-        timestamp=ts, offset=0, negative_utc=True, offset_bytes=b"-0000"
-    )
-    assert tstz.timestamp == ts
-    assert tstz.offset == 0
-    assert tstz.negative_utc is True
-    assert tstz.offset_bytes == b"-0000"
-
-    assert tstz == TimestampWithTimezone(timestamp=ts, offset=0, negative_utc=True)
-    assert tstz == TimestampWithTimezone(timestamp=ts, offset_bytes=b"-0000")
-
-    assert tstz != TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0000")
 
 
 TS_DICTS_INVALID_TIMESTAMP = [
@@ -1262,8 +1162,6 @@ def test_normalize_timestamp_datetime(
     assert TimestampWithTimezone.from_dict(date).to_dict() == {
         "timestamp": {"seconds": seconds, "microseconds": microsecond},
         "offset_bytes": offset_bytes,
-        "offset": offset,
-        "negative_utc": False,
     }
 
 

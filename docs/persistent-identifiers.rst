@@ -338,6 +338,25 @@ This has various practical implications:
   archival on Software Heritage
 
 
+Choosing what type of SWHID to use
+----------------------------------
+
+``swh:1:dir:`` SWHIDs are the most robust SWHIDs, as they can be recomputed from
+the simplest objects (a directory structure on a filesystem), even when all
+metadata is lost, without relying on the Software Heritage archive.
+
+Therefore, we advise implementers and users to prefer this type of SWHIDs
+over ``swh:1:rev:`` and ``swh:1:rel:`` to reference a source code artifacts.
+
+However, since keeping the metadata is also important, you should add an anchor
+qualifier to ``swh:1:dir:`` SWHIDs whenever possible, so the metadata stored
+in the Software Heritage archive can be retrieved when needed.
+
+This means, for example, that you should prefer
+``swh:1:dir:a8eded6a2d062c998ba2dcc3dcb0ce68a4e15a58;anchor=swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f``
+over ``swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f``.
+
+
 Resolvers
 ---------
 
