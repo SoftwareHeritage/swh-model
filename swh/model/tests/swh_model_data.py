@@ -129,6 +129,27 @@ REVISIONS = [
         parents=(),
         extra_headers=((b"foo", b"bar"),),
     ),
+    Revision(
+        id=hash_to_bytes("51580d63b8dcc0ec73e74994e66896858542840a"),
+        message=b"hello",
+        date=DATES[0],
+        committer=COMMITTERS[0],
+        author=COMMITTERS[0],
+        committer_date=DATES[0],
+        type=RevisionType.GIT,
+        directory=b"\x01" * 20,
+        synthetic=False,
+        metadata=None,
+        parents=(hash_to_bytes("9b918dd063cec85c2bc63cc7f167e29f5894dcbc"),),
+        raw_manifest=(
+            b"commit 207\x00"
+            b"tree 0101010101010101010101010101010101010101\n"
+            b"parent 9B918DD063CEC85C2BC63CC7F167E29F5894DCBC"  # upper-cased
+            b"nauthor foo 1234567891 +0200\n"
+            b"committer foo 1234567891 +0200"
+            b"\n\nhello"
+        ),
+    ),
 ]
 
 EXTIDS = [
@@ -165,6 +186,27 @@ RELEASES = [
         target=b"\x05" * 20,
         message=b"bar",
         synthetic=False,
+    ),
+    Release(
+        id=hash_to_bytes("1cdd1e87234b6f066d0855a3b5b567638a55d583"),
+        name=b"v0.0.1",
+        date=TimestampWithTimezone(
+            timestamp=Timestamp(seconds=1234567890, microseconds=0,),
+            offset_bytes=b"+0200",
+        ),
+        author=COMMITTERS[0],
+        target_type=ObjectType.REVISION,
+        target=b"\x04" * 20,
+        message=b"foo",
+        synthetic=False,
+        raw_manifest=(
+            b"tag 102\x00"
+            b"object 0404040404040404040404040404040404040404\n"
+            b"type commit\n"
+            b"tag v0.0.1\n"
+            b"tagger foo 1234567890 +200"  # missing leading 0 for timezone
+            b"\n\nfoo"
+        ),
     ),
 ]
 
@@ -279,6 +321,19 @@ DIRECTORIES = [
             DirectoryEntry(
                 name=b"subprepo1", perms=0o160000, type="rev", target=REVISIONS[1].id,
             ),
+        ),
+    ),
+    Directory(
+        id=hash_to_bytes("d135a91ac82a754e7f4bdeff8d56ef06d921eb7d"),
+        entries=(
+            DirectoryEntry(
+                name=b"file1.ext", perms=0o644, type="file", target=b"\x11" * 20,
+            ),
+        ),
+        raw_manifest=(
+            b"tree 34\x00"
+            + b"00644 file1.ext\x00"  # added two leading zeros
+            + b"\x11" * 20
         ),
     ),
 ]
