@@ -452,53 +452,53 @@ def test_timestampwithtimezone():
     ts = Timestamp(seconds=0, microseconds=0)
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0000")
     attr.validate(tstz)
-    assert tstz.offset == 0
+    assert tstz.offset_minutes() == 0
     assert tstz.offset_bytes == b"+0000"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+0010")
     attr.validate(tstz)
-    assert tstz.offset == 10
+    assert tstz.offset_minutes() == 10
     assert tstz.offset_bytes == b"+0010"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"-0010")
     attr.validate(tstz)
-    assert tstz.offset == -10
+    assert tstz.offset_minutes() == -10
     assert tstz.offset_bytes == b"-0010"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"-0000")
     attr.validate(tstz)
-    assert tstz.offset == 0
+    assert tstz.offset_minutes() == 0
     assert tstz.offset_bytes == b"-0000"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"-1030")
     attr.validate(tstz)
-    assert tstz.offset == -630
+    assert tstz.offset_minutes() == -630
     assert tstz.offset_bytes == b"-1030"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+1320")
     attr.validate(tstz)
-    assert tstz.offset == 800
+    assert tstz.offset_minutes() == 800
     assert tstz.offset_bytes == b"+1320"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+200")
     attr.validate(tstz)
-    assert tstz.offset == 120
+    assert tstz.offset_minutes() == 120
     assert tstz.offset_bytes == b"+200"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+02")
     attr.validate(tstz)
-    assert tstz.offset == 120
+    assert tstz.offset_minutes() == 120
     assert tstz.offset_bytes == b"+02"
 
     tstz = TimestampWithTimezone(timestamp=ts, offset_bytes=b"+2000000000")
     attr.validate(tstz)
-    assert tstz.offset == 0
+    assert tstz.offset_minutes() == 0
     assert tstz.offset_bytes == b"+2000000000"
 
     with pytest.raises(AttributeTypeError):
         TimestampWithTimezone(timestamp=datetime.datetime.now(), offset_bytes=b"+0000")
 
-    with pytest.raises((AttributeTypeError, AttributeError, TypeError)):
+    with pytest.raises((AttributeTypeError, TypeError)):
         TimestampWithTimezone(timestamp=ts, offset_bytes=0)
 
 
