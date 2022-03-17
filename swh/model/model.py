@@ -289,8 +289,8 @@ class Person(BaseModel):
     object_type: Final = "person"
 
     fullname = attr.ib(type=bytes, validator=type_validator())
-    name = attr.ib(type=Optional[bytes], validator=type_validator())
-    email = attr.ib(type=Optional[bytes], validator=type_validator())
+    name = attr.ib(type=Optional[bytes], validator=type_validator(), eq=False)
+    email = attr.ib(type=Optional[bytes], validator=type_validator(), eq=False)
 
     @classmethod
     def from_fullname(cls, fullname: bytes):

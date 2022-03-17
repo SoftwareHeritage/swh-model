@@ -646,6 +646,18 @@ def test_git_author_line_to_author():
         assert expected_person == Person.from_fullname(person)
 
 
+def test_person_comparison():
+    """Check only the fullname attribute is used to compare Person objects
+
+    """
+    person = Person(fullname=b"p1", name=None, email=None)
+    assert attr.evolve(person, name=b"toto") == person
+    assert attr.evolve(person, email=b"toto@example.com") == person
+
+    person = Person(fullname=b"", name=b"toto", email=b"toto@example.com")
+    assert attr.evolve(person, fullname=b"dude") != person
+
+
 # Content
 
 
