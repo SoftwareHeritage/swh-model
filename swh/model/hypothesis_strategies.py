@@ -217,6 +217,7 @@ def releases_d(draw):
 
     d = draw(
         one_of(
+            # None author/date:
             builds(
                 dict,
                 name=name,
@@ -228,6 +229,7 @@ def releases_d(draw):
                 target_type=target_type,
                 metadata=metadata,
             ),
+            # non-None author/date:
             builds(
                 dict,
                 name=name,
@@ -239,6 +241,8 @@ def releases_d(draw):
                 target_type=target_type,
                 metadata=metadata,
             ),
+            # it is also possible for date to be None but not author, but let's not
+            # overwhelm hypothesis with this edge case
         )
     )
 
@@ -264,19 +268,39 @@ def extra_headers():
 @composite
 def revisions_d(draw):
     d = draw(
-        builds(
-            dict,
-            message=optional(binary()),
-            synthetic=booleans(),
-            author=persons_d(),
-            committer=persons_d(),
-            date=timestamps_with_timezone_d(),
-            committer_date=timestamps_with_timezone_d(),
-            parents=tuples(sha1_git()),
-            directory=sha1_git(),
-            type=sampled_from([x.value for x in RevisionType]),
-            metadata=optional(revision_metadata()),
-            extra_headers=extra_headers(),
+        one_of(
+            # None author/committer/date/committer_date
+            builds(
+                dict,
+                message=optional(binary()),
+                synthetic=booleans(),
+                author=none(),
+                committer=none(),
+                date=none(),
+                committer_date=none(),
+                parents=tuples(sha1_git()),
+                directory=sha1_git(),
+                type=sampled_from([x.value for x in RevisionType]),
+                metadata=optional(revision_metadata()),
+                extra_headers=extra_headers(),
+            ),
+            # non-None author/committer/date/committer_date
+            builds(
+                dict,
+                message=optional(binary()),
+                synthetic=booleans(),
+                author=persons_d(),
+                committer=persons_d(),
+                date=timestamps_with_timezone_d(),
+                committer_date=timestamps_with_timezone_d(),
+                parents=tuples(sha1_git()),
+                directory=sha1_git(),
+                type=sampled_from([x.value for x in RevisionType]),
+                metadata=optional(revision_metadata()),
+                extra_headers=extra_headers(),
+            ),
+            # There are many other combinations, but let's not overwhelm hypothesis
+            # with these edge cases
         )
     )
     # TODO: metadata['extra_headers'] can have binary keys and values

@@ -1124,6 +1124,33 @@ def test_revision_extra_headers_as_lists_from_dict():
     assert rev_model.extra_headers == extra_headers
 
 
+def test_revision_no_author_or_committer_from_dict():
+    rev_dict = revision_example.copy()
+    rev_dict["author"] = rev_dict["date"] = None
+    rev_dict["committer"] = rev_dict["committer_date"] = None
+    rev_model = Revision.from_dict(rev_dict)
+    assert rev_model.to_dict() == {
+        **rev_dict,
+        "parents": tuple(rev_dict["parents"]),
+        "extra_headers": (),
+        "metadata": None,
+    }
+
+
+def test_revision_none_author_or_committer():
+    rev_dict = revision_example.copy()
+    rev_dict["author"] = None
+    with pytest.raises(ValueError, match=".*date must be None if author is None.*"):
+        Revision.from_dict(rev_dict)
+
+    rev_dict = revision_example.copy()
+    rev_dict["committer"] = None
+    with pytest.raises(
+        ValueError, match=".*committer_date must be None if committer is None.*"
+    ):
+        Revision.from_dict(rev_dict)
+
+
 @given(strategies.objects(split_content=True))
 def test_object_type(objtype_and_obj):
     obj_type, obj = objtype_and_obj
