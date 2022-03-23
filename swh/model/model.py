@@ -289,8 +289,8 @@ class Person(BaseModel):
     object_type: Final = "person"
 
     fullname = attr.ib(type=bytes, validator=type_validator())
-    name = attr.ib(type=Optional[bytes], validator=type_validator())
-    email = attr.ib(type=Optional[bytes], validator=type_validator())
+    name = attr.ib(type=Optional[bytes], validator=type_validator(), eq=False)
+    email = attr.ib(type=Optional[bytes], validator=type_validator(), eq=False)
 
     @classmethod
     def from_fullname(cls, fullname: bytes):
@@ -835,8 +835,8 @@ class Revision(HashableObjectWithManifest, BaseModel):
     object_type: Final = "revision"
 
     message = attr.ib(type=Optional[bytes], validator=type_validator())
-    author = attr.ib(type=Person, validator=type_validator())
-    committer = attr.ib(type=Person, validator=type_validator())
+    author = attr.ib(type=Optional[Person], validator=type_validator())
+    committer = attr.ib(type=Optional[Person], validator=type_validator())
     date = attr.ib(type=Optional[TimestampWithTimezone], validator=type_validator())
     committer_date = attr.ib(
         type=Optional[TimestampWithTimezone], validator=type_validator()
@@ -877,6 +877,20 @@ class Revision(HashableObjectWithManifest, BaseModel):
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.revision_git_object(self))
 
+    @author.validator
+    def check_author(self, attribute, value):
+        """If the author is `None`, checks the date is `None` too."""
+        if self.author is None and self.date is not None:
+            raise ValueError("revision date must be None if author is None.")
+
+    @committer.validator
+    def check_committer(self, attribute, value):
+        """If the committer is `None`, checks the committer_date is `None` too."""
+        if self.committer is None and self.committer_date is not None:
+            raise ValueError(
+                "revision committer_date must be None if committer is None."
+            )
+
     @classmethod
     def from_dict(cls, d):
         d = d.copy()
@@ -888,9 +902,17 @@ class Revision(HashableObjectWithManifest, BaseModel):
         if committer_date:
             committer_date = TimestampWithTimezone.from_dict(committer_date)
 
+        author = d.pop("author")
+        if author:
+            author = Person.from_dict(author)
+
+        committer = d.pop("committer")
+        if committer:
+            committer = Person.from_dict(committer)
+
         return cls(
-            author=Person.from_dict(d.pop("author")),
-            committer=Person.from_dict(d.pop("committer")),
+            author=author,
+            committer=committer,
             date=date,
             committer_date=committer_date,
             type=RevisionType(d.pop("type")),
@@ -909,7 +931,9 @@ class Revision(HashableObjectWithManifest, BaseModel):
         Person object.
         """
         return attr.evolve(
-            self, author=self.author.anonymize(), committer=self.committer.anonymize()
+            self,
+            author=None if self.author is None else self.author.anonymize(),
+            committer=None if self.committer is None else self.committer.anonymize(),
         )
 
 
