@@ -340,10 +340,15 @@ def revision_git_object(revision: Union[Dict, model.Revision]) -> bytes:
         if parent:
             headers.append((b"parent", hash_to_bytehex(parent)))
 
-    headers.append((b"author", format_author_data(revision.author, revision.date)))
-    headers.append(
-        (b"committer", format_author_data(revision.committer, revision.committer_date),)
-    )
+    if revision.author is not None:
+        headers.append((b"author", format_author_data(revision.author, revision.date)))
+    if revision.committer is not None:
+        headers.append(
+            (
+                b"committer",
+                format_author_data(revision.committer, revision.committer_date),
+            )
+        )
 
     # Handle extra headers
     metadata = revision.metadata or ImmutableDict()

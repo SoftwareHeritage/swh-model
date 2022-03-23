@@ -646,6 +646,18 @@ def test_git_author_line_to_author():
         assert expected_person == Person.from_fullname(person)
 
 
+def test_person_comparison():
+    """Check only the fullname attribute is used to compare Person objects
+
+    """
+    person = Person(fullname=b"p1", name=None, email=None)
+    assert attr.evolve(person, name=b"toto") == person
+    assert attr.evolve(person, email=b"toto@example.com") == person
+
+    person = Person(fullname=b"", name=b"toto", email=b"toto@example.com")
+    assert attr.evolve(person, fullname=b"dude") != person
+
+
 # Content
 
 
@@ -1110,6 +1122,33 @@ def test_revision_extra_headers_as_lists_from_dict():
     rev_model = Revision.from_dict(rev_dict)
     assert "extra_headers" not in rev_model.metadata
     assert rev_model.extra_headers == extra_headers
+
+
+def test_revision_no_author_or_committer_from_dict():
+    rev_dict = revision_example.copy()
+    rev_dict["author"] = rev_dict["date"] = None
+    rev_dict["committer"] = rev_dict["committer_date"] = None
+    rev_model = Revision.from_dict(rev_dict)
+    assert rev_model.to_dict() == {
+        **rev_dict,
+        "parents": tuple(rev_dict["parents"]),
+        "extra_headers": (),
+        "metadata": None,
+    }
+
+
+def test_revision_none_author_or_committer():
+    rev_dict = revision_example.copy()
+    rev_dict["author"] = None
+    with pytest.raises(ValueError, match=".*date must be None if author is None.*"):
+        Revision.from_dict(rev_dict)
+
+    rev_dict = revision_example.copy()
+    rev_dict["committer"] = None
+    with pytest.raises(
+        ValueError, match=".*committer_date must be None if committer is None.*"
+    ):
+        Revision.from_dict(rev_dict)
 
 
 @given(strategies.objects(split_content=True))
