@@ -1,3 +1,14 @@
+swh-model (6.0.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 6.0.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2022-03-23 11:02:28 +0100)
+  * Upstream changes:     - v6.0.0     - * Add objects with non-None
+    raw_manifest to TEST_OBJECTS     - * Exclude name and email
+    attributes from People comparison     - * Add support for None as
+    author or committer of a Revision
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 23 Mar 2022 10:06:05 +0000
+
 swh-model (5.0.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 5.0.0     - (tagged by Valentin Lorentz
