@@ -226,7 +226,6 @@ def identify(
 
     For more details about SWHIDs see:
 
-    \b
     https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html
 
     Tip: you can pass "-" to identify the content of standard input.
