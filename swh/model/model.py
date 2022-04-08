@@ -19,7 +19,7 @@ from abc import ABCMeta, abstractmethod
 import datetime
 from enum import Enum
 import hashlib
-from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union
 
 import attr
 from attrs_strict import AttributeTypeError
@@ -1519,3 +1519,31 @@ class ExtID(HashableObject, BaseModel):
 
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.extid_git_object(self))
+
+
+# Note: we need the type ignore stanza here because mypy cannot figure that all
+# subclasses of BaseModel do have an object_type attribute, even if BaseModel
+# itself does not (because these are Final)
+SWH_MODEL_OBJECT_TYPES: Dict[str, Type[BaseModel]] = {
+    cls.object_type: cls  # type: ignore
+    for cls in (
+        Person,
+        Timestamp,
+        TimestampWithTimezone,
+        Origin,
+        OriginVisit,
+        OriginVisitStatus,
+        Snapshot,
+        SnapshotBranch,
+        Release,
+        Revision,
+        Directory,
+        DirectoryEntry,
+        Content,
+        SkippedContent,
+        MetadataAuthority,
+        MetadataFetcher,
+        RawExtrinsicMetadata,
+        ExtID,
+    )
+}
