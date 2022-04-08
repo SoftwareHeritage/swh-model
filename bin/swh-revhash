@@ -15,9 +15,7 @@ from swh.model import hashutil, identifiers
 
 
 def revhash(revision_raw):
-    """Compute the revision hash.
-
-    """
+    """Compute the revision hash."""
     # HACK: string have somehow their \n expanded to \\n
     if b"\\n" in revision_raw:
         revision_raw = revision_raw.replace(b"\\n", b"\n")

@@ -279,8 +279,8 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
 
     def iter_tree(self, dedup=True) -> Iterator["MerkleNode"]:
         """Yields all children nodes, recursively. Common nodes are deduplicated
-           by default (deduplication can be turned off setting the given argument
-           'dedup' to False).
+        by default (deduplication can be turned off setting the given argument
+        'dedup' to False).
         """
         yield from self._iter_tree(set(), dedup)
 
