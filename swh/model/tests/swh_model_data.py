@@ -91,10 +91,18 @@ COMMITTERS = [
 
 DATES = [
     TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1234567891, microseconds=0,), offset_bytes=b"+0200",
+        timestamp=Timestamp(
+            seconds=1234567891,
+            microseconds=0,
+        ),
+        offset_bytes=b"+0200",
     ),
     TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1234567892, microseconds=0,), offset_bytes=b"+0200",
+        timestamp=Timestamp(
+            seconds=1234567892,
+            microseconds=0,
+        ),
+        offset_bytes=b"+0200",
     ),
 ]
 
@@ -153,8 +161,16 @@ REVISIONS = [
 ]
 
 EXTIDS = [
-    ExtID(extid_type="git256", extid=b"\x03" * 32, target=REVISIONS[0].swhid(),),
-    ExtID(extid_type="hg", extid=b"\x04" * 20, target=REVISIONS[1].swhid(),),
+    ExtID(
+        extid_type="git256",
+        extid=b"\x03" * 32,
+        target=REVISIONS[0].swhid(),
+    ),
+    ExtID(
+        extid_type="hg",
+        extid=b"\x04" * 20,
+        target=REVISIONS[1].swhid(),
+    ),
     ExtID(
         extid_type="hg-nodeid",
         extid=b"\x05" * 20,
@@ -168,7 +184,10 @@ RELEASES = [
         id=hash_to_bytes("8059dc4e17fcd0e51ca3bcd6b80f4577d281fd08"),
         name=b"v0.0.1",
         date=TimestampWithTimezone(
-            timestamp=Timestamp(seconds=1234567890, microseconds=0,),
+            timestamp=Timestamp(
+                seconds=1234567890,
+                microseconds=0,
+            ),
             offset_bytes=b"+0200",
         ),
         author=COMMITTERS[0],
@@ -191,7 +210,10 @@ RELEASES = [
         id=hash_to_bytes("1cdd1e87234b6f066d0855a3b5b567638a55d583"),
         name=b"v0.0.1",
         date=TimestampWithTimezone(
-            timestamp=Timestamp(seconds=1234567890, microseconds=0,),
+            timestamp=Timestamp(
+                seconds=1234567890,
+                microseconds=0,
+            ),
             offset_bytes=b"+0200",
         ),
         author=COMMITTERS[0],
@@ -211,8 +233,12 @@ RELEASES = [
 ]
 
 ORIGINS = [
-    Origin(url="https://somewhere.org/den/fox",),
-    Origin(url="https://overtherainbow.org/fox/den",),
+    Origin(
+        url="https://somewhere.org/den/fox",
+    ),
+    Origin(
+        url="https://overtherainbow.org/fox/den",
+    ),
 ]
 
 ORIGIN_VISITS = [
@@ -319,7 +345,10 @@ DIRECTORIES = [
                 target=hash_to_bytes("4b825dc642cb6eb9a060e54bf8d69288fbee4904"),
             ),
             DirectoryEntry(
-                name=b"subprepo1", perms=0o160000, type="rev", target=REVISIONS[1].id,
+                name=b"subprepo1",
+                perms=0o160000,
+                type="rev",
+                target=REVISIONS[1].id,
             ),
         ),
     ),
@@ -327,7 +356,10 @@ DIRECTORIES = [
         id=hash_to_bytes("d135a91ac82a754e7f4bdeff8d56ef06d921eb7d"),
         entries=(
             DirectoryEntry(
-                name=b"file1.ext", perms=0o644, type="file", target=b"\x11" * 20,
+                name=b"file1.ext",
+                perms=0o644,
+                type="file",
+                target=b"\x11" * 20,
             ),
         ),
         raw_manifest=(
@@ -352,13 +384,15 @@ SNAPSHOTS = [
         id=hash_to_bytes("0e7f84ede9a254f2cd55649ad5240783f557e65f"),
         branches={
             b"target/revision": SnapshotBranch(
-                target_type=TargetType.REVISION, target=REVISIONS[0].id,
+                target_type=TargetType.REVISION,
+                target=REVISIONS[0].id,
             ),
             b"target/alias": SnapshotBranch(
                 target_type=TargetType.ALIAS, target=b"target/revision"
             ),
             b"target/directory": SnapshotBranch(
-                target_type=TargetType.DIRECTORY, target=DIRECTORIES[0].id,
+                target_type=TargetType.DIRECTORY,
+                target=DIRECTORIES[0].id,
             ),
             b"target/release": SnapshotBranch(
                 target_type=TargetType.RELEASE, target=RELEASES[0].id
@@ -374,12 +408,18 @@ SNAPSHOTS = [
 
 METADATA_AUTHORITIES = [
     MetadataAuthority(
-        type=MetadataAuthorityType.FORGE, url="http://example.org/", metadata={},
+        type=MetadataAuthorityType.FORGE,
+        url="http://example.org/",
+        metadata={},
     ),
 ]
 
 METADATA_FETCHERS = [
-    MetadataFetcher(name="test-fetcher", version="1.0.0", metadata={},)
+    MetadataFetcher(
+        name="test-fetcher",
+        version="1.0.0",
+        metadata={},
+    )
 ]
 
 RAW_EXTRINSIC_METADATA = [

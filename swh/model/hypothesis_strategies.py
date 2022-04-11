@@ -343,7 +343,8 @@ def directory_entries_d():
             target=sha1_git(),
             type=just("rev"),
             perms=integers(
-                min_value=DentryPerms.revision, max_value=DentryPerms.revision + 0o777,
+                min_value=DentryPerms.revision,
+                max_value=DentryPerms.revision + 0o777,
             ),
         ),
     )

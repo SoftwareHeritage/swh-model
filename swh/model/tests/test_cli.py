@@ -78,7 +78,9 @@ class TestIdentify(DataMixin, unittest.TestCase):
         with unittest.mock.patch.dict(sys.modules, {"dulwich": None}):
             with tempfile.TemporaryDirectory(prefix="swh.model.cli") as d:
                 result = self.runner.invoke(
-                    cli.identify, ["--type", "snapshot", d], catch_exceptions=False,
+                    cli.identify,
+                    ["--type", "snapshot", d],
+                    catch_exceptions=False,
                 )
 
         assert result.exit_code == 1
