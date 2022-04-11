@@ -42,7 +42,7 @@ _DULWICH_TYPES = {
 
 class CoreSWHIDParamType(click.ParamType):
     """Click argument that accepts a core SWHID and returns them as
-    :class:`swh.model.swhids.CoreSWHID` instances """
+    :class:`swh.model.swhids.CoreSWHID` instances"""
 
     name = "SWHID"
 
@@ -209,7 +209,10 @@ def identify_object(
     help="reference identifier to be compared with computed one",
 )
 @click.option(
-    "-r", "--recursive", is_flag=True, help="compute SWHID recursively",
+    "-r",
+    "--recursive",
+    is_flag=True,
+    help="compute SWHID recursively",
 )
 @click.argument("objects", nargs=-1, required=True)
 def identify(

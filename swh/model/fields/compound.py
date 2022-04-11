@@ -27,7 +27,10 @@ def validate_against_schema(model, schema, value):
     if not isinstance(value, dict):
         raise ValidationError(
             "Unexpected type %(type)s for %(model)s, expected dict",
-            params={"model": model, "type": value.__class__.__name__,},
+            params={
+                "model": model,
+                "type": value.__class__.__name__,
+            },
             code="model-unexpected-type",
         )
 

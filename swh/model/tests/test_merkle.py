@@ -96,17 +96,29 @@ class TestMerkleNode(unittest.TestCase):
         self.nodes = {b"root": self.root}
         for i in (b"a", b"b", b"c"):
             value = b"root/" + i
-            node = MerkleTestNode({"value": value,})
+            node = MerkleTestNode(
+                {
+                    "value": value,
+                }
+            )
             self.root[i] = node
             self.nodes[value] = node
             for j in (b"a", b"b", b"c"):
                 value2 = value + b"/" + j
-                node2 = MerkleTestNode({"value": value2,})
+                node2 = MerkleTestNode(
+                    {
+                        "value": value2,
+                    }
+                )
                 node[j] = node2
                 self.nodes[value2] = node2
                 for k in (b"a", b"b", b"c"):
                     value3 = value2 + b"/" + j
-                    node3 = MerkleTestNode({"value": value3,})
+                    node3 = MerkleTestNode(
+                        {
+                            "value": value3,
+                        }
+                    )
                     node2[j] = node3
                     self.nodes[value3] = node3
 

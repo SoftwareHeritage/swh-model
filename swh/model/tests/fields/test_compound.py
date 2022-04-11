@@ -157,7 +157,9 @@ class ValidateCompound(unittest.TestCase):
     def test_validate_whole_schema_shortcut_previous_error(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(
-                self.test_model, self.test_schema_shortcut, self.test_value_missing,
+                self.test_model,
+                self.test_schema_shortcut,
+                self.test_value_missing,
             )
 
         exc = cm.exception
@@ -167,7 +169,9 @@ class ValidateCompound(unittest.TestCase):
     def test_validate_whole_schema(self):
         with self.assertRaises(ValidationError) as cm:
             compound.validate_against_schema(
-                self.test_model, self.test_schema_shortcut, self.test_value,
+                self.test_model,
+                self.test_schema_shortcut,
+                self.test_value,
             )
 
         # The exception should be of the form:

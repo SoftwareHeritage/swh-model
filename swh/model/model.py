@@ -19,7 +19,7 @@ from abc import ABCMeta, abstractmethod
 import datetime
 from enum import Enum
 import hashlib
-from typing import Any, Dict, Iterable, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union
 
 import attr
 from attrs_strict import AttributeTypeError
@@ -325,7 +325,11 @@ class Person(BaseModel):
             else:
                 email = raw_email[:close_bracket]
 
-        return Person(name=name or None, email=email or None, fullname=fullname,)
+        return Person(
+            name=name or None,
+            email=email or None,
+            fullname=fullname,
+        )
 
     def anonymize(self) -> "Person":
         """Returns an anonymized version of the Person object.
@@ -334,7 +338,9 @@ class Person(BaseModel):
         or email.
         """
         return Person(
-            fullname=hashlib.sha256(self.fullname).digest(), name=None, email=None,
+            fullname=hashlib.sha256(self.fullname).digest(),
+            name=None,
+            email=None,
         )
 
     @classmethod
@@ -370,13 +376,13 @@ class Timestamp(BaseModel):
     @seconds.validator
     def check_seconds(self, attribute, value):
         """Check that seconds fit in a 64-bits signed integer."""
-        if not (-(2 ** 63) <= value < 2 ** 63):
+        if not (-(2**63) <= value < 2**63):
             raise ValueError("Seconds must be a signed 64-bits integer.")
 
     @microseconds.validator
     def check_microseconds(self, attribute, value):
         """Checks that microseconds are positive and < 1000000."""
-        if not (0 <= value < 10 ** 6):
+        if not (0 <= value < 10**6):
             raise ValueError("Microseconds must be in [0, 1000000[.")
 
 
@@ -496,8 +502,7 @@ class TimestampWithTimezone(BaseModel):
 
     @classmethod
     def from_iso8601(cls, s):
-        """Builds a TimestampWithTimezone from an ISO8601-formatted string.
-        """
+        """Builds a TimestampWithTimezone from an ISO8601-formatted string."""
         dt = iso8601.parse_date(s)
         tstz = cls.from_datetime(dt)
         if dt.tzname() == "-00:00":
@@ -549,7 +554,7 @@ class TimestampWithTimezone(BaseModel):
             minutes = int(offset_str[-2:])
 
         offset = sign * (hours * 60 + minutes)
-        if (0 <= minutes <= 59) and (-(2 ** 15) <= offset < 2 ** 15):
+        if (0 <= minutes <= 59) and (-(2**15) <= offset < 2**15):
             return offset
         else:
             # can't parse it to a reasonable value; give up and pretend it's UTC.
@@ -597,7 +602,8 @@ class Origin(HashableObject, BaseModel):
     def swhid(self) -> ExtendedSWHID:
         """Returns a SWHID representing this origin."""
         return ExtendedSWHID(
-            object_type=SwhidExtendedObjectType.ORIGIN, object_id=self.id,
+            object_type=SwhidExtendedObjectType.ORIGIN,
+            object_id=self.id,
         )
 
 
@@ -634,9 +640,7 @@ class OriginVisit(BaseModel):
 
 @attr.s(frozen=True, slots=True)
 class OriginVisitStatus(BaseModel):
-    """Represents a visit update of an origin at a given point in time.
-
-    """
+    """Represents a visit update of an origin at a given point in time."""
 
     object_type: Final = "origin_visit_status"
 
@@ -869,7 +873,9 @@ class Revision(HashableObjectWithManifest, BaseModel):
             if not self.extra_headers and "extra_headers" in metadata:
                 (extra_headers, metadata) = metadata.copy_pop("extra_headers")
                 object.__setattr__(
-                    self, "extra_headers", tuplify_extra_headers(extra_headers),
+                    self,
+                    "extra_headers",
+                    tuplify_extra_headers(extra_headers),
                 )
                 attr.validate(self)
             object.__setattr__(self, "metadata", metadata)
@@ -1513,3 +1519,31 @@ class ExtID(HashableObject, BaseModel):
 
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.extid_git_object(self))
+
+
+# Note: we need the type ignore stanza here because mypy cannot figure that all
+# subclasses of BaseModel do have an object_type attribute, even if BaseModel
+# itself does not (because these are Final)
+SWH_MODEL_OBJECT_TYPES: Dict[str, Type[BaseModel]] = {
+    cls.object_type: cls  # type: ignore
+    for cls in (
+        Person,
+        Timestamp,
+        TimestampWithTimezone,
+        Origin,
+        OriginVisit,
+        OriginVisitStatus,
+        Snapshot,
+        SnapshotBranch,
+        Release,
+        Revision,
+        Directory,
+        DirectoryEntry,
+        Content,
+        SkippedContent,
+        MetadataAuthority,
+        MetadataFetcher,
+        RawExtrinsicMetadata,
+        ExtID,
+    )
+}
