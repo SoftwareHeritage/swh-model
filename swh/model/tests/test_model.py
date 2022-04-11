@@ -215,8 +215,16 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         [ImmutableDict({"foo": "bar"}), ImmutableDict({42: 123})],
     ),
     # Any:
-    (object, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
-    (Any, [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()], [],),
+    (
+        object,
+        [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()],
+        [],
+    ),
+    (
+        Any,
+        [-1, 0, 1, 42, 1000, None, "123", 0.0, (), ImmutableDict()],
+        [],
+    ),
     (
         ImmutableDict[Any, int],
         [
@@ -240,10 +248,16 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     # attr objects:
     (
         Timestamp,
-        [Timestamp(seconds=123, microseconds=0),],
+        [
+            Timestamp(seconds=123, microseconds=0),
+        ],
         [None, "2021-09-28T11:27:59", 123],
     ),
-    (Cls1, [Cls1(), Cls2()], [None, b"abcd"],),
+    (
+        Cls1,
+        [Cls1(), Cls2()],
+        [None, b"abcd"],
+    ),
     # enums:
     (
         TargetType,
@@ -300,7 +314,11 @@ def test_unique_key():
     }
     assert OriginVisitStatus(
         origin=url, visit=42, date=date, status="created", snapshot=None
-    ).unique_key() == {"origin": url, "visit": "42", "date": str(date),}
+    ).unique_key() == {
+        "origin": url,
+        "visit": "42",
+        "date": str(date),
+    }
 
     assert Snapshot.from_dict({**snapshot_example, "id": id_}).unique_key() == id_
     assert Release.from_dict({**release_example, "id": id_}).unique_key() == id_
@@ -372,7 +390,9 @@ def test_todict_origin_visits(origin_visit):
 def test_origin_visit_naive_datetime():
     with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
         OriginVisit(
-            origin="http://foo/", date=datetime.datetime.now(), type="git",
+            origin="http://foo/",
+            date=datetime.datetime.now(),
+            type="git",
         )
 
 
@@ -407,13 +427,13 @@ def test_timestamp_seconds():
     with pytest.raises(AttributeTypeError):
         Timestamp(seconds="0", microseconds=0)
 
-    attr.validate(Timestamp(seconds=2 ** 63 - 1, microseconds=0))
+    attr.validate(Timestamp(seconds=2**63 - 1, microseconds=0))
     with pytest.raises(ValueError):
-        Timestamp(seconds=2 ** 63, microseconds=0)
+        Timestamp(seconds=2**63, microseconds=0)
 
-    attr.validate(Timestamp(seconds=-(2 ** 63), microseconds=0))
+    attr.validate(Timestamp(seconds=-(2**63), microseconds=0))
     with pytest.raises(ValueError):
-        Timestamp(seconds=-(2 ** 63) - 1, microseconds=0)
+        Timestamp(seconds=-(2**63) - 1, microseconds=0)
 
 
 def test_timestamp_microseconds():
@@ -421,9 +441,9 @@ def test_timestamp_microseconds():
     with pytest.raises(AttributeTypeError):
         Timestamp(seconds=0, microseconds="0")
 
-    attr.validate(Timestamp(seconds=0, microseconds=10 ** 6 - 1))
+    attr.validate(Timestamp(seconds=0, microseconds=10**6 - 1))
     with pytest.raises(ValueError):
-        Timestamp(seconds=0, microseconds=10 ** 6)
+        Timestamp(seconds=0, microseconds=10**6)
 
     with pytest.raises(ValueError):
         Timestamp(seconds=0, microseconds=-1)
@@ -440,9 +460,9 @@ def test_timestamp_from_dict():
     with pytest.raises(ValueError):
         Timestamp.from_dict({"seconds": 0, "microseconds": -1})
 
-    Timestamp.from_dict({"seconds": 0, "microseconds": 10 ** 6 - 1})
+    Timestamp.from_dict({"seconds": 0, "microseconds": 10**6 - 1})
     with pytest.raises(ValueError):
-        Timestamp.from_dict({"seconds": 0, "microseconds": 10 ** 6})
+        Timestamp.from_dict({"seconds": 0, "microseconds": 10**6})
 
 
 # TimestampWithTimezone
@@ -508,7 +528,11 @@ def test_timestampwithtimezone_from_datetime():
     date = datetime.datetime(2020, 2, 27, 14, 39, 19, tzinfo=tz)
     tstz = TimestampWithTimezone.from_datetime(date)
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1582810759, microseconds=0,), offset_bytes=b"+0100"
+        timestamp=Timestamp(
+            seconds=1582810759,
+            microseconds=0,
+        ),
+        offset_bytes=b"+0100",
     )
 
     # Typical case (close to epoch)
@@ -516,7 +540,11 @@ def test_timestampwithtimezone_from_datetime():
     date = datetime.datetime(1970, 1, 1, 1, 0, 5, tzinfo=tz)
     tstz = TimestampWithTimezone.from_datetime(date)
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=5, microseconds=0,), offset_bytes=b"+0100"
+        timestamp=Timestamp(
+            seconds=5,
+            microseconds=0,
+        ),
+        offset_bytes=b"+0100",
     )
 
     # non-integer number of seconds before UNIX epoch
@@ -525,7 +553,11 @@ def test_timestampwithtimezone_from_datetime():
     )
     tstz = TimestampWithTimezone.from_datetime(date)
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=-1, microseconds=100000,), offset_bytes=b"+0000"
+        timestamp=Timestamp(
+            seconds=-1,
+            microseconds=100000,
+        ),
+        offset_bytes=b"+0000",
     )
 
     # non-integer number of seconds in both the timestamp and the offset
@@ -533,7 +565,11 @@ def test_timestampwithtimezone_from_datetime():
     date = datetime.datetime(1969, 12, 31, 23, 59, 59, 600000, tzinfo=tz)
     tstz = TimestampWithTimezone.from_datetime(date)
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=0, microseconds=200000,), offset_bytes=b"+0000"
+        timestamp=Timestamp(
+            seconds=0,
+            microseconds=200000,
+        ),
+        offset_bytes=b"+0000",
     )
 
     # timezone offset with non-integer number of seconds, for dates before epoch
@@ -543,7 +579,11 @@ def test_timestampwithtimezone_from_datetime():
     date = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=tz)
     tstz = TimestampWithTimezone.from_datetime(date)
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=-1, microseconds=100000,), offset_bytes=b"+0000"
+        timestamp=Timestamp(
+            seconds=-1,
+            microseconds=100000,
+        ),
+        offset_bytes=b"+0000",
     )
 
 
@@ -560,7 +600,10 @@ def test_timestampwithtimezone_from_iso8601():
     tstz = TimestampWithTimezone.from_iso8601(date)
 
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1582810759, microseconds=123456,),
+        timestamp=Timestamp(
+            seconds=1582810759,
+            microseconds=123456,
+        ),
         offset_bytes=b"+0100",
     )
 
@@ -571,7 +614,11 @@ def test_timestampwithtimezone_from_iso8601_negative_utc():
     tstz = TimestampWithTimezone.from_iso8601(date)
 
     assert tstz == TimestampWithTimezone(
-        timestamp=Timestamp(seconds=1582810759, microseconds=0,), offset_bytes=b"-0000"
+        timestamp=Timestamp(
+            seconds=1582810759,
+            microseconds=0,
+        ),
+        offset_bytes=b"-0000",
     )
 
 
@@ -587,21 +634,23 @@ def test_timestampwithtimezone_to_datetime(date, tz, microsecond):
 
 
 def test_person_from_fullname():
-    """The author should have name, email and fullname filled.
-
-    """
+    """The author should have name, email and fullname filled."""
     actual_person = Person.from_fullname(b"tony <ynot@dagobah>")
     assert actual_person == Person(
-        fullname=b"tony <ynot@dagobah>", name=b"tony", email=b"ynot@dagobah",
+        fullname=b"tony <ynot@dagobah>",
+        name=b"tony",
+        email=b"ynot@dagobah",
     )
 
 
 def test_person_from_fullname_no_email():
-    """The author and fullname should be the same as the input (author).
-
-    """
+    """The author and fullname should be the same as the input (author)."""
     actual_person = Person.from_fullname(b"tony")
-    assert actual_person == Person(fullname=b"tony", name=b"tony", email=None,)
+    assert actual_person == Person(
+        fullname=b"tony",
+        name=b"tony",
+        email=None,
+    )
 
 
 def test_person_from_fullname_empty_person():
@@ -610,7 +659,11 @@ def test_person_from_fullname_empty_person():
 
     """
     actual_person = Person.from_fullname(b"")
-    assert actual_person == Person(fullname=b"", name=None, email=None,)
+    assert actual_person == Person(
+        fullname=b"",
+        name=None,
+        email=None,
+    )
 
 
 def test_git_author_line_to_author():
@@ -619,9 +672,15 @@ def test_git_author_line_to_author():
         Person.from_fullname(None)
 
     tests = {
-        b"a <b@c.com>": Person(name=b"a", email=b"b@c.com", fullname=b"a <b@c.com>",),
+        b"a <b@c.com>": Person(
+            name=b"a",
+            email=b"b@c.com",
+            fullname=b"a <b@c.com>",
+        ),
         b"<foo@bar.com>": Person(
-            name=None, email=b"foo@bar.com", fullname=b"<foo@bar.com>",
+            name=None,
+            email=b"foo@bar.com",
+            fullname=b"<foo@bar.com>",
         ),
         b"malformed <email": Person(
             name=b"malformed", email=b"email", fullname=b"malformed <email"
@@ -632,13 +691,25 @@ def test_git_author_line_to_author():
             fullname=b'malformed <"<br"@ckets>',
         ),
         b"trailing <sp@c.e> ": Person(
-            name=b"trailing", email=b"sp@c.e", fullname=b"trailing <sp@c.e> ",
+            name=b"trailing",
+            email=b"sp@c.e",
+            fullname=b"trailing <sp@c.e> ",
         ),
-        b"no<sp@c.e>": Person(name=b"no", email=b"sp@c.e", fullname=b"no<sp@c.e>",),
+        b"no<sp@c.e>": Person(
+            name=b"no",
+            email=b"sp@c.e",
+            fullname=b"no<sp@c.e>",
+        ),
         b" more   <sp@c.es>": Person(
-            name=b"more", email=b"sp@c.es", fullname=b" more   <sp@c.es>",
+            name=b"more",
+            email=b"sp@c.es",
+            fullname=b" more   <sp@c.es>",
         ),
-        b" <>": Person(name=None, email=None, fullname=b" <>",),
+        b" <>": Person(
+            name=None,
+            email=None,
+            fullname=b" <>",
+        ),
     }
 
     for person in sorted(tests):
@@ -647,9 +718,7 @@ def test_git_author_line_to_author():
 
 
 def test_person_comparison():
-    """Check only the fullname attribute is used to compare Person objects
-
-    """
+    """Check only the fullname attribute is used to compare Person objects"""
     person = Person(fullname=b"p1", name=None, email=None)
     assert attr.evolve(person, name=b"toto") == person
     assert attr.evolve(person, email=b"toto@example.com") == person
@@ -767,7 +836,8 @@ def test_content_naive_datetime():
     c = Content.from_data(b"foo")
     with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
         Content(
-            **c.to_dict(), ctime=datetime.datetime.now(),
+            **c.to_dict(),
+            ctime=datetime.datetime.now(),
         )
 
 
@@ -800,7 +870,8 @@ def test_skipped_content_naive_datetime():
     c = SkippedContent.from_data(b"foo", reason="reason")
     with pytest.raises(ValueError, match="must be a timezone-aware datetime"):
         SkippedContent(
-            **c.to_dict(), ctime=datetime.datetime.now(),
+            **c.to_dict(),
+            ctime=datetime.datetime.now(),
         )
 
 
@@ -1173,9 +1244,13 @@ def test_object_type_is_final():
 
 
 _metadata_authority = MetadataAuthority(
-    type=MetadataAuthorityType.FORGE, url="https://forge.softwareheritage.org",
+    type=MetadataAuthorityType.FORGE,
+    url="https://forge.softwareheritage.org",
 )
-_metadata_fetcher = MetadataFetcher(name="test-fetcher", version="0.0.1",)
+_metadata_fetcher = MetadataFetcher(
+    name="test-fetcher",
+    version="0.0.1",
+)
 _content_swhid = ExtendedSWHID.from_string(
     "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2"
 )
@@ -1203,7 +1278,8 @@ def test_metadata_valid():
 
     # Object with an SWHID
     RawExtrinsicMetadata(
-        target=_content_swhid, **_common_metadata_fields,
+        target=_content_swhid,
+        **_common_metadata_fields,
     )
 
 
@@ -1212,13 +1288,19 @@ def test_metadata_to_dict():
 
     common_fields = {
         "authority": {"type": "forge", "url": "https://forge.softwareheritage.org"},
-        "fetcher": {"name": "test-fetcher", "version": "0.0.1",},
+        "fetcher": {
+            "name": "test-fetcher",
+            "version": "0.0.1",
+        },
         "discovery_date": _common_metadata_fields["discovery_date"],
         "format": "json",
         "metadata": b'{"origin": "https://example.com", "lines": "42"}',
     }
 
-    m = RawExtrinsicMetadata(target=_origin_swhid, **_common_metadata_fields,)
+    m = RawExtrinsicMetadata(
+        target=_origin_swhid,
+        **_common_metadata_fields,
+    )
     assert m.to_dict() == {
         "target": str(_origin_swhid),
         "id": b"@j\xc9\x01\xbc\x1e#p*\xf3q9\xa7u\x97\x00\x14\x02xa",
@@ -1226,7 +1308,10 @@ def test_metadata_to_dict():
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
 
-    m = RawExtrinsicMetadata(target=_content_swhid, **_common_metadata_fields,)
+    m = RawExtrinsicMetadata(
+        target=_content_swhid,
+        **_common_metadata_fields,
+    )
     assert m.to_dict() == {
         "target": "swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2",
         "id": b"\xbc\xa3U\xddf\x19U\xc5\xd2\xd7\xdfK\xd7c\x1f\xa8\xfeh\x992",
@@ -1286,12 +1371,16 @@ def test_metadata_validate_context_origin():
         ValueError, match="Unexpected 'origin' context for origin object"
     ):
         RawExtrinsicMetadata(
-            target=_origin_swhid, origin=_origin_url, **_common_metadata_fields,
+            target=_origin_swhid,
+            origin=_origin_url,
+            **_common_metadata_fields,
         )
 
     # but all other types can
     RawExtrinsicMetadata(
-        target=_content_swhid, origin=_origin_url, **_common_metadata_fields,
+        target=_content_swhid,
+        origin=_origin_url,
+        **_common_metadata_fields,
     )
 
     # SWHIDs aren't valid origin URLs
@@ -1311,18 +1400,25 @@ def test_metadata_validate_context_visit():
         ValueError, match="Unexpected 'visit' context for origin object"
     ):
         RawExtrinsicMetadata(
-            target=_origin_swhid, visit=42, **_common_metadata_fields,
+            target=_origin_swhid,
+            visit=42,
+            **_common_metadata_fields,
         )
 
     # but all other types can
     RawExtrinsicMetadata(
-        target=_content_swhid, origin=_origin_url, visit=42, **_common_metadata_fields,
+        target=_content_swhid,
+        origin=_origin_url,
+        visit=42,
+        **_common_metadata_fields,
     )
 
     # Missing 'origin'
     with pytest.raises(ValueError, match="'origin' context must be set if 'visit' is"):
         RawExtrinsicMetadata(
-            target=_content_swhid, visit=42, **_common_metadata_fields,
+            target=_content_swhid,
+            visit=42,
+            **_common_metadata_fields,
         )
 
     # visit id must be positive
@@ -1345,7 +1441,8 @@ def test_metadata_validate_context_snapshot():
         RawExtrinsicMetadata(
             target=_origin_swhid,
             snapshot=CoreSWHID(
-                object_type=ObjectType.SNAPSHOT, object_id=EXAMPLE_HASH,
+                object_type=ObjectType.SNAPSHOT,
+                object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -1363,7 +1460,10 @@ def test_metadata_validate_context_snapshot():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            snapshot=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
+            snapshot=CoreSWHID(
+                object_type=ObjectType.CONTENT,
+                object_id=EXAMPLE_HASH,
+            ),
             **_common_metadata_fields,
         )
 
@@ -1377,7 +1477,10 @@ def test_metadata_validate_context_release():
     ):
         RawExtrinsicMetadata(
             target=_origin_swhid,
-            release=CoreSWHID(object_type=ObjectType.RELEASE, object_id=EXAMPLE_HASH,),
+            release=CoreSWHID(
+                object_type=ObjectType.RELEASE,
+                object_id=EXAMPLE_HASH,
+            ),
             **_common_metadata_fields,
         )
 
@@ -1394,7 +1497,10 @@ def test_metadata_validate_context_release():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            release=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
+            release=CoreSWHID(
+                object_type=ObjectType.CONTENT,
+                object_id=EXAMPLE_HASH,
+            ),
             **_common_metadata_fields,
         )
 
@@ -1409,7 +1515,8 @@ def test_metadata_validate_context_revision():
         RawExtrinsicMetadata(
             target=_origin_swhid,
             revision=CoreSWHID(
-                object_type=ObjectType.REVISION, object_id=EXAMPLE_HASH,
+                object_type=ObjectType.REVISION,
+                object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -1427,7 +1534,10 @@ def test_metadata_validate_context_revision():
     ):
         RawExtrinsicMetadata(
             target=_content_swhid,
-            revision=CoreSWHID(object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,),
+            revision=CoreSWHID(
+                object_type=ObjectType.CONTENT,
+                object_id=EXAMPLE_HASH,
+            ),
             **_common_metadata_fields,
         )
 
@@ -1438,12 +1548,16 @@ def test_metadata_validate_context_path():
     # Origins can't have a 'path' context
     with pytest.raises(ValueError, match="Unexpected 'path' context for origin object"):
         RawExtrinsicMetadata(
-            target=_origin_swhid, path=b"/foo/bar", **_common_metadata_fields,
+            target=_origin_swhid,
+            path=b"/foo/bar",
+            **_common_metadata_fields,
         )
 
     # but content can
     RawExtrinsicMetadata(
-        target=_content_swhid, path=b"/foo/bar", **_common_metadata_fields,
+        target=_content_swhid,
+        path=b"/foo/bar",
+        **_common_metadata_fields,
     )
 
 
@@ -1457,7 +1571,8 @@ def test_metadata_validate_context_directory():
         RawExtrinsicMetadata(
             target=_origin_swhid,
             directory=CoreSWHID(
-                object_type=ObjectType.DIRECTORY, object_id=EXAMPLE_HASH,
+                object_type=ObjectType.DIRECTORY,
+                object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -1465,7 +1580,10 @@ def test_metadata_validate_context_directory():
     # but content can
     RawExtrinsicMetadata(
         target=_content_swhid,
-        directory=CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=EXAMPLE_HASH,),
+        directory=CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=EXAMPLE_HASH,
+        ),
         **_common_metadata_fields,
     )
 
@@ -1476,7 +1594,8 @@ def test_metadata_validate_context_directory():
         RawExtrinsicMetadata(
             target=_content_swhid,
             directory=CoreSWHID(
-                object_type=ObjectType.CONTENT, object_id=EXAMPLE_HASH,
+                object_type=ObjectType.CONTENT,
+                object_id=EXAMPLE_HASH,
             ),
             **_common_metadata_fields,
         )
@@ -1497,7 +1616,9 @@ def test_metadata_normalize_discovery_date():
     # Check for truncation to integral second
     date_with_us = truncated_date.replace(microsecond=42)
     md = RawExtrinsicMetadata(
-        target=_content_swhid, discovery_date=date_with_us, **fields_copy,
+        target=_content_swhid,
+        discovery_date=date_with_us,
+        **fields_copy,
     )
 
     assert md.discovery_date == truncated_date
@@ -1511,7 +1632,9 @@ def test_metadata_normalize_discovery_date():
     assert date_with_tz.tzinfo != datetime.timezone.utc
 
     md = RawExtrinsicMetadata(
-        target=_content_swhid, discovery_date=date_with_tz, **fields_copy,
+        target=_content_swhid,
+        discovery_date=date_with_tz,
+        **fields_copy,
     )
 
     assert md.discovery_date == truncated_date

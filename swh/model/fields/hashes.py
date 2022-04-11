@@ -96,7 +96,9 @@ def validate_hash(value, hash_type):
 
     raise ValidationError(
         "Unexpected type %(type)s for hash, expected str or bytes",
-        params={"type": value.__class__.__name__,},
+        params={
+            "type": value.__class__.__name__,
+        },
         code="unexpected-hash-value-type",
     )
 

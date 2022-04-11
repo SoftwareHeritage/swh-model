@@ -18,7 +18,10 @@ def validate_type(value, type):
             typestr = type.__name__
         raise ValidationError(
             "Unexpected type %(type)s, expected %(expected_type)s",
-            params={"type": value.__class__.__name__, "expected_type": typestr,},
+            params={
+                "type": value.__class__.__name__,
+                "expected_type": typestr,
+            },
             code="unexpected-type",
         )
 

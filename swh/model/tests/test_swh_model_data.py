@@ -19,7 +19,8 @@ def test_swh_model_data(object_type, objects):
 
 
 @pytest.mark.parametrize(
-    "object_type", ("directory", "revision", "release", "snapshot"),
+    "object_type",
+    ("directory", "revision", "release", "snapshot"),
 )
 def test_swh_model_data_hash(object_type):
     for obj in TEST_OBJECTS[object_type]:
@@ -46,8 +47,7 @@ def test_ensure_visit_status_date_consistency():
 
 
 def test_ensure_visit_status_snapshot_consistency():
-    """ensure origin-visit-status snapshots exist in the test dataset
-    """
+    """ensure origin-visit-status snapshots exist in the test dataset"""
     snapshots = [snp.id for snp in TEST_OBJECTS["snapshot"]]
     for visit_status in TEST_OBJECTS["origin_visit_status"]:
         if visit_status.snapshot:

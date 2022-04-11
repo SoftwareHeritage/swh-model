@@ -36,9 +36,18 @@ def remove_id(d: Dict) -> Dict:
 class UtilityFunctionsDateOffset(unittest.TestCase):
     def setUp(self):
         self.dates = {
-            b"1448210036": {"seconds": 1448210036, "microseconds": 0,},
-            b"1448210036.002342": {"seconds": 1448210036, "microseconds": 2342,},
-            b"1448210036.12": {"seconds": 1448210036, "microseconds": 120000,},
+            b"1448210036": {
+                "seconds": 1448210036,
+                "microseconds": 0,
+            },
+            b"1448210036.002342": {
+                "seconds": 1448210036,
+                "microseconds": 2342,
+            },
+            b"1448210036.12": {
+                "seconds": 1448210036,
+                "microseconds": 120000,
+            },
         }
 
     def test_format_date(self):
@@ -187,14 +196,16 @@ class DirectoryIdentifier(unittest.TestCase):
     def test_dir_identifier(self):
         self.assertEqual(Directory.from_dict(self.directory).id, self.directory["id"])
         self.assertEqual(
-            Directory.from_dict(remove_id(self.directory)).id, self.directory["id"],
+            Directory.from_dict(remove_id(self.directory)).id,
+            self.directory["id"],
         )
 
     def test_dir_identifier_entry_order(self):
         # Reverse order of entries, check the id is still the same.
         directory = {"entries": reversed(self.directory["entries"])}
         self.assertEqual(
-            Directory.from_dict(remove_id(directory)).id, self.directory["id"],
+            Directory.from_dict(remove_id(directory)).id,
+            self.directory["id"],
         )
 
     def test_dir_identifier_empty_directory(self):
@@ -279,7 +290,10 @@ dg1KdHOa34shrKDaOVzW
                 "name": b"Software Heritage",
                 "email": b"robot@softwareheritage.org",
             },
-            "date": {"timestamp": {"seconds": 1437047495}, "offset_bytes": b"+0000",},
+            "date": {
+                "timestamp": {"seconds": 1437047495},
+                "offset_bytes": b"+0000",
+            },
             "type": "tar",
             "committer": {
                 "name": b"Software Heritage",
@@ -344,9 +358,18 @@ dg1KdHOa34shrKDaOVzW
                 "email": b"worldhello.net@gmail.com",
                 "fullname": b"Jiang Xin <worldhello.net@gmail.com>",
             },
-            "date": {"timestamp": 1428538899, "offset": 480,},
-            "committer": {"name": b"Jiang Xin", "email": b"worldhello.net@gmail.com",},
-            "committer_date": {"timestamp": 1428538899, "offset": 480,},
+            "date": {
+                "timestamp": 1428538899,
+                "offset": 480,
+            },
+            "committer": {
+                "name": b"Jiang Xin",
+                "email": b"worldhello.net@gmail.com",
+            },
+            "committer_date": {
+                "timestamp": 1428538899,
+                "offset": 480,
+            },
             "extra_headers": ((b"gpgsig", gpgsig),),
             "message": b"""Merge branch 'master' of git://github.com/alexhenrie/git-po
 
@@ -369,9 +392,18 @@ dg1KdHOa34shrKDaOVzW
                 "email": b"worldhello.net@gmail.com",
                 "fullname": b"Jiang Xin <worldhello.net@gmail.com>",
             },
-            "date": {"timestamp": 1428538899, "offset": 480,},
-            "committer": {"name": b"Jiang Xin", "email": b"worldhello.net@gmail.com",},
-            "committer_date": {"timestamp": 1428538899, "offset": 480,},
+            "date": {
+                "timestamp": 1428538899,
+                "offset": 480,
+            },
+            "committer": {
+                "name": b"Jiang Xin",
+                "email": b"worldhello.net@gmail.com",
+            },
+            "committer_date": {
+                "timestamp": 1428538899,
+                "offset": 480,
+            },
             "message": None,
             "type": "git",
             "synthetic": False,
@@ -389,9 +421,18 @@ dg1KdHOa34shrKDaOVzW
                 "email": b"worldhello.net@gmail.com",
                 "fullname": b"Jiang Xin <worldhello.net@gmail.com>",
             },
-            "date": {"timestamp": 1428538899, "offset": 480,},
-            "committer": {"name": b"Jiang Xin", "email": b"worldhello.net@gmail.com",},
-            "committer_date": {"timestamp": 1428538899, "offset": 480,},
+            "date": {
+                "timestamp": 1428538899,
+                "offset": 480,
+            },
+            "committer": {
+                "name": b"Jiang Xin",
+                "email": b"worldhello.net@gmail.com",
+            },
+            "committer_date": {
+                "timestamp": 1428538899,
+                "offset": 480,
+            },
             "message": b"",
             "type": "git",
             "synthetic": False,
@@ -401,7 +442,9 @@ dg1KdHOa34shrKDaOVzW
             "id": _x("010d34f384fa99d047cdd5e2f41e56e5c2feee45"),
             "directory": _x("85a74718d377195e1efd0843ba4f3260bad4fe07"),
             "parents": [_x("01e2d0627a9a6edb24c37db45db5ecb31e9de808")],
-            "author": {"fullname": b"Linus Torvalds <torvalds@linux-foundation.org>",},
+            "author": {
+                "fullname": b"Linus Torvalds <torvalds@linux-foundation.org>",
+            },
             "date": datetime.datetime(2015, 7, 12, 15, 10, 30, tzinfo=linus_tz),
             "committer": {
                 "fullname": b"Linus Torvalds <torvalds@linux-foundation.org>",
@@ -420,10 +463,12 @@ dg1KdHOa34shrKDaOVzW
 
     def test_revision_identifier(self):
         self.assertEqual(
-            Revision.from_dict(self.revision).id, self.revision["id"],
+            Revision.from_dict(self.revision).id,
+            self.revision["id"],
         )
         self.assertEqual(
-            Revision.from_dict(remove_id(self.revision)).id, self.revision["id"],
+            Revision.from_dict(remove_id(self.revision)).id,
+            self.revision["id"],
         )
 
     def test_revision_identifier_none_metadata(self):
@@ -523,7 +568,10 @@ o6X/3T+vm8K3bf3driRr34c=
             "target": _x("9ee1c939d1cb936b1f98e8d81aeffab57bae46ab"),
             "target_type": "revision",
             "name": b"v2.6.12",
-            "author": {"name": b"Linus Torvalds", "email": b"torvalds@g5.osdl.org",},
+            "author": {
+                "name": b"Linus Torvalds",
+                "email": b"torvalds@g5.osdl.org",
+            },
             "date": datetime.datetime(2005, 10, 27, 17, 2, 33, tzinfo=linus_tz),
             "message": None,
             "synthetic": False,
@@ -534,7 +582,10 @@ o6X/3T+vm8K3bf3driRr34c=
             "target": _x("9ee1c939d1cb936b1f98e8d81aeffab57bae46ab"),
             "target_type": "revision",
             "name": b"v2.6.12",
-            "author": {"name": b"Linus Torvalds", "email": b"torvalds@g5.osdl.org",},
+            "author": {
+                "name": b"Linus Torvalds",
+                "email": b"torvalds@g5.osdl.org",
+            },
             "date": datetime.datetime(2005, 10, 27, 17, 2, 33, tzinfo=linus_tz),
             "message": b"",
             "synthetic": False,
@@ -545,8 +596,14 @@ o6X/3T+vm8K3bf3driRr34c=
             "name": b"20081029",
             "target": _x("54e9abca4c77421e2921f5f156c9fe4a9f7441c7"),
             "target_type": "revision",
-            "date": {"timestamp": {"seconds": 1225281976}, "offset_bytes": b"-0000",},
-            "author": {"name": b"Otavio Salvador", "email": b"otavio@debian.org",},
+            "date": {
+                "timestamp": {"seconds": 1225281976},
+                "offset_bytes": b"-0000",
+            },
+            "author": {
+                "name": b"Otavio Salvador",
+                "email": b"otavio@debian.org",
+            },
             "synthetic": False,
             "message": b"tagging version 20081029\n\nr56558\n",
         }
@@ -559,7 +616,10 @@ o6X/3T+vm8K3bf3driRr34c=
             },
             "date": {
                 "offset_bytes": b"+1000",
-                "timestamp": {"microseconds": 0, "seconds": 1377480558,},
+                "timestamp": {
+                    "microseconds": 0,
+                    "seconds": 1377480558,
+                },
             },
             "id": _x("5c98f559d034162de22d3ebeb95433e6f8885231"),
             "message": b"Release of v0.3.2.",
@@ -577,10 +637,12 @@ o6X/3T+vm8K3bf3driRr34c=
 
     def test_release_identifier(self):
         self.assertEqual(
-            Release.from_dict(self.release).id, self.release["id"],
+            Release.from_dict(self.release).id,
+            self.release["id"],
         )
         self.assertEqual(
-            Release.from_dict(remove_id(self.release)).id, self.release["id"],
+            Release.from_dict(remove_id(self.release)).id,
+            self.release["id"],
         )
 
     def test_release_identifier_no_author(self):
@@ -631,7 +693,10 @@ snapshot_example = {
             "target": _x("fe95a46679d128ff167b7c55df5d02356c5a1ae1"),
             "target_type": "content",
         },
-        b"alias": {"target": b"revision", "target_type": "alias",},
+        b"alias": {
+            "target": b"revision",
+            "target_type": "alias",
+        },
         b"revision": {
             "target": _x("aafb16d69fd30ff58afdd69036a26047f3aebdc6"),
             "target_type": "revision",
@@ -660,19 +725,27 @@ class SnapshotIdentifier(unittest.TestCase):
 
         self.dangling_branch = {
             "id": _x("c84502e821eb21ed84e9fd3ec40973abc8b32353"),
-            "branches": {b"HEAD": None,},
+            "branches": {
+                b"HEAD": None,
+            },
         }
 
         self.unresolved = {
             "id": _x("84b4548ea486e4b0a7933fa541ff1503a0afe1e0"),
-            "branches": {b"foo": {"target": b"bar", "target_type": "alias",},},
+            "branches": {
+                b"foo": {
+                    "target": b"bar",
+                    "target_type": "alias",
+                },
+            },
         }
 
         self.all_types = snapshot_example
 
     def test_empty_snapshot(self):
         self.assertEqual(
-            Snapshot.from_dict(remove_id(self.empty)).id, self.empty["id"],
+            Snapshot.from_dict(remove_id(self.empty)).id,
+            self.empty["id"],
         )
 
     def test_dangling_branch(self):
@@ -687,7 +760,8 @@ class SnapshotIdentifier(unittest.TestCase):
 
     def test_all_types(self):
         self.assertEqual(
-            Snapshot.from_dict(remove_id(self.all_types)).id, self.all_types["id"],
+            Snapshot.from_dict(remove_id(self.all_types)).id,
+            self.all_types["id"],
         )
 
 
@@ -828,7 +902,13 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         metadata = {
             **self.minimal,
             "discovery_date": datetime.datetime(
-                2021, 1, 25, 12, 27, 51, tzinfo=utc_plus_one,
+                2021,
+                1,
+                25,
+                12,
+                27,
+                51,
+                tzinfo=utc_plus_one,
             ),
         }
 
@@ -855,7 +935,14 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         metadata = {
             **self.minimal,
             "discovery_date": datetime.datetime(
-                2021, 1, 25, 11, 27, 51, 123456, tzinfo=datetime.timezone.utc,
+                2021,
+                1,
+                25,
+                11,
+                27,
+                51,
+                123456,
+                tzinfo=datetime.timezone.utc,
             ),
         }
 
@@ -883,7 +970,14 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         metadata = {
             **self.minimal,
             "discovery_date": datetime.datetime(
-                2021, 1, 25, 11, 27, 50, 1_000_000 - 42, tzinfo=tz,
+                2021,
+                1,
+                25,
+                11,
+                27,
+                50,
+                1_000_000 - 42,
+                tzinfo=tz,
             ),
         }
 
@@ -908,7 +1002,13 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         metadata = {
             **self.minimal,
             "discovery_date": datetime.datetime(
-                1960, 1, 25, 11, 27, 51, tzinfo=datetime.timezone.utc,
+                1960,
+                1,
+                25,
+                11,
+                27,
+                51,
+                tzinfo=datetime.timezone.utc,
             ),
         }
 
@@ -942,7 +1042,13 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         metadata = {
             **self.minimal,
             "discovery_date": datetime.datetime(
-                1970, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc,
+                1970,
+                1,
+                1,
+                0,
+                0,
+                0,
+                tzinfo=datetime.timezone.utc,
             ),
         }
 
@@ -976,7 +1082,14 @@ class RawExtrinsicMetadataIdentifier(unittest.TestCase):
         metadata = {
             **self.minimal,
             "discovery_date": datetime.datetime(
-                1969, 12, 31, 23, 59, 59, 1, tzinfo=datetime.timezone.utc,
+                1969,
+                12,
+                31,
+                23,
+                59,
+                59,
+                1,
+                tzinfo=datetime.timezone.utc,
             ),
         }
 
@@ -1035,23 +1148,38 @@ TS_DICTS = [
     # with current input dict format (offset_bytes)
     (
         {"timestamp": 12345, "offset_bytes": b"+0000"},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"-0000"},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"-0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"-0000",
+        },
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"+0200"},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0200",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0200",
+        },
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"-0200"},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"-0200",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"-0200",
+        },
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"--700"},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"--700",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"--700",
+        },
     ),
     (
         {"timestamp": 12345, "offset_bytes": b"1234567"},
@@ -1063,23 +1191,38 @@ TS_DICTS = [
     # with old-style input dicts (numeric offset + optional negative_utc):
     (
         {"timestamp": 12345, "offset": 0},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": False},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": False},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": None},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {"timestamp": {"seconds": 12345}, "offset": 0, "negative_utc": None},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {
@@ -1087,7 +1230,10 @@ TS_DICTS = [
             "offset": 0,
             "negative_utc": None,
         },
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
     (
         {
@@ -1102,11 +1248,17 @@ TS_DICTS = [
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": True},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"-0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"-0000",
+        },
     ),
     (
         {"timestamp": 12345, "offset": 0, "negative_utc": None},
-        {"timestamp": {"seconds": 12345, "microseconds": 0}, "offset_bytes": b"+0000",},
+        {
+            "timestamp": {"seconds": 12345, "microseconds": 0},
+            "offset_bytes": b"+0000",
+        },
     ),
 ]
 

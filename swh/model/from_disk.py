@@ -214,8 +214,7 @@ class Content(MerkleLeaf):
         return obj
 
     def swhid(self) -> CoreSWHID:
-        """Return node identifier as a SWHID
-        """
+        """Return node identifier as a SWHID"""
         return CoreSWHID(object_type=ObjectType.CONTENT, object_id=self.hash)
 
     def __repr__(self):
@@ -297,14 +296,14 @@ def extract_regex_objs(
     root_path: bytes, patterns: Iterable[bytes]
 ) -> Iterator[Pattern[bytes]]:
     """Generates a regex object for each pattern given in input and checks if
-       the path is a subdirectory or relative to the root path.
+     the path is a subdirectory or relative to the root path.
 
-      Args:
-        root_path (bytes): path to the root directory
-        patterns (list of byte): patterns to match
+    Args:
+      root_path (bytes): path to the root directory
+      patterns (list of byte): patterns to match
 
-       Yields:
-          an SRE_Pattern object
+     Yields:
+        an SRE_Pattern object
     """
     absolute_root_path = os.path.abspath(root_path)
     for pattern in patterns:
@@ -494,8 +493,7 @@ class Directory(MerkleNode):
         return self.__entries
 
     def swhid(self) -> CoreSWHID:
-        """Return node identifier as a SWHID
-        """
+        """Return node identifier as a SWHID"""
         return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):

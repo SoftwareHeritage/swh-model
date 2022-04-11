@@ -177,7 +177,13 @@ def directory_git_object(directory: Union[Dict, model.Directory]) -> bytes:
 
     for entry in sorted(directory.entries, key=directory_entry_sort_key):
         components.extend(
-            [_perms_to_bytes(entry.perms), b"\x20", entry.name, b"\x00", entry.target,]
+            [
+                _perms_to_bytes(entry.perms),
+                b"\x20",
+                entry.name,
+                b"\x00",
+                entry.target,
+            ]
         )
 
     return format_git_object_from_parts("tree", components)
@@ -564,7 +570,10 @@ def raw_extrinsic_metadata_git_object(
             b"authority",
             f"{metadata.authority.type.value} {metadata.authority.url}".encode(),
         ),
-        (b"fetcher", f"{metadata.fetcher.name} {metadata.fetcher.version}".encode(),),
+        (
+            b"fetcher",
+            f"{metadata.fetcher.name} {metadata.fetcher.version}".encode(),
+        ),
         (b"format", metadata.format.encode()),
     ]
 
@@ -620,7 +629,10 @@ def extid_git_object(extid: model.ExtID) -> bytes:
         headers.append((b"extid_version", str(extid_version).encode("ascii")))
 
     headers.extend(
-        [(b"extid", extid.extid), (b"target", str(extid.target).encode("ascii")),]
+        [
+            (b"extid", extid.extid),
+            (b"target", str(extid.target).encode("ascii")),
+        ]
     )
 
     return format_git_object_from_headers("extid", headers)

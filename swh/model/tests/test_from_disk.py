@@ -726,11 +726,13 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name], self.empty_content,
+                directory[b"specials/" + name],
+                self.empty_content,
             )
 
         self.assertEqual(
-            directory[b"empty1/empty2"].get_data(), self.empty_directory,
+            directory[b"empty1/empty2"].get_data(),
+            self.empty_directory,
         )
 
         # Raise on non existent file
@@ -763,7 +765,8 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name], self.empty_content,
+                directory[b"specials/" + name],
+                self.empty_content,
             )
 
         # empty directories have been ignored recursively
@@ -791,11 +794,13 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name], self.empty_content,
+                directory[b"specials/" + name],
+                self.empty_content,
             )
 
         self.assertEqual(
-            directory[b"empty1/empty2"].get_data(), self.empty_directory,
+            directory[b"empty1/empty2"].get_data(),
+            self.empty_directory,
         )
 
         with self.assertRaisesRegex(KeyError, "b'symlinks'"):
@@ -820,11 +825,13 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name], self.empty_content,
+                directory[b"specials/" + name],
+                self.empty_content,
             )
 
         self.assertEqual(
-            directory[b"empty1/empty2"].get_data(), self.empty_directory,
+            directory[b"empty1/empty2"].get_data(),
+            self.empty_directory,
         )
 
         with self.assertRaisesRegex(KeyError, "b'symlinks'"):
@@ -880,9 +887,7 @@ class TarballIterDirectory(DataMixin, unittest.TestCase):
         self.make_from_tarball(self.tmpdir_name)
 
     def test_iter_directory(self):
-        """Iter from_disk.directory should yield the full arborescence tree
-
-        """
+        """Iter from_disk.directory should yield the full arborescence tree"""
         directory = Directory.from_disk(
             path=os.path.join(self.tmpdir_name, b"sample-folder")
         )

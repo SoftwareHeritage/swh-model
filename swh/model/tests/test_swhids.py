@@ -82,33 +82,78 @@ HASH = "94a9ed024d3859793618152ea559a168bbcbb5e2"
 VALID_SWHIDS = [
     (
         f"swh:1:cnt:{HASH}",
-        CoreSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH),),
-        QualifiedSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH),),
-        ExtendedSWHID(object_type=ExtendedObjectType.CONTENT, object_id=_x(HASH),),
+        CoreSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+        ),
+        QualifiedSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+        ),
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.CONTENT,
+            object_id=_x(HASH),
+        ),
     ),
     (
         f"swh:1:dir:{HASH}",
-        CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH),),
-        QualifiedSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH),),
-        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=_x(HASH),),
+        CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=_x(HASH),
+        ),
+        QualifiedSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=_x(HASH),
+        ),
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.DIRECTORY,
+            object_id=_x(HASH),
+        ),
     ),
     (
         f"swh:1:rev:{HASH}",
-        CoreSWHID(object_type=ObjectType.REVISION, object_id=_x(HASH),),
-        QualifiedSWHID(object_type=ObjectType.REVISION, object_id=_x(HASH),),
-        ExtendedSWHID(object_type=ExtendedObjectType.REVISION, object_id=_x(HASH),),
+        CoreSWHID(
+            object_type=ObjectType.REVISION,
+            object_id=_x(HASH),
+        ),
+        QualifiedSWHID(
+            object_type=ObjectType.REVISION,
+            object_id=_x(HASH),
+        ),
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.REVISION,
+            object_id=_x(HASH),
+        ),
     ),
     (
         f"swh:1:rel:{HASH}",
-        CoreSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH),),
-        QualifiedSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH),),
-        ExtendedSWHID(object_type=ExtendedObjectType.RELEASE, object_id=_x(HASH),),
+        CoreSWHID(
+            object_type=ObjectType.RELEASE,
+            object_id=_x(HASH),
+        ),
+        QualifiedSWHID(
+            object_type=ObjectType.RELEASE,
+            object_id=_x(HASH),
+        ),
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.RELEASE,
+            object_id=_x(HASH),
+        ),
     ),
     (
         f"swh:1:snp:{HASH}",
-        CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH),),
-        QualifiedSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH),),
-        ExtendedSWHID(object_type=ExtendedObjectType.SNAPSHOT, object_id=_x(HASH),),
+        CoreSWHID(
+            object_type=ObjectType.SNAPSHOT,
+            object_id=_x(HASH),
+        ),
+        QualifiedSWHID(
+            object_type=ObjectType.SNAPSHOT,
+            object_id=_x(HASH),
+        ),
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.SNAPSHOT,
+            object_id=_x(HASH),
+        ),
     ),
     (
         f"swh:1:cnt:{HASH};origin=https://github.com/python/cpython;lines=1-18",
@@ -152,14 +197,18 @@ VALID_SWHIDS = [
         f"swh:1:ori:{HASH}",
         None,  # CoreSWHID does not allow origin pseudo-SWHIDs
         None,  # Neither does QualifiedSWHID
-        ExtendedSWHID(object_type=ExtendedObjectType.ORIGIN, object_id=_x(HASH),),
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.ORIGIN,
+            object_id=_x(HASH),
+        ),
     ),
     (
         f"swh:1:emd:{HASH}",
         None,  # likewise for metadata pseudo-SWHIDs
         None,  # Neither does QualifiedSWHID
         ExtendedSWHID(
-            object_type=ExtendedObjectType.RAW_EXTRINSIC_METADATA, object_id=_x(HASH),
+            object_type=ExtendedObjectType.RAW_EXTRINSIC_METADATA,
+            object_id=_x(HASH),
         ),
     ),
     (
@@ -247,7 +296,11 @@ def test_QualifiedSWHID_validation_error(ns, version, type, id, qualifiers):
             f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
         ),
         (ObjectType.CONTENT, {"visit": 42}, TypeError),
-        (ObjectType.CONTENT, {"visit": f"swh:1:rel:{HASH}"}, ValidationError,),
+        (
+            ObjectType.CONTENT,
+            {"visit": f"swh:1:rel:{HASH}"},
+            ValidationError,
+        ),
         (
             ObjectType.CONTENT,
             {"visit": CoreSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH))},
@@ -275,20 +328,32 @@ def test_QualifiedSWHID_validation_error(ns, version, type, id, qualifiers):
             f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
         ),
         (ObjectType.CONTENT, {"anchor": 42}, TypeError),
-        (ObjectType.CONTENT, {"anchor": f"swh:1:cnt:{HASH}"}, ValidationError,),
+        (
+            ObjectType.CONTENT,
+            {"anchor": f"swh:1:cnt:{HASH}"},
+            ValidationError,
+        ),
         (
             ObjectType.CONTENT,
             {"anchor": CoreSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH))},
             ValidationError,
         ),
         # path:
-        (ObjectType.CONTENT, {"path": b"/foo"}, f"swh:1:cnt:{HASH};path=/foo",),
+        (
+            ObjectType.CONTENT,
+            {"path": b"/foo"},
+            f"swh:1:cnt:{HASH};path=/foo",
+        ),
         (
             ObjectType.CONTENT,
             {"path": b"/foo;bar"},
             f"swh:1:cnt:{HASH};path=/foo%3Bbar",
         ),
-        (ObjectType.CONTENT, {"path": "/foo"}, f"swh:1:cnt:{HASH};path=/foo",),
+        (
+            ObjectType.CONTENT,
+            {"path": "/foo"},
+            f"swh:1:cnt:{HASH};path=/foo",
+        ),
         (
             ObjectType.CONTENT,
             {"path": "/foo;bar"},
@@ -296,11 +361,31 @@ def test_QualifiedSWHID_validation_error(ns, version, type, id, qualifiers):
         ),
         (ObjectType.CONTENT, {"path": 42}, Exception),
         # lines:
-        (ObjectType.CONTENT, {"lines": (42, None)}, f"swh:1:cnt:{HASH};lines=42",),
-        (ObjectType.CONTENT, {"lines": (21, 42)}, f"swh:1:cnt:{HASH};lines=21-42",),
-        (ObjectType.CONTENT, {"lines": 42}, TypeError,),
-        (ObjectType.CONTENT, {"lines": (None, 42)}, ValueError,),
-        (ObjectType.CONTENT, {"lines": ("42", None)}, ValueError,),
+        (
+            ObjectType.CONTENT,
+            {"lines": (42, None)},
+            f"swh:1:cnt:{HASH};lines=42",
+        ),
+        (
+            ObjectType.CONTENT,
+            {"lines": (21, 42)},
+            f"swh:1:cnt:{HASH};lines=21-42",
+        ),
+        (
+            ObjectType.CONTENT,
+            {"lines": 42},
+            TypeError,
+        ),
+        (
+            ObjectType.CONTENT,
+            {"lines": (None, 42)},
+            ValueError,
+        ),
+        (
+            ObjectType.CONTENT,
+            {"lines": ("42", None)},
+            ValueError,
+        ),
     ],
 )
 def test_QualifiedSWHID_init(object_type, qualifiers, expected):
@@ -331,11 +416,15 @@ def test_QualifiedSWHID_hash():
 
     assert hash(
         QualifiedSWHID(
-            object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
+            object_type=ObjectType.DIRECTORY,
+            object_id=object_id,
+            **dummy_qualifiers,
         )
     ) == hash(
         QualifiedSWHID(
-            object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
+            object_type=ObjectType.DIRECTORY,
+            object_id=object_id,
+            **dummy_qualifiers,
         )
     )
 
@@ -366,15 +455,23 @@ def test_QualifiedSWHID_eq():
     ) == QualifiedSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id)
 
     assert QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+        **dummy_qualifiers,
     ) == QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+        **dummy_qualifiers,
     )
 
     assert QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+        **dummy_qualifiers,
     ) == QualifiedSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=object_id, **dummy_qualifiers,
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+        **dummy_qualifiers,
     )
 
 
@@ -413,7 +510,10 @@ QUALIFIED_SWHIDS = [
             visit=CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH)),
         ),
     ),
-    (f"swh:1:cnt:{HASH};visit=swh:1:rel:{HASH}", None,),
+    (
+        f"swh:1:cnt:{HASH};visit=swh:1:rel:{HASH}",
+        None,
+    ),
     # anchor:
     (
         f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
@@ -468,18 +568,31 @@ QUALIFIED_SWHIDS = [
     (
         f"swh:1:cnt:{HASH};lines=1-18",
         QualifiedSWHID(
-            object_type=ObjectType.CONTENT, object_id=_x(HASH), lines=(1, 18),
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            lines=(1, 18),
         ),
     ),
     (
         f"swh:1:cnt:{HASH};lines=18",
         QualifiedSWHID(
-            object_type=ObjectType.CONTENT, object_id=_x(HASH), lines=(18, None),
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+            lines=(18, None),
         ),
     ),
-    (f"swh:1:cnt:{HASH};lines=", None,),
-    (f"swh:1:cnt:{HASH};lines=aa", None,),
-    (f"swh:1:cnt:{HASH};lines=18-aa", None,),
+    (
+        f"swh:1:cnt:{HASH};lines=",
+        None,
+    ),
+    (
+        f"swh:1:cnt:{HASH};lines=aa",
+        None,
+    ),
+    (
+        f"swh:1:cnt:{HASH};lines=18-aa",
+        None,
+    ),
 ]
 
 
@@ -529,7 +642,10 @@ def test_QualifiedSWHID_attributes():
 def test_CoreSWHID_validation_error(ns, version, type, id):
     with pytest.raises(ValidationError):
         CoreSWHID(
-            namespace=ns, scheme_version=version, object_type=type, object_id=_x(id),
+            namespace=ns,
+            scheme_version=version,
+            object_type=type,
+            object_id=_x(id),
         )
 
 
@@ -541,14 +657,30 @@ def test_CoreSWHID_hash():
     ) == hash(CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id))
 
     assert hash(
-        CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,)
-    ) == hash(CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,))
+        CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=object_id,
+        )
+    ) == hash(
+        CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=object_id,
+        )
+    )
 
     # Different order of the dictionary, so the underlying order of the tuple in
     # ImmutableDict is different.
     assert hash(
-        CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,)
-    ) == hash(CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,))
+        CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=object_id,
+        )
+    ) == hash(
+        CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=object_id,
+        )
+    )
 
 
 def test_CoreSWHID_eq():
@@ -559,12 +691,20 @@ def test_CoreSWHID_eq():
     ) == CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id)
 
     assert CoreSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=object_id,
-    ) == CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,)
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+    ) == CoreSWHID(
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+    )
 
     assert CoreSWHID(
-        object_type=ObjectType.DIRECTORY, object_id=object_id,
-    ) == CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=object_id,)
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+    ) == CoreSWHID(
+        object_type=ObjectType.DIRECTORY,
+        object_id=object_id,
+    )
 
 
 @pytest.mark.parametrize(
@@ -588,7 +728,10 @@ def test_CoreSWHID_eq():
 def test_ExtendedSWHID_validation_error(ns, version, type, id):
     with pytest.raises(ValidationError):
         ExtendedSWHID(
-            namespace=ns, scheme_version=version, object_type=type, object_id=_x(id),
+            namespace=ns,
+            scheme_version=version,
+            object_type=type,
+            object_id=_x(id),
         )
 
 
@@ -602,17 +745,29 @@ def test_ExtendedSWHID_hash():
     )
 
     assert hash(
-        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.DIRECTORY,
+            object_id=object_id,
+        )
     ) == hash(
-        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.DIRECTORY,
+            object_id=object_id,
+        )
     )
 
     # Different order of the dictionary, so the underlying order of the tuple in
     # ImmutableDict is different.
     assert hash(
-        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.DIRECTORY,
+            object_id=object_id,
+        )
     ) == hash(
-        ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+        ExtendedSWHID(
+            object_type=ExtendedObjectType.DIRECTORY,
+            object_id=object_id,
+        )
     )
 
 
@@ -624,12 +779,20 @@ def test_ExtendedSWHID_eq():
     ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id)
 
     assert ExtendedSWHID(
-        object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,
-    ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+        object_type=ExtendedObjectType.DIRECTORY,
+        object_id=object_id,
+    ) == ExtendedSWHID(
+        object_type=ExtendedObjectType.DIRECTORY,
+        object_id=object_id,
+    )
 
     assert ExtendedSWHID(
-        object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,
-    ) == ExtendedSWHID(object_type=ExtendedObjectType.DIRECTORY, object_id=object_id,)
+        object_type=ExtendedObjectType.DIRECTORY,
+        object_id=object_id,
+    ) == ExtendedSWHID(
+        object_type=ExtendedObjectType.DIRECTORY,
+        object_id=object_id,
+    )
 
 
 def test_object_types():

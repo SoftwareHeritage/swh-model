@@ -160,9 +160,7 @@ class MultiHash:
 
 
 def _new_blake2_hash(algo):
-    """Return a function that initializes a blake2 hash.
-
-    """
+    """Return a function that initializes a blake2 hash."""
     if algo in _blake2_hash_cache:
         return _blake2_hash_cache[algo]()
 
