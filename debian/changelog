@@ -1,8 +1,11 @@
-swh-model (6.1.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (6.2.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 6.2.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2022-04-27 18:36:27 +0200)
+  * Upstream changes:     - v6.2.0     - * Add missing
+    `content_git_object`     - * test/pre-commit maintenance
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 11 Apr 2022 10:50:00 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 27 Apr 2022 16:40:00 +0000
 
 swh-model (6.1.0-1~swh1) unstable-swh; urgency=medium
 

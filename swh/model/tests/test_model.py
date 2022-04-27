@@ -841,6 +841,14 @@ def test_content_naive_datetime():
         )
 
 
+@given(strategies.present_contents().filter(lambda cnt: cnt.data is not None))
+def test_content_git_roundtrip(content):
+    assert content.data is not None
+    raw = swh.model.git_objects.content_git_object(content)
+    sha1_git = hashlib.new("sha1", raw).digest()
+    assert content.sha1_git == sha1_git
+
+
 # SkippedContent
 
 
