@@ -39,6 +39,19 @@ from .collections import ImmutableDict
 from .hashutil import git_object_header, hash_to_bytehex
 
 
+def content_git_object(content: model.Content) -> bytes:
+    """Formats a content as a git blob.
+
+    A content's identifier is the blob sha1 à la git of the tagged content.
+    """
+    content = cast(model.Content, content)
+
+    if content.data is None:
+        raise model.MissingData("Content data is None, cannot format.")
+
+    return git_object_header("blob", len(content.data)) + content.data
+
+
 def directory_entry_sort_key(entry: model.DirectoryEntry):
     """The sorting key for tree entries"""
     if isinstance(entry, dict):
