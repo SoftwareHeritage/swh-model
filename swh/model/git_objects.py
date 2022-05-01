@@ -240,10 +240,7 @@ def format_git_object_from_headers(
     if message is not None:
         entries.extend((b"\n", message))
 
-    concatenated_entries = b"".join(entries)
-
-    header = git_object_header(git_type, len(concatenated_entries))
-    return header + concatenated_entries
+    return format_git_object_from_parts(git_type, entries)
 
 
 def format_git_object_from_parts(git_type: str, parts: Iterable[bytes]) -> bytes:
