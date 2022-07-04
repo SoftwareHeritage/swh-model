@@ -56,7 +56,7 @@ import functools
 import hashlib
 from io import BytesIO
 import os
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Union
 
 ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512", "md5"])
 """Hashing algorithms supported by this module"""
@@ -293,7 +293,7 @@ def hash_git_data(data, git_type, base_algo="sha1"):
 
 
 @functools.lru_cache()
-def hash_to_hex(hash):
+def hash_to_hex(hash: Union[str, bytes]) -> str:
     """Converts a hash (in hex or bytes form) to its hexadecimal ascii form
 
     Args:
@@ -309,7 +309,7 @@ def hash_to_hex(hash):
 
 
 @functools.lru_cache()
-def hash_to_bytehex(hash):
+def hash_to_bytehex(hash: bytes) -> bytes:
     """Converts a hash to its hexadecimal bytes representation
 
     Args:
@@ -322,7 +322,7 @@ def hash_to_bytehex(hash):
 
 
 @functools.lru_cache()
-def hash_to_bytes(hash):
+def hash_to_bytes(hash: Union[str, bytes]) -> bytes:
     """Converts a hash (in hex or bytes form) to its raw bytes form
 
     Args:
@@ -338,7 +338,7 @@ def hash_to_bytes(hash):
 
 
 @functools.lru_cache()
-def bytehex_to_hash(hex):
+def bytehex_to_hash(hex: bytes) -> bytes:
     """Converts a hexadecimal bytes representation of a hash to that hash
 
     Args:
