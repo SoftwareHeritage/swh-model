@@ -1,8 +1,15 @@
-swh-model (6.2.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (6.3.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 6.3.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2022-07-12 10:46:01 +0200)
+  * Upstream changes:     - v6.3.0     - * Dedup
+    `format_git_object_from_headers`     - * hashutil: Add type
+    annotations to conversion functions     - * model: Add
+    Directory.from_possibly_duplicated_entries factory     - *
+    hypothesis_strategies: Add kwargs to composite strategies, to
+    replace default sub-strategies
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Wed, 27 Apr 2022 16:41:59 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 12 Jul 2022 08:50:50 +0000
 
 swh-model (6.2.0-1~swh1) unstable-swh; urgency=medium
 
