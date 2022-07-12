@@ -16,10 +16,11 @@ method to convert between them and msgpack-serializable objects.
 """
 
 from abc import ABCMeta, abstractmethod
+import collections
 import datetime
 from enum import Enum
 import hashlib
-from typing import Any, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import attr
 from attrs_strict import AttributeTypeError
@@ -29,7 +30,7 @@ from typing_extensions import Final
 
 from . import git_objects
 from .collections import ImmutableDict
-from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_hex
+from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytehex, hash_to_hex
 from .swhids import CoreSWHID
 from .swhids import ExtendedObjectType as SwhidExtendedObjectType
 from .swhids import ExtendedSWHID
@@ -266,7 +267,7 @@ class HashableObjectWithManifest(HashableObject):
         attribute is set to an empty value.
         """
         if self.raw_manifest is None:
-            return super().compute_hash()
+            return super().compute_hash()  # calls self._compute_hash_from_attributes()
         else:
             return _compute_hash_from_manifest(self.raw_manifest)
 
@@ -943,12 +944,15 @@ class Revision(HashableObjectWithManifest, BaseModel):
         )
 
 
+_DIR_ENTRY_TYPES = ["file", "dir", "rev"]
+
+
 @attr.s(frozen=True, slots=True)
 class DirectoryEntry(BaseModel):
     object_type: Final = "directory_entry"
 
     name = attr.ib(type=bytes, validator=type_validator())
-    type = attr.ib(type=str, validator=attr.validators.in_(["file", "dir", "rev"]))
+    type = attr.ib(type=str, validator=attr.validators.in_(_DIR_ENTRY_TYPES))
     target = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
     perms = attr.ib(type=int, validator=type_validator(), converter=int, repr=oct)
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
@@ -995,6 +999,87 @@ class Directory(HashableObjectWithManifest, BaseModel):
     def swhid(self) -> CoreSWHID:
         """Returns a SWHID representing this object."""
         return CoreSWHID(object_type=SwhidObjectType.DIRECTORY, object_id=self.id)
+
+    @classmethod
+    def from_possibly_duplicated_entries(
+        cls,
+        *,
+        entries: Tuple[DirectoryEntry, ...],
+        id: Sha1Git = b"",
+        raw_manifest: Optional[bytes] = None,
+    ) -> Tuple[bool, "Directory"]:
+        """Constructs a ``Directory`` object from a list of entries that may contain
+        duplicated names.
+
+        This is required to represent legacy objects, that were ingested in the
+        storage database before this check was added.
+
+        As it is impossible for a ``Directory`` instances to have more than one entry
+        with a given names, this function computes a ``raw_manifest`` and renames one of
+        the entries before constructing the ``Directory``.
+
+        Returns:
+            ``(is_corrupt, directory)`` where ``is_corrupt`` is True iff some
+            entry names were indeed duplicated
+        """
+        # First, try building a Directory object normally without any extra computation,
+        # which works the overwhelming majority of the time:
+        try:
+            return (False, Directory(entries=entries, id=id, raw_manifest=raw_manifest))
+        except ValueError:
+            pass
+
+        # If it fails:
+        # 1. compute a raw_manifest if there isn't already one:
+        if raw_manifest is None:
+            # invalid_directory behaves like a Directory object, but without the
+            # duplicated entry check; which allows computing its raw_manifest
+            invalid_directory = type("", (), {})()
+            invalid_directory.entries = entries
+            raw_manifest = git_objects.directory_git_object(invalid_directory)
+
+        # 2. look for duplicated entries:
+        entries_by_name: Dict[
+            bytes, Dict[str, List[DirectoryEntry]]
+        ] = collections.defaultdict(lambda: collections.defaultdict(list))
+        for entry in entries:
+            entries_by_name[entry.name][entry.type].append(entry)
+
+        # 3. strip duplicates
+        deduplicated_entries = []
+        for entry_lists in entries_by_name.values():
+            # We could pick one entry at random to keep the original name; but we try to
+            # "minimize" the impact, by preserving entries of type "rev" first
+            # (because renaming them would likely break git submodules entirely
+            # when this directory is written to disk),
+            # then entries of type "dir" (because renaming them affects the path
+            # of every file in the dir, instead of just one "cnt").
+            dir_entry_types = ("rev", "dir", "file")
+            assert set(dir_entry_types) == set(_DIR_ENTRY_TYPES)
+            picked_winner = False  # when True, all future entries must be renamed
+            for type_ in dir_entry_types:
+                for entry in entry_lists[type_]:
+                    if not picked_winner:
+                        # this is the "most important" entry according to this
+                        # heuristic; it gets to keep its name.
+                        deduplicated_entries.append(entry)
+                        picked_winner = True
+                    else:
+                        # the heuristic already found an entry more important than
+                        # this one; so this one must be renamed to something.
+                        # we pick the beginning of its hash, it should be good enough
+                        # to avoid any conflict.
+                        new_name = (
+                            entry.name + b"_" + hash_to_bytehex(entry.target)[0:10]
+                        )
+                        renamed_entry = attr.evolve(entry, name=new_name)
+                        deduplicated_entries.append(renamed_entry)
+
+        # Finally, return the "fixed" the directory
+        dir_ = Directory(
+            entries=tuple(deduplicated_entries), id=id, raw_manifest=raw_manifest
+        )
+        return (True, dir_)
 
 
 @attr.s(frozen=True, slots=True)
