@@ -1,16 +1,14 @@
 Metadata-Version: 2.1
 Name: swh.model
-Version: 6.2.0
+Version: 6.3.0
 Summary: Software Heritage data model
 Home-page: https://forge.softwareheritage.org/diffusion/DMOD/
 Author: Software Heritage developers
 Author-email: swh-devel@inria.fr
-License: UNKNOWN
 Project-URL: Bug Reports, https://forge.softwareheritage.org/maniphest
 Project-URL: Funding, https://www.softwareheritage.org/donate
 Project-URL: Source, https://forge.softwareheritage.org/source/swh-model
 Project-URL: Documentation, https://docs.softwareheritage.org/devel/swh-model/
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
@@ -42,5 +40,3 @@ This module defines the notion of SoftWare Heritage persistent IDentifiers
    $ swh-identify --no-filename /usr/src/linux/kernel/
    swh:1:dir:f9f858a48d663b3809c9e2f336412717496202ab
 ```
-
-

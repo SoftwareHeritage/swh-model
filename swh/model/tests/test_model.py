@@ -13,7 +13,7 @@ import attr
 from attrs_strict import AttributeTypeError
 import dateutil
 from hypothesis import given
-from hypothesis.strategies import binary
+from hypothesis.strategies import binary, none
 import pytest
 
 from swh.model.collections import ImmutableDict
@@ -841,7 +841,7 @@ def test_content_naive_datetime():
         )
 
 
-@given(strategies.present_contents().filter(lambda cnt: cnt.data is not None))
+@given(strategies.present_contents())
 def test_content_git_roundtrip(content):
     assert content.data is not None
     raw = swh.model.git_objects.content_git_object(content)
@@ -886,7 +886,7 @@ def test_skipped_content_naive_datetime():
 # Directory
 
 
-@given(strategies.directories().filter(lambda d: d.raw_manifest is None))
+@given(strategies.directories(raw_manifest=none()))
 def test_directory_check(directory):
     directory.check()
 
@@ -903,7 +903,7 @@ def test_directory_check(directory):
         directory2.check()
 
 
-@given(strategies.directories().filter(lambda d: d.raw_manifest is None))
+@given(strategies.directories(raw_manifest=none()))
 def test_directory_raw_manifest(directory):
     assert "raw_manifest" not in directory.to_dict()
 
@@ -943,10 +943,147 @@ def test_directory_duplicate_entry_name():
         Directory(entries=entries)
 
 
+@given(strategies.directories())
+def test_directory_from_possibly_duplicated_entries__no_duplicates(directory):
+    """
+    Directory.from_possibly_duplicated_entries should return the directory
+    unchanged if it has no duplicated entry name.
+    """
+    assert (False, directory) == Directory.from_possibly_duplicated_entries(
+        id=directory.id, entries=directory.entries, raw_manifest=directory.raw_manifest
+    )
+    assert (False, directory) == Directory.from_possibly_duplicated_entries(
+        entries=directory.entries, raw_manifest=directory.raw_manifest
+    )
+
+
+@pytest.mark.parametrize("rev_first", [True, False])
+def test_directory_from_possibly_duplicated_entries__rev_and_dir(rev_first):
+    entries = (
+        DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
+        DirectoryEntry(name=b"foo", type="rev", target=b"\x00" * 20, perms=0),
+    )
+    if rev_first:
+        entries = tuple(reversed(entries))
+    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    assert is_corrupt
+    assert dir_.entries == (
+        DirectoryEntry(name=b"foo", type="rev", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(
+            name=b"foo_0101010101", type="dir", target=b"\x01" * 20, perms=1
+        ),
+    )
+
+    # order is independent of 'rev_first' because it is always sorted in git order
+    assert dir_.raw_manifest == (
+        # fmt: off
+        b"tree 52\x00"
+        + b"0 foo\x00" + b"\x00" * 20
+        + b"1 foo\x00" + b"\x01" * 20
+        # fmt: on
+    )
+
+
+@pytest.mark.parametrize("file_first", [True, False])
+def test_directory_from_possibly_duplicated_entries__file_and_dir(file_first):
+    entries = (
+        DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+    )
+    if file_first:
+        entries = tuple(reversed(entries))
+    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    assert is_corrupt
+    assert dir_.entries == (
+        DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
+        DirectoryEntry(
+            name=b"foo_0000000000", type="file", target=b"\x00" * 20, perms=0
+        ),
+    )
+
+    # order is independent of 'file_first' because it is always sorted in git order
+    assert dir_.raw_manifest == (
+        # fmt: off
+        b"tree 52\x00"
+        + b"0 foo\x00" + b"\x00" * 20
+        + b"1 foo\x00" + b"\x01" * 20
+        # fmt: on
+    )
+
+
+def test_directory_from_possibly_duplicated_entries__two_files1():
+    entries = (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x01" * 20, perms=1),
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+    )
+    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    assert is_corrupt
+
+    assert dir_.entries == (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x01" * 20, perms=1),
+        DirectoryEntry(
+            name=b"foo_0000000000", type="file", target=b"\x00" * 20, perms=0
+        ),
+    )
+    assert dir_.raw_manifest == (
+        # fmt: off
+        b"tree 52\x00"
+        + b"1 foo\x00" + b"\x01" * 20
+        + b"0 foo\x00" + b"\x00" * 20
+        # fmt: on
+    )
+
+
+def test_directory_from_possibly_duplicated_entries__two_files2():
+    """
+    Same as above, but entries are in a different order (and order matters
+    to break the tie)
+    """
+    entries = (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(name=b"foo", type="file", target=b"\x01" * 20, perms=1),
+    )
+    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    assert is_corrupt
+
+    assert dir_.entries == (
+        DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(
+            name=b"foo_0101010101", type="file", target=b"\x01" * 20, perms=1
+        ),
+    )
+    assert dir_.raw_manifest == (
+        # fmt: off
+        b"tree 52\x00"
+        + b"0 foo\x00" + b"\x00" * 20
+        + b"1 foo\x00" + b"\x01" * 20
+        # fmt: on
+    )
+
+
+def test_directory_from_possibly_duplicated_entries__preserve_manifest():
+    entries = (
+        DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
+        DirectoryEntry(name=b"foo", type="rev", target=b"\x00" * 20, perms=0),
+    )
+    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(
+        entries=entries, raw_manifest=b"blah"
+    )
+    assert is_corrupt
+    assert dir_.entries == (
+        DirectoryEntry(name=b"foo", type="rev", target=b"\x00" * 20, perms=0),
+        DirectoryEntry(
+            name=b"foo_0101010101", type="dir", target=b"\x01" * 20, perms=1
+        ),
+    )
+
+    assert dir_.raw_manifest == b"blah"
+
+
 # Release
 
 
-@given(strategies.releases().filter(lambda rel: rel.raw_manifest is None))
+@given(strategies.releases(raw_manifest=none()))
 def test_release_check(release):
     release.check()
 
@@ -963,7 +1100,7 @@ def test_release_check(release):
         release2.check()
 
 
-@given(strategies.releases().filter(lambda rev: rev.raw_manifest is None))
+@given(strategies.releases(raw_manifest=none()))
 def test_release_raw_manifest(release):
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
@@ -983,7 +1120,7 @@ def test_release_raw_manifest(release):
 # Revision
 
 
-@given(strategies.revisions().filter(lambda rev: rev.raw_manifest is None))
+@given(strategies.revisions(raw_manifest=none()))
 def test_revision_check(revision):
     revision.check()
 
@@ -1000,7 +1137,7 @@ def test_revision_check(revision):
         revision2.check()
 
 
-@given(strategies.revisions().filter(lambda rev: rev.raw_manifest is None))
+@given(strategies.revisions(raw_manifest=none()))
 def test_revision_raw_manifest(revision):
 
     raw_manifest = b"foo"
