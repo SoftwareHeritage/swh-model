@@ -133,7 +133,7 @@ def timestamps_d(**kwargs):
     ).timestamp()
     defaults = dict(
         seconds=integers(min_seconds, max_seconds),
-        microseconds=integers(0, 1000000),
+        microseconds=integers(0, 1000000 - 1),
     )
     return builds(dict, **{**defaults, **kwargs})
 
