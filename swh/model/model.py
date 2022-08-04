@@ -197,7 +197,9 @@ class BaseModel:
 
     def check(self) -> None:
         """Performs internal consistency checks, and raises an error if one fails."""
-        attr.validate(self)
+        # without the type-ignore comment below, attr >= 22.1.0 causes mypy to report:
+        #   Argument 1 has incompatible type "BaseModel"; expected "AttrsInstance"
+        attr.validate(self)  # type: ignore[arg-type]
 
 
 def _compute_hash_from_manifest(manifest: bytes) -> Sha1Git:
