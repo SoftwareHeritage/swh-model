@@ -743,7 +743,9 @@ class Snapshot(HashableObject, BaseModel):
     id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
 
     def _compute_hash_from_attributes(self) -> bytes:
-        return _compute_hash_from_manifest(git_objects.snapshot_git_object(self))
+        return _compute_hash_from_manifest(
+            git_objects.snapshot_git_object(self, ignore_unresolved=True)
+        )
 
     @classmethod
     def from_dict(cls, d):

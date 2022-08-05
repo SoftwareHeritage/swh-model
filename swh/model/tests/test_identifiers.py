@@ -755,8 +755,9 @@ class SnapshotIdentifier(unittest.TestCase):
         )
 
     def test_unresolved(self):
-        with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
-            Snapshot.from_dict(remove_id(self.unresolved))
+        self.assertEqual(
+            Snapshot.from_dict(remove_id(self.unresolved)).id, self.unresolved["id"]
+        )
 
     def test_git_object_unresolved(self):
         with self.assertRaisesRegex(ValueError, "b'foo' -> b'bar'"):
