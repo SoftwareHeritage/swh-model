@@ -412,7 +412,9 @@ def release_git_object(release: Union[Dict, model.Release]) -> bytes:
     return format_git_object_from_headers("tag", headers, release.message)
 
 
-def snapshot_git_object(snapshot: Union[Dict, model.Snapshot]) -> bytes:
+def snapshot_git_object(
+    snapshot: Union[Dict, model.Snapshot], *, ignore_unresolved: bool = False
+) -> bytes:
     """Formats a snapshot as a git-like object.
 
     Snapshots are a set of named branches, which are pointers to objects at any
@@ -456,6 +458,10 @@ def snapshot_git_object(snapshot: Union[Dict, model.Snapshot]) -> bytes:
       Note that, akin to directory manifests, there is no separator between
       entries. Because of symbolic branches, identifiers are of arbitrary
       length but are length-encoded to avoid ambiguity.
+
+    Args:
+      ignore_unresolved: if False (the default), raises an exception when
+        alias branches point to non-existing branches cause
     """
     if isinstance(snapshot, dict):
         # For backward compatibility
@@ -495,7 +501,7 @@ def snapshot_git_object(snapshot: Union[Dict, model.Snapshot]) -> bytes:
             ]
         )
 
-    if unresolved:
+    if unresolved and not ignore_unresolved:
         raise ValueError(
             "Branch aliases unresolved: %s"
             % ", ".join("%r -> %r" % x for x in unresolved),
