@@ -461,7 +461,7 @@ def snapshot_git_object(
 
     Args:
       ignore_unresolved: if False (the default), raises an exception when
-        alias branches point to non-existing branches cause
+        alias branches point to non-existing branches
     """
     if isinstance(snapshot, dict):
         # For backward compatibility
