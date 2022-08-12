@@ -1,3 +1,13 @@
+swh-model (6.4.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 6.4.0     - (tagged by Valentin Lorentz
+    <vlorentz@softwareheritage.org> on 2022-08-12 10:58:05 +0200)
+  * Upstream changes:     - v6.4.0     - * hypothesis_strategies: Avoid
+    generating timestamps which overflow datetime.datetime.fromtimestamp
+    - * model: Allow unresolved branches when computing Snapshot hash
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Fri, 12 Aug 2022 09:01:41 +0000
+
 swh-model (6.3.1-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 6.3.1     - (tagged by Valentin Lorentz
