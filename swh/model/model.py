@@ -1564,6 +1564,12 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 
     @classmethod
     def from_dict(cls, d):
+        if "type" in d:
+            # Convert from old schema
+            type_ = d.pop("type")
+            if type_ == "origin":
+                d["target"] = str(Origin(d["target"]).swhid())
+
         d = {
             **d,
             "target": ExtendedSWHID.from_string(d["target"]),
