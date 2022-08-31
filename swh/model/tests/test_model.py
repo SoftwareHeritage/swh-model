@@ -1401,7 +1401,7 @@ _content_swhid = ExtendedSWHID.from_string(
 )
 _origin_url = "https://forge.softwareheritage.org/source/swh-model.git"
 _origin_swhid = ExtendedSWHID.from_string(
-    "swh:1:ori:94a9ed024d3859793618152ea559a168bbcbb5e2"
+    "swh:1:ori:433b4f5612f0720ed51fa7aeaf43a3625870057b"
 )
 _dummy_qualifiers = {"origin": "https://example.com", "lines": "42"}
 _common_metadata_fields = dict(
@@ -1428,6 +1428,41 @@ def test_metadata_valid():
     )
 
 
+def test_metadata_from_old_dict():
+    common_fields = {
+        "authority": {"type": "forge", "url": "https://forge.softwareheritage.org"},
+        "fetcher": {
+            "name": "test-fetcher",
+            "version": "0.0.1",
+        },
+        "discovery_date": _common_metadata_fields["discovery_date"],
+        "format": "json",
+        "metadata": b'{"origin": "https://example.com", "lines": "42"}',
+    }
+
+    m = RawExtrinsicMetadata(
+        target=_origin_swhid,
+        **_common_metadata_fields,
+    )
+    assert (
+        RawExtrinsicMetadata.from_dict(
+            {"id": m.id, "target": _origin_url, "type": "origin", **common_fields}
+        )
+        == m
+    )
+
+    m = RawExtrinsicMetadata(
+        target=_content_swhid,
+        **_common_metadata_fields,
+    )
+    assert (
+        RawExtrinsicMetadata.from_dict(
+            {"target": str(_content_swhid), "type": "content", **common_fields}
+        )
+        == m
+    )
+
+
 def test_metadata_to_dict():
     """Checks valid RawExtrinsicMetadata objects don't raise an error."""
 
@@ -1448,7 +1483,7 @@ def test_metadata_to_dict():
     )
     assert m.to_dict() == {
         "target": str(_origin_swhid),
-        "id": b"@j\xc9\x01\xbc\x1e#p*\xf3q9\xa7u\x97\x00\x14\x02xa",
+        "id": b"\xa3)q\x0f\xf7p\xc7\xb0\\O\xe8\x84\x83Z\xb0]\x81\xe9\x95\x13",
         **common_fields,
     }
     assert RawExtrinsicMetadata.from_dict(m.to_dict()) == m
