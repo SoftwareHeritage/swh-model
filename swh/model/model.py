@@ -147,18 +147,29 @@ def _check_type(type_, value):
         raise NotImplementedError(f"Type-checking {type_}")
 
 
+def generic_type_validator(instance, attribute, value):
+    """validates the type of an attribute value whatever the attribute type"""
+    if not _check_type(attribute.type, value):
+        raise AttributeTypeError(value, attribute)
+
+
 def type_validator():
     """Like attrs_strict.type_validator(), but stricter.
 
     It is an attrs validator, which checks attributes have the specified type,
     using type equality instead of ``isinstance()``, for improved performance
     """
+    return generic_type_validator
 
-    def validator(instance, attribute, value):
-        if not _check_type(attribute.type, value):
-            raise AttributeTypeError(value, attribute)
 
-    return validator
+def optimize_all_validators(cls, old_fields):
+    """process validators to turn them into a faster version … eventually"""
+    new_fields = []
+    for f in old_fields:
+        if f.validator is generic_type_validator:
+            f = f.evolve(validator=generic_type_validator)
+        new_fields.append(f)
+    return new_fields
 
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
@@ -285,7 +296,7 @@ class HashableObjectWithManifest(HashableObject):
             )
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
 
@@ -367,7 +378,7 @@ class Person(BaseModel):
         return super().from_dict(d)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Timestamp(BaseModel):
     """Represents a naive timestamp from a VCS."""
 
@@ -389,7 +400,7 @@ class Timestamp(BaseModel):
             raise ValueError("Microseconds must be in [0, 1000000[.")
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
 
@@ -586,7 +597,7 @@ class TimestampWithTimezone(BaseModel):
         return self._parse_offset_bytes(self.offset_bytes)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Origin(HashableObject, BaseModel):
     """Represents a software source: a VCS and an URL."""
 
@@ -610,7 +621,7 @@ class Origin(HashableObject, BaseModel):
         )
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class OriginVisit(BaseModel):
     """Represents an origin visit with a given type at a given point in time, by a
     SWH loader."""
@@ -641,7 +652,7 @@ class OriginVisit(BaseModel):
         return {"origin": self.origin, "date": str(self.date)}
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class OriginVisitStatus(BaseModel):
     """Represents a visit update of an origin at a given point in time."""
 
@@ -707,7 +718,7 @@ class ObjectType(Enum):
         return f"ObjectType.{self.name}"
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class SnapshotBranch(BaseModel):
     """Represents one of the branches of a snapshot."""
 
@@ -729,7 +740,7 @@ class SnapshotBranch(BaseModel):
         return cls(target=d["target"], target_type=TargetType(d["target_type"]))
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Snapshot(HashableObject, BaseModel):
     """Represents the full state of an origin at a given point in time."""
 
@@ -763,7 +774,7 @@ class Snapshot(HashableObject, BaseModel):
         return CoreSWHID(object_type=SwhidObjectType.SNAPSHOT, object_id=self.id)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Release(HashableObjectWithManifest, BaseModel):
     object_type: Final = "release"
 
@@ -839,7 +850,7 @@ def tuplify_extra_headers(value: Iterable):
     return tuple((k, v) for k, v in value)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Revision(HashableObjectWithManifest, BaseModel):
     object_type: Final = "revision"
 
@@ -951,7 +962,7 @@ class Revision(HashableObjectWithManifest, BaseModel):
 _DIR_ENTRY_TYPES = ["file", "dir", "rev"]
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class DirectoryEntry(BaseModel):
     object_type: Final = "directory_entry"
 
@@ -967,7 +978,7 @@ class DirectoryEntry(BaseModel):
             raise ValueError(f"{value!r} is not a valid directory entry name.")
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Directory(HashableObjectWithManifest, BaseModel):
     object_type: Final = "directory"
 
@@ -1086,7 +1097,7 @@ class Directory(HashableObjectWithManifest, BaseModel):
         return (True, dir_)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class BaseContent(BaseModel):
     status = attr.ib(
         type=str, validator=attr.validators.in_(["visible", "hidden", "absent"])
@@ -1122,7 +1133,7 @@ class BaseContent(BaseModel):
         return {algo: getattr(self, algo) for algo in DEFAULT_ALGORITHMS}
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Content(BaseContent):
     object_type: Final = "content"
 
@@ -1205,7 +1216,7 @@ class Content(BaseContent):
         return CoreSWHID(object_type=SwhidObjectType.CONTENT, object_id=self.sha1_git)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class SkippedContent(BaseContent):
     object_type: Final = "skipped_content"
 
@@ -1298,7 +1309,7 @@ class MetadataAuthorityType(Enum):
         return f"MetadataAuthorityType.{self.name}"
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class MetadataAuthority(BaseModel):
     """Represents an entity that provides metadata about an origin or
     software artifact."""
@@ -1332,7 +1343,7 @@ class MetadataAuthority(BaseModel):
         return {"type": self.type.value, "url": self.url}
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class MetadataFetcher(BaseModel):
     """Represents a software component used to fetch metadata from a metadata
     authority, and ingest them into the Software Heritage archive."""
@@ -1369,7 +1380,7 @@ def normalize_discovery_date(value: Any) -> datetime.datetime:
     return value.astimezone(datetime.timezone.utc).replace(microsecond=0)
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class RawExtrinsicMetadata(HashableObject, BaseModel):
     object_type: Final = "raw_extrinsic_metadata"
 
@@ -1592,7 +1603,7 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
         )
 
 
-@attr.s(frozen=True, slots=True)
+@attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class ExtID(HashableObject, BaseModel):
     object_type: Final = "extid"
 
