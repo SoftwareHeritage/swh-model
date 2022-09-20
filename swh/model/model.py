@@ -162,12 +162,153 @@ def type_validator():
     return generic_type_validator
 
 
+def _true_validator(instance, attribute, value, expected_type=None):
+    pass
+
+
+def _none_validator(instance, attribute, value, expected_type=None):
+    if value is not None:
+        raise AttributeTypeError(value, attribute)
+
+
+def _origin_type_validator(instance, attribute, value, expected_type=None):
+    # This is functionally equivalent to using just this:
+    #   return isinstance(value, type)
+    # but using type equality before isinstance allows very quick checks
+    # when the exact class is used (which is the overwhelming majority of cases)
+    # while still allowing subclasses to be used.
+    if expected_type is None:
+        expected_type = attribute.type
+    if not (type(value) == expected_type or isinstance(value, expected_type)):
+        raise AttributeTypeError(value, attribute)
+
+
+def _tuple_infinite_validator(instance, attribute, value, expected_type=None):
+    type_ = type(value)
+    if type_ != tuple and not isinstance(value, tuple):
+        raise AttributeTypeError(value, attribute)
+    if expected_type is None:
+        expected_type = attribute.type
+    args = expected_type.__args__
+    # assert len(args) == 2 and args[1] is Ellipsis
+    expected_value_type = args[0]
+    validator = optimized_validator(expected_value_type)
+    try:
+        for i in value:
+            validator(instance, attribute, i, expected_type=expected_value_type)
+    except AttributeTypeError:
+        raise AttributeTypeError(value, attribute) from None
+
+
+def _tuple_bytes_bytes_validator(instance, attribute, value, expected_type=None):
+    type_ = type(value)
+    if type_ != tuple and not isinstance(value, tuple):
+        raise AttributeTypeError(value, attribute)
+    if len(value) != 2:
+        raise AttributeTypeError(value, attribute)
+    if type(value[0]) is not bytes or type(value[1]) is not bytes:
+        raise AttributeTypeError(value, attribute)
+
+
+def _tuple_finite_validator(instance, attribute, value, expected_type=None):
+    # might be useful to optimise the sub-validator tuple, in practice, we only
+    # have [bytes, bytes]
+    type_ = type(value)
+    if type_ != tuple and not isinstance(value, tuple):
+        raise AttributeTypeError(value, attribute)
+    if expected_type is None:
+        expected_type = attribute.type
+    args = expected_type.__args__
+
+    # assert len(args) != 2 or args[1] is Ellipsis
+    if len(args) != len(value):
+        raise AttributeTypeError(value, attribute)
+    try:
+        for item_type, item in zip(args, value):
+            validator = optimized_validator(item_type)
+            validator(instance, attribute, item, expected_type=item_type)
+    except AttributeTypeError:
+        raise AttributeTypeError(value, attribute) from None
+
+
+def _immutable_dict_validator(instance, attribute, value, expected_type=None):
+    value_type = type(value)
+    if value_type != ImmutableDict and not isinstance(value, ImmutableDict):
+        raise AttributeTypeError(value, attribute)
+
+    if expected_type is None:
+        expected_type = attribute.type
+    (expected_key_type, expected_value_type) = expected_type.__args__
+
+    key_validator = optimized_validator(expected_key_type)
+    value_validator = optimized_validator(expected_value_type)
+
+    try:
+        for (item_key, item_value) in value.items():
+            key_validator(
+                instance, attribute, item_key, expected_type=expected_key_type
+            )
+            value_validator(
+                instance, attribute, item_value, expected_type=expected_value_type
+            )
+    except AttributeTypeError:
+        raise AttributeTypeError(value, attribute) from None
+
+
+def optimized_validator(type_):
+    if type_ is object or type_ is Any:
+        return _true_validator
+
+    if type_ is None:
+        return _none_validator
+
+    origin = getattr(type_, "__origin__", None)
+
+    # Non-generic type, check it directly
+    if origin is None:
+        return _origin_type_validator
+
+    # Then, if it's a container, check its items.
+    if origin is tuple:
+        args = type_.__args__
+        if len(args) == 2 and args[1] is Ellipsis:
+            # Infinite tuple
+            return _tuple_infinite_validator
+        elif args == (bytes, bytes):
+            return _tuple_bytes_bytes_validator
+        else:
+            return _tuple_finite_validator
+    elif origin is Union:
+        args = type_.__args__
+        all_validators = tuple((optimized_validator(t), t) for t in args)
+
+        def union_validator(instance, attribute, value, expected_type=None):
+            for (validator, type_) in all_validators:
+                try:
+                    validator(instance, attribute, value, expected_type=type_)
+                except AttributeTypeError:
+                    pass
+                else:
+                    break
+            else:
+                raise AttributeTypeError(value, attribute)
+
+        return union_validator
+    elif origin is ImmutableDict:
+        return _immutable_dict_validator
+    else:
+        # No need to check dict or list. because they are converted to ImmutableDict
+        # and tuple respectively.
+        raise NotImplementedError(f"Type-checking {type_}")
+
+
 def optimize_all_validators(cls, old_fields):
     """process validators to turn them into a faster version … eventually"""
     new_fields = []
     for f in old_fields:
         if f.validator is generic_type_validator:
-            f = f.evolve(validator=generic_type_validator)
+            validator = optimized_validator(f.type)
+            f = f.evolve(validator=validator)
         new_fields.append(f)
     return new_fields
 
