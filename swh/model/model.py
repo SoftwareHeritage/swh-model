@@ -23,6 +23,8 @@ import hashlib
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import attr
+from attr._make import _AndValidator
+from attr.validators import and_
 from attrs_strict import AttributeTypeError
 import dateutil.parser
 import iso8601
@@ -287,18 +289,29 @@ def optimized_validator(type_):
         return union_validator
     elif origin is ImmutableDict:
         return _immutable_dict_validator
-    else:
-        # No need to check dict or list. because they are converted to ImmutableDict
-        # and tuple respectively.
-        raise NotImplementedError(f"Type-checking {type_}")
+    # No need to check dict or list. because they are converted to ImmutableDict
+    # and tuple respectively.
+    raise NotImplementedError(f"Type-checking {type_}")
 
 
 def optimize_all_validators(cls, old_fields):
     """process validators to turn them into a faster version … eventually"""
     new_fields = []
     for f in old_fields:
-        if f.validator is generic_type_validator:
+        validator = f.validator
+        if validator is generic_type_validator:
             validator = optimized_validator(f.type)
+        elif isinstance(validator, _AndValidator):
+            new_and = []
+            for v in validator._validators:
+                if v is generic_type_validator:
+                    v = optimized_validator(f.type)
+                new_and.append(v)
+            validator = and_(*new_and)
+        else:
+            validator = None
+
+        if validator is not None:
             f = f.evolve(validator=validator)
         new_fields.append(f)
     return new_fields
