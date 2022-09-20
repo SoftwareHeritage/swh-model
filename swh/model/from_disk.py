@@ -401,7 +401,7 @@ class Directory(MerkleNode):
     for instance when the client is applying diffs.
     """
 
-    __slots__ = ["__entries"]
+    __slots__ = ["__entries", "__model_object"]
     object_type: Final = "directory"
 
     @classmethod
@@ -447,9 +447,11 @@ class Directory(MerkleNode):
     def __init__(self, data=None):
         super().__init__(data=data)
         self.__entries = None
+        self.__model_object = None
 
     def invalidate_hash(self):
         self.__entries = None
+        self.__model_object = None
         super().invalidate_hash()
 
     @staticmethod
@@ -497,12 +499,14 @@ class Directory(MerkleNode):
         return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):
-        return model.Directory.from_dict({"entries": self.entries}).id
+        return self.to_model().id
 
     def to_model(self) -> model.Directory:
         """Builds a `model.Directory` object based on this node;
         ignoring its children."""
-        return model.Directory.from_dict(self.get_data())
+        if self.__model_object is None:
+            self.__model_object = model.Directory.from_dict({"entries": self.entries})
+        return self.__model_object
 
     def __getitem__(self, key):
         if not isinstance(key, bytes):
