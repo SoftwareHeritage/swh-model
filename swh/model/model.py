@@ -153,15 +153,6 @@ def generic_type_validator(instance, attribute, value):
         raise AttributeTypeError(value, attribute)
 
 
-def type_validator():
-    """Like attrs_strict.type_validator(), but stricter.
-
-    It is an attrs validator, which checks attributes have the specified type,
-    using type equality instead of ``isinstance()``, for improved performance
-    """
-    return generic_type_validator
-
-
 def _true_validator(instance, attribute, value, expected_type=None):
     pass
 
@@ -443,9 +434,9 @@ class Person(BaseModel):
 
     object_type: Final = "person"
 
-    fullname = attr.ib(type=bytes, validator=type_validator())
-    name = attr.ib(type=Optional[bytes], validator=type_validator(), eq=False)
-    email = attr.ib(type=Optional[bytes], validator=type_validator(), eq=False)
+    fullname = attr.ib(type=bytes, validator=generic_type_validator)
+    name = attr.ib(type=Optional[bytes], validator=generic_type_validator, eq=False)
+    email = attr.ib(type=Optional[bytes], validator=generic_type_validator, eq=False)
 
     @classmethod
     def from_fullname(cls, fullname: bytes):
@@ -525,8 +516,8 @@ class Timestamp(BaseModel):
 
     object_type: Final = "timestamp"
 
-    seconds = attr.ib(type=int, validator=type_validator())
-    microseconds = attr.ib(type=int, validator=type_validator())
+    seconds = attr.ib(type=int, validator=generic_type_validator)
+    microseconds = attr.ib(type=int, validator=generic_type_validator)
 
     @seconds.validator
     def check_seconds(self, attribute, value):
@@ -547,9 +538,9 @@ class TimestampWithTimezone(BaseModel):
 
     object_type: Final = "timestamp_with_timezone"
 
-    timestamp = attr.ib(type=Timestamp, validator=type_validator())
+    timestamp = attr.ib(type=Timestamp, validator=generic_type_validator)
 
-    offset_bytes = attr.ib(type=bytes, validator=type_validator())
+    offset_bytes = attr.ib(type=bytes, validator=generic_type_validator)
     """Raw git representation of the timezone, as an offset from UTC.
     It should follow this format: ``+HHMM`` or ``-HHMM`` (including ``+0000`` and
     ``-0000``).
@@ -744,9 +735,9 @@ class Origin(HashableObject, BaseModel):
 
     object_type: Final = "origin"
 
-    url = attr.ib(type=str, validator=type_validator())
+    url = attr.ib(type=str, validator=generic_type_validator)
 
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"")
+    id = attr.ib(type=Sha1Git, validator=generic_type_validator, default=b"")
 
     def unique_key(self) -> KeyType:
         return {"url": self.url}
@@ -769,11 +760,11 @@ class OriginVisit(BaseModel):
 
     object_type: Final = "origin_visit"
 
-    origin = attr.ib(type=str, validator=type_validator())
-    date = attr.ib(type=datetime.datetime, validator=type_validator())
-    type = attr.ib(type=str, validator=type_validator())
+    origin = attr.ib(type=str, validator=generic_type_validator)
+    date = attr.ib(type=datetime.datetime, validator=generic_type_validator)
+    type = attr.ib(type=str, validator=generic_type_validator)
     """Should not be set before calling 'origin_visit_add()'."""
-    visit = attr.ib(type=Optional[int], validator=type_validator(), default=None)
+    visit = attr.ib(type=Optional[int], validator=generic_type_validator, default=None)
 
     @date.validator
     def check_date(self, attribute, value):
@@ -799,10 +790,10 @@ class OriginVisitStatus(BaseModel):
 
     object_type: Final = "origin_visit_status"
 
-    origin = attr.ib(type=str, validator=type_validator())
-    visit = attr.ib(type=int, validator=type_validator())
+    origin = attr.ib(type=str, validator=generic_type_validator)
+    visit = attr.ib(type=int, validator=generic_type_validator)
 
-    date = attr.ib(type=datetime.datetime, validator=type_validator())
+    date = attr.ib(type=datetime.datetime, validator=generic_type_validator)
     status = attr.ib(
         type=str,
         validator=attr.validators.in_(
@@ -810,13 +801,13 @@ class OriginVisitStatus(BaseModel):
         ),
     )
     snapshot = attr.ib(
-        type=Optional[Sha1Git], validator=type_validator(), repr=hash_repr
+        type=Optional[Sha1Git], validator=generic_type_validator, repr=hash_repr
     )
     # Type is optional be to able to use it before adding it to the database model
-    type = attr.ib(type=Optional[str], validator=type_validator(), default=None)
+    type = attr.ib(type=Optional[str], validator=generic_type_validator, default=None)
     metadata = attr.ib(
         type=Optional[ImmutableDict[str, object]],
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=freeze_optional_dict,
         default=None,
     )
@@ -865,8 +856,8 @@ class SnapshotBranch(BaseModel):
 
     object_type: Final = "snapshot_branch"
 
-    target = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
-    target_type = attr.ib(type=TargetType, validator=type_validator())
+    target = attr.ib(type=bytes, validator=generic_type_validator, repr=hash_repr)
+    target_type = attr.ib(type=TargetType, validator=generic_type_validator)
 
     @target.validator
     def check_target(self, attribute, value):
@@ -889,10 +880,12 @@ class Snapshot(HashableObject, BaseModel):
 
     branches = attr.ib(
         type=ImmutableDict[bytes, Optional[SnapshotBranch]],
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=freeze_optional_dict,
     )
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    id = attr.ib(
+        type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
+    )
 
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(
@@ -919,22 +912,30 @@ class Snapshot(HashableObject, BaseModel):
 class Release(HashableObjectWithManifest, BaseModel):
     object_type: Final = "release"
 
-    name = attr.ib(type=bytes, validator=type_validator())
-    message = attr.ib(type=Optional[bytes], validator=type_validator())
-    target = attr.ib(type=Optional[Sha1Git], validator=type_validator(), repr=hash_repr)
-    target_type = attr.ib(type=ObjectType, validator=type_validator())
-    synthetic = attr.ib(type=bool, validator=type_validator())
-    author = attr.ib(type=Optional[Person], validator=type_validator(), default=None)
+    name = attr.ib(type=bytes, validator=generic_type_validator)
+    message = attr.ib(type=Optional[bytes], validator=generic_type_validator)
+    target = attr.ib(
+        type=Optional[Sha1Git], validator=generic_type_validator, repr=hash_repr
+    )
+    target_type = attr.ib(type=ObjectType, validator=generic_type_validator)
+    synthetic = attr.ib(type=bool, validator=generic_type_validator)
+    author = attr.ib(
+        type=Optional[Person], validator=generic_type_validator, default=None
+    )
     date = attr.ib(
-        type=Optional[TimestampWithTimezone], validator=type_validator(), default=None
+        type=Optional[TimestampWithTimezone],
+        validator=generic_type_validator,
+        default=None,
     )
     metadata = attr.ib(
         type=Optional[ImmutableDict[str, object]],
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=freeze_optional_dict,
         default=None,
     )
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    id = attr.ib(
+        type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
+    )
     raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
     def _compute_hash_from_attributes(self) -> bytes:
@@ -995,27 +996,33 @@ def tuplify_extra_headers(value: Iterable):
 class Revision(HashableObjectWithManifest, BaseModel):
     object_type: Final = "revision"
 
-    message = attr.ib(type=Optional[bytes], validator=type_validator())
-    author = attr.ib(type=Optional[Person], validator=type_validator())
-    committer = attr.ib(type=Optional[Person], validator=type_validator())
-    date = attr.ib(type=Optional[TimestampWithTimezone], validator=type_validator())
-    committer_date = attr.ib(
-        type=Optional[TimestampWithTimezone], validator=type_validator()
+    message = attr.ib(type=Optional[bytes], validator=generic_type_validator)
+    author = attr.ib(type=Optional[Person], validator=generic_type_validator)
+    committer = attr.ib(type=Optional[Person], validator=generic_type_validator)
+    date = attr.ib(
+        type=Optional[TimestampWithTimezone], validator=generic_type_validator
     )
-    type = attr.ib(type=RevisionType, validator=type_validator())
-    directory = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
-    synthetic = attr.ib(type=bool, validator=type_validator())
+    committer_date = attr.ib(
+        type=Optional[TimestampWithTimezone], validator=generic_type_validator
+    )
+    type = attr.ib(type=RevisionType, validator=generic_type_validator)
+    directory = attr.ib(type=Sha1Git, validator=generic_type_validator, repr=hash_repr)
+    synthetic = attr.ib(type=bool, validator=generic_type_validator)
     metadata = attr.ib(
         type=Optional[ImmutableDict[str, object]],
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=freeze_optional_dict,
         default=None,
     )
-    parents = attr.ib(type=Tuple[Sha1Git, ...], validator=type_validator(), default=())
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    parents = attr.ib(
+        type=Tuple[Sha1Git, ...], validator=generic_type_validator, default=()
+    )
+    id = attr.ib(
+        type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
+    )
     extra_headers = attr.ib(
         type=Tuple[Tuple[bytes, bytes], ...],
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=tuplify_extra_headers,
         default=(),
     )
@@ -1107,10 +1114,10 @@ _DIR_ENTRY_TYPES = ["file", "dir", "rev"]
 class DirectoryEntry(BaseModel):
     object_type: Final = "directory_entry"
 
-    name = attr.ib(type=bytes, validator=type_validator())
+    name = attr.ib(type=bytes, validator=generic_type_validator)
     type = attr.ib(type=str, validator=attr.validators.in_(_DIR_ENTRY_TYPES))
-    target = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
-    perms = attr.ib(type=int, validator=type_validator(), converter=int, repr=oct)
+    target = attr.ib(type=Sha1Git, validator=generic_type_validator, repr=hash_repr)
+    perms = attr.ib(type=int, validator=generic_type_validator, converter=int, repr=oct)
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
 
     @name.validator
@@ -1123,8 +1130,10 @@ class DirectoryEntry(BaseModel):
 class Directory(HashableObjectWithManifest, BaseModel):
     object_type: Final = "directory"
 
-    entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=type_validator())
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=generic_type_validator)
+    id = attr.ib(
+        type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
+    )
     raw_manifest = attr.ib(type=Optional[bytes], default=None)
 
     def _compute_hash_from_attributes(self) -> bytes:
@@ -1278,12 +1287,12 @@ class BaseContent(BaseModel):
 class Content(BaseContent):
     object_type: Final = "content"
 
-    sha1 = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
-    sha1_git = attr.ib(type=Sha1Git, validator=type_validator(), repr=hash_repr)
-    sha256 = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
-    blake2s256 = attr.ib(type=bytes, validator=type_validator(), repr=hash_repr)
+    sha1 = attr.ib(type=bytes, validator=generic_type_validator, repr=hash_repr)
+    sha1_git = attr.ib(type=Sha1Git, validator=generic_type_validator, repr=hash_repr)
+    sha256 = attr.ib(type=bytes, validator=generic_type_validator, repr=hash_repr)
+    blake2s256 = attr.ib(type=bytes, validator=generic_type_validator, repr=hash_repr)
 
-    length = attr.ib(type=int, validator=type_validator())
+    length = attr.ib(type=int, validator=generic_type_validator)
 
     status = attr.ib(
         type=str,
@@ -1291,11 +1300,11 @@ class Content(BaseContent):
         default="visible",
     )
 
-    data = attr.ib(type=Optional[bytes], validator=type_validator(), default=None)
+    data = attr.ib(type=Optional[bytes], validator=generic_type_validator, default=None)
 
     ctime = attr.ib(
         type=Optional[datetime.datetime],
-        validator=type_validator(),
+        validator=generic_type_validator,
         default=None,
         eq=False,
     )
@@ -1361,25 +1370,29 @@ class Content(BaseContent):
 class SkippedContent(BaseContent):
     object_type: Final = "skipped_content"
 
-    sha1 = attr.ib(type=Optional[bytes], validator=type_validator(), repr=hash_repr)
-    sha1_git = attr.ib(
-        type=Optional[Sha1Git], validator=type_validator(), repr=hash_repr
+    sha1 = attr.ib(
+        type=Optional[bytes], validator=generic_type_validator, repr=hash_repr
     )
-    sha256 = attr.ib(type=Optional[bytes], validator=type_validator(), repr=hash_repr)
+    sha1_git = attr.ib(
+        type=Optional[Sha1Git], validator=generic_type_validator, repr=hash_repr
+    )
+    sha256 = attr.ib(
+        type=Optional[bytes], validator=generic_type_validator, repr=hash_repr
+    )
     blake2s256 = attr.ib(
-        type=Optional[bytes], validator=type_validator(), repr=hash_repr
+        type=Optional[bytes], validator=generic_type_validator, repr=hash_repr
     )
 
-    length = attr.ib(type=Optional[int], validator=type_validator())
+    length = attr.ib(type=Optional[int], validator=generic_type_validator)
 
     status = attr.ib(type=str, validator=attr.validators.in_(["absent"]))
-    reason = attr.ib(type=Optional[str], validator=type_validator(), default=None)
+    reason = attr.ib(type=Optional[str], validator=generic_type_validator, default=None)
 
-    origin = attr.ib(type=Optional[str], validator=type_validator(), default=None)
+    origin = attr.ib(type=Optional[str], validator=generic_type_validator, default=None)
 
     ctime = attr.ib(
         type=Optional[datetime.datetime],
-        validator=type_validator(),
+        validator=generic_type_validator,
         default=None,
         eq=False,
     )
@@ -1457,12 +1470,12 @@ class MetadataAuthority(BaseModel):
 
     object_type: Final = "metadata_authority"
 
-    type = attr.ib(type=MetadataAuthorityType, validator=type_validator())
-    url = attr.ib(type=str, validator=type_validator())
+    type = attr.ib(type=MetadataAuthorityType, validator=generic_type_validator)
+    url = attr.ib(type=str, validator=generic_type_validator)
     metadata = attr.ib(
         type=Optional[ImmutableDict[str, Any]],
         default=None,
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=freeze_optional_dict,
     )
 
@@ -1491,12 +1504,12 @@ class MetadataFetcher(BaseModel):
 
     object_type: Final = "metadata_fetcher"
 
-    name = attr.ib(type=str, validator=type_validator())
-    version = attr.ib(type=str, validator=type_validator())
+    name = attr.ib(type=str, validator=generic_type_validator)
+    version = attr.ib(type=str, validator=generic_type_validator)
     metadata = attr.ib(
         type=Optional[ImmutableDict[str, Any]],
         default=None,
-        validator=type_validator(),
+        validator=generic_type_validator,
         converter=freeze_optional_dict,
     )
 
@@ -1526,35 +1539,37 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
     object_type: Final = "raw_extrinsic_metadata"
 
     # target object
-    target = attr.ib(type=ExtendedSWHID, validator=type_validator())
+    target = attr.ib(type=ExtendedSWHID, validator=generic_type_validator)
 
     # source
     discovery_date = attr.ib(type=datetime.datetime, converter=normalize_discovery_date)
-    authority = attr.ib(type=MetadataAuthority, validator=type_validator())
-    fetcher = attr.ib(type=MetadataFetcher, validator=type_validator())
+    authority = attr.ib(type=MetadataAuthority, validator=generic_type_validator)
+    fetcher = attr.ib(type=MetadataFetcher, validator=generic_type_validator)
 
     # the metadata itself
-    format = attr.ib(type=str, validator=type_validator())
-    metadata = attr.ib(type=bytes, validator=type_validator())
+    format = attr.ib(type=str, validator=generic_type_validator)
+    metadata = attr.ib(type=bytes, validator=generic_type_validator)
 
     # context
-    origin = attr.ib(type=Optional[str], default=None, validator=type_validator())
-    visit = attr.ib(type=Optional[int], default=None, validator=type_validator())
+    origin = attr.ib(type=Optional[str], default=None, validator=generic_type_validator)
+    visit = attr.ib(type=Optional[int], default=None, validator=generic_type_validator)
     snapshot = attr.ib(
-        type=Optional[CoreSWHID], default=None, validator=type_validator()
+        type=Optional[CoreSWHID], default=None, validator=generic_type_validator
     )
     release = attr.ib(
-        type=Optional[CoreSWHID], default=None, validator=type_validator()
+        type=Optional[CoreSWHID], default=None, validator=generic_type_validator
     )
     revision = attr.ib(
-        type=Optional[CoreSWHID], default=None, validator=type_validator()
+        type=Optional[CoreSWHID], default=None, validator=generic_type_validator
     )
-    path = attr.ib(type=Optional[bytes], default=None, validator=type_validator())
+    path = attr.ib(type=Optional[bytes], default=None, validator=generic_type_validator)
     directory = attr.ib(
-        type=Optional[CoreSWHID], default=None, validator=type_validator()
+        type=Optional[CoreSWHID], default=None, validator=generic_type_validator
     )
 
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    id = attr.ib(
+        type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
+    )
 
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(
@@ -1748,12 +1763,14 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 class ExtID(HashableObject, BaseModel):
     object_type: Final = "extid"
 
-    extid_type = attr.ib(type=str, validator=type_validator())
-    extid = attr.ib(type=bytes, validator=type_validator())
-    target = attr.ib(type=CoreSWHID, validator=type_validator())
-    extid_version = attr.ib(type=int, validator=type_validator(), default=0)
+    extid_type = attr.ib(type=str, validator=generic_type_validator)
+    extid = attr.ib(type=bytes, validator=generic_type_validator)
+    target = attr.ib(type=CoreSWHID, validator=generic_type_validator)
+    extid_version = attr.ib(type=int, validator=generic_type_validator, default=0)
 
-    id = attr.ib(type=Sha1Git, validator=type_validator(), default=b"", repr=hash_repr)
+    id = attr.ib(
+        type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
+    )
 
     @classmethod
     def from_dict(cls, d):
