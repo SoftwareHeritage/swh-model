@@ -505,7 +505,30 @@ class Directory(MerkleNode):
         """Builds a `model.Directory` object based on this node;
         ignoring its children."""
         if self.__model_object is None:
-            self.__model_object = model.Directory.from_dict({"entries": self.entries})
+
+            DirectoryEntry = model.DirectoryEntry
+
+            entries = []
+            for name, child in self.items():
+                if child.object_type == "directory":
+                    e = DirectoryEntry(
+                        type="dir",
+                        perms=DentryPerms.directory,
+                        target=child.hash,
+                        name=name,
+                    )
+                elif child.object_type == "content":
+                    e = DirectoryEntry(
+                        type="file",
+                        perms=child.data["perms"],
+                        target=child.hash,
+                        name=name,
+                    )
+                else:
+                    raise ValueError(f"unknown child {child}")
+                entries.append(e)
+            entries.sort(key=directory_entry_sort_key)
+            self.__model_object = model.Directory(entries=tuple(entries))
         return self.__model_object
 
     def __getitem__(self, key):
