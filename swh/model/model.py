@@ -1689,7 +1689,11 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid(SwhidObjectType.SNAPSHOT, value)
+        if value.object_type != SwhidObjectType.SNAPSHOT:
+            raise ValueError(
+                f"Expected SWHID type 'snapshot', "
+                f"got '{value.object_type.name.lower()}' in {value}"
+            )
 
     @release.validator
     def check_release(self, attribute, value):
@@ -1709,7 +1713,11 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid(SwhidObjectType.RELEASE, value)
+        if value.object_type != SwhidObjectType.RELEASE:
+            raise ValueError(
+                f"Expected SWHID type 'release', "
+                f"got '{value.object_type.name.lower()}' in {value}"
+            )
 
     @revision.validator
     def check_revision(self, attribute, value):
@@ -1729,7 +1737,11 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid(SwhidObjectType.REVISION, value)
+        if value.object_type != SwhidObjectType.REVISION:
+            raise ValueError(
+                f"Expected SWHID type 'revision', "
+                f"got '{value.object_type.name.lower()}' in {value}"
+            )
 
     @path.validator
     def check_path(self, attribute, value):
@@ -1763,16 +1775,10 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
                 f"{self.target.object_type.name.lower()} object: {value}"
             )
 
-        self._check_swhid(SwhidObjectType.DIRECTORY, value)
-
-    def _check_swhid(self, expected_object_type, swhid):
-        if swhid.__class__ is not CoreSWHID:
-            raise ValueError(f"Expected SWHID, got a {swhid.__class__}: {swhid}")
-
-        if swhid.object_type != expected_object_type:
+        if value.object_type != SwhidObjectType.DIRECTORY:
             raise ValueError(
-                f"Expected SWHID type '{expected_object_type.name.lower()}', "
-                f"got '{swhid.object_type.name.lower()}' in {swhid}"
+                f"Expected SWHID type 'directory', "
+                f"got '{value.object_type.name.lower()}' in {value}"
             )
 
     def to_dict(self):
