@@ -95,64 +95,9 @@ def dictify(value):
         return value
 
 
-def _check_type(type_, value):
-    if type_ is object or type_ is Any:
-        return True
-
-    if type_ is None:
-        return value is None
-
-    origin = getattr(type_, "__origin__", None)
-
-    # Non-generic type, check it directly
-    if origin is None:
-        # This is functionally equivalent to using just this:
-        #   return isinstance(value, type)
-        # but using type equality before isinstance allows very quick checks
-        # when the exact class is used (which is the overwhelming majority of cases)
-        # while still allowing subclasses to be used.
-        return type(value) == type_ or isinstance(value, type_)
-
-    # Check the type of the value itself
-    #
-    # For the same reason as above, this condition is functionally equivalent to:
-    #   if origin is not Union and not isinstance(value, origin):
-    if origin is not Union and type(value) != origin and not isinstance(value, origin):
-        return False
-
-    # Then, if it's a container, check its items.
-    if origin is tuple:
-        args = type_.__args__
-        if len(args) == 2 and args[1] is Ellipsis:
-            # Infinite tuple
-            return all(_check_type(args[0], item) for item in value)
-        else:
-            # Finite tuple
-            if len(args) != len(value):
-                return False
-
-            return all(
-                _check_type(item_type, item) for (item_type, item) in zip(args, value)
-            )
-    elif origin is Union:
-        args = type_.__args__
-        return any(_check_type(variant, value) for variant in args)
-    elif origin is ImmutableDict:
-        (key_type, value_type) = type_.__args__
-        return all(
-            _check_type(key_type, key) and _check_type(value_type, value)
-            for (key, value) in value.items()
-        )
-    else:
-        # No need to check dict or list. because they are converted to ImmutableDict
-        # and tuple respectively.
-        raise NotImplementedError(f"Type-checking {type_}")
-
-
 def generic_type_validator(instance, attribute, value):
     """validates the type of an attribute value whatever the attribute type"""
-    if not _check_type(attribute.type, value):
-        raise AttributeTypeError(value, attribute)
+    raise NotImplementedError("generic type check should have been optimized")
 
 
 def _true_validator(instance, attribute, value, expected_type=None, origin_value=None):

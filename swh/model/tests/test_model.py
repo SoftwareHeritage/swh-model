@@ -43,7 +43,6 @@ from swh.model.model import (
     TargetType,
     Timestamp,
     TimestampWithTimezone,
-    generic_type_validator,
     optimized_validator,
 )
 import swh.model.swhids
@@ -286,34 +285,9 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         for value in values
     ],
 )
-def test_generic_type_validator_valid(type_, value):
-    generic_type_validator(None, attr.ib(type=type_), value)
-
-
-@pytest.mark.parametrize(
-    "type_,value",
-    [
-        pytest.param(type_, value, id=f"type={type_}, value={value}")
-        for (type_, values, _) in _TYPE_VALIDATOR_PARAMETERS
-        for value in values
-    ],
-)
 def test_optimized_type_validator_valid(type_, value):
     validator = optimized_validator(type_)
     validator(None, attr.ib(type=type_), value)
-
-
-@pytest.mark.parametrize(
-    "type_,value",
-    [
-        pytest.param(type_, value, id=f"type={type_}, value={value}")
-        for (type_, _, values) in _TYPE_VALIDATOR_PARAMETERS
-        for value in values
-    ],
-)
-def test_generic_type_validator_invalid(type_, value):
-    with pytest.raises(AttributeTypeError):
-        generic_type_validator(None, attr.ib(type=type_), value)
 
 
 @pytest.mark.parametrize(
