@@ -43,7 +43,7 @@ from swh.model.model import (
     TargetType,
     Timestamp,
     TimestampWithTimezone,
-    type_validator,
+    optimized_validator,
 )
 import swh.model.swhids
 from swh.model.swhids import CoreSWHID, ExtendedSWHID, ObjectType
@@ -168,6 +168,16 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         [("foo",), ("foo", "bar", "baz"), ("foo", 42), (42, "foo")],
     ),
     (
+        Tuple[bytes, bytes],
+        [
+            (b"foo", b"bar"),
+            (b"", b""),
+            _custom_namedtuple(b"", b""),
+            _custom_tuple((b"", b"")),
+        ],
+        [(b"foo",), (b"foo", b"bar", b"baz"), (b"foo", 42), (42, b"foo")],
+    ),
+    (
         Tuple[str, ...],
         [
             ("foo",),
@@ -275,8 +285,9 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
         for value in values
     ],
 )
-def test_type_validator_valid(type_, value):
-    type_validator()(None, attr.ib(type=type_), value)
+def test_optimized_type_validator_valid(type_, value):
+    validator = optimized_validator(type_)
+    validator(None, attr.ib(type=type_), value)
 
 
 @pytest.mark.parametrize(
@@ -287,9 +298,10 @@ def test_type_validator_valid(type_, value):
         for value in values
     ],
 )
-def test_type_validator_invalid(type_, value):
+def test_optimized_type_validator_invalid(type_, value):
+    validator = optimized_validator(type_)
     with pytest.raises(AttributeTypeError):
-        type_validator()(None, attr.ib(type=type_), value)
+        validator(None, attr.ib(type=type_), value)
 
 
 @pytest.mark.parametrize("object_type, objects", TEST_OBJECTS.items())

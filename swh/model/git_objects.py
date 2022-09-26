@@ -55,12 +55,16 @@ def content_git_object(content: model.Content) -> bytes:
 def directory_entry_sort_key(entry: model.DirectoryEntry):
     """The sorting key for tree entries"""
     if isinstance(entry, dict):
-        # For backward compatibility
-        entry = model.DirectoryEntry.from_dict(entry)
-    if entry.type == "dir":
-        return entry.name + b"/"
+        type_ = entry["type"]
+        name = entry["name"]
     else:
-        return entry.name
+        type_ = entry.type
+        name = entry.name
+
+    if type_ == "dir":
+        return name + b"/"
+    else:
+        return name
 
 
 @lru_cache()
