@@ -1343,3 +1343,14 @@ def test_extid_identifier_bwcompat():
         ExtID.from_dict({**extid_dict, "extid_version": 1}).id
         != ExtID.from_dict(extid_dict).id
     )
+
+    assert (
+        ExtID.from_dict(
+            {
+                **extid_dict,
+                "payload_type": "test",
+                "payload": bytes.fromhex("257cc5642cb1a054f08cc83f2d943e56fd3ebe99"),
+            }
+        ).id
+        != ExtID.from_dict(extid_dict).id
+    )

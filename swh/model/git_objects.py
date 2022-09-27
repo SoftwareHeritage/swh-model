@@ -631,6 +631,8 @@ def extid_git_object(extid: model.ExtID) -> bytes:
     [extid_version $Str]
     extid $Bytes
     target $CoreSwhid
+    [payload_type $StrWithoutSpaces]
+    [payload $ContentIdentifier]
     ```
 
     $StrWithoutSpaces is an ASCII string, and may not contain spaces.
@@ -639,6 +641,10 @@ def extid_git_object(extid: model.ExtID) -> bytes:
     space after them.
 
     The extid_version line is only generated if the version is non-zero.
+
+    The payload_type and payload lines are only generated if they are not
+    :const:`None`. $ContentIdentifier is the object ID of a content object.
+
     """
 
     headers = [
@@ -654,5 +660,13 @@ def extid_git_object(extid: model.ExtID) -> bytes:
             (b"target", str(extid.target).encode("ascii")),
         ]
     )
+
+    payload_type = extid.payload_type
+    if payload_type is not None:
+        headers.append((b"payload_type", payload_type.encode("ascii")))
+
+    payload = extid.payload
+    if payload is not None:
+        headers.append((b"payload", payload))
 
     return format_git_object_from_headers("extid", headers)

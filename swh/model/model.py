@@ -1908,9 +1908,29 @@ class ExtID(BaseHashableModel):
     target = attr.ib(type=CoreSWHID, validator=generic_type_validator)
     extid_version = attr.ib(type=int, validator=generic_type_validator, default=0)
 
+    payload_type = attr.ib(
+        type=Optional[str], validator=generic_type_validator, default=None
+    )
+    payload = attr.ib(
+        type=Optional[Sha1Git],
+        validator=generic_type_validator,
+        default=None,
+        repr=hash_repr,
+    )
+
     id = attr.ib(
         type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
     )
+
+    @payload_type.validator
+    def check_payload_type(self, attribute, value):
+        if value is not None and self.payload is None:
+            raise ValueError("'payload' must be set if 'payload_type' is.")
+
+    @payload.validator
+    def check_payload(self, attribute, value):
+        if value is not None and self.payload_type is None:
+            raise ValueError("'payload_type' must be set if 'payload' is.")
 
     @classmethod
     def from_dict(cls, d):
@@ -1919,6 +1939,8 @@ class ExtID(BaseHashableModel):
             extid_type=d["extid_type"],
             target=CoreSWHID.from_string(d["target"]),
             extid_version=d.get("extid_version", 0),
+            payload_type=d.get("payload_type"),
+            payload=d.get("payload"),
         )
 
     def _compute_hash_from_attributes(self) -> bytes:

@@ -160,25 +160,6 @@ REVISIONS = [
     ),
 ]
 
-EXTIDS = [
-    ExtID(
-        extid_type="git256",
-        extid=b"\x03" * 32,
-        target=REVISIONS[0].swhid(),
-    ),
-    ExtID(
-        extid_type="hg",
-        extid=b"\x04" * 20,
-        target=REVISIONS[1].swhid(),
-    ),
-    ExtID(
-        extid_type="hg-nodeid",
-        extid=b"\x05" * 20,
-        target=REVISIONS[1].swhid(),
-        extid_version=1,
-    ),
-]
-
 RELEASES = [
     Release(
         id=hash_to_bytes("8059dc4e17fcd0e51ca3bcd6b80f4577d281fd08"),
@@ -441,6 +422,31 @@ RAW_EXTRINSIC_METADATA = [
     ),
 ]
 
+EXTIDS = [
+    ExtID(
+        extid_type="git256",
+        extid=b"\x03" * 32,
+        target=REVISIONS[0].swhid(),
+    ),
+    ExtID(
+        extid_type="hg",
+        extid=b"\x04" * 20,
+        target=REVISIONS[1].swhid(),
+    ),
+    ExtID(
+        extid_type="hg-nodeid",
+        extid=b"\x05" * 20,
+        target=REVISIONS[1].swhid(),
+        extid_version=1,
+    ),
+    ExtID(
+        extid_type="tarball-sha256",
+        extid=b"\x03" * 32,
+        target=DIRECTORIES[0].swhid(),
+        payload_type="disarchive",
+        payload=CONTENTS[0].sha1_git,
+    ),
+]
 
 TEST_OBJECTS: Dict[str, Sequence[BaseModel]] = {
     "content": CONTENTS,
