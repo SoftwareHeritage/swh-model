@@ -271,12 +271,18 @@ artifacts.
 **extid**
   a relationship between an original identifier of an artifact, in its
   native/upstream environment, and a `core SWHID <persistent-identifiers>`,
-  which is specific to Software Heritage. As such, it is a triple made of:
+  which is specific to Software Heritage. As such, it includes:
 
   * the external identifier, stored as bytes whose format is opaque to the
     data model
   * a type (a simple name and a version), to identify the type of relationship
   * the "target", which is a core SWHID
+
+  An extid may also include a "payload", which is arbitrary data about
+  the relationship.  For example, an extid might link a directory to
+  the cryptographic hash of the tarball that originally contained it.
+  In this case, the payload could include data useful for
+  reconstructing the original tarball from the directory.
 
 **raw extrinsic metadata**
   an opaque bytestring, along with its format (a simple name), an identifier
