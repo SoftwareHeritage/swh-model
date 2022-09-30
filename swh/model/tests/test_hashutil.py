@@ -112,34 +112,44 @@ def test_multi_hash_file_bytehexdigest(hash_test_data):
     assert checksums == hash_test_data.bytehex_checksums
 
 
-def test_multi_hash_file_with_md5(hash_test_data):
+EXTRA_HASH_ALGOS = ["md5", "sha512"]
+
+
+@pytest.mark.parametrize("hash_algo", EXTRA_HASH_ALGOS)
+def test_multi_hash_file_with_extra_hash_algo(hash_test_data, hash_algo):
     fobj = io.BytesIO(hash_test_data.data)
 
     checksums = MultiHash.from_file(
-        fobj, hash_names=DEFAULT_ALGORITHMS | {"md5"}, length=len(hash_test_data.data)
+        fobj,
+        hash_names=DEFAULT_ALGORITHMS | {hash_algo},
+        length=len(hash_test_data.data),
     ).digest()
-    md5sum = {"md5": hashlib.md5(hash_test_data.data).digest()}
-    assert checksums == {**hash_test_data.checksums, **md5sum}
+    checksum = {hash_algo: hashlib.new(hash_algo, hash_test_data.data).digest()}
+    assert checksums == {**hash_test_data.checksums, **checksum}
 
 
-def test_multi_hash_file_hexdigest_with_md5(hash_test_data):
+@pytest.mark.parametrize("hash_algo", EXTRA_HASH_ALGOS)
+def test_multi_hash_file_hexdigest_with_extra_hash_algo(hash_test_data, hash_algo):
     fobj = io.BytesIO(hash_test_data.data)
     length = len(hash_test_data.data)
     checksums = MultiHash.from_file(
-        fobj, hash_names=DEFAULT_ALGORITHMS | {"md5"}, length=length
+        fobj, hash_names=DEFAULT_ALGORITHMS | {hash_algo}, length=length
     ).hexdigest()
-    md5sum = {"md5": hashlib.md5(hash_test_data.data).hexdigest()}
-    assert checksums == {**hash_test_data.hex_checksums, **md5sum}
+    checksum = {hash_algo: hashlib.new(hash_algo, hash_test_data.data).hexdigest()}
+    assert checksums == {**hash_test_data.hex_checksums, **checksum}
 
 
-def test_multi_hash_file_bytehexdigest_with_md5(hash_test_data):
+@pytest.mark.parametrize("hash_algo", EXTRA_HASH_ALGOS)
+def test_multi_hash_file_bytehexdigest_with_extra_algo(hash_test_data, hash_algo):
     fobj = io.BytesIO(hash_test_data.data)
     length = len(hash_test_data.data)
     checksums = MultiHash.from_file(
-        fobj, hash_names=DEFAULT_ALGORITHMS | {"md5"}, length=length
+        fobj, hash_names=DEFAULT_ALGORITHMS | {hash_algo}, length=length
     ).bytehexdigest()
-    md5sum = {"md5": hash_to_bytehex(hashlib.md5(hash_test_data.data).digest())}
-    assert checksums == {**hash_test_data.bytehex_checksums, **md5sum}
+    checksum = {
+        hash_algo: hash_to_bytehex(hashlib.new(hash_algo, hash_test_data.data).digest())
+    }
+    assert checksums == {**hash_test_data.bytehex_checksums, **checksum}
 
 
 def test_multi_hash_file_missing_length(hash_test_data):
