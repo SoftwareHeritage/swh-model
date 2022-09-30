@@ -300,16 +300,20 @@ def extract_regex_objs(
 
     Args:
       root_path (bytes): path to the root directory
-      patterns (list of byte): patterns to match
+      patterns (list of byte): shell patterns to match
 
      Yields:
         an SRE_Pattern object
     """
     absolute_root_path = os.path.abspath(root_path)
     for pattern in patterns:
-        for path in glob.glob(pattern):
-            absolute_path = os.path.abspath(path)
-            if not absolute_path.startswith(absolute_root_path):
+        if os.path.isabs(pattern):
+            pattern = os.path.relpath(pattern, root_path)
+        # python 3.10 has a `root_dir` argument for glob, but not the previous
+        # version. So we adjust the pattern
+        test_pattern = os.path.join(absolute_root_path, pattern)
+        for path in glob.glob(test_pattern):
+            if os.path.isabs(path) and not path.startswith(absolute_root_path):
                 error_msg = (
                     b'The path "' + path + b'" is not a subdirectory or relative '
                     b'to the root directory path: "' + root_path + b'"'
@@ -326,7 +330,7 @@ def ignore_directories_patterns(root_path: bytes, patterns: Iterable[bytes]):
 
     Args:
       root_path (bytes): path of the root directory
-      patterns (list of byte): patterns to ignore
+      patterns (list of bytes): patterns to ignore
 
     Returns:
       a directory filter for :func:`directory_to_objects`
