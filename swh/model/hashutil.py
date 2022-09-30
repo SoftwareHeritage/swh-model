@@ -58,7 +58,9 @@ from io import BytesIO
 import os
 from typing import Callable, Dict, Optional, Union
 
-ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512", "md5"])
+ALGORITHMS = set(
+    ["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512", "md5", "sha512"]
+)
 """Hashing algorithms supported by this module"""
 
 DEFAULT_ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256"])
