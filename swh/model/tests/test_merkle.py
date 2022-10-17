@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020 The Software Heritage developers
+# Copyright (C) 2017-2022 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -15,11 +15,10 @@ class MerkleTestNode(merkle.MerkleNode):
         super().__init__(data)
         self.compute_hash_called = 0
 
-    def compute_hash(self):
+    def compute_hash(self) -> bytes:
         self.compute_hash_called += 1
         child_data = [child + b"=" + self[child].hash for child in sorted(self)]
-
-        return b"hash(" + b", ".join([self.data["value"]] + child_data) + b")"
+        return b"hash(" + b", ".join([self.data.get("value", b"")] + child_data) + b")"
 
 
 class MerkleTestLeaf(merkle.MerkleLeaf):
@@ -31,7 +30,7 @@ class MerkleTestLeaf(merkle.MerkleLeaf):
 
     def compute_hash(self):
         self.compute_hash_called += 1
-        return b"hash(" + self.data["value"] + b")"
+        return b"hash(" + self.data.get("value", b"") + b")"
 
 
 class TestMerkleLeaf(unittest.TestCase):
@@ -62,14 +61,10 @@ class TestMerkleLeaf(unittest.TestCase):
         collected = self.instance.collect()
         self.assertEqual(
             collected,
-            {
-                self.instance.object_type: {
-                    self.instance.hash: self.instance.get_data(),
-                },
-            },
+            {self.instance},
         )
         collected2 = self.instance.collect()
-        self.assertEqual(collected2, {})
+        self.assertEqual(collected2, set())
         self.instance.reset_collect()
         collected3 = self.instance.collect()
         self.assertEqual(collected, collected3)
@@ -123,17 +118,17 @@ class TestMerkleNode(unittest.TestCase):
                     self.nodes[value3] = node3
 
     def test_equality(self):
-        node1 = merkle.MerkleNode({"foo": b"bar"})
-        node2 = merkle.MerkleNode({"foo": b"bar"})
-        node3 = merkle.MerkleNode({})
+        node1 = MerkleTestNode({"value": b"bar"})
+        node2 = MerkleTestNode({"value": b"bar"})
+        node3 = MerkleTestNode({})
 
         self.assertEqual(node1, node2)
         self.assertNotEqual(node1, node3, node1 == node3)
 
-        node1["foo"] = node3
+        node1[b"a"] = node3
         self.assertNotEqual(node1, node2)
 
-        node2["foo"] = node3
+        node2[b"a"] = node3
         self.assertEqual(node1, node2)
 
     def test_hash(self):
@@ -178,11 +173,11 @@ class TestMerkleNode(unittest.TestCase):
 
     def test_collect(self):
         collected = self.root.collect()
-        self.assertEqual(len(collected[self.root.object_type]), len(self.nodes))
+        self.assertEqual(collected, set(self.nodes.values()))
         for node in self.nodes.values():
             self.assertTrue(node.collected)
         collected2 = self.root.collect()
-        self.assertEqual(collected2, {})
+        self.assertEqual(collected2, set())
 
     def test_iter_tree_with_deduplication(self):
         nodes = list(self.root.iter_tree())
@@ -252,16 +247,16 @@ class TestMerkleNode(unittest.TestCase):
 
         # Ensure we collected root, root/b, and both new children
         collected_after_update = self.root.collect()
-        self.assertCountEqual(
-            collected_after_update[MerkleTestNode.object_type],
-            [
-                self.nodes[b"root"].hash,
-                self.nodes[b"root/b"].hash,
-                new_children[b"c"].hash,
-                new_children[b"d"].hash,
-            ],
+        self.assertEqual(
+            collected_after_update,
+            {
+                self.nodes[b"root"],
+                self.nodes[b"root/b"],
+                new_children[b"c"],
+                new_children[b"d"],
+            },
         )
 
         # test that noop updates doesn't invalidate anything
         self.root[b"a"][b"b"].update({})
-        self.assertEqual(self.root.collect(), {})
+        self.assertEqual(self.root.collect(), set())
