@@ -326,7 +326,15 @@ def optimize_all_validators(cls, old_fields):
         if validator is not None:
             f = f.evolve(validator=validator)
         new_fields.append(f)
-    return new_fields
+    if attr.__version__ < "21.3.0":
+        # https://github.com/python-attrs/attrs/issues/821
+        from attr._make import _make_attr_tuple_class
+
+        attr_names = [f.name for f in new_fields]
+        AttrsClass = _make_attr_tuple_class(cls.__name__, attr_names)
+        return AttrsClass(new_fields)
+    else:
+        return new_fields
 
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
