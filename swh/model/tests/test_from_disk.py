@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020 The Software Heritage developers
+# Copyright (C) 2017-2022 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -715,6 +715,21 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         empties = os.path.join(self.tmpdir_name, b"empty1", b"empty2")
         os.makedirs(empties)
 
+    def check_collect(
+        self, directory, expected_directory_count, expected_content_count
+    ):
+        objs = directory.collect()
+        contents = []
+        directories = []
+        for obj in objs:
+            if isinstance(obj, Content):
+                contents.append(obj)
+            elif isinstance(obj, Directory):
+                directories.append(obj)
+
+        self.assertEqual(len(directories), expected_directory_count)
+        self.assertEqual(len(contents), expected_content_count)
+
     def test_directory_to_objects(self):
         directory = Directory.from_disk(path=self.tmpdir_name)
 
@@ -743,13 +758,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         with self.assertRaisesRegex(KeyError, "b'nonexistentdir'"):
             directory[b"nonexistentdir/file"]
 
-        objs = directory.collect()
-
-        self.assertCountEqual(["content", "directory"], objs)
-
-        self.assertEqual(len(objs["directory"]), 6)
-        self.assertEqual(
-            len(objs["content"]), len(self.contents) + len(self.symlinks) + 1
+        self.check_collect(
+            directory,
+            expected_directory_count=6,
+            expected_content_count=len(self.contents) + len(self.symlinks) + 1,
         )
 
     def test_directory_to_objects_ignore_empty(self):
@@ -775,13 +787,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         with self.assertRaisesRegex(KeyError, "b'empty1'"):
             directory[b"empty1/empty2"]
 
-        objs = directory.collect()
-
-        self.assertCountEqual(["content", "directory"], objs)
-
-        self.assertEqual(len(objs["directory"]), 4)
-        self.assertEqual(
-            len(objs["content"]), len(self.contents) + len(self.symlinks) + 1
+        self.check_collect(
+            directory,
+            expected_directory_count=4,
+            expected_content_count=len(self.contents) + len(self.symlinks) + 1,
         )
 
     def test_directory_to_objects_ignore_name(self):
@@ -806,12 +815,11 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         with self.assertRaisesRegex(KeyError, "b'symlinks'"):
             directory[b"symlinks"]
 
-        objs = directory.collect()
-
-        self.assertCountEqual(["content", "directory"], objs)
-
-        self.assertEqual(len(objs["directory"]), 5)
-        self.assertEqual(len(objs["content"]), len(self.contents) + 1)
+        self.check_collect(
+            directory,
+            expected_directory_count=5,
+            expected_content_count=len(self.contents) + 1,
+        )
 
     def test_directory_to_objects_ignore_name_case(self):
         directory = Directory.from_disk(
@@ -837,12 +845,11 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         with self.assertRaisesRegex(KeyError, "b'symlinks'"):
             directory[b"symlinks"]
 
-        objs = directory.collect()
-
-        self.assertCountEqual(["content", "directory"], objs)
-
-        self.assertEqual(len(objs["directory"]), 5)
-        self.assertEqual(len(objs["content"]), len(self.contents) + 1)
+        self.check_collect(
+            directory,
+            expected_directory_count=5,
+            expected_content_count=len(self.contents) + 1,
+        )
 
     def test_directory_entry_order(self):
         with tempfile.TemporaryDirectory() as dirname:
