@@ -1,76 +1,14 @@
-# Copyright (C) 2017-2020 The Software Heritage developers
+# Copyright (C) 2017-2022 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 """Merkle tree data structure"""
 
+from __future__ import annotations
+
 import abc
-from collections.abc import Mapping
-from typing import Dict, Iterator, List, Set
-
-
-def deep_update(left, right):
-    """Recursively update the left mapping with deeply nested values from the right
-    mapping.
-
-    This function is useful to merge the results of several calls to
-    :func:`MerkleNode.collect`.
-
-    Arguments:
-      left: a mapping (modified by the update operation)
-      right: a mapping
-
-    Returns:
-      the left mapping, updated with nested values from the right mapping
-
-    Example:
-        >>> a = {
-        ...     'key1': {
-        ...         'key2': {
-        ...              'key3': 'value1/2/3',
-        ...         },
-        ...     },
-        ... }
-        >>> deep_update(a, {
-        ...     'key1': {
-        ...         'key2': {
-        ...              'key4': 'value1/2/4',
-        ...         },
-        ...     },
-        ... }) == {
-        ...     'key1': {
-        ...         'key2': {
-        ...             'key3': 'value1/2/3',
-        ...             'key4': 'value1/2/4',
-        ...         },
-        ...     },
-        ... }
-        True
-        >>> deep_update(a, {
-        ...     'key1': {
-        ...         'key2': {
-        ...              'key3': 'newvalue1/2/3',
-        ...         },
-        ...     },
-        ... }) == {
-        ...     'key1': {
-        ...         'key2': {
-        ...             'key3': 'newvalue1/2/3',
-        ...             'key4': 'value1/2/4',
-        ...         },
-        ...     },
-        ... }
-        True
-
-    """
-    for key, rvalue in right.items():
-        if isinstance(rvalue, Mapping):
-            new_lvalue = deep_update(left.get(key, {}), rvalue)
-            left[key] = new_lvalue
-        else:
-            left[key] = rvalue
-    return left
+from typing import Any, Dict, Iterator, List, Set
 
 
 class MerkleNode(dict, metaclass=abc.ABCMeta):
@@ -141,7 +79,7 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         for parent in self.parents:
             parent.invalidate_hash()
 
-    def update_hash(self, *, force=False):
+    def update_hash(self, *, force=False) -> Any:
         """Recursively compute the hash of the current node.
 
         Args:
@@ -161,14 +99,17 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         return self.__hash
 
     @property
-    def hash(self):
+    def hash(self) -> Any:
         """The hash of the current node, as calculated by
         :func:`compute_hash`.
         """
         return self.update_hash()
 
+    def __hash__(self):
+        return hash(self.hash)
+
     @abc.abstractmethod
-    def compute_hash(self):
+    def compute_hash(self) -> Any:
         """Compute the hash of the current node.
 
         The hash should depend on the data of the node, as well as on hashes
@@ -223,47 +164,24 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         """
         return self.data
 
-    def collect_node(self, **kwargs):
-        """Collect the data for the current node, for use by :func:`collect`.
-
-        Arguments:
-          kwargs: passed as-is to :func:`get_data`.
-
-        Returns:
-          A :class:`dict` compatible with :func:`collect`.
-        """
+    def collect_node(self) -> Set[MerkleNode]:
+        """Collect the current node if it has not been yet, for use by :func:`collect`."""
         if not self.collected:
             self.collected = True
-            return {self.object_type: {self.hash: self.get_data(**kwargs)}}
+            return {self}
         else:
-            return {}
+            return set()
 
-    def collect(self, **kwargs):
-        """Collect the data for all nodes in the subtree rooted at `self`.
-
-        The data is deduplicated by type and by hash.
-
-        Arguments:
-          kwargs: passed as-is to :func:`get_data`.
+    def collect(self) -> Set[MerkleNode]:
+        """Collect the added and modified nodes in the subtree rooted at `self`
+        since the last collect operation.
 
         Returns:
-           A :class:`dict` with the following structure::
-
-             {
-               'typeA': {
-                 node1.hash: node1.get_data(),
-                 node2.hash: node2.get_data(),
-               },
-               'typeB': {
-                 node3.hash: node3.get_data(),
-                 ...
-               },
-               ...
-             }
+           A :class:`set` of collected nodes
         """
-        ret = self.collect_node(**kwargs)
+        ret = self.collect_node()
         for child in self.values():
-            deep_update(ret, child.collect(**kwargs))
+            ret.update(child.collect())
 
         return ret
 
@@ -277,14 +195,14 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         for child in self.values():
             child.reset_collect()
 
-    def iter_tree(self, dedup=True) -> Iterator["MerkleNode"]:
+    def iter_tree(self, dedup=True) -> Iterator[MerkleNode]:
         """Yields all children nodes, recursively. Common nodes are deduplicated
         by default (deduplication can be turned off setting the given argument
         'dedup' to False).
         """
         yield from self._iter_tree(set(), dedup)
 
-    def _iter_tree(self, seen: Set[bytes], dedup) -> Iterator["MerkleNode"]:
+    def _iter_tree(self, seen: Set[bytes], dedup) -> Iterator[MerkleNode]:
         if self.hash not in seen:
             if dedup:
                 seen.add(self.hash)
