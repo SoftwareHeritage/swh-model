@@ -296,7 +296,7 @@ Identifiers with qualifiers
       lines=9-15
 
 * Here is an example of a :swh_web:`SWHID
-  <swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`
+  <swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%253Burl=foo/>`
   with a file path that requires percent-escaping::
 
     swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;
@@ -376,13 +376,13 @@ programmatically resolve SWHIDs; see: :http:get:`/api/1/resolve/(swhid)/`.
 
 Examples:
 
-* :swh_web:`<swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2>`
-* :swh_web:`<swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505>`
-* :swh_web:`<api/1/resolve/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d>`
-* :swh_web:`<api/1/resolve/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`
-* :swh_web:`<api/1/resolve/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`
-* :swh_web:`<swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`
-* :swh_web:`<wh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`
+* :swh_web:`swh:1:cnt:94a9ed024d3859793618152ea559a168bbcbb5e2`
+* :swh_web:`swh:1:dir:d198bc9d7a6bcf6db04f476d29314f157507d505`
+* :swh_web:`api/1/resolve/swh:1:rev:309cf2674ee7a0749978cf8265ab91a60aea0f7d`
+* :swh_web:`api/1/resolve/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f`
+* :swh_web:`api/1/resolve/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453`
+* :swh_web:`swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15`
+* :swh_web:`swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%253Burl=foo/`
 
 
 Third-party resolvers
@@ -408,7 +408,7 @@ Examples:
 * `<https://n2t.net/swh:1:rel:22ece559cc7cc2364edc5e5593d63ae8bd229f9f>`_
 * `<https://n2t.net/swh:1:snp:c7c108084bc0bf3d81436bf980b46e98bd338453>`_
 * `<https://n2t.net/swh:1:cnt:4d99d2d18326621ccdd70f5ea66c2e2ac236ad8b;origin=https://gitorious.org/ocamlp3l/ocamlp3l_cvs.git;visit=swh:1:snp:d7f1b9eb7ccb596c2622c4780febaa02549830f9;anchor=swh:1:rev:2db189928c94d62a3b4757b3eec68f0a4d4113f0;path=/Examples/SimpleFarm/simplefarm.ml;lines=9-15>`_
-* `<https://n2t.net/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%3Burl=foo/>`_
+* `<https://n2t.net/swh:1:cnt:f10371aa7b8ccabca8479196d6cd640676fd4a04;origin=https://github.com/web-platform-tests/wpt;visit=swh:1:snp:b37d435721bbd450624165f334724e3585346499;anchor=swh:1:rev:259d0612af038d14f2cd889a14a3adb6c9e96d96;path=/html/semantics/document-metadata/the-meta-element/pragma-directives/attr-meta-http-equiv-refresh/support/x%25253Burl=foo/>`_
 
 
 References
