@@ -558,7 +558,9 @@ class SymlinkToContent(DataMixin, unittest.TestCase):
             path = os.path.join(self.tmpdir_name, filename)
             perms = 0o120000
             conv_content = Content.from_symlink(path=path, mode=perms)
-            self.assertContentEqual(conv_content, symlink)
+            symlink_copy = symlink.copy()
+            symlink_copy["path"] = path
+            self.assertContentEqual(conv_content, symlink_copy, check_path=True)
 
     def test_symlink_to_base_model(self):
         for filename, symlink in self.symlinks.items():
