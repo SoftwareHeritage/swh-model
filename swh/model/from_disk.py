@@ -149,7 +149,9 @@ class Content(MerkleLeaf):
     @classmethod
     def from_symlink(cls, *, path, mode):
         """Convert a symbolic link to a Software Heritage content entry"""
-        return cls.from_bytes(mode=mode, data=os.readlink(path))
+        content = cls.from_bytes(mode=mode, data=os.readlink(path))
+        content.data["path"] = path
+        return content
 
     @classmethod
     def from_file(cls, *, path, max_content_length=None):
@@ -231,6 +233,7 @@ class Content(MerkleLeaf):
             data.pop("path", None)
             return model.SkippedContent.from_dict(data)
         elif "data" in data:
+            data.pop("path", None)
             return model.Content.from_dict(data)
         else:
             return DiskBackedContent.from_dict(data)
