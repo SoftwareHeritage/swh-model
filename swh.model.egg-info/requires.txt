@@ -18,6 +18,7 @@ pytz
 types-python-dateutil
 types-pytz
 swh.core>=0.3
+Click
 dulwich
 
 [testing-minimal]

@@ -59,10 +59,6 @@ Sha1Git = bytes
 Sha1 = bytes
 
 
-KT = TypeVar("KT")
-VT = TypeVar("VT")
-
-
 def hash_repr(h: bytes) -> str:
     if h is None:
         return "None"
@@ -71,8 +67,8 @@ def hash_repr(h: bytes) -> str:
 
 
 def freeze_optional_dict(
-    d: Union[None, Dict[KT, VT], ImmutableDict[KT, VT]]  # type: ignore
-) -> Optional[ImmutableDict[KT, VT]]:
+    d: Union[None, Dict, ImmutableDict]
+) -> Optional[ImmutableDict]:
     if isinstance(d, dict):
         return ImmutableDict(d)
     else:
