@@ -858,6 +858,14 @@ class OriginVisitStatus(BaseModel):
     def unique_key(self) -> KeyType:
         return {"origin": self.origin, "visit": str(self.visit), "date": str(self.date)}
 
+    def origin_swhid(self) -> ExtendedSWHID:
+        return Origin(url=self.origin).swhid()
+
+    def snapshot_swhid(self) -> Optional[CoreSWHID]:
+        if self.snapshot is None:
+            return None
+        return CoreSWHID(object_type=SwhidObjectType.SNAPSHOT, object_id=self.snapshot)
+
 
 class TargetType(Enum):
     """The type of content pointed to by a snapshot branch. Usually a
@@ -909,6 +917,15 @@ class SnapshotBranch(BaseModel):
     @classmethod
     def from_dict(cls, d):
         return cls(target=d["target"], target_type=TargetType(d["target_type"]))
+
+    def swhid(self) -> Optional[CoreSWHID]:
+        """Returns a SWHID for the current branch or None if the branch has no
+        target or is an alias."""
+        if self.target is None or self.target_type == TargetType.ALIAS:
+            return None
+        return CoreSWHID(
+            object_id=self.target, object_type=SwhidObjectType[self.target_type.name]
+        )
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
@@ -1004,6 +1021,14 @@ class Release(HashableObjectWithManifest, BaseModel):
     def swhid(self) -> CoreSWHID:
         """Returns a SWHID representing this object."""
         return CoreSWHID(object_type=SwhidObjectType.RELEASE, object_id=self.id)
+
+    def target_swhid(self) -> Optional[CoreSWHID]:
+        """Returns the SWHID for the target of this release or None if unset."""
+        if self.target is None:
+            return None
+        return CoreSWHID(
+            object_id=self.target, object_type=SwhidObjectType[self.target_type.name]
+        )
 
     def anonymize(self) -> "Release":
         """Returns an anonymized version of the Release object.
@@ -1133,6 +1158,19 @@ class Revision(HashableObjectWithManifest, BaseModel):
         """Returns a SWHID representing this object."""
         return CoreSWHID(object_type=SwhidObjectType.REVISION, object_id=self.id)
 
+    def directory_swhid(self) -> CoreSWHID:
+        """Returns the SWHID for the directory referenced by the revision."""
+        return CoreSWHID(
+            object_type=SwhidObjectType.DIRECTORY, object_id=self.directory
+        )
+
+    def parent_swhids(self) -> List[CoreSWHID]:
+        """Returns a list of SWHID for the parent revisions."""
+        return [
+            CoreSWHID(object_type=SwhidObjectType.REVISION, object_id=parent)
+            for parent in self.parents
+        ]
+
     def anonymize(self) -> "Revision":
         """Returns an anonymized version of the Revision object.
 
@@ -1159,12 +1197,25 @@ class DirectoryEntry(BaseModel):
     perms = attr.ib(type=int, validator=generic_type_validator, converter=int, repr=oct)
     """Usually one of the values of `swh.model.from_disk.DentryPerms`."""
 
+    DIR_ENTRY_TYPE_TO_SWHID_OBJECT_TYPE = {
+        "file": SwhidObjectType.CONTENT,
+        "dir": SwhidObjectType.DIRECTORY,
+        "rev": SwhidObjectType.REVISION,
+    }
+
     @name.validator
     def check_name(self, attribute, value):
         if value.__class__ is not bytes:
             raise AttributeTypeError(value, attribute)
         if b"/" in value:
             raise ValueError(f"{value!r} is not a valid directory entry name.")
+
+    def swhid(self) -> CoreSWHID:
+        """Returns a SWHID for this directory entry"""
+        return CoreSWHID(
+            object_type=DirectoryEntry.DIR_ENTRY_TYPE_TO_SWHID_OBJECT_TYPE[self.type],
+            object_id=self.target,
+        )
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
@@ -1504,6 +1555,12 @@ class SkippedContent(BaseContent):
 
     def unique_key(self) -> KeyType:
         return self.hashes()
+
+    def swhid(self) -> Optional[CoreSWHID]:
+        """Returns a SWHID representing this object or None if unset."""
+        if self.sha1_git is None:
+            return None
+        return CoreSWHID(object_type=SwhidObjectType.CONTENT, object_id=self.sha1_git)
 
 
 class MetadataAuthorityType(Enum):
