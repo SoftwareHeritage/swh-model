@@ -426,6 +426,30 @@ def test_origin_visit_status_naive_datetime():
         )
 
 
+@pytest.fixture
+def origin_visit_status_example():
+    tz = datetime.timezone(datetime.timedelta(minutes=+60))
+    return OriginVisitStatus(
+        origin="http://foo/",
+        visit=42,
+        date=datetime.datetime.now(tz=tz),
+        status="full",
+        snapshot=hash_to_bytes("6e65b86363953b780d92b0a928f3e8fcdd10db36"),
+    )
+
+
+def test_origin_visit_status_snapshot_swhid(origin_visit_status_example):
+    assert origin_visit_status_example.snapshot_swhid() == CoreSWHID.from_string(
+        "swh:1:snp:6e65b86363953b780d92b0a928f3e8fcdd10db36"
+    )
+
+
+def test_origin_visit_status_origin_swhid(origin_visit_status_example):
+    assert origin_visit_status_example.origin_swhid() == ExtendedSWHID.from_string(
+        "swh:1:ori:e0cee4b024ab93b037a1c182865942f5430c6fa4"
+    )
+
+
 # Timestamp
 
 
@@ -895,6 +919,13 @@ def test_skipped_content_naive_datetime():
         )
 
 
+def test_skipped_content_swhid():
+    skipped_content = SkippedContent.from_data(b"foo", reason="reason")
+    assert skipped_content.swhid() == CoreSWHID.from_string(
+        "swh:1:cnt:19102815663d23f8b75a47e7a01965dcdc96468c"
+    )
+
+
 # Directory
 
 
@@ -1092,6 +1123,42 @@ def test_directory_from_possibly_duplicated_entries__preserve_manifest():
     assert dir_.raw_manifest == b"blah"
 
 
+@pytest.fixture
+def directory_with_every_possible_type():
+    return Directory.from_dict(
+        {
+            "entries": [
+                {
+                    "type": "file",
+                    "perms": 33188,
+                    "name": b"README",
+                    "target": hash_to_bytes("37ec8ea2110c0b7a32fbb0e872f6e7debbf95e21"),
+                },
+                {
+                    "type": "dir",
+                    "perms": 16384,
+                    "name": b"src",
+                    "target": hash_to_bytes("61e6e867f5d7ba3b40540869bc050b0c4fed9e95"),
+                },
+                {
+                    "type": "rev",
+                    "perms": 57344,
+                    "name": b"submodule",
+                    "target": hash_to_bytes("3d531e169db92a16a9a8974f0ae6edf52e52659e"),
+                },
+            ],
+        }
+    )
+
+
+def test_directory_entry_swhids(directory_with_every_possible_type):
+    assert [entry.swhid() for entry in directory_with_every_possible_type.entries] == [
+        CoreSWHID.from_string("swh:1:cnt:37ec8ea2110c0b7a32fbb0e872f6e7debbf95e21"),
+        CoreSWHID.from_string("swh:1:dir:61e6e867f5d7ba3b40540869bc050b0c4fed9e95"),
+        CoreSWHID.from_string("swh:1:rev:3d531e169db92a16a9a8974f0ae6edf52e52659e"),
+    ]
+
+
 # Release
 
 
@@ -1127,6 +1194,13 @@ def test_release_raw_manifest(release):
     assert release2.id == id_ != release.id
     assert release2.to_dict()["raw_manifest"] == raw_manifest
     release2.check()
+
+
+def test_release_target_swhid():
+    release = Release.from_dict(release_example)
+    assert release.target_swhid() == CoreSWHID.from_string(
+        "swh:1:rev:741b2252a5e14d6c60a913c77a6099abe73a854a"
+    )
 
 
 # Revision
@@ -1377,6 +1451,55 @@ def test_revision_none_author_or_committer():
         ValueError, match=".*committer_date must be None if committer is None.*"
     ):
         Revision.from_dict(rev_dict)
+
+
+def test_revision_directory_swhid():
+    revision = Revision.from_dict(revision_example)
+    assert revision.directory_swhid() == CoreSWHID.from_string(
+        "swh:1:dir:85a74718d377195e1efd0843ba4f3260bad4fe07"
+    )
+
+
+def test_revision_parent_swhids():
+    revision_d = revision_example.copy()
+    revision_d["parents"].append(
+        hash_to_bytes("b2a7e1260492e344fab3cbf91bc13c91e05426fd")
+    )
+    revision = Revision.from_dict(revision_d)
+    assert revision.parent_swhids() == [
+        CoreSWHID.from_string("swh:1:rev:01e2d0627a9a6edb24c37db45db5ecb31e9de808"),
+        CoreSWHID.from_string("swh:1:rev:b2a7e1260492e344fab3cbf91bc13c91e05426fd"),
+    ]
+
+
+@pytest.fixture
+def snapshot_with_all_types():
+    return Snapshot.from_dict(snapshot_example)
+
+
+def test_snapshot_branch_swhids(snapshot_with_all_types):
+    assert {
+        name: branch and branch.swhid()
+        for (name, branch) in snapshot_with_all_types.branches.items()
+    } == {
+        b"directory": CoreSWHID.from_string(
+            "swh:1:dir:1bd0e65f7d2ff14ae994de17a1e7fe65111dcad8"
+        ),
+        b"content": CoreSWHID.from_string(
+            "swh:1:cnt:fe95a46679d128ff167b7c55df5d02356c5a1ae1"
+        ),
+        b"alias": None,
+        b"revision": CoreSWHID.from_string(
+            "swh:1:rev:aafb16d69fd30ff58afdd69036a26047f3aebdc6"
+        ),
+        b"release": CoreSWHID.from_string(
+            "swh:1:rel:7045404f3d1c54e6473c71bbb716529fbad4be24"
+        ),
+        b"snapshot": CoreSWHID.from_string(
+            "swh:1:snp:1a8893e6a86f444e8be8e7bda6cb34fb1735a00e"
+        ),
+        b"dangling": None,
+    }
 
 
 @given(strategies.objects(split_content=True))
