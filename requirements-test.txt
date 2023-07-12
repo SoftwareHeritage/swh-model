@@ -1,5 +1,6 @@
 click
 pytest
 pytz
+types-click
 types-python-dateutil
 types-pytz
