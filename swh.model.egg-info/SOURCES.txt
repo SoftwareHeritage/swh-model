@@ -45,6 +45,7 @@ swh.model.egg-info/top_level.txt
 swh/model/__init__.py
 swh/model/cli.py
 swh/model/collections.py
+swh/model/discovery.py
 swh/model/exceptions.py
 swh/model/from_disk.py
 swh/model/git_objects.py
@@ -67,6 +68,7 @@ swh/model/tests/generate_testdata_from_disk.py
 swh/model/tests/swh_model_data.py
 swh/model/tests/test_cli.py
 swh/model/tests/test_collections.py
+swh/model/tests/test_discovery.py
 swh/model/tests/test_from_disk.py
 swh/model/tests/test_generate_testdata.py
 swh/model/tests/test_hashutil.py
