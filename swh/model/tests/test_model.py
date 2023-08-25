@@ -1461,7 +1461,7 @@ def test_revision_directory_swhid():
 
 
 def test_revision_parent_swhids():
-    revision_d = revision_example.copy()
+    revision_d = copy.deepcopy(revision_example)
     revision_d["parents"].append(
         hash_to_bytes("b2a7e1260492e344fab3cbf91bc13c91e05426fd")
     )
@@ -1954,3 +1954,29 @@ def test_metadata_normalize_discovery_date():
 
     assert md.discovery_date == truncated_date
     assert md.discovery_date.tzinfo == datetime.timezone.utc
+
+
+def test_revision_repr():
+    from swh.model.model import RevisionType  # noqa
+
+    revision = Revision.from_dict(revision_example)
+    rev_repr = repr(revision)
+
+    assert rev_repr == (
+        "Revision(message=b'Linux 4.2-rc2\\n', "
+        "author=Person(fullname=b'Linus Torvalds <torvalds@linux-foundation.org>', "
+        "name=b'Linus Torvalds', email=b'torvalds@linux-foundation.org'), "
+        "committer=Person(fullname=b'Linus Torvalds <torvalds@linux-foundation.org>', "
+        "name=b'Linus Torvalds', email=b'torvalds@linux-foundation.org'), "
+        "date=TimestampWithTimezone(timestamp=Timestamp(seconds=1436739030, microseconds=0), "
+        "offset_bytes=b'-0700'), "
+        "committer_date=TimestampWithTimezone(timestamp=Timestamp(seconds=1436739030, "
+        "microseconds=0), offset_bytes=b'-0700'), "
+        "type=RevisionType.GIT, "
+        "directory=hash_to_bytes('85a74718d377195e1efd0843ba4f3260bad4fe07'), "
+        "synthetic=False, metadata=None, "
+        "parents=(hash_to_bytes('01e2d0627a9a6edb24c37db45db5ecb31e9de808'),), "
+        "id=hash_to_bytes('bc0195aad0daa2ad5b0d76cce22b167bc3435590'), "
+        "extra_headers=(), raw_manifest=None)"
+    )
+    assert eval(rev_repr) == revision
