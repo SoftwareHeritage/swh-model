@@ -56,7 +56,8 @@ from .model import (
 from .swhids import ExtendedObjectType, ExtendedSWHID
 
 pgsql_alphabet = characters(
-    blacklist_categories=("Cs",), blacklist_characters=["\u0000"]
+    blacklist_categories=["Cs"],
+    blacklist_characters=["\u0000"],
 )  # postgresql does not like these
 
 
