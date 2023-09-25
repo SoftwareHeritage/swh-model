@@ -1,8 +1,8 @@
-swh-model (6.8.0-1~swh1~bpo10+1) buster-swh; urgency=medium
+swh-model (6.8.0-1~swh2) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * Bump dependency on typing-extensions
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 21 Aug 2023 11:43:20 +0000
+ -- Nicolas Dandrimont <olasd@debian.org>  Mon, 25 Sep 2023 16:35:40 +0200
 
 swh-model (6.8.0-1~swh1) unstable-swh; urgency=medium
 
