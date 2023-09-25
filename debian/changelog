@@ -1,3 +1,9 @@
+swh-model (6.8.0-1~swh2) unstable-swh; urgency=medium
+
+  * Bump dependency on typing-extensions
+
+ -- Nicolas Dandrimont <olasd@debian.org>  Mon, 25 Sep 2023 16:35:40 +0200
+
 swh-model (6.8.0-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 6.8.0     - (tagged by Valentin Lorentz
