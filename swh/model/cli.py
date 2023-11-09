@@ -70,17 +70,18 @@ def swhid_of_file_content(data) -> CoreSWHID:
 
 
 def model_of_dir(
-    path: bytes, exclude_patterns: Optional[Iterable[bytes]] = None
+    path: bytes,
+    exclude_patterns: Optional[Iterable[bytes]] = None,
 ) -> Directory:
-    from swh.model.from_disk import accept_all_directories, ignore_directories_patterns
+    from swh.model.from_disk import accept_all_paths, ignore_directories_patterns
 
-    dir_filter = (
+    path_filter = (
         ignore_directories_patterns(path, exclude_patterns)
         if exclude_patterns
-        else accept_all_directories
+        else accept_all_paths
     )
 
-    return Directory.from_disk(path=path, dir_filter=dir_filter)
+    return Directory.from_disk(path=path, path_filter=path_filter)
 
 
 def swhid_of_dir(
