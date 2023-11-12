@@ -49,15 +49,15 @@ class ArchiveDiscoveryInterface(Protocol):
         self.skipped_contents = skipped_contents
         self.directories = directories
 
-    async def content_missing(self, contents: List[Sha1Git]) -> Iterable[Sha1Git]:
+    def content_missing(self, contents: List[Sha1Git]) -> Iterable[Sha1Git]:
         """List content missing from the archive by sha1"""
 
-    async def skipped_content_missing(
+    def skipped_content_missing(
         self, skipped_contents: List[Sha1Git]
     ) -> Iterable[Sha1Git]:
         """List skipped content missing from the archive by sha1"""
 
-    async def directory_missing(self, directories: List[Sha1Git]) -> Iterable[Sha1Git]:
+    def directory_missing(self, directories: List[Sha1Git]) -> Iterable[Sha1Git]:
         """List directories missing from the archive by sha1"""
 
 
@@ -124,7 +124,7 @@ class BaseDiscoveryGraph:
             next_entries = transitive_mapping.get(current, set()) & self.undecided
             to_process.update(next_entries)
 
-    async def get_sample(
+    def get_sample(
         self,
     ) -> Sample:
         """Return a three-tuple of samples from the undecided sets of contents,
@@ -133,9 +133,7 @@ class BaseDiscoveryGraph:
         which are known."""
         raise NotImplementedError()
 
-    async def do_query(
-        self, archive: ArchiveDiscoveryInterface, sample: Sample
-    ) -> None:
+    def do_query(self, archive: ArchiveDiscoveryInterface, sample: Sample) -> None:
         """Given a three-tuple of samples, ask the archive which are known or
         unknown and mark them as such."""
 
@@ -149,7 +147,7 @@ class BaseDiscoveryGraph:
             if not sample_per_type:
                 continue
             known = set(sample_per_type)
-            unknown = set(await method(list(sample_per_type)))
+            unknown = set(method(list(sample_per_type)))
             known -= unknown
 
             self.mark_known(known)
@@ -165,7 +163,7 @@ class RandomDirSamplingDiscoveryGraph(BaseDiscoveryGraph):
     are left: we send them directly to the storage since they should be few and
     their structure flat."""
 
-    async def get_sample(self) -> Sample:
+    def get_sample(self) -> Sample:
         if self._undecided_directories:
             if len(self._undecided_directories) <= SAMPLE_SIZE:
                 return Sample(
@@ -197,7 +195,7 @@ class RandomDirSamplingDiscoveryGraph(BaseDiscoveryGraph):
         )
 
 
-async def filter_known_objects(archive: ArchiveDiscoveryInterface):
+def filter_known_objects(archive: ArchiveDiscoveryInterface):
     """Filter ``archive``'s ``contents``, ``skipped_contents`` and ``directories``
     to only return those that are unknown to the SWH archive using a discovery
     algorithm."""
@@ -212,8 +210,8 @@ async def filter_known_objects(archive: ArchiveDiscoveryInterface):
     graph = RandomDirSamplingDiscoveryGraph(contents, skipped_contents, directories)
 
     while graph.undecided:
-        sample = await graph.get_sample()
-        await graph.do_query(archive, sample)
+        sample = graph.get_sample()
+        graph.do_query(archive, sample)
 
     contents = [c for c in contents if c.sha1_git in graph.unknown]
     skipped_contents = [c for c in skipped_contents if c.sha1_git in graph.unknown]
