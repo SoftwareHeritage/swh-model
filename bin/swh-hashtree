@@ -15,7 +15,7 @@ from swh.model import from_disk, hashutil
 def combine_filters(*filters):
     """Combine several ignore filters"""
     if len(filters) == 0:
-        return from_disk.accept_all_directories
+        return from_disk.accept_all_paths
     elif len(filters) == 1:
         return filters[0]
 
@@ -32,7 +32,6 @@ def combine_filters(*filters):
 )
 @click.option("--ignore", multiple=True, help="Ignore pattern.")
 def main(path, ignore_empty_folder=False, ignore=None):
-
     filters = []
     if ignore_empty_folder:
         filters.append(from_disk.ignore_empty_directories)
@@ -43,7 +42,7 @@ def main(path, ignore_empty_folder=False, ignore=None):
 
     try:
         d = from_disk.Directory.from_disk(
-            path=os.fsencode(path), dir_filter=combine_filters(*filters)
+            path=os.fsencode(path), path_filter=combine_filters(*filters)
         )
         hash = d.hash
     except Exception as e:
