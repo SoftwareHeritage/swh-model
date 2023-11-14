@@ -66,6 +66,10 @@ def hash_repr(h: bytes) -> str:
         return f"hash_to_bytes('{hash_to_hex(h)}')"
 
 
+def parents_repr(parents: Tuple[Sha1Git, ...]):
+    return repr(tuple(hash_repr(p) for p in parents)).replace('"', "")
+
+
 def freeze_optional_dict(
     d: Union[None, Dict, ImmutableDict]
 ) -> Optional[ImmutableDict]:
@@ -1079,7 +1083,10 @@ class Revision(HashableObjectWithManifest, BaseModel):
         default=None,
     )
     parents = attr.ib(
-        type=Tuple[Sha1Git, ...], validator=generic_type_validator, default=()
+        type=Tuple[Sha1Git, ...],
+        validator=generic_type_validator,
+        default=(),
+        repr=parents_repr,
     )
     id = attr.ib(
         type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr

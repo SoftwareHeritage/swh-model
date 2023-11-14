@@ -768,7 +768,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
     def test_directory_to_objects_ignore_empty(self):
         directory = Directory.from_disk(
-            path=self.tmpdir_name, dir_filter=from_disk.ignore_empty_directories
+            path=self.tmpdir_name, path_filter=from_disk.ignore_empty_directories
         )
 
         for name, value in self.contents.items():
@@ -798,7 +798,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
     def test_directory_to_objects_ignore_name(self):
         directory = Directory.from_disk(
             path=self.tmpdir_name,
-            dir_filter=from_disk.ignore_named_directories([b"symlinks"]),
+            path_filter=from_disk.ignore_named_directories([b"symlinks"]),
         )
         for name, value in self.contents.items():
             self.assertContentEqual(directory[b"contents/" + name], value)
@@ -826,7 +826,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
     def test_directory_to_objects_ignore_name_case(self):
         directory = Directory.from_disk(
             path=self.tmpdir_name,
-            dir_filter=from_disk.ignore_named_directories(
+            path_filter=from_disk.ignore_named_directories(
                 [b"symLiNks"], case_sensitive=False
             ),
         )
@@ -867,6 +867,52 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             b"foo",
             b"foo0",
         ]
+
+    def test_directory_path_filter(self):
+        def filter_func(path, name, entries):
+            return name.startswith(b"foo")
+
+        with tempfile.TemporaryDirectory() as dirname:
+            dirname = os.fsencode(dirname)
+            open(os.path.join(dirname, b"foofile"), "a")
+            open(os.path.join(dirname, b"file"), "a")
+            os.mkdir(os.path.join(dirname, b"foo"))
+            os.mkdir(os.path.join(dirname, b"baz"))
+
+            # No filters
+            directory = Directory.from_disk(path=dirname)
+            assert [entry["name"] for entry in directory.entries] == [
+                b"baz",
+                b"file",
+                b"foo",
+                b"foofile",
+            ]
+
+            # Filter paths
+            directory = Directory.from_disk(path=dirname, path_filter=filter_func)
+            assert [entry["name"] for entry in directory.entries] == [
+                b"foo",
+                b"foofile",
+            ]
+
+            # Filter directories and paths (`path_filter` should take precedence)
+            with pytest.deprecated_call():
+                directory = Directory.from_disk(
+                    path=dirname, path_filter=filter_func, dir_filter=filter_func
+                )
+                assert [entry["name"] for entry in directory.entries] == [
+                    b"foo",
+                    b"foofile",
+                ]
+
+            # Test deprecated way
+            with pytest.deprecated_call():
+                directory = Directory.from_disk(path=dirname, dir_filter=filter_func)
+                assert [entry["name"] for entry in directory.entries] == [
+                    b"file",
+                    b"foo",
+                    b"foofile",
+                ]
 
 
 @pytest.mark.fs
