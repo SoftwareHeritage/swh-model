@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: swh.model
-Version: 6.8.0
+Version: 6.9.0
 Summary: Software Heritage data model
 Home-page: https://forge.softwareheritage.org/diffusion/DMOD/
 Author: Software Heritage developers
@@ -16,11 +16,38 @@ Classifier: Operating System :: OS Independent
 Classifier: Development Status :: 5 - Production/Stable
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
-Provides-Extra: cli
-Provides-Extra: testing-minimal
-Provides-Extra: testing
 License-File: LICENSE
 License-File: AUTHORS
+Requires-Dist: attrs!=21.1.0
+Requires-Dist: attrs_strict>=0.0.7
+Requires-Dist: deprecated
+Requires-Dist: hypothesis
+Requires-Dist: iso8601
+Requires-Dist: python-dateutil
+Requires-Dist: typing_extensions
+Provides-Extra: cli
+Requires-Dist: swh.core>=0.3; extra == "cli"
+Requires-Dist: Click; extra == "cli"
+Requires-Dist: dulwich; extra == "cli"
+Provides-Extra: testing-minimal
+Requires-Dist: aiohttp; extra == "testing-minimal"
+Requires-Dist: click; extra == "testing-minimal"
+Requires-Dist: pytest; extra == "testing-minimal"
+Requires-Dist: pytz; extra == "testing-minimal"
+Requires-Dist: types-click; extra == "testing-minimal"
+Requires-Dist: types-python-dateutil; extra == "testing-minimal"
+Requires-Dist: types-pytz; extra == "testing-minimal"
+Provides-Extra: testing
+Requires-Dist: aiohttp; extra == "testing"
+Requires-Dist: click; extra == "testing"
+Requires-Dist: pytest; extra == "testing"
+Requires-Dist: pytz; extra == "testing"
+Requires-Dist: types-click; extra == "testing"
+Requires-Dist: types-python-dateutil; extra == "testing"
+Requires-Dist: types-pytz; extra == "testing"
+Requires-Dist: swh.core>=0.3; extra == "testing"
+Requires-Dist: Click; extra == "testing"
+Requires-Dist: dulwich; extra == "testing"
 
 swh-model
 =========

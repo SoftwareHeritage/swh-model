@@ -17,7 +17,18 @@ import glob
 import os
 import re
 import stat
-from typing import Any, Iterable, Iterator, List, Optional, Pattern, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Pattern,
+    Tuple,
+)
+import warnings
 
 import attr
 from attrs_strict import type_validator
@@ -239,7 +250,9 @@ class Content(MerkleLeaf):
             return DiskBackedContent.from_dict(data)
 
 
-def accept_all_directories(dirpath: str, dirname: str, entries: Iterable[Any]) -> bool:
+def accept_all_directories(
+    dirpath: bytes, dirname: bytes, entries: Optional[Iterable[Any]]
+) -> bool:
     """Default filter for :func:`Directory.from_disk` accepting all
     directories
 
@@ -247,11 +260,22 @@ def accept_all_directories(dirpath: str, dirname: str, entries: Iterable[Any]) -
       dirname (bytes): directory name
       entries (list): directory entries
     """
+    warnings.warn(
+        "`accept_all_directories` is deprecated, use `accept_all_paths`",
+        DeprecationWarning,
+    )
+    return True
+
+
+def accept_all_paths(
+    path: bytes, name: bytes, entries: Optional[Iterable[Any]]
+) -> bool:
+    """Default filter for :func:`Directory.from_disk` accepting all paths"""
     return True
 
 
 def ignore_empty_directories(
-    dirpath: str, dirname: str, entries: Iterable[Any]
+    dirpath: bytes, dirname: bytes, entries: Optional[Iterable[Any]]
 ) -> bool:
     """Filter for :func:`directory_to_objects` ignoring empty directories
 
@@ -261,6 +285,9 @@ def ignore_empty_directories(
     Returns:
       True if the directory is not empty, false if the directory is empty
     """
+    if entries is None:
+        # Files are not ignored
+        return True
     return bool(entries)
 
 
@@ -285,6 +312,9 @@ def ignore_named_directories(names, *, case_sensitive=True):
         names: Iterable[Any] = names,
         case_sensitive: bool = case_sensitive,
     ):
+        if entries is None:
+            # Files are not ignored
+            return True
         if case_sensitive:
             return dirname not in names
         else:
@@ -413,23 +443,43 @@ class Directory(MerkleNode):
 
     @classmethod
     def from_disk(
-        cls, *, path, dir_filter=accept_all_directories, max_content_length=None
-    ):
+        cls,
+        *,
+        path: bytes,
+        path_filter: Callable[
+            [bytes, bytes, Optional[List[bytes]]], bool
+        ] = accept_all_paths,
+        dir_filter: Optional[
+            Callable[[bytes, bytes, Optional[List[bytes]]], bool]
+        ] = None,
+        max_content_length: Optional[int] = None,
+    ) -> "Directory":
         """Compute the Software Heritage objects for a given directory tree
 
         Args:
           path (bytes): the directory to traverse
           data (bool): whether to add the data to the content objects
           save_path (bool): whether to add the path to the content objects
-          dir_filter (function): a filter to ignore some directories by
-            name or contents. Takes two arguments: dirname and entries, and
+          path_filter (function): a filter to ignore some paths.
+            Takes three arguments: `path`, `name` and `entries`.
+            `entries` is `None` for files, and a (possibly empty) list of names
+            for directories.
+            Returns True if the path should be added, False if the
+            path should be ignored.
+          dir_filter (DEPRECATED, function): a filter to ignore some directories
+            by name or contents. Takes two arguments: dirname and entries, and
             returns True if the directory should be added, False if the
             directory should be ignored.
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
         """
         top_path = path
-        dirs = {}
+        dirs: Dict[bytes, Directory] = {}
+        if dir_filter is not None:
+            warnings.warn(
+                "`dir_filter` is deprecated. Use `path_filter` instead",
+                DeprecationWarning,
+            )
 
         for root, dentries, fentries in os.walk(top_path, topdown=False):
             entries = {}
@@ -438,12 +488,17 @@ class Directory(MerkleNode):
             for name in fentries + dentries:
                 path = os.path.join(root, name)
                 if not os.path.isdir(path) or os.path.islink(path):
+                    if not path_filter(path, name, None):
+                        continue
                     content = Content.from_file(
                         path=path, max_content_length=max_content_length
                     )
                     entries[name] = content
                 else:
-                    if dir_filter(path, name, dirs[path].entries):
+                    if dir_filter is not None:
+                        if dir_filter(path, name, dirs[path].entries):
+                            entries[name] = dirs[path]
+                    elif path_filter(path, name, dirs[path].entries):
                         entries[name] = dirs[path]
 
             dirs[root] = cls({"name": os.path.basename(root), "path": root})

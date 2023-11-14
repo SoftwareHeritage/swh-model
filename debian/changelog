@@ -1,8 +1,14 @@
-swh-model (6.8.0-1~swh2~bpo10+1) buster-swh; urgency=medium
+swh-model (6.9.0-1~swh1) unstable-swh; urgency=medium
 
-  * Rebuild for buster-swh
+  * New upstream release 6.9.0     - (tagged by Nicolas Dandrimont
+    <nicolas@dandrimont.eu> on 2023-11-14 18:42:25 +0100)
+  * Upstream changes:     - Release swh.model 6.9.0     -
+    from_disk.Directory: replace dir_filter with path_filter supporting
+    - filtering files in addition to directories     - model.Revision:
+    add parents to repr()     - hypothesis_strategies: update for newer
+    hypothesis version
 
- -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 25 Sep 2023 14:37:56 +0000
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Tue, 14 Nov 2023 17:47:39 +0000
 
 swh-model (6.8.0-1~swh2) unstable-swh; urgency=medium
 
