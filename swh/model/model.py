@@ -382,7 +382,7 @@ def _compute_hash_from_manifest(manifest: bytes) -> Sha1Git:
     return hashlib.new("sha1", manifest).digest()
 
 
-class HashableObject(metaclass=ABCMeta):
+class BaseHashableModel(BaseModel, metaclass=ABCMeta):
     """Mixin to automatically compute object identifier hash when
     the associated model is instantiated."""
 
@@ -412,14 +412,17 @@ class HashableObject(metaclass=ABCMeta):
         return self.id
 
     def check(self) -> None:
-        super().check()  # type: ignore
+        super().check()
 
         if self.id != self.compute_hash():
             raise ValueError("'id' does not match recomputed hash.")
 
 
-class HashableObjectWithManifest(HashableObject):
-    """Derived class of HashableObject, for objects that may need to store
+HashableObject = BaseHashableModel  # deprecated alias
+
+
+class HashableObjectWithManifest(BaseHashableModel):
+    """Derived class of BaseHashableModel, for objects that may need to store
     verbatim git objects as ``raw_manifest`` to preserve original hashes."""
 
     __slots__ = ()
@@ -767,7 +770,7 @@ class TimestampWithTimezone(BaseModel):
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
-class Origin(HashableObject, BaseModel):
+class Origin(BaseHashableModel):
     """Represents a software source: a VCS and an URL."""
 
     object_type: Final = "origin"
@@ -933,7 +936,7 @@ class SnapshotBranch(BaseModel):
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
-class Snapshot(HashableObject, BaseModel):
+class Snapshot(BaseHashableModel):
     """Represents the full state of an origin at a given point in time."""
 
     object_type: Final = "snapshot"
@@ -1651,7 +1654,7 @@ def normalize_discovery_date(value: Any) -> datetime.datetime:
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
-class RawExtrinsicMetadata(HashableObject, BaseModel):
+class RawExtrinsicMetadata(BaseHashableModel):
     object_type: Final = "raw_extrinsic_metadata"
 
     # target object
@@ -1897,7 +1900,7 @@ class RawExtrinsicMetadata(HashableObject, BaseModel):
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
-class ExtID(HashableObject, BaseModel):
+class ExtID(BaseHashableModel):
     object_type: Final = "extid"
 
     extid_type = attr.ib(type=str, validator=generic_type_validator)
