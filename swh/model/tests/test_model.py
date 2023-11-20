@@ -1509,9 +1509,13 @@ def test_object_type(objtype_and_obj):
 
 
 def test_object_type_is_final():
+    checked_classes = set()
     object_types = set()
 
     def check_final(cls):
+        if cls in checked_classes:
+            return
+        checked_classes.add(cls)
         if hasattr(cls, "object_type"):
             assert cls.object_type not in object_types
             object_types.add(cls.object_type)

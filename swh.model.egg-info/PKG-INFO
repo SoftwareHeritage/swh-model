@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: swh.model
-Version: 6.9.0
+Version: 6.9.1
 Summary: Software Heritage data model
 Home-page: https://forge.softwareheritage.org/diffusion/DMOD/
 Author: Software Heritage developers
@@ -15,7 +15,7 @@ Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Classifier: Operating System :: OS Independent
 Classifier: Development Status :: 5 - Production/Stable
 Requires-Python: >=3.7
-Description-Content-Type: text/markdown
+Description-Content-Type: text/x-rst
 License-File: LICENSE
 License-File: AUTHORS
 Requires-Dist: attrs!=21.1.0
@@ -49,16 +49,17 @@ Requires-Dist: swh.core>=0.3; extra == "testing"
 Requires-Dist: Click; extra == "testing"
 Requires-Dist: dulwich; extra == "testing"
 
-swh-model
-=========
+Software Heritage - Data model
+==============================
 
 Implementation of the Data model of the Software Heritage project, used to
 archive source code artifacts.
 
-This module defines the notion of SoftWare Heritage persistent IDentifiers
+This module defines the notion of SoftWare Hash persistent IDentifiers
 (SWHIDs) and provides tools to compute them:
 
-```sh
+.. code-block:: shell
+
    $ swh-identify fork.c kmod.c sched/deadline.c
    swh:1:cnt:2e391c754ae730bd2d8520c2ab497c403220c6e3    fork.c
    swh:1:cnt:0277d1216f80ae1adeed84a686ed34c9b2931fc2    kmod.c
@@ -66,4 +67,4 @@ This module defines the notion of SoftWare Heritage persistent IDentifiers
 
    $ swh-identify --no-filename /usr/src/linux/kernel/
    swh:1:dir:f9f858a48d663b3809c9e2f336412717496202ab
-```
+
