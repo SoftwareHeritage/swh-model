@@ -1,9 +1,9 @@
 .. _persistent-identifiers:
 .. _swhids:
 
-=================================================
-SoftWare Heritage persistent IDentifiers (SWHIDs)
-=================================================
+=============================================
+SoftWare Hash persistent IDentifiers (SWHIDs)
+=============================================
 
 **version 1.6, last modified 2021-04-30**
 
@@ -17,7 +17,7 @@ Overview
 
 You can point to objects present in the `Software Heritage
 <https://www.softwareheritage.org/>`_ `archive
-<https://archive.softwareheritage.org/>`_ by the means of **SoftWare Heritage
+<https://archive.softwareheritage.org/>`_ by the means of **SoftWare Hash
 persistent IDentifiers**, or **SWHIDs** for short, that are guaranteed to
 remain stable (persistent) over time. Their syntax, meaning, and usage is
 described below. Note that they are identifiers and not URLs, even though

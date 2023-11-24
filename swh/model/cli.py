@@ -237,7 +237,7 @@ def identify(
     exclude_patterns,
     recursive,
 ):
-    """Compute the Software Heritage persistent identifier (SWHID) for the given
+    """Compute the Software Hash persistent identifier (SWHID) for the given
     source code object(s).
 
     For more details about SWHIDs see:

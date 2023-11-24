@@ -1,10 +1,11 @@
-# Copyright (C) 2015-2021  The Software Heritage developers
+# Copyright (C) 2015-2025  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 """
-Classes to represent :ref:`SWH persistend IDentifiers <persistent-identifiers>`.
+Classes to represent :ref:`SoftWare Hash persistent IDentifiers
+(SWHIDs)<persistent-identifiers>`.
 
 :class:`CoreSWHID` represents a SWHID with no qualifier, and :class:`QualifiedSWHID`
 represents a SWHID that may have qualifiers.
@@ -154,7 +155,7 @@ class _BaseSWHID(Generic[_TObjectType]):
 @attr.s(frozen=True, kw_only=True, repr=False)
 class CoreSWHID(_BaseSWHID[ObjectType]):
     """
-    Dataclass holding the relevant info associated to a SoftWare Heritage
+    Dataclass holding the relevant info associated to a SoftWare Hash
     persistent IDentifier (SWHID).
 
     Unlike `QualifiedSWHID`, it is restricted to core SWHIDs, ie. SWHIDs
@@ -289,7 +290,7 @@ def _parse_path_qualifier(path: Union[str, bytes, None]) -> Optional[bytes]:
 @attr.s(frozen=True, kw_only=True, repr=False)
 class QualifiedSWHID(_BaseSWHID[ObjectType]):
     """
-    Dataclass holding the relevant info associated to a SoftWare Heritage
+    Dataclass holding the relevant info associated to a SoftWare Hash
     persistent IDentifier (SWHID)
 
     Raises:
@@ -456,7 +457,7 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
 @attr.s(frozen=True, kw_only=True, repr=False)
 class ExtendedSWHID(_BaseSWHID[ExtendedObjectType]):
     """
-    Dataclass holding the relevant info associated to a SoftWare Heritage
+    Dataclass holding the relevant info associated to a SoftWare Hash
     persistent IDentifier (SWHID).
 
     It extends  `CoreSWHID`, by allowing non-standard object types; and should
@@ -500,7 +501,7 @@ def _parse_swhid(swhid: str) -> Dict[str, Any]:
     as they perform validation and build a dataclass.
 
     Args:
-        swhid (str): A persistent identifier
+        swhid (str): A SoftWare Hash persistent IDentifier
 
     Raises:
         swh.model.exceptions.ValidationError: if passed string is not a valid SWHID
