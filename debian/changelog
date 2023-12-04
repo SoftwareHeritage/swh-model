@@ -1,3 +1,12 @@
+swh-model (6.10.0-1~swh1) unstable-swh; urgency=medium
+
+  * New upstream release 6.10.0     - (tagged by David Douard
+    <david.douard@sdfa3.org> on 2023-12-04 17:04:49 +0100)
+  * Upstream changes:     - v6.10.0     - migrate to copier, PEP420 and
+    pyproject.toml based packaging
+
+ -- Software Heritage autobuilder (on jenkins-debian1) <jenkins@jenkins-debian1.internal.softwareheritage.org>  Mon, 04 Dec 2023 16:27:40 +0000
+
 swh-model (6.9.1-1~swh1) unstable-swh; urgency=medium
 
   * New upstream release 6.9.1     - (tagged by David Douard
