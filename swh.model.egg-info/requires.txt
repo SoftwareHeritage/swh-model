@@ -12,6 +12,9 @@ Click
 dulwich
 
 [testing]
+swh.core>=0.3
+Click
+dulwich
 aiohttp
 click
 pytest
@@ -19,11 +22,8 @@ pytz
 types-click
 types-python-dateutil
 types-pytz
-swh.core>=0.3
-Click
-dulwich
 
-[testing-minimal]
+[testing_minimal]
 aiohttp
 click
 pytest

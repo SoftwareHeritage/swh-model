@@ -1,3 +1,4 @@
+.copier-answers.yml
 .git-blame-ignore-revs
 .gitignore
 .pre-commit-config.yaml
@@ -5,7 +6,6 @@ AUTHORS
 CODE_OF_CONDUCT.md
 CONTRIBUTORS
 LICENSE
-MANIFEST.in
 Makefile
 Makefile.local
 README.rst
@@ -16,7 +16,6 @@ requirements-cli.txt
 requirements-test.txt
 requirements.txt
 setup.cfg
-setup.py
 tox.ini
 bin/git-revhash
 bin/swh-hashtree
@@ -35,7 +34,6 @@ docs/_templates/.placeholder
 docs/images/.gitignore
 docs/images/Makefile
 docs/images/swh-merkle-dag.dia
-swh/__init__.py
 swh.model.egg-info/PKG-INFO
 swh.model.egg-info/SOURCES.txt
 swh.model.egg-info/dependency_links.txt

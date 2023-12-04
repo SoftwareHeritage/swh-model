@@ -45,7 +45,7 @@ class ImmutableDict(Mapping, Generic[KT, VT]):
         return self._data[key]
 
     def __iter__(self):
-        for (k, v) in self.data:
+        for k, v in self.data:
             yield k
 
     def __len__(self):
@@ -61,5 +61,5 @@ class ImmutableDict(Mapping, Generic[KT, VT]):
         """Returns a copy of this ImmutableDict without the given key,
         as well as the value associated to the key."""
         new_items = copy.deepcopy(self._data)
-        popped_value = new_items.pop(popped_key, None)  # type: ignore
+        popped_value: Optional[VT] = new_items.pop(popped_key, None)
         return (popped_value, ImmutableDict(new_items))

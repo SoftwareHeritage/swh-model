@@ -1,5 +1,5 @@
 [console_scripts]
-swh-identify = swh.model.cli:identify
+swh.identify = swh.model.cli:identify
 
 [swh.cli.subcommands]
-identify = swh.model.cli
+swh.model = swh.model.cli

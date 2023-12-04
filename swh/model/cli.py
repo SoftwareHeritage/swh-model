@@ -20,10 +20,12 @@ except ImportError:
     exit(1)
 
 try:
-    from swh.core.cli import swh as swh_cli_group
+    import swh.core.cli
+
+    cli_command = swh.core.cli.swh.command
 except ImportError:
     # stub so that swh-identify can be used when swh-core isn't installed
-    swh_cli_group = click  # type: ignore
+    cli_command = click.command
 
 from swh.model.from_disk import Directory
 from swh.model.swhids import CoreSWHID
@@ -175,7 +177,7 @@ def identify_object(
     return swhid
 
 
-@swh_cli_group.command(context_settings=CONTEXT_SETTINGS)
+@cli_command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "--dereference/--no-dereference",
     "follow_symlinks",
@@ -304,7 +306,7 @@ def identify(
                 click.echo("SWHID mismatch: %s != %s" % (verify, swhid))
                 sys.exit(1)
         else:
-            for (obj, swhid) in results:
+            for obj, swhid in results:
                 msg = swhid
                 if show_filename:
                     msg = "%s\t%s" % (swhid, os.fsdecode(obj))
