@@ -138,7 +138,7 @@ class Content(MerkleLeaf):
 
     """
 
-    __slots__ = []  # type: List[str]
+    __slots__: List[str] = []
     object_type: Final = "content"
 
     @classmethod
