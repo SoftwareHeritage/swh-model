@@ -567,7 +567,6 @@ class Directory(MerkleNode):
         """Builds a `model.Directory` object based on this node;
         ignoring its children."""
         if self.__model_object is None:
-
             DirectoryEntry = model.DirectoryEntry
 
             entries = []
