@@ -1,14 +1,13 @@
 Metadata-Version: 2.1
 Name: swh.model
-Version: 6.9.1
+Version: 6.10.0
 Summary: Software Heritage data model
-Home-page: https://forge.softwareheritage.org/diffusion/DMOD/
-Author: Software Heritage developers
-Author-email: swh-devel@inria.fr
-Project-URL: Bug Reports, https://forge.softwareheritage.org/maniphest
+Author-email: Software Heritage developers <swh-devel@inria.fr>
+Project-URL: Homepage, https://gitlab.softwareheritage.org/swh/devel/swh-model
+Project-URL: Bug Reports, https://gitlab.softwareheritage.org/swh/devel/swh-model/-/issues
 Project-URL: Funding, https://www.softwareheritage.org/donate
-Project-URL: Source, https://forge.softwareheritage.org/source/swh-model
 Project-URL: Documentation, https://docs.softwareheritage.org/devel/swh-model/
+Project-URL: Source, https://gitlab.softwareheritage.org/swh/devel/swh-model.git
 Classifier: Programming Language :: Python :: 3
 Classifier: Intended Audience :: Developers
 Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
@@ -29,6 +28,17 @@ Provides-Extra: cli
 Requires-Dist: swh.core>=0.3; extra == "cli"
 Requires-Dist: Click; extra == "cli"
 Requires-Dist: dulwich; extra == "cli"
+Provides-Extra: testing
+Requires-Dist: swh.core>=0.3; extra == "testing"
+Requires-Dist: Click; extra == "testing"
+Requires-Dist: dulwich; extra == "testing"
+Requires-Dist: aiohttp; extra == "testing"
+Requires-Dist: click; extra == "testing"
+Requires-Dist: pytest; extra == "testing"
+Requires-Dist: pytz; extra == "testing"
+Requires-Dist: types-click; extra == "testing"
+Requires-Dist: types-python-dateutil; extra == "testing"
+Requires-Dist: types-pytz; extra == "testing"
 Provides-Extra: testing-minimal
 Requires-Dist: aiohttp; extra == "testing-minimal"
 Requires-Dist: click; extra == "testing-minimal"
@@ -37,17 +47,6 @@ Requires-Dist: pytz; extra == "testing-minimal"
 Requires-Dist: types-click; extra == "testing-minimal"
 Requires-Dist: types-python-dateutil; extra == "testing-minimal"
 Requires-Dist: types-pytz; extra == "testing-minimal"
-Provides-Extra: testing
-Requires-Dist: aiohttp; extra == "testing"
-Requires-Dist: click; extra == "testing"
-Requires-Dist: pytest; extra == "testing"
-Requires-Dist: pytz; extra == "testing"
-Requires-Dist: types-click; extra == "testing"
-Requires-Dist: types-python-dateutil; extra == "testing"
-Requires-Dist: types-pytz; extra == "testing"
-Requires-Dist: swh.core>=0.3; extra == "testing"
-Requires-Dist: Click; extra == "testing"
-Requires-Dist: dulwich; extra == "testing"
 
 Software Heritage - Data model
 ==============================
