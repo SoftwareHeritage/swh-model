@@ -25,21 +25,21 @@ class FakeArchive:
     skipped_contents: List[model.SkippedContent]
     directories: List[model.Directory]
 
-    async def content_missing(self, contents: List[Sha1Git]) -> Iterable[Sha1Git]:
+    def content_missing(self, contents: List[Sha1Git]) -> Iterable[Sha1Git]:
         return []
 
-    async def skipped_content_missing(
+    def skipped_content_missing(
         self, skipped_contents: List[Sha1Git]
     ) -> Iterable[Sha1Git]:
         """List skipped content missing from the archive by sha1"""
         return []
 
-    async def directory_missing(self, directories: List[Sha1Git]) -> Iterable[Sha1Git]:
+    def directory_missing(self, directories: List[Sha1Git]) -> Iterable[Sha1Git]:
         """List directories missing from the archive by sha1"""
         return []
 
 
-async def test_filter_known_objects(monkeypatch):
+def test_filter_known_objects(monkeypatch):
     # Test with smaller sample sizes to actually trigger the random sampling
     monkeypatch.setattr(discovery, "SAMPLE_SIZE", 1)
 
@@ -60,9 +60,7 @@ async def test_filter_known_objects(monkeypatch):
     assert archive.contents[0].sha1_git == KNOWN_CONTENT_HASH
     assert archive.directories[0].id == KNOWN_DIRECTORY_HASH
     assert archive.directories[1].id == KNOWN_DIRECTORY_HASH_2
-    (contents, skipped_contents, directories) = await discovery.filter_known_objects(
-        archive
-    )
+    (contents, skipped_contents, directories) = discovery.filter_known_objects(archive)
     assert len(contents) == 0
     assert len(skipped_contents) == 0
     assert len(directories) == 0

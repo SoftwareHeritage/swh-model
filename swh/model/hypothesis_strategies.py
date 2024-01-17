@@ -479,7 +479,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
                 }
             )
         except ValueError as e:
-            for (source, target) in e.args[1]:
+            for source, target in e.args[1]:
                 branches[source] = draw(branch_targets_d(only_objects=True))
         else:
             break

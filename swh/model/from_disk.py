@@ -138,7 +138,7 @@ class Content(MerkleLeaf):
 
     """
 
-    __slots__ = []  # type: List[str]
+    __slots__: List[str] = []
     object_type: Final = "content"
 
     @classmethod
@@ -567,7 +567,6 @@ class Directory(MerkleNode):
         """Builds a `model.Directory` object based on this node;
         ignoring its children."""
         if self.__model_object is None:
-
             DirectoryEntry = model.DirectoryEntry
 
             entries = []

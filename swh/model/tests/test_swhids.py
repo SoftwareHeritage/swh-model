@@ -230,7 +230,7 @@ VALID_SWHIDS = [
 def test_parse_unparse_swhids(string, core, qualified, extended):
     """Tests parsing and serializing valid SWHIDs with the various SWHID classes."""
     classes = [CoreSWHID, QualifiedSWHID, ExtendedSWHID]
-    for (cls, parsed_swhid) in zip(classes, [core, qualified, extended]):
+    for cls, parsed_swhid in zip(classes, [core, qualified, extended]):
         if parsed_swhid is None:
             # This class should not accept this SWHID
             with pytest.raises(ValidationError) as excinfo:

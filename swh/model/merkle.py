@@ -217,7 +217,7 @@ class MerkleLeaf(MerkleNode):
     A Merkle leaf is simply a Merkle node with children disabled.
     """
 
-    __slots__ = []  # type: List[str]
+    __slots__: List[str] = []
 
     def __setitem__(self, name, child):
         raise ValueError("%s is a leaf" % self.__class__.__name__)

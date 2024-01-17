@@ -229,7 +229,7 @@ def _immutable_dict_validator(
     key_validator = optimized_validator(expected_key_type)
     value_validator = optimized_validator(expected_value_type)
 
-    for (item_key, item_value) in value.items():
+    for item_key, item_value in value.items():
         key_validator(
             instance,
             attribute,
@@ -282,7 +282,7 @@ def optimized_validator(type_):
         ):
             if origin_value is None:
                 origin_value = value
-            for (validator, type_) in all_validators:
+            for validator, type_ in all_validators:
                 try:
                     validator(
                         instance,

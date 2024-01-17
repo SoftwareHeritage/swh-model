@@ -63,7 +63,7 @@ def assert_nested_dict(obj):
     """Tests the object is a nested dict and contains no more class
     from swh.model.model."""
     if isinstance(obj, dict):
-        for (key, value) in obj.items():
+        for key, value in obj.items():
             assert isinstance(key, (str, bytes)), key
             assert_nested_dict(value)
     elif isinstance(obj, tuple):
@@ -164,7 +164,6 @@ _max_snp_size = 100
 @given(snapshots(min_size=_min_snp_size, max_size=_max_snp_size))
 @settings(max_examples=1)
 def test_snapshots_strategy(snapshot):
-
     branches = snapshot.branches
 
     assert len(branches) >= _min_snp_size
