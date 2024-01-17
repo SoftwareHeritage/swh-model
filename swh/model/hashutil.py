@@ -72,7 +72,7 @@ Subset of :const:`ALGORITHMS`.
 HASH_BLOCK_SIZE = 32768
 """Block size for streaming hash computations made in this module"""
 
-_blake2_hash_cache = {}  # type: Dict[str, Callable]
+_blake2_hash_cache: Dict[str, Callable] = {}
 
 
 class MultiHash:

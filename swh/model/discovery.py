@@ -11,7 +11,17 @@ from collections import namedtuple
 import itertools
 import logging
 import random
-from typing import Any, Iterable, List, Mapping, NamedTuple, Set, Union
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Set,
+    Union,
+)
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -49,29 +59,42 @@ class ArchiveDiscoveryInterface(Protocol):
         self.skipped_contents = skipped_contents
         self.directories = directories
 
-    async def content_missing(self, contents: List[Sha1Git]) -> Iterable[Sha1Git]:
+    def content_missing(self, contents: List[Sha1Git]) -> Iterable[Sha1Git]:
         """List content missing from the archive by sha1"""
 
-    async def skipped_content_missing(
+    def skipped_content_missing(
         self, skipped_contents: List[Sha1Git]
     ) -> Iterable[Sha1Git]:
         """List skipped content missing from the archive by sha1"""
 
-    async def directory_missing(self, directories: List[Sha1Git]) -> Iterable[Sha1Git]:
+    def directory_missing(self, directories: List[Sha1Git]) -> Iterable[Sha1Git]:
         """List directories missing from the archive by sha1"""
 
 
 class BaseDiscoveryGraph:
     """Creates the base structures and methods needed for discovery algorithms.
-    Subclasses should override ``get_sample`` to affect how the discovery is made."""
+    Subclasses should override ``get_sample`` to affect how the discovery is made.
 
-    def __init__(self, contents, skipped_contents, directories):
+    The `update_info_callback` is an optional argument that will get called for
+    each new piece of information we get. The callback arguments are `(content,
+    known)`.
+    - content: the relevant model.Content object,
+    - known: a boolean, True if the file is known to the archive False otherwise.
+    """
+
+    def __init__(
+        self,
+        contents,
+        skipped_contents,
+        directories,
+        update_info_callback: Optional[Callable[[Any, bool], None]] = None,
+    ):
         self._all_contents: Mapping[
             Sha1Git, Union[model.Content, model.SkippedContent]
         ] = {}
         self._undecided_directories: Set[Sha1Git] = set()
-        self._children: Mapping[Sha1Git, model.DirectoryEntry] = {}
-        self._parents: Mapping[model.DirectoryEntry, Sha1Git] = {}
+        self._children: Mapping[Sha1Git, Set[Sha1Git]] = {}
+        self._parents: Mapping[model.DirectoryEntry, Set[Any]] = {}
         self.undecided: Set[Sha1Git] = set()
 
         for content in itertools.chain(contents, skipped_contents):
@@ -88,6 +111,12 @@ class BaseDiscoveryGraph:
         self.undecided |= self._undecided_directories
         self.known: Set[Sha1Git] = set()
         self.unknown: Set[Sha1Git] = set()
+        self._update_info_callback = update_info_callback
+        self._sha1_to_obj = {}
+        for content in itertools.chain(contents, skipped_contents):
+            self._sha1_to_obj[content.sha1_git] = content
+        for directory in directories:
+            self._sha1_to_obj[directory.id] = directory
 
     def mark_known(self, entries: Iterable[Sha1Git]):
         """Mark ``entries`` and those they imply as known in the SWH archive"""
@@ -115,16 +144,21 @@ class BaseDiscoveryGraph:
         - ``target_set``: set where marked entries will be added.
 
         """
+        callback = self._update_info_callback
         to_process = set(entries)
         while to_process:
             current = to_process.pop()
             target_set.add(current)
+            new = current in self.undecided
             self.undecided.discard(current)
             self._undecided_directories.discard(current)
             next_entries = transitive_mapping.get(current, set()) & self.undecided
             to_process.update(next_entries)
+            if new and callback is not None:
+                obj = self._sha1_to_obj[current]
+                callback(obj, current in self.known)
 
-    async def get_sample(
+    def get_sample(
         self,
     ) -> Sample:
         """Return a three-tuple of samples from the undecided sets of contents,
@@ -133,9 +167,7 @@ class BaseDiscoveryGraph:
         which are known."""
         raise NotImplementedError()
 
-    async def do_query(
-        self, archive: ArchiveDiscoveryInterface, sample: Sample
-    ) -> None:
+    def do_query(self, archive: ArchiveDiscoveryInterface, sample: Sample) -> None:
         """Given a three-tuple of samples, ask the archive which are known or
         unknown and mark them as such."""
 
@@ -149,7 +181,7 @@ class BaseDiscoveryGraph:
             if not sample_per_type:
                 continue
             known = set(sample_per_type)
-            unknown = set(await method(list(sample_per_type)))
+            unknown = set(method(list(sample_per_type)))
             known -= unknown
 
             self.mark_known(known)
@@ -165,7 +197,7 @@ class RandomDirSamplingDiscoveryGraph(BaseDiscoveryGraph):
     are left: we send them directly to the storage since they should be few and
     their structure flat."""
 
-    async def get_sample(self) -> Sample:
+    def get_sample(self) -> Sample:
         if self._undecided_directories:
             if len(self._undecided_directories) <= SAMPLE_SIZE:
                 return Sample(
@@ -197,10 +229,20 @@ class RandomDirSamplingDiscoveryGraph(BaseDiscoveryGraph):
         )
 
 
-async def filter_known_objects(archive: ArchiveDiscoveryInterface):
+def filter_known_objects(
+    archive: ArchiveDiscoveryInterface,
+    update_info_callback: Optional[Callable[[Any, bool], None]] = None,
+):
     """Filter ``archive``'s ``contents``, ``skipped_contents`` and ``directories``
     to only return those that are unknown to the SWH archive using a discovery
-    algorithm."""
+    algorithm.
+
+    The `update_info_callback` is an optional argument that will get called for
+    each new piece of information we get. The callback arguments are `(content,
+    known)`.
+    - content: the relevant model.Content object,
+    - known: a boolean, True if the file is known to the archive False otherwise.
+    """
     contents = archive.contents
     skipped_contents = archive.skipped_contents
     directories = archive.directories
@@ -209,11 +251,16 @@ async def filter_known_objects(archive: ArchiveDiscoveryInterface):
     skipped_contents_count = len(skipped_contents)
     directories_count = len(directories)
 
-    graph = RandomDirSamplingDiscoveryGraph(contents, skipped_contents, directories)
+    graph = RandomDirSamplingDiscoveryGraph(
+        contents,
+        skipped_contents,
+        directories,
+        update_info_callback=update_info_callback,
+    )
 
     while graph.undecided:
-        sample = await graph.get_sample()
-        await graph.do_query(archive, sample)
+        sample = graph.get_sample()
+        graph.do_query(archive, sample)
 
     contents = [c for c in contents if c.sha1_git in graph.unknown]
     skipped_contents = [c for c in skipped_contents if c.sha1_git in graph.unknown]

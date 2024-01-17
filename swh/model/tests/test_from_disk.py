@@ -136,7 +136,7 @@ class TestDiskBackedContent(unittest.TestCase):
 
 
 class DataMixin:
-    maxDiff = None  # type: ClassVar[Optional[int]]
+    maxDiff: ClassVar[Optional[int]] = None
 
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory(prefix="swh.model.from_disk")

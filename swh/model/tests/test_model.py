@@ -769,7 +769,7 @@ def test_person_comparison():
 def test_content_get_hash():
     hashes = dict(sha1=b"foo", sha1_git=b"bar", sha256=b"baz", blake2s256=b"qux")
     c = Content(length=42, status="visible", **hashes)
-    for (hash_name, hash_) in hashes.items():
+    for hash_name, hash_ in hashes.items():
         assert c.get_hash(hash_name) == hash_
 
 
@@ -1225,7 +1225,6 @@ def test_revision_check(revision):
 
 @given(strategies.revisions(raw_manifest=none()))
 def test_revision_raw_manifest(revision):
-
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
 

@@ -36,7 +36,6 @@ def blake2_hash_cache_reset():
 @pytest.fixture
 def hash_test_data():
     class HashTestData:
-
         data = b"1984\n"
         hex_checksums = {
             "sha1": "62be35bf00ff0c624f4a621e2ea5595a049e0731",
