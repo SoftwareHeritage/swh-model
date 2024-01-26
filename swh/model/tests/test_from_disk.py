@@ -13,7 +13,13 @@ import unittest
 import pytest
 
 from swh.model import from_disk, model
-from swh.model.from_disk import Content, DentryPerms, Directory, DiskBackedContent
+from swh.model.from_disk import (
+    Content,
+    DentryPerms,
+    Directory,
+    DiskBackedContent,
+    FromDiskType,
+)
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
 
 TEST_DATA = os.path.join(os.path.dirname(__file__), "data")
@@ -965,9 +971,12 @@ class TarballIterDirectory(DataMixin, unittest.TestCase):
             obj = directory[name]
             expected_nb[obj.object_type] += 1
 
-        assert len(contents) == expected_nb["content"] and len(contents) > 0
+        assert len(contents) == expected_nb[FromDiskType.CONTENT] and len(contents) > 0
         assert len(skipped_contents) == 0
-        assert len(directories) == expected_nb["directory"] and len(directories) > 0
+        assert (
+            len(directories) == expected_nb[FromDiskType.DIRECTORY]
+            and len(directories) > 0
+        )
 
 
 class DirectoryManipulation(DataMixin, unittest.TestCase):

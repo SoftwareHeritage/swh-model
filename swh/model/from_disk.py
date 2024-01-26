@@ -41,7 +41,30 @@ from .exceptions import InvalidDirectoryPath
 from .git_objects import directory_entry_sort_key
 from .hashutil import MultiHash, hash_to_hex
 from .merkle import MerkleLeaf, MerkleNode
-from .swhids import CoreSWHID, ObjectType
+from .swhids import CoreSWHID
+from .swhids import ObjectType as SWHIDType
+
+
+class FromDiskType(enum.Enum):
+    """Possible object types for "from disk" object."""
+
+    CONTENT = "content"
+    DIRECTORY = "directory"
+
+    def __eq__(self, other):
+        # stay compatible with legacy string comparison (for now)
+        if isinstance(other, str):
+            # note: we should issue deprecation warning at some point
+            return self.value == other
+        return super().__eq__(other)
+
+    def __str__(self):
+        # preserve interpolation property (for now)
+        return self.value
+
+    def __hash__(self):
+        # make sure we don't confuse dictionary key matching (for now)
+        return hash(str(self.value))
 
 
 @attr.s(frozen=True, slots=True)
@@ -141,7 +164,7 @@ class Content(MerkleLeaf):
     """
 
     __slots__: List[str] = []
-    object_type: Final = "content"
+    object_type: Final = FromDiskType.CONTENT
 
     @classmethod
     def from_bytes(cls, *, mode, data):
@@ -230,7 +253,7 @@ class Content(MerkleLeaf):
 
     def swhid(self) -> CoreSWHID:
         """Return node identifier as a SWHID"""
-        return CoreSWHID(object_type=ObjectType.CONTENT, object_id=self.hash)
+        return CoreSWHID(object_type=SWHIDType.CONTENT, object_id=self.hash)
 
     def __repr__(self):
         return "Content(id=%s)" % hash_to_hex(self.hash)
@@ -442,7 +465,7 @@ class Directory(MerkleNode):
     """
 
     __slots__ = ["__entries", "__model_object"]
-    object_type: Final = "directory"
+    object_type: Final = FromDiskType.DIRECTORY
 
     @classmethod
     def from_disk(
@@ -539,14 +562,14 @@ class Directory(MerkleNode):
 
     @staticmethod
     def child_to_directory_entry(name, child):
-        if child.object_type == "directory":
+        if child.object_type == FromDiskType.DIRECTORY:
             return {
                 "type": "dir",
                 "perms": DentryPerms.directory,
                 "target": child.hash,
                 "name": name,
             }
-        elif child.object_type == "content":
+        elif child.object_type == FromDiskType.CONTENT:
             return {
                 "type": "file",
                 "perms": child.data["perms"],
@@ -579,7 +602,7 @@ class Directory(MerkleNode):
 
     def swhid(self) -> CoreSWHID:
         """Return node identifier as a SWHID"""
-        return CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=self.hash)
+        return CoreSWHID(object_type=SWHIDType.DIRECTORY, object_id=self.hash)
 
     def compute_hash(self):
         return self.to_model().id
@@ -592,14 +615,14 @@ class Directory(MerkleNode):
 
             entries = []
             for name, child in self.items():
-                if child.object_type == "directory":
+                if child.object_type == FromDiskType.DIRECTORY:
                     e = DirectoryEntry(
                         type="dir",
                         perms=DentryPerms.directory,
                         target=child.hash,
                         name=name,
                     )
-                elif child.object_type == "content":
+                elif child.object_type == FromDiskType.CONTENT:
                     e = DirectoryEntry(
                         type="file",
                         perms=child.data["perms"],
