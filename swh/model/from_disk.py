@@ -453,6 +453,7 @@ class Directory(MerkleNode):
             Callable[[bytes, bytes, Optional[List[bytes]]], bool]
         ] = None,
         max_content_length: Optional[int] = None,
+        progress_callback: Optional[Callable[[int], None]] = None,
     ) -> "Directory":
         """Compute the Software Heritage objects for a given directory tree
 
@@ -472,6 +473,8 @@ class Directory(MerkleNode):
             directory should be ignored.
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
+          progress_callback (Optional function): if given, returns for each
+          non empty directories traversed the number of computed entries.
         """
         top_path = path
         dirs: Dict[bytes, Directory] = {}
@@ -503,6 +506,10 @@ class Directory(MerkleNode):
 
             dirs[root] = cls({"name": os.path.basename(root), "path": root})
             dirs[root].update(entries)
+
+            if progress_callback is not None:
+                if len(entries) > 0:
+                    progress_callback(len(entries))
 
         return dirs[top_path]
 

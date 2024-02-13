@@ -5,7 +5,7 @@
 
 import os
 import sys
-from typing import Dict, Iterable, Optional
+from typing import Callable, Dict, Iterable, Optional
 
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
@@ -74,6 +74,7 @@ def swhid_of_file_content(data) -> CoreSWHID:
 def model_of_dir(
     path: bytes,
     exclude_patterns: Optional[Iterable[bytes]] = None,
+    update_info: Optional[Callable[[int], None]] = None,
 ) -> Directory:
     from swh.model.from_disk import accept_all_paths, ignore_directories_patterns
 
@@ -83,7 +84,9 @@ def model_of_dir(
         else accept_all_paths
     )
 
-    return Directory.from_disk(path=path, path_filter=path_filter)
+    return Directory.from_disk(
+        path=path, path_filter=path_filter, progress_callback=update_info
+    )
 
 
 def swhid_of_dir(

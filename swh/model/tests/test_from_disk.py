@@ -914,6 +914,17 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                     b"foofile",
                 ]
 
+    def test_directory_progress_callback(self):
+        total = []
+
+        def update_info(arg):
+            assert type(arg) is int
+            total.append(arg)
+
+        Directory.from_disk(path=self.tmpdir_name, progress_callback=update_info)
+        # Corresponds to the deeper files and directories plus the four top level ones
+        assert total == [1, 1, 1, 1, 4]
+
 
 @pytest.mark.fs
 class TarballTest(DataMixin, unittest.TestCase):
