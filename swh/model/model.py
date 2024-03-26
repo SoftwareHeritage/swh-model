@@ -338,6 +338,7 @@ def optimize_all_validators(cls, old_fields):
 
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
+HashableModelType = TypeVar("HashableModelType", bound="BaseHashableModel")
 
 
 class BaseModel:
@@ -358,6 +359,10 @@ class BaseModel:
         """Takes a dictionary representing a tree of SWH objects, and
         recursively builds the corresponding objects."""
         return cls(**d)
+
+    def evolve(self: ModelType, **kwargs) -> ModelType:
+        """Alias to call :func:`attr.evolve` on this object, returning a new object."""
+        return attr.evolve(self, **kwargs)  # type: ignore[misc]
 
     def anonymize(self: ModelType) -> Optional[ModelType]:
         """Returns an anonymized version of the object, if needed.
@@ -407,6 +412,18 @@ class BaseHashableModel(BaseModel, metaclass=ABCMeta):
         if not self.id:
             obj_id = self.compute_hash()
             object.__setattr__(self, "id", obj_id)
+
+    def evolve(self: HashableModelType, **kwargs) -> HashableModelType:
+        """Alias to call :func:`attr.evolve` on this object, returning a new object
+        with its ``id`` recomputed based on the content."""
+        if "id" in kwargs:
+            raise TypeError(
+                f"{self.__class__.__name__}.evolve recomputes the id itself; "
+                f"use attr.evolve to change the id manually."
+            )
+        obj = attr.evolve(self, **kwargs)  # type: ignore[misc]
+        new_hash = obj.compute_hash()
+        return attr.evolve(obj, id=new_hash)  # type: ignore[misc]
 
     def unique_key(self) -> KeyType:
         return self.id

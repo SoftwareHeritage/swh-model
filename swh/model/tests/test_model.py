@@ -40,6 +40,7 @@ from swh.model.model import (
     Revision,
     SkippedContent,
     Snapshot,
+    SnapshotBranch,
     TargetType,
     Timestamp,
     TimestampWithTimezone,
@@ -885,6 +886,17 @@ def test_content_git_roundtrip(content):
     assert content.sha1_git == sha1_git
 
 
+@given(strategies.present_contents())
+def test_content_evolve(content):
+    content.check()
+
+    assert attr.evolve(content, sha1=b"\x00" * 20) == content.evolve(sha1=b"\x00" * 20)
+
+    assert attr.evolve(content, data=b"foo") == content.evolve(data=b"foo")
+
+    assert attr.evolve(content, data=None) == content.evolve(data=None)
+
+
 # SkippedContent
 
 
@@ -926,6 +938,15 @@ def test_skipped_content_swhid():
     )
 
 
+@given(strategies.skipped_contents())
+def test_skipped_content_evolve(content):
+    content.check()
+
+    assert attr.evolve(content, sha1=b"\x00" * 20) == content.evolve(sha1=b"\x00" * 20)
+
+    assert attr.evolve(content, sha1=None) == content.evolve(sha1=None)
+
+
 # Directory
 
 
@@ -953,16 +974,69 @@ def test_directory_raw_manifest(directory):
     raw_manifest = b"foo"
     id_ = hashlib.new("sha1", raw_manifest).digest()
 
+    # Forgot to update the id -> error
     directory2 = attr.evolve(directory, raw_manifest=raw_manifest)
     assert directory2.to_dict()["raw_manifest"] == raw_manifest
     with pytest.raises(ValueError, match="does not match recomputed hash"):
         directory2.check()
 
+    # id set to the right value -> ok
     directory2 = attr.evolve(directory, raw_manifest=raw_manifest, id=id_)
     assert directory2.id is not None
     assert directory2.id == id_ != directory.id
     assert directory2.to_dict()["raw_manifest"] == raw_manifest
     directory2.check()
+
+    # id implicitly set to the right value -> ok
+    directory3 = directory.evolve(raw_manifest=raw_manifest)
+    assert directory3.id is not None
+    assert directory3.id == id_ != directory.id
+    assert directory3.to_dict()["raw_manifest"] == raw_manifest
+    directory3.check()
+
+
+@given(strategies.directories(raw_manifest=none()))
+def test_directory_evolve(directory):
+    directory.check()
+
+    # Add an entry (while making sure it is not a duplicate)
+    longest_entry_name = max(
+        (entry.name for entry in directory.entries), key=len, default=b""
+    )
+    entries = (
+        *directory.entries,
+        DirectoryEntry(
+            name=longest_entry_name + b"x",
+            type="file",
+            target=b"\x00" * 20,
+            perms=0,
+        ),
+    )
+    directory2 = directory.evolve(entries=entries)
+    assert directory2.entries == entries
+    assert directory2.id != directory.id, "directory.evolve() did not update the id"
+    directory2.check()
+
+    with pytest.raises(TypeError, match="use attr.evolve"):
+        directory.evolve(id=b"\x00" * 20)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        directory.evolve(foo=b"")
+
+
+@given(strategies.directories(raw_manifest=none()))
+def test_directory_evolve_raw_manifest(directory):
+    directory2 = directory.evolve(raw_manifest=b"123")
+    assert directory2 == attr.evolve(directory, id=directory2.id, raw_manifest=b"123")
+
+    directory3 = directory2.evolve(entries=())
+    assert directory3.raw_manifest == directory2.raw_manifest
+    assert (
+        directory3.id == directory2.id
+    ), ".evolve() change the id despite raw_manifest being set"
+    assert directory3 == attr.evolve(
+        directory, id=directory2.id, entries=(), raw_manifest=b"123"
+    )
 
 
 def test_directory_entry_name_validation():
@@ -1200,6 +1274,46 @@ def test_release_target_swhid():
     release = Release.from_dict(release_example)
     assert release.target_swhid() == CoreSWHID.from_string(
         "swh:1:rev:741b2252a5e14d6c60a913c77a6099abe73a854a"
+    )
+
+
+@given(strategies.releases(raw_manifest=none()))
+def test_release_evolve(release):
+    release.check()
+
+    message = (release.message or b"abc") + b"\n"
+    release2 = release.evolve(message=message)
+    assert release2.message == message
+    assert release2.id != release.id, "release.evolve() did not update the id"
+    release2.check()
+
+    release2 = release.evolve(message=None)
+    assert release2.message is None
+    if release.message is None:
+        assert release2.id == release.id, "no-op release.evolve() updated the id"
+    else:
+        assert release2.id != release.id, "release.evolve() did not update the id"
+    release2.check()
+
+    with pytest.raises(TypeError, match="use attr.evolve"):
+        release.evolve(id=b"\x00" * 20)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        release.evolve(foo=b"")
+
+
+@given(strategies.releases(raw_manifest=none()))
+def test_release_evolve_raw_manifest(release):
+    release2 = release.evolve(raw_manifest=b"123")
+    assert release2 == attr.evolve(release, id=release2.id, raw_manifest=b"123")
+
+    release3 = release2.evolve(message=None)
+    assert release3.raw_manifest == release2.raw_manifest
+    assert (
+        release3.id == release2.id
+    ), ".evolve() change the id despite raw_manifest being set"
+    assert release3 == attr.evolve(
+        release, id=release2.id, message=None, raw_manifest=b"123"
     )
 
 
@@ -1499,6 +1613,72 @@ def test_snapshot_branch_swhids(snapshot_with_all_types):
         ),
         b"dangling": None,
     }
+
+
+@given(strategies.snapshots())
+def test_snapshot_evolve(snapshot):
+    snapshot.check()
+
+    # Add an entry (while making sure it is not a duplicate)
+    longest_branch_name = max(snapshot.branches, key=len, default=b"")
+    branches = {
+        **snapshot.branches,
+        longest_branch_name
+        + b"x": SnapshotBranch(
+            target_type=TargetType.RELEASE,
+            target=b"\x00" * 20,
+        ),
+    }
+    snapshot2 = snapshot.evolve(branches=branches)
+    assert snapshot2.branches == branches
+    assert snapshot2.id != snapshot.id, "snapshot.evolve() did not update the id"
+    snapshot2.check()
+
+    with pytest.raises(TypeError, match="use attr.evolve"):
+        snapshot.evolve(id=b"\x00" * 20)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        snapshot.evolve(foo=b"")
+
+
+@given(strategies.revisions(raw_manifest=none()))
+def test_revision_evolve(revision):
+    revision.check()
+
+    message = (revision.message or b"abc") + b"\n"
+    revision2 = revision.evolve(message=message)
+    assert revision2.message == message
+    assert revision2.id != revision.id, "revision.evolve() did not update the id"
+    revision2.check()
+
+    revision2 = revision.evolve(message=None)
+    assert revision2.message is None
+    if revision.message is None:
+        assert revision2.id == revision.id, "no-op revision.evolve() updated the id"
+    else:
+        assert revision2.id != revision.id, "revision.evolve() did not update the id"
+    revision2.check()
+
+    with pytest.raises(TypeError, match="use attr.evolve"):
+        revision.evolve(id=b"\x00" * 20)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument"):
+        revision.evolve(foo=b"")
+
+
+@given(strategies.revisions(raw_manifest=none()))
+def test_revision_evolve_raw_manifest(revision):
+    revision2 = revision.evolve(raw_manifest=b"123")
+    assert revision2 == attr.evolve(revision, id=revision2.id, raw_manifest=b"123")
+
+    revision3 = revision2.evolve(message=None)
+    assert revision3.raw_manifest == revision2.raw_manifest
+    assert (
+        revision3.id == revision2.id
+    ), ".evolve() change the id despite raw_manifest being set"
+    assert revision3 == attr.evolve(
+        revision, id=revision2.id, message=None, raw_manifest=b"123"
+    )
 
 
 @given(strategies.objects(split_content=True))
