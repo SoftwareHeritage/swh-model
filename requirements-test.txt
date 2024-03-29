@@ -1,6 +1,6 @@
 aiohttp
 click
-pytest
+pytest >= 8.1
 pytz
 types-click
 types-python-dateutil
