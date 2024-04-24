@@ -809,6 +809,19 @@ class Origin(BaseHashableModel):
             object_id=self.id,
         )
 
+    @url.validator
+    def check_url(self, attribute, value):
+        if len(value.encode()) >= 2048:
+            # Rationale for this value:
+            # 1. Needs to be stored in a postgresql btree, which is limited to
+            #    somewhere around 2700 bytes
+            # 2. URLs longer than 2048 characters won't work very well in browsers,
+            #    and repository URLs are often meant to at least display something
+            #    when opened in a browser. https://stackoverflow.com/a/417184/539465
+            # 3. Even though this field is actually an IRI, it is usually in ASCII
+            #    so this should be a good-enough approximation
+            raise ValueError("Origin URL is too long")
+
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class OriginVisit(BaseModel):

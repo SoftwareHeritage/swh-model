@@ -393,6 +393,13 @@ def test_todict_origins(origin):
     assert type(origin)(url=origin.url) == type(origin).from_dict(obj)
 
 
+def test_origin_long_url():
+    with pytest.raises(ValueError, match="Origin URL is too long"):
+        Origin(url="https://" + "a" * 3000)
+    with pytest.raises(ValueError, match="Origin URL is too long"):
+        Origin(url="https://example.org/" + "a" * 3050)
+
+
 @given(strategies.origin_visits())
 def test_todict_origin_visits(origin_visit):
     obj = origin_visit.to_dict()

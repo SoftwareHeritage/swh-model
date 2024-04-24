@@ -175,7 +175,7 @@ timestamps_with_timezone = timestamps_with_timezone_d().map(
 )
 
 
-def origins_d(*, url=iris()):
+def origins_d(*, url=iris().filter(lambda iri: len(iri.encode()) < 2048)):
     return builds(dict, url=url)
 
 
