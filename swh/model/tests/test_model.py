@@ -7,6 +7,7 @@ import collections
 import copy
 import datetime
 import hashlib
+import re
 from typing import Any, List, Optional, Tuple, Union
 
 import attr
@@ -82,6 +83,18 @@ def test_todict_inverse_fromdict(objtype_and_obj):
     assert obj_as_dict == type(obj).from_dict(obj_as_dict).to_dict()
 
 
+# In some case, python-dateutil build a `tzfile` object from the
+# content of a tarball. In such case the `tzfile._filename` attribute will refer to the
+# filepath within the tarball, making the __repr__ unusable. We work around
+# this by replacing the tzfile by a gettz call, as the filename matches the
+# timezone identifier.
+#
+# We detect the bogus tzfile __repr__ by checking if the path is absolute. If
+# the path is not absolute, we are in the tarball case.
+
+RE_FIX_TZ_FILE = re.compile(r"tzfile\('([^/][^']*)'\)")
+
+
 @given(strategies.objects())
 def test_repr(objtype_and_obj):
     """Checks every model object has a working repr(), and that it can be eval()uated
@@ -92,10 +105,13 @@ def test_repr(objtype_and_obj):
     env = {
         "tzutc": lambda: datetime.timezone.utc,
         "tzfile": dateutil.tz.tzfile,
+        "gettz": dateutil.tz.gettz,
         "hash_to_bytes": hash_to_bytes,
         **swh.model.swhids.__dict__,
         **swh.model.model.__dict__,
     }
+    # replace bogus tzfile __repr__ on the fly
+    r = RE_FIX_TZ_FILE.sub(r"gettz('\1')", r)
     assert eval(r, env) == obj
 
 
