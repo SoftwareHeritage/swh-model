@@ -17,7 +17,7 @@ from swh.model.from_disk import (
     Content,
     DentryPerms,
     Directory,
-    DiskBackedContent,
+    DiskBackedData,
     FromDiskType,
 )
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
@@ -67,10 +67,10 @@ class TestDiskBackedContent(unittest.TestCase):
             blake2s256=b"qux",
         )
         with tempfile.NamedTemporaryFile(mode="w+b") as fd:
-            content = DiskBackedContent(
+            content = model.Content(
                 length=42,
                 status="visible",
-                path=fd.name,
+                get_data=DiskBackedData(path=fd.name),
                 sha1=b"foo",
                 sha1_git=b"bar",
                 sha256=b"baz",
@@ -86,10 +86,10 @@ class TestDiskBackedContent(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode="w+b") as fd:
             fd.write(b"foo")
             fd.seek(0)
-            content = DiskBackedContent(
+            content = model.Content(
                 length=42,
                 status="visible",
-                path=fd.name,
+                get_data=DiskBackedData(path=fd.name),
                 sha1=b"foo",
                 sha1_git=b"bar",
                 sha256=b"baz",
@@ -105,10 +105,10 @@ class TestDiskBackedContent(unittest.TestCase):
 
     def test_with_data_cannot_read(self):
         with tempfile.NamedTemporaryFile(mode="w+b") as fd:
-            content = DiskBackedContent(
+            content = model.Content(
                 length=42,
                 status="visible",
-                path=fd.name,
+                get_data=DiskBackedData(path=fd.name),
                 sha1=b"foo",
                 sha1_git=b"bar",
                 sha256=b"baz",
@@ -119,8 +119,8 @@ class TestDiskBackedContent(unittest.TestCase):
             content.with_data()
 
     def test_missing_path(self):
-        with pytest.raises(TypeError):
-            DiskBackedContent(
+        with pytest.raises(model.MissingData):
+            c = model.Content(
                 length=42,
                 status="visible",
                 sha1=b"foo",
@@ -128,17 +128,19 @@ class TestDiskBackedContent(unittest.TestCase):
                 sha256=b"baz",
                 blake2s256=b"qux",
             )
+            c.with_data()
 
-        with pytest.raises(TypeError):
-            DiskBackedContent(
+        with pytest.raises(model.MissingData):
+            c = model.Content(
                 length=42,
                 status="visible",
-                path=None,
+                get_data=lambda: None,
                 sha1=b"foo",
                 sha1_git=b"bar",
                 sha256=b"baz",
                 blake2s256=b"qux",
             )
+            c.with_data()
 
 
 class DataMixin:
@@ -632,9 +634,9 @@ class FileToContent(DataMixin, unittest.TestCase):
                 right.pop(key, None)
             assert model_content.with_data() == model.Content.from_dict(right)
 
-            right["path"] = path
+            right["get_data"] = DiskBackedData(path=path)
             del right["data"]
-            assert model_content == DiskBackedContent.from_dict(right)
+            assert model_content == model.Content.from_dict(right)
 
     def test_special_to_content_model(self):
         for filename in self.specials:

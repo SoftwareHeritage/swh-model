@@ -10,7 +10,6 @@ filesystem, and convert them to in-memory data structures, which can then
 be exported to SWH data model objects, as defined in :mod:`swh.model.model`.
 """
 
-import datetime
 import enum
 import fnmatch
 import glob
@@ -33,7 +32,6 @@ from typing import (
 import warnings
 
 import attr
-from attrs_strict import type_validator
 from typing_extensions import Final
 
 from . import model
@@ -68,47 +66,12 @@ class FromDiskType(enum.Enum):
 
 
 @attr.s(frozen=True, slots=True)
-class DiskBackedContent(model.BaseContent):
-    """Content-like class, which allows lazy-loading data from the disk."""
+class DiskBackedData:
+    path = attr.ib(type=bytes)
 
-    object_type: Final = "content_file"
-
-    sha1 = attr.ib(type=bytes, validator=type_validator())
-    sha1_git = attr.ib(type=model.Sha1Git, validator=type_validator())
-    sha256 = attr.ib(type=bytes, validator=type_validator())
-    blake2s256 = attr.ib(type=bytes, validator=type_validator())
-
-    length = attr.ib(type=int, validator=type_validator())
-
-    status = attr.ib(
-        type=str,
-        validator=attr.validators.in_(["visible", "hidden"]),
-        default="visible",
-    )
-
-    ctime = attr.ib(
-        type=Optional[datetime.datetime],
-        validator=type_validator(),
-        default=None,
-        eq=False,
-    )
-
-    path = attr.ib(type=Optional[bytes], default=None)
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(**d)
-
-    def __attrs_post_init__(self):
-        if self.path is None:
-            raise TypeError("path must not be None.")
-
-    def with_data(self) -> model.Content:
-        args = self.to_dict()
-        del args["path"]
-        assert self.path is not None
+    def __call__(self) -> bytes:
         with open(self.path, "rb") as fd:
-            return model.Content.from_dict({**args, "data": fd.read()})
+            return fd.read()
 
 
 class DentryPerms(enum.IntEnum):
@@ -265,14 +228,12 @@ class Content(MerkleLeaf):
         """Builds a `model.BaseContent` object based on this leaf."""
         data = self.get_data().copy()
         data.pop("perms", None)
+        path = data.pop("path", None)
         if data["status"] == "absent":
-            data.pop("path", None)
             return model.SkippedContent.from_dict(data)
-        elif "data" in data:
-            data.pop("path", None)
-            return model.Content.from_dict(data)
-        else:
-            return DiskBackedContent.from_dict(data)
+        elif "data" not in data:
+            data["get_data"] = DiskBackedData(path=path)
+        return model.Content.from_dict(data)
 
 
 def accept_all_directories(
@@ -436,7 +397,7 @@ def iter_directory(
                 # FIXME: read the data from disk later (when the
                 # storage buffer is flushed).
                 #
-                c_obj = cast(Union[model.Content, DiskBackedContent], obj)
+                c_obj = cast(model.Content, obj)
                 contents.append(c_obj.with_data())
         else:
             raise TypeError(f"Unexpected object type from disk: {obj}")

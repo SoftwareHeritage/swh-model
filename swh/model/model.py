@@ -20,7 +20,18 @@ import collections
 import datetime
 from enum import Enum
 import hashlib
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import attr
 from attr._make import _AndValidator
@@ -1442,6 +1453,11 @@ class Content(BaseContent):
     )
 
     data = attr.ib(type=Optional[bytes], validator=generic_type_validator, default=None)
+    get_data = attr.ib(
+        type=Optional[Callable[[], bytes]],
+        default=None,
+        cmp=False,
+    )
 
     ctime = attr.ib(
         type=Optional[datetime.datetime],
@@ -1467,11 +1483,10 @@ class Content(BaseContent):
                 raise ValueError("ctime must be a timezone-aware datetime.")
 
     def to_dict(self):
-        content = super().to_dict()
-        if content["data"] is None:
-            del content["data"]
-        if content["ctime"] is None:
-            del content["ctime"]
+        content = super(Content, self.with_data()).to_dict()
+        for k in ("get_data", "data", "ctime"):
+            if content[k] is None:
+                del content[k]
         return content
 
     @classmethod
@@ -1499,9 +1514,14 @@ class Content(BaseContent):
 
         This call is almost a no-op, but subclasses may overload this method
         to lazy-load data (eg. from disk or objstorage)."""
-        if self.data is None:
-            raise MissingData("Content data is None.")
-        return self
+        if self.data is not None:
+            return self
+        new_data = None
+        if self.get_data is not None:
+            new_data = self.get_data()
+        if new_data is None:
+            raise MissingData("Content data and get_data are both None.")
+        return attr.evolve(self, data=new_data, get_data=None)
 
     def unique_key(self) -> KeyType:
         return self.sha1  # TODO: use a dict of hashes
