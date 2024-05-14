@@ -43,7 +43,7 @@ from .swhids import CoreSWHID
 from .swhids import ObjectType as SWHIDType
 
 
-class FromDiskType(enum.Enum):
+class FromDiskType(model._StringCompatibleEnum):
     """Possible object types for "from disk" object."""
 
     CONTENT = "content"

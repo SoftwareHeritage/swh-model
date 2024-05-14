@@ -15,7 +15,7 @@ All classes define a ``from_dict`` class method and a ``to_dict``
 method to convert between them and msgpack-serializable objects.
 """
 
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import collections
 import datetime
 from enum import Enum
@@ -352,6 +352,46 @@ ModelType = TypeVar("ModelType", bound="BaseModel")
 HashableModelType = TypeVar("HashableModelType", bound="BaseHashableModel")
 
 
+class _StringCompatibleEnum(Enum):
+    def __eq__(self, other):
+        # stay compatible with legacy string comparison (for now)
+        if isinstance(other, str):
+            # note: we should issue deprecation warning at some point
+            return self.value == other
+        return super().__eq__(other)
+
+    def __str__(self):
+        # preserve interpolation property (for now)
+        return self.value
+
+    def __hash__(self):
+        # make sure we don't confuse dictionary key matching (for now)
+        return hash(str(self.value))
+
+
+class ModelObjectType(_StringCompatibleEnum):
+    """Possible object types of Model object"""
+
+    CONTENT = "content"
+    DIRECTORY = "directory"
+    DIRECTORY_ENTRY = "directory_entry"
+    EXTID = "extid"
+    METADATA_AUTHORITY = "metadata_authority"
+    METADATA_FETCHER = "metadata_fetcher"
+    ORIGIN = "origin"
+    ORIGIN_VISIT = "origin_visit"
+    ORIGIN_VISIT_STATUS = "origin_visit_status"
+    PERSON = "person"
+    RAW_EXTRINSIC_METADATA = "raw_extrinsic_metadata"
+    RELEASE = "release"
+    REVISION = "revision"
+    SKIPPED_CONTENT = "skipped_content"
+    SNAPSHOT = "snapshot"
+    SNAPSHOT_BRANCH = "snapshot_branch"
+    TIMESTAMP = "timestamp"
+    TIMESTAMP_WITH_TIMEZONE = "timestamp_with_timezone"
+
+
 class BaseModel(ABC):
     """Base class for SWH model classes.
 
@@ -362,7 +402,7 @@ class BaseModel(ABC):
 
     @property
     @abstractmethod
-    def object_type(self) -> str:
+    def object_type(self) -> ModelObjectType:
         # Some juggling to please mypy
         #
         # Note: starting from Python 3.11 we can combine @property with
@@ -407,7 +447,7 @@ def _compute_hash_from_manifest(manifest: bytes) -> Sha1Git:
     return hashlib.new("sha1", manifest).digest()
 
 
-class BaseHashableModel(BaseModel, metaclass=ABCMeta):
+class BaseHashableModel(BaseModel, ABC):
     """Mixin to automatically compute object identifier hash when
     the associated model is instantiated."""
 
@@ -505,7 +545,7 @@ class HashableObjectWithManifest(BaseHashableModel):
 class Person(BaseModel):
     """Represents the author/committer of a revision or release."""
 
-    object_type: Final = "person"
+    object_type: Final = ModelObjectType.PERSON
 
     fullname = attr.ib(type=bytes, validator=generic_type_validator)
     name = attr.ib(type=Optional[bytes], validator=generic_type_validator, eq=False)
@@ -587,7 +627,7 @@ class Person(BaseModel):
 class Timestamp(BaseModel):
     """Represents a naive timestamp from a VCS."""
 
-    object_type: Final = "timestamp"
+    object_type: Final = ModelObjectType.TIMESTAMP
 
     seconds = attr.ib(type=int)
     microseconds = attr.ib(type=int)
@@ -613,7 +653,7 @@ class Timestamp(BaseModel):
 class TimestampWithTimezone(BaseModel):
     """Represents a TZ-aware timestamp from a VCS."""
 
-    object_type: Final = "timestamp_with_timezone"
+    object_type: Final = ModelObjectType.TIMESTAMP_WITH_TIMEZONE
 
     timestamp = attr.ib(type=Timestamp, validator=generic_type_validator)
 
@@ -810,7 +850,7 @@ class TimestampWithTimezone(BaseModel):
 class Origin(BaseHashableModel):
     """Represents a software source: a VCS and an URL."""
 
-    object_type: Final = "origin"
+    object_type: Final = ModelObjectType.ORIGIN
 
     url = attr.ib(type=str, validator=generic_type_validator)
 
@@ -848,7 +888,7 @@ class OriginVisit(BaseModel):
     """Represents an origin visit with a given type at a given point in time, by a
     SWH loader."""
 
-    object_type: Final = "origin_visit"
+    object_type: Final = ModelObjectType.ORIGIN_VISIT
 
     origin = attr.ib(type=str, validator=generic_type_validator)
     date = attr.ib(type=datetime.datetime)
@@ -880,7 +920,7 @@ class OriginVisit(BaseModel):
 class OriginVisitStatus(BaseModel):
     """Represents a visit update of an origin at a given point in time."""
 
-    object_type: Final = "origin_visit_status"
+    object_type: Final = ModelObjectType.ORIGIN_VISIT_STATUS
 
     origin = attr.ib(type=str, validator=generic_type_validator)
     visit = attr.ib(type=int, validator=generic_type_validator)
@@ -956,7 +996,7 @@ class ObjectType(Enum):
 class SnapshotBranch(BaseModel):
     """Represents one of the branches of a snapshot."""
 
-    object_type: Final = "snapshot_branch"
+    object_type: Final = ModelObjectType.SNAPSHOT_BRANCH
 
     target = attr.ib(type=bytes, repr=hash_repr)
     target_type = attr.ib(type=TargetType, validator=generic_type_validator)
@@ -989,7 +1029,7 @@ class SnapshotBranch(BaseModel):
 class Snapshot(BaseHashableModel):
     """Represents the full state of an origin at a given point in time."""
 
-    object_type: Final = "snapshot"
+    object_type: Final = ModelObjectType.SNAPSHOT
 
     branches = attr.ib(
         type=ImmutableDict[bytes, Optional[SnapshotBranch]],
@@ -1023,7 +1063,7 @@ class Snapshot(BaseHashableModel):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Release(HashableObjectWithManifest, BaseModel):
-    object_type: Final = "release"
+    object_type: Final = ModelObjectType.RELEASE
 
     name = attr.ib(type=bytes, validator=generic_type_validator)
     message = attr.ib(type=Optional[bytes], validator=generic_type_validator)
@@ -1115,7 +1155,7 @@ def tuplify_extra_headers(value: Iterable):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Revision(HashableObjectWithManifest, BaseModel):
-    object_type: Final = "revision"
+    object_type: Final = ModelObjectType.REVISION
 
     message = attr.ib(type=Optional[bytes], validator=generic_type_validator)
     author = attr.ib(type=Optional[Person], validator=generic_type_validator)
@@ -1249,7 +1289,7 @@ _DIR_ENTRY_TYPES = ["file", "dir", "rev"]
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class DirectoryEntry(BaseModel):
-    object_type: Final = "directory_entry"
+    object_type: Final = ModelObjectType.DIRECTORY_ENTRY
 
     name = attr.ib(type=bytes)
     type = attr.ib(type=str, validator=attr.validators.in_(_DIR_ENTRY_TYPES))
@@ -1280,7 +1320,7 @@ class DirectoryEntry(BaseModel):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Directory(HashableObjectWithManifest, BaseModel):
-    object_type: Final = "directory"
+    object_type: Final = ModelObjectType.DIRECTORY
 
     entries = attr.ib(type=Tuple[DirectoryEntry, ...], validator=generic_type_validator)
     id = attr.ib(
@@ -1437,7 +1477,7 @@ class BaseContent(BaseModel, ABC):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Content(BaseContent):
-    object_type: Final[str] = "content"
+    object_type: Final = ModelObjectType.CONTENT
 
     sha1 = attr.ib(type=bytes, validator=generic_type_validator, repr=hash_repr)
     sha1_git = attr.ib(type=Sha1Git, validator=generic_type_validator, repr=hash_repr)
@@ -1533,7 +1573,7 @@ class Content(BaseContent):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class SkippedContent(BaseContent):
-    object_type: Final = "skipped_content"
+    object_type: Final = ModelObjectType.SKIPPED_CONTENT
 
     sha1 = attr.ib(
         type=Optional[bytes], validator=generic_type_validator, repr=hash_repr
@@ -1646,7 +1686,7 @@ class MetadataAuthority(BaseModel):
     """Represents an entity that provides metadata about an origin or
     software artifact."""
 
-    object_type: Final = "metadata_authority"
+    object_type: Final = ModelObjectType.METADATA_AUTHORITY
 
     type = attr.ib(type=MetadataAuthorityType, validator=generic_type_validator)
     url = attr.ib(type=str, validator=generic_type_validator)
@@ -1680,7 +1720,7 @@ class MetadataFetcher(BaseModel):
     """Represents a software component used to fetch metadata from a metadata
     authority, and ingest them into the Software Heritage archive."""
 
-    object_type: Final = "metadata_fetcher"
+    object_type: Final = ModelObjectType.METADATA_FETCHER
 
     name = attr.ib(type=str, validator=generic_type_validator)
     version = attr.ib(type=str, validator=generic_type_validator)
@@ -1714,7 +1754,7 @@ def normalize_discovery_date(value: Any) -> datetime.datetime:
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class RawExtrinsicMetadata(BaseHashableModel):
-    object_type: Final = "raw_extrinsic_metadata"
+    object_type: Final = ModelObjectType.RAW_EXTRINSIC_METADATA
 
     # target object
     target = attr.ib(type=ExtendedSWHID, validator=generic_type_validator)
@@ -1960,7 +2000,7 @@ class RawExtrinsicMetadata(BaseHashableModel):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class ExtID(BaseHashableModel):
-    object_type: Final = "extid"
+    object_type: Final = ModelObjectType.EXTID
 
     extid_type = attr.ib(type=str, validator=generic_type_validator)
     extid = attr.ib(type=bytes, validator=generic_type_validator)
