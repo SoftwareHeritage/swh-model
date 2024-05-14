@@ -15,7 +15,7 @@ All classes define a ``from_dict`` class method and a ``to_dict``
 method to convert between them and msgpack-serializable objects.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 import collections
 import datetime
 from enum import Enum
@@ -341,13 +341,22 @@ ModelType = TypeVar("ModelType", bound="BaseModel")
 HashableModelType = TypeVar("HashableModelType", bound="BaseHashableModel")
 
 
-class BaseModel:
+class BaseModel(ABC):
     """Base class for SWH model classes.
 
     Provides serialization/deserialization to/from Python dictionaries,
     that are suitable for JSON/msgpack-like formats."""
 
     __slots__ = ()
+
+    @property
+    @abstractmethod
+    def object_type(self) -> str:
+        # Some juggling to please mypy
+        #
+        # Note: starting from Python 3.11 we can combine @property with
+        # @classmethod which is the real intend here.
+        raise NotImplementedError
 
     def to_dict(self):
         """Wrapper of `attr.asdict` that can be overridden by subclasses
@@ -1380,7 +1389,7 @@ class Directory(HashableObjectWithManifest, BaseModel):
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
-class BaseContent(BaseModel):
+class BaseContent(BaseModel, ABC):
     status = attr.ib(
         type=str, validator=attr.validators.in_(["visible", "hidden", "absent"])
     )
@@ -1417,7 +1426,7 @@ class BaseContent(BaseModel):
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Content(BaseContent):
-    object_type: Final = "content"
+    object_type: Final[str] = "content"
 
     sha1 = attr.ib(type=bytes, validator=generic_type_validator, repr=hash_repr)
     sha1_git = attr.ib(type=Sha1Git, validator=generic_type_validator, repr=hash_repr)

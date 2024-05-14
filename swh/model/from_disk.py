@@ -27,6 +27,8 @@ from typing import (
     Optional,
     Pattern,
     Tuple,
+    Union,
+    cast,
 )
 import warnings
 
@@ -385,7 +387,7 @@ def ignore_directories_patterns(root_path: bytes, patterns: Iterable[bytes]):
 
 
 def iter_directory(
-    directory,
+    directory: "Directory",
 ) -> Tuple[List[model.Content], List[model.SkippedContent], List[model.Directory]]:
     """Return the directory listing from a disk-memory directory instance.
 
@@ -400,18 +402,19 @@ def iter_directory(
     skipped_contents: List[model.SkippedContent] = []
     directories: List[model.Directory] = []
 
-    for obj in directory.iter_tree():
-        obj = obj.to_model()
-        obj_type = obj.object_type
-        if obj_type in (model.Content.object_type, DiskBackedContent.object_type):
-            # FIXME: read the data from disk later (when the
-            # storage buffer is flushed).
-            obj = obj.with_data()
-            contents.append(obj)
-        elif obj_type == model.SkippedContent.object_type:
-            skipped_contents.append(obj)
-        elif obj_type == model.Directory.object_type:
-            directories.append(obj)
+    for i_obj in directory.iter_tree():
+        if isinstance(i_obj, Directory):
+            directories.append(i_obj.to_model())
+        elif isinstance(i_obj, Content):
+            obj = i_obj.to_model()
+            if isinstance(obj, model.SkippedContent):
+                skipped_contents.append(obj)
+            else:
+                # FIXME: read the data from disk later (when the
+                # storage buffer is flushed).
+                #
+                c_obj = cast(Union[model.Content, DiskBackedContent], obj)
+                contents.append(c_obj.with_data())
         else:
             raise TypeError(f"Unexpected object type from disk: {obj}")
 
@@ -517,6 +520,17 @@ class Directory(MerkleNode):
         super().__init__(data=data)
         self.__entries = None
         self.__model_object = None
+
+    # note: the overwrite could probably be done by parametrysing the
+    # MerkelNode type, but that is a much bigger rework than the series
+    # introducting this change.
+    def iter_tree(self, dedup=True) -> Iterator[Union["Directory", "Content"]]:
+        """Yields all children nodes, recursively. Common nodes are deduplicated
+        by default (deduplication can be turned off setting the given argument
+        'dedup' to False).
+        """
+        tree = super().iter_tree(dedup=dedup)
+        yield from cast(Iterator[Union["Directory", "Content"]], tree)
 
     def invalidate_hash(self):
         self.__entries = None

@@ -1717,12 +1717,18 @@ def test_object_type_is_final():
     def check_final(cls):
         if cls in checked_classes:
             return
+
         checked_classes.add(cls)
-        if hasattr(cls, "object_type"):
+        obj_type = sentinel = object()
+        obj_type = getattr(cls, "object_type", sentinel)
+        if getattr(obj_type, "__isabstractmethod__", False):
+            obj_type = sentinel
+        if obj_type is sentinel:
+            assert cls.__subclasses__()
+        else:
+            assert not cls.__subclasses__()
             assert cls.object_type not in object_types
             object_types.add(cls.object_type)
-        if cls.__subclasses__():
-            assert not hasattr(cls, "object_type")
         for subcls in cls.__subclasses__():
             check_final(subcls)
 
