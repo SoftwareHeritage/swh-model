@@ -32,6 +32,7 @@ from typing import (
 import warnings
 
 import attr
+from deprecated import deprecated
 from typing_extensions import Final
 
 from . import model
@@ -63,6 +64,16 @@ class FromDiskType(model._StringCompatibleEnum):
     def __hash__(self):
         # make sure we don't confuse dictionary key matching (for now)
         return hash(str(self.value))
+
+
+# There is an handful of other module that test for
+# DiskBackedContent.object_type in conjunction of Content.object_type, give
+# them a hand to let them handle compatibility in a smoother way.
+#
+# Remove this compatibility trick once this user have been migrated
+DiskBackedContent = deprecated(
+    version="v6.13.0", reason="Use model.Content.object_type instead"
+)(model.Content)
 
 
 @attr.s(frozen=True, slots=True)
