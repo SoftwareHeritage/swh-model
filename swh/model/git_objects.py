@@ -381,14 +381,14 @@ def revision_git_object(revision: Union[Dict, model.Revision]) -> bytes:
     return format_git_object_from_headers("commit", headers, revision.message)
 
 
-def target_type_to_git(target_type: model.ObjectType) -> bytes:
+def target_type_to_git(target_type: model.ReleaseTargetType) -> bytes:
     """Convert a software heritage target type to a git object type"""
     return {
-        model.ObjectType.CONTENT: b"blob",
-        model.ObjectType.DIRECTORY: b"tree",
-        model.ObjectType.REVISION: b"commit",
-        model.ObjectType.RELEASE: b"tag",
-        model.ObjectType.SNAPSHOT: b"refs",
+        model.ReleaseTargetType.CONTENT: b"blob",
+        model.ReleaseTargetType.DIRECTORY: b"tree",
+        model.ReleaseTargetType.REVISION: b"commit",
+        model.ReleaseTargetType.RELEASE: b"tag",
+        model.ReleaseTargetType.SNAPSHOT: b"refs",
     }[target_type]
 
 

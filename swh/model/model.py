@@ -40,6 +40,7 @@ from attr._make import _AndValidator
 from attr.validators import and_
 from attrs_strict import AttributeTypeError
 import dateutil.parser
+from deprecated import deprecated
 import iso8601
 from typing_extensions import Final
 
@@ -981,7 +982,7 @@ class TargetType(Enum):
         return f"TargetType.{self.name}"
 
 
-class ObjectType(Enum):
+class ReleaseTargetType(Enum):
     """The type of content pointed to by a release. Usually a revision"""
 
     CONTENT = "content"
@@ -991,7 +992,12 @@ class ObjectType(Enum):
     SNAPSHOT = "snapshot"
 
     def __repr__(self):
-        return f"ObjectType.{self.name}"
+        return f"ReleaseTargetType.{self.name}"
+
+
+ObjectType = deprecated(version="v6.13.0", reason="Use model.ReleaseTargetType")(
+    ReleaseTargetType
+)
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
@@ -1072,7 +1078,7 @@ class Release(HashableObjectWithManifest, BaseModel):
     target = attr.ib(
         type=Optional[Sha1Git], validator=generic_type_validator, repr=hash_repr
     )
-    target_type = attr.ib(type=ObjectType, validator=generic_type_validator)
+    target_type = attr.ib(type=ReleaseTargetType, validator=generic_type_validator)
     synthetic = attr.ib(type=bool, validator=generic_type_validator)
     author = attr.ib(
         type=Optional[Person], validator=generic_type_validator, default=None
@@ -1115,7 +1121,7 @@ class Release(HashableObjectWithManifest, BaseModel):
             d["author"] = Person.from_dict(d["author"])
         if d.get("date"):
             d["date"] = TimestampWithTimezone.from_dict(d["date"])
-        return cls(target_type=ObjectType(d.pop("target_type")), **d)
+        return cls(target_type=ReleaseTargetType(d.pop("target_type")), **d)
 
     def swhid(self) -> CoreSWHID:
         """Returns a SWHID representing this object."""
