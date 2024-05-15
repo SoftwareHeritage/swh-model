@@ -490,7 +490,7 @@ QUALIFIED_SWHIDS = [
         QualifiedSWHID(
             object_type=ObjectType.CONTENT,
             object_id=_x(HASH),
-            origin="https://example.org/foo%3Bbar%25baz",
+            origin="https://example.org/foo;bar%baz",
         ),
     ),
     (
@@ -607,15 +607,15 @@ def test_QualifiedSWHID_parse_serialize_qualifiers(string, parsed):
         assert str(parsed) == string
 
 
-def test_QualifiedSWHID_serialize_origin():
+def test_QualifiedSWHID_deserialize_origin_extra_escapes():
     """Checks that semicolon in origins are escaped."""
     string = f"swh:1:cnt:{HASH};origin=https://example.org/foo%3Bbar%25baz"
     swhid = QualifiedSWHID(
         object_type=ObjectType.CONTENT,
         object_id=_x(HASH),
-        origin="https://example.org/foo;bar%25baz",
+        origin="https://example.org/foo;bar%baz",
     )
-    assert str(swhid) == string
+    assert QualifiedSWHID.from_string(string) == swhid
 
 
 def test_QualifiedSWHID_attributes():

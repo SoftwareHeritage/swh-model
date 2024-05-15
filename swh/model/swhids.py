@@ -322,14 +322,14 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
             )
 
     def qualifiers(self) -> Dict[str, str]:
+        """Returns URL-escaped qualifiers of this SWHID, for use in serialization"""
         origin = self.origin
         if origin:
             unescaped_origin = origin
+            origin = origin.replace("%", "%25")
             origin = origin.replace(";", "%3B")
-            assert urllib.parse.unquote_to_bytes(
-                origin
-            ) == urllib.parse.unquote_to_bytes(
-                unescaped_origin
+            assert (
+                urllib.parse.unquote(origin) == unescaped_origin
             ), "Escaping ';' in the origin qualifier corrupted the origin URL."
 
         d: Dict[str, Optional[str]] = {
@@ -377,6 +377,9 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
                 "Invalid qualifier(s): %(qualifiers)s",
                 params={"qualifiers": ", ".join(invalid_qualifiers)},
             )
+        if "origin" in qualifiers:
+            qualifiers["origin"] = urllib.parse.unquote(qualifiers["origin"])
+
         try:
             return QualifiedSWHID(**parts, **qualifiers)
         except ValueError as e:
