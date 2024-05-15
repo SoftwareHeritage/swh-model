@@ -967,7 +967,7 @@ class OriginVisitStatus(BaseModel):
         return CoreSWHID(object_type=SwhidObjectType.SNAPSHOT, object_id=self.snapshot)
 
 
-class TargetType(Enum):
+class SnapshotTargetType(Enum):
     """The type of content pointed to by a snapshot branch. Usually a
     revision or an alias."""
 
@@ -979,7 +979,12 @@ class TargetType(Enum):
     ALIAS = "alias"
 
     def __repr__(self):
-        return f"TargetType.{self.name}"
+        return f"SnapshotTargetType.{self.name}"
+
+
+TargetType = deprecated(version="v6.13.0", reason="Use model.SnapshotTargetType")(
+    SnapshotTargetType
+)
 
 
 class ReleaseTargetType(Enum):
@@ -1007,7 +1012,7 @@ class SnapshotBranch(BaseModel):
     object_type: Final = ModelObjectType.SNAPSHOT_BRANCH
 
     target = attr.ib(type=bytes, repr=hash_repr)
-    target_type = attr.ib(type=TargetType, validator=generic_type_validator)
+    target_type = attr.ib(type=SnapshotTargetType, validator=generic_type_validator)
 
     @target.validator
     def check_target(self, attribute, value):
@@ -1015,18 +1020,18 @@ class SnapshotBranch(BaseModel):
         valid sha1_git."""
         if value.__class__ is not bytes:
             raise AttributeTypeError(value, attribute)
-        if self.target_type != TargetType.ALIAS and self.target is not None:
+        if self.target_type != SnapshotTargetType.ALIAS and self.target is not None:
             if len(value) != 20:
                 raise ValueError("Wrong length for bytes identifier: %d" % len(value))
 
     @classmethod
     def from_dict(cls, d):
-        return cls(target=d["target"], target_type=TargetType(d["target_type"]))
+        return cls(target=d["target"], target_type=SnapshotTargetType(d["target_type"]))
 
     def swhid(self) -> Optional[CoreSWHID]:
         """Returns a SWHID for the current branch or None if the branch has no
         target or is an alias."""
-        if self.target is None or self.target_type == TargetType.ALIAS:
+        if self.target is None or self.target_type == SnapshotTargetType.ALIAS:
             return None
         return CoreSWHID(
             object_id=self.target, object_type=SwhidObjectType[self.target_type.name]

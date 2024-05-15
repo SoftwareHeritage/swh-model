@@ -485,7 +485,7 @@ def snapshot_git_object(
         if not target:
             target_type = b"dangling"
             target_id = b""
-        elif target.target_type == model.TargetType.ALIAS:
+        elif target.target_type == model.SnapshotTargetType.ALIAS:
             target_type = b"alias"
             target_id = target.target
             if target_id not in snapshot.branches or target_id == name:

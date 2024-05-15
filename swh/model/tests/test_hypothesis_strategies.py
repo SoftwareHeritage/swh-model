@@ -20,7 +20,7 @@ from swh.model.hypothesis_strategies import (
     skipped_contents,
     snapshots,
 )
-from swh.model.model import TargetType
+from swh.model.model import SnapshotTargetType
 
 target_types = ("content", "directory", "revision", "release", "snapshot", "alias")
 all_but_skipped_content = (
@@ -174,7 +174,7 @@ def test_snapshots_strategy(snapshot):
     # check snapshot integrity
     for name, branch in branches.items():
         assert branch is None or branch.target_type.value in target_types
-        if branch is not None and branch.target_type == TargetType.ALIAS:
+        if branch is not None and branch.target_type == SnapshotTargetType.ALIAS:
             aliases.append(name)
             assert branch.target in branches
 
@@ -184,7 +184,7 @@ def test_snapshots_strategy(snapshot):
         current_alias = alias
         while (
             branches[current_alias] is not None
-            and branches[current_alias].target_type == TargetType.ALIAS
+            and branches[current_alias].target_type == SnapshotTargetType.ALIAS
         ):
             assert branches[current_alias].target not in processed_alias
             processed_alias.add(current_alias)

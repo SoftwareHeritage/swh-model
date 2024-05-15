@@ -42,7 +42,7 @@ from swh.model.model import (
     SkippedContent,
     Snapshot,
     SnapshotBranch,
-    TargetType,
+    SnapshotTargetType,
     Timestamp,
     TimestampWithTimezone,
     optimized_validator,
@@ -287,8 +287,8 @@ _TYPE_VALIDATOR_PARAMETERS: List[Tuple[Any, List[Any], List[Any]]] = [
     ),
     # enums:
     (
-        TargetType,
-        [TargetType.CONTENT, TargetType.ALIAS],
+        SnapshotTargetType,
+        [SnapshotTargetType.CONTENT, SnapshotTargetType.ALIAS],
         ["content", "alias", 123, None],
     ),
 ]
@@ -1666,7 +1666,7 @@ def test_snapshot_evolve(snapshot):
         **snapshot.branches,
         longest_branch_name
         + b"x": SnapshotBranch(
-            target_type=TargetType.RELEASE,
+            target_type=SnapshotTargetType.RELEASE,
             target=b"\x00" * 20,
         ),
     }

@@ -30,7 +30,7 @@ from swh.model.model import (
     SkippedContent,
     Snapshot,
     SnapshotBranch,
-    TargetType,
+    SnapshotTargetType,
     Timestamp,
     TimestampWithTimezone,
 )
@@ -357,7 +357,7 @@ SNAPSHOTS = [
         id=hash_to_bytes("9e78d7105c5e0f886487511e2a92377b4ee4c32a"),
         branches={
             b"master": SnapshotBranch(
-                target_type=TargetType.REVISION, target=REVISIONS[0].id
+                target_type=SnapshotTargetType.REVISION, target=REVISIONS[0].id
             )
         },
     ),
@@ -365,21 +365,21 @@ SNAPSHOTS = [
         id=hash_to_bytes("0e7f84ede9a254f2cd55649ad5240783f557e65f"),
         branches={
             b"target/revision": SnapshotBranch(
-                target_type=TargetType.REVISION,
+                target_type=SnapshotTargetType.REVISION,
                 target=REVISIONS[0].id,
             ),
             b"target/alias": SnapshotBranch(
-                target_type=TargetType.ALIAS, target=b"target/revision"
+                target_type=SnapshotTargetType.ALIAS, target=b"target/revision"
             ),
             b"target/directory": SnapshotBranch(
-                target_type=TargetType.DIRECTORY,
+                target_type=SnapshotTargetType.DIRECTORY,
                 target=DIRECTORIES[0].id,
             ),
             b"target/release": SnapshotBranch(
-                target_type=TargetType.RELEASE, target=RELEASES[0].id
+                target_type=SnapshotTargetType.RELEASE, target=RELEASES[0].id
             ),
             b"target/snapshot": SnapshotBranch(
-                target_type=TargetType.SNAPSHOT,
+                target_type=SnapshotTargetType.SNAPSHOT,
                 target=hash_to_bytes("9e78d7105c5e0f886487511e2a92377b4ee4c32a"),
             ),
         },

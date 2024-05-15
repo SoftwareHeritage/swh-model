@@ -7,6 +7,7 @@ import datetime
 import string
 from typing import Sequence
 
+from deprecated import deprecated
 from hypothesis import assume
 from hypothesis.extra.dateutil import timezones
 from hypothesis.strategies import (
@@ -49,7 +50,7 @@ from .model import (
     SkippedContent,
     Snapshot,
     SnapshotBranch,
-    TargetType,
+    SnapshotTargetType,
     Timestamp,
     TimestampWithTimezone,
 )
@@ -413,31 +414,48 @@ def branch_names():
     return binary(min_size=1)
 
 
-def branch_targets_object_d():
+def snapshot_targets_object_d():
     return builds(
         dict,
         target=sha1_git(),
         target_type=sampled_from(
-            [x.value for x in TargetType if x.value not in ("alias",)]
+            [x.value for x in SnapshotTargetType if x.value not in ("alias",)]
         ),
     )
 
 
-def branch_targets_alias_d():
+branch_targets_object_d = deprecated(
+    version="v6.13.0", reason="use snapshot_targets_object_d"
+)(snapshot_targets_object_d)
+
+
+def snapshot_targets_alias_d():
     return builds(
         dict, target=sha1_git(), target_type=just("alias")
-    )  # TargetType.ALIAS.value))
+    )  # SnapshotTargetType.ALIAS.value))
 
 
-def branch_targets_d(*, only_objects=False):
+branch_targets_alias_d = deprecated(
+    version="v6.13.0", reason="use snapshot_targets_alias_d"
+)(snapshot_targets_alias_d)
+
+
+def snapshot_targets_d(*, only_objects=False):
     if only_objects:
-        return branch_targets_object_d()
+        return snapshot_targets_object_d()
     else:
-        return one_of(branch_targets_alias_d(), branch_targets_object_d())
+        return one_of(snapshot_targets_alias_d(), snapshot_targets_object_d())
 
 
-def branch_targets(*, only_objects=False):
-    return builds(SnapshotBranch.from_dict, branch_targets_d(only_objects=only_objects))
+branch_targets_d = deprecated(version="v6.13.0", reason="use snapshot_targets_d")(
+    snapshot_targets_d
+)
+
+
+def snapshot_targets(*, only_objects=False):
+    return builds(
+        SnapshotBranch.from_dict, snapshot_targets_d(only_objects=only_objects)
+    )
 
 
 @composite
@@ -445,7 +463,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
     branches = draw(
         dictionaries(
             keys=branch_names(),
-            values=optional(branch_targets_d(only_objects=only_objects)),
+            values=optional(snapshot_targets_d(only_objects=only_objects)),
             min_size=min_size,
             max_size=max_size,
         )
@@ -466,7 +484,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
             # Override alias branch with one pointing to a real object
             # if max_size constraint is reached
             alias = alias_target if len(branches) < max_size else alias_name
-            branches[alias] = draw(branch_targets_d(only_objects=True))
+            branches[alias] = draw(snapshot_targets_d(only_objects=True))
 
     # Ensure no cycles between aliases
     while True:
@@ -480,7 +498,7 @@ def snapshots_d(draw, *, min_size=0, max_size=100, only_objects=False):
             )
         except ValueError as e:
             for source, target in e.args[1]:
-                branches[source] = draw(branch_targets_d(only_objects=True))
+                branches[source] = draw(snapshot_targets_d(only_objects=True))
         else:
             break
 
