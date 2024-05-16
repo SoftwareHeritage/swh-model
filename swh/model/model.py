@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 The Software Heritage developers
+# Copyright (C) 2018-2024 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -14,6 +14,8 @@ The classes defined in this module are immutable
 All classes define a ``from_dict`` class method and a ``to_dict``
 method to convert between them and msgpack-serializable objects.
 """
+
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import collections
@@ -590,7 +592,7 @@ class Person(BaseModel):
             fullname=fullname,
         )
 
-    def anonymize(self) -> "Person":
+    def anonymize(self) -> Person:
         """Returns an anonymized version of the Person object.
 
         Anonymization is simply a Person which fullname is the hashed, with unset name
@@ -669,7 +671,7 @@ class TimestampWithTimezone(BaseModel):
     @classmethod
     def from_numeric_offset(
         cls, timestamp: Timestamp, offset: int, negative_utc: bool
-    ) -> "TimestampWithTimezone":
+    ) -> TimestampWithTimezone:
         """Returns a :class:`TimestampWithTimezone` instance from the old dictionary
         format (with ``offset`` and ``negative_utc`` instead of ``offset_bytes``).
         """
@@ -683,7 +685,7 @@ class TimestampWithTimezone(BaseModel):
     @classmethod
     def from_dict(
         cls, time_representation: Union[Dict, datetime.datetime, int]
-    ) -> "TimestampWithTimezone":
+    ) -> TimestampWithTimezone:
         """Builds a TimestampWithTimezone from any of the formats
         accepted by :func:`swh.model.normalize_timestamp`."""
         # TODO: this accept way more types than just dicts; find a better
@@ -747,7 +749,7 @@ class TimestampWithTimezone(BaseModel):
             )
 
     @classmethod
-    def from_datetime(cls, dt: datetime.datetime) -> "TimestampWithTimezone":
+    def from_datetime(cls, dt: datetime.datetime) -> TimestampWithTimezone:
         return cls.from_dict(dt)
 
     def to_datetime(self) -> datetime.datetime:
@@ -1127,7 +1129,7 @@ class Release(HashableObjectWithManifest, BaseModel):
             object_id=self.target, object_type=SwhidObjectType[self.target_type.name]
         )
 
-    def anonymize(self) -> "Release":
+    def anonymize(self) -> Release:
         """Returns an anonymized version of the Release object.
 
         Anonymization consists in replacing the author with an anonymized Person object.
@@ -1271,7 +1273,7 @@ class Revision(HashableObjectWithManifest, BaseModel):
             for parent in self.parents
         ]
 
-    def anonymize(self) -> "Revision":
+    def anonymize(self) -> Revision:
         """Returns an anonymized version of the Revision object.
 
         Anonymization consists in replacing the author and committer with an anonymized
@@ -1530,7 +1532,7 @@ class Content(BaseContent):
         return content
 
     @classmethod
-    def from_data(cls, data, status="visible", ctime=None) -> "Content":
+    def from_data(cls, data, status="visible", ctime=None) -> Content:
         """Generate a Content from a given `data` byte string.
 
         This populates the Content with the hashes and length for the data
@@ -1548,7 +1550,7 @@ class Content(BaseContent):
             d["ctime"] = dateutil.parser.parse(d["ctime"])
         return super().from_dict(d, use_subclass=False)
 
-    def with_data(self, raise_if_missing: bool = True) -> "Content":
+    def with_data(self, raise_if_missing: bool = True) -> Content:
         """Loads the ``data`` attribute if ``get_data`` is not :const:`None`.
 
         This call is almost a no-op, but subclasses may overload this method
@@ -1643,7 +1645,7 @@ class SkippedContent(BaseContent):
     @classmethod
     def from_data(
         cls, data: bytes, reason: str, ctime: Optional[datetime.datetime] = None
-    ) -> "SkippedContent":
+    ) -> SkippedContent:
         """Generate a SkippedContent from a given `data` byte string.
 
         This populates the SkippedContent with the hashes and length for the
