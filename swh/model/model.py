@@ -1396,9 +1396,9 @@ class Directory(HashableObjectWithManifest, BaseModel):
             raw_manifest = git_objects.directory_git_object(invalid_directory)
 
         # 2. look for duplicated entries:
-        entries_by_name: Dict[
-            bytes, Dict[str, List[DirectoryEntry]]
-        ] = collections.defaultdict(lambda: collections.defaultdict(list))
+        entries_by_name: Dict[bytes, Dict[str, List[DirectoryEntry]]] = (
+            collections.defaultdict(lambda: collections.defaultdict(list))
+        )
         for entry in entries:
             entries_by_name[entry.name][entry.type].append(entry)
 
@@ -1523,7 +1523,7 @@ class Content(BaseContent):
                 raise ValueError("ctime must be a timezone-aware datetime.")
 
     def to_dict(self):
-        content = super(Content, self.with_data()).to_dict()
+        content = super(Content, self.with_data(raise_if_missing=False)).to_dict()
         for k in ("get_data", "data", "ctime"):
             if content[k] is None:
                 del content[k]
@@ -1548,18 +1548,22 @@ class Content(BaseContent):
             d["ctime"] = dateutil.parser.parse(d["ctime"])
         return super().from_dict(d, use_subclass=False)
 
-    def with_data(self) -> "Content":
-        """Loads the `data` attribute; meaning that it is guaranteed not to
-        be None after this call.
+    def with_data(self, raise_if_missing: bool = True) -> "Content":
+        """Loads the ``data`` attribute if ``get_data`` is not :const:`None`.
 
         This call is almost a no-op, but subclasses may overload this method
-        to lazy-load data (eg. from disk or objstorage)."""
+        to lazy-load data (eg. from disk or objstorage).
+
+        Args:
+            raise_if_missing: if :const:`True` (default), raise :class:`MissingData`
+                exception if no data is attached to content object
+        """
         if self.data is not None:
             return self
         new_data = None
         if self.get_data is not None:
             new_data = self.get_data()
-        if new_data is None:
+        if new_data is None and raise_if_missing:
             raise MissingData("Content data and get_data are both None.")
         return attr.evolve(self, data=new_data, get_data=None)
 

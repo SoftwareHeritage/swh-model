@@ -79,8 +79,10 @@ class TestDiskBackedContent(unittest.TestCase):
             fd.write(b"foo bar")
             fd.seek(0)
             content_with_data = content.with_data()
+            assert content.to_dict() == content_with_data.to_dict()
 
         assert expected_content == content_with_data
+        assert expected_content.to_dict() == content_with_data.to_dict()
 
     def test_lazy_data(self):
         with tempfile.NamedTemporaryFile(mode="w+b") as fd:

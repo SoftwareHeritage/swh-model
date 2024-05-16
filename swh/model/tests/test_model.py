@@ -814,6 +814,15 @@ def test_content_data():
         blake2s256=b"qux",
     )
     assert c.with_data() == c
+    assert c.to_dict() == {
+        "sha1": b"foo",
+        "sha1_git": b"bar",
+        "sha256": b"baz",
+        "blake2s256": b"qux",
+        "length": 42,
+        "status": "visible",
+        "data": b"foo",
+    }
 
 
 def test_content_data_missing():
@@ -827,6 +836,15 @@ def test_content_data_missing():
     )
     with pytest.raises(MissingData):
         c.with_data()
+
+    assert c.to_dict() == {
+        "sha1": b"foo",
+        "sha1_git": b"bar",
+        "sha256": b"baz",
+        "blake2s256": b"qux",
+        "length": 42,
+        "status": "visible",
+    }
 
 
 @given(strategies.present_contents_d())
