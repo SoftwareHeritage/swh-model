@@ -1409,9 +1409,9 @@ class Directory(HashableObjectWithManifest, BaseModel):
             raw_manifest = git_objects.directory_git_object(invalid_directory)
 
         # 2. look for duplicated entries:
-        entries_by_name: Dict[bytes, Dict[str, List[DirectoryEntry]]] = (
-            collections.defaultdict(lambda: collections.defaultdict(list))
-        )
+        entries_by_name: Dict[
+            bytes, Dict[str, List[DirectoryEntry]]
+        ] = collections.defaultdict(lambda: collections.defaultdict(list))
         for entry in entries:
             entries_by_name[entry.name][entry.type].append(entry)
 
