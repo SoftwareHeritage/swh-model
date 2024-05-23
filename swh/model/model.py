@@ -34,6 +34,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 import attr
 from attr._make import _AndValidator
@@ -359,7 +360,11 @@ class _StringCompatibleEnum(Enum):
     def __eq__(self, other):
         # stay compatible with legacy string comparison (for now)
         if isinstance(other, str):
-            # note: we should issue deprecation warning at some point
+            warnings.warn(
+                "Use the enum value instead of string",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
             return self.value == other
         return super().__eq__(other)
 
