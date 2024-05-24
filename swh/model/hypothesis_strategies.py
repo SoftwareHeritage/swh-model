@@ -38,13 +38,13 @@ from .model import (
     DirectoryEntry,
     MetadataAuthority,
     MetadataFetcher,
-    ObjectType,
     Origin,
     OriginVisit,
     OriginVisitStatus,
     Person,
     RawExtrinsicMetadata,
     Release,
+    ReleaseTargetType,
     Revision,
     RevisionType,
     SkippedContent,
@@ -224,7 +224,7 @@ def origin_visit_statuses(**kwargs):
 @composite
 def releases_d(draw, **kwargs):
     defaults = dict(
-        target_type=sampled_from([x.value for x in ObjectType]),
+        target_type=sampled_from([x.value for x in ReleaseTargetType]),
         name=binary(),
         message=optional(binary()),
         synthetic=booleans(),
