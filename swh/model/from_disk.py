@@ -71,9 +71,9 @@ class FromDiskType(model._StringCompatibleEnum):
 # them a hand to let them handle compatibility in a smoother way.
 #
 # Remove this compatibility trick once this user have been migrated
-DiskBackedContent = deprecated(
-    version="v6.13.0", reason="Use model.Content.object_type instead"
-)(model.Content)
+@deprecated(version="v6.13.0", reason="Use model.Content.object_type instead")
+def DiskBackedContent(*args, **kwargs):
+    return model.Content(*args, **kwargs)
 
 
 @attr.s(frozen=True, slots=True)
