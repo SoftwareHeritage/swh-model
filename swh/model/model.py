@@ -41,7 +41,6 @@ from attr._make import _AndValidator
 from attr.validators import and_
 from attrs_strict import AttributeTypeError
 import dateutil.parser
-from deprecated import deprecated
 import iso8601
 from typing_extensions import Final
 
@@ -987,9 +986,10 @@ class SnapshotTargetType(Enum):
         return f"SnapshotTargetType.{self.name}"
 
 
-TargetType = deprecated(version="v6.13.0", reason="Use model.SnapshotTargetType")(
-    SnapshotTargetType
-)
+# Remove this compatibility trick once all user have been migrated.
+#
+# We cannot use @deprecated as this would modify SnapshotTargetType directly
+TargetType = SnapshotTargetType
 
 
 class ReleaseTargetType(Enum):
@@ -1005,9 +1005,10 @@ class ReleaseTargetType(Enum):
         return f"ReleaseTargetType.{self.name}"
 
 
-ObjectType = deprecated(version="v6.13.0", reason="Use model.ReleaseTargetType")(
-    ReleaseTargetType
-)
+# Remove this compatibility trick once all user have been migrated.
+#
+# We cannot use @deprecated as this would modify SnapshotTargetType directly
+ObjectType = ReleaseTargetType
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
