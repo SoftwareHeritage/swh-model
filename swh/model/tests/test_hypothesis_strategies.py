@@ -81,7 +81,7 @@ def assert_nested_dict(obj):
 def test_dicts_generation(obj_type_and_obj):
     (obj_type, object_) = obj_type_and_obj
     assert_nested_dict(object_)
-    if obj_type == "content":
+    if obj_type == ModelObjectType.CONTENT:
         COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {"length", "status", "ctime"}
         if object_["status"] == "visible":
             assert set(object_) <= COMMON_KEYS | {"data"}
@@ -91,9 +91,9 @@ def test_dicts_generation(obj_type_and_obj):
             assert set(object_) <= COMMON_KEYS | {"data"}
         else:
             assert False, object_
-    elif obj_type == "release":
+    elif obj_type == ModelObjectType.RELEASE:
         assert object_["target_type"] in target_types
-    elif obj_type == "snapshot":
+    elif obj_type == ModelObjectType.SNAPSHOT:
         for branch in object_["branches"].values():
             assert branch is None or branch["target_type"] in target_types
 
@@ -109,22 +109,28 @@ def test_datetimes(dt):
 @given(object_dicts(split_content=False))
 def test_dicts_generation_merged_content(obj_type_and_obj):
     # we should never generate a "skipped_content" here
-    assert obj_type_and_obj[0] != "skipped_content"
+    assert obj_type_and_obj[0] != ModelObjectType.SKIPPED_CONTENT
+
+
+@given(object_dicts(split_content=True, blacklist_types=all_but_skipped_content))
+def test_dicts_generation_split_content(obj_type_and_obj):
+    # we should only generate "skipped_content"
+    assert obj_type_and_obj[0] == ModelObjectType.SKIPPED_CONTENT
 
 
 @given(
     object_dicts(
-        split_content=True, blacklist_types={e.value for e in all_but_skipped_content}
+        blacklist_types={
+            ModelObjectType.CONTENT,
+            ModelObjectType.RELEASE,
+        }
     )
 )
-def test_dicts_generation_split_content(obj_type_and_obj):
-    # we should only generate "skipped_content"
-    assert obj_type_and_obj[0] == "skipped_content"
-
-
-@given(object_dicts(blacklist_types=("release", "content")))
 def test_dicts_generation_blacklist(obj_type_and_obj):
-    assert obj_type_and_obj[0] not in ("release", "content")
+    assert obj_type_and_obj[0] not in {
+        ModelObjectType.CONTENT,
+        ModelObjectType.RELEASE,
+    }
 
 
 @given(objects())

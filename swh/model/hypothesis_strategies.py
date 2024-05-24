@@ -598,7 +598,9 @@ def objects(
     return one_of(*candidates)
 
 
-def object_dicts(blacklist_types=("origin_visit_status",), split_content=False):
+def object_dicts(
+    blacklist_types=(ModelObjectType.ORIGIN_VISIT_STATUS,), split_content=False
+):
     """generates a random couple (type, dict)
 
     which dict is suitable for <ModelForType>.from_dict() factory methods.
@@ -610,20 +612,20 @@ def object_dicts(blacklist_types=("origin_visit_status",), split_content=False):
 
     """
     strategies = [
-        ("origin", origins_d),
-        ("origin_visit", origin_visits_d),
-        ("origin_visit_status", origin_visit_statuses_d),
-        ("snapshot", snapshots_d),
-        ("release", releases_d),
-        ("revision", revisions_d),
-        ("directory", directories_d),
-        ("raw_extrinsic_metadata", raw_extrinsic_metadata_d),
+        (ModelObjectType.ORIGIN, origins_d),
+        (ModelObjectType.ORIGIN_VISIT, origin_visits_d),
+        (ModelObjectType.ORIGIN_VISIT_STATUS, origin_visit_statuses_d),
+        (ModelObjectType.SNAPSHOT, snapshots_d),
+        (ModelObjectType.RELEASE, releases_d),
+        (ModelObjectType.REVISION, revisions_d),
+        (ModelObjectType.DIRECTORY, directories_d),
+        (ModelObjectType.RAW_EXTRINSIC_METADATA, raw_extrinsic_metadata_d),
     ]
     if split_content:
-        strategies.append(("content", present_contents_d))
-        strategies.append(("skipped_content", skipped_contents_d))
+        strategies.append((ModelObjectType.CONTENT, present_contents_d))
+        strategies.append((ModelObjectType.SKIPPED_CONTENT, skipped_contents_d))
     else:
-        strategies.append(("content", contents_d))
+        strategies.append((ModelObjectType.CONTENT, contents_d))
     args = [
         obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
         for (obj_type, obj_gen) in strategies
