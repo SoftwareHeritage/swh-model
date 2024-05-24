@@ -390,13 +390,13 @@ def test_anonymization(objtype_and_obj):
             assert len(p.fullname) == 32
 
     anon_obj = obj.anonymize()
-    if obj_type == "person":
+    if obj_type == ModelObjectType.PERSON:
         assert anon_obj is not None
         check_person(anon_obj)
-    elif obj_type == "release":
+    elif obj_type == ModelObjectType.RELEASE:
         assert anon_obj is not None
         check_person(anon_obj.author)
-    elif obj_type == "revision":
+    elif obj_type == ModelObjectType.REVISION:
         assert anon_obj is not None
         check_person(anon_obj.author)
         check_person(anon_obj.committer)
