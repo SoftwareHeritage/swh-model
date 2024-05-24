@@ -718,45 +718,52 @@ class SnapshotIdentifier(unittest.TestCase):
     def setUp(self):
         super().setUp()
 
-        self.empty = {
-            "id": _x("1a8893e6a86f444e8be8e7bda6cb34fb1735a00e"),
-            "branches": {},
-        }
+        self.empty = Snapshot.from_dict(
+            {
+                "id": _x("1a8893e6a86f444e8be8e7bda6cb34fb1735a00e"),
+                "branches": {},
+            }
+        )
 
-        self.dangling_branch = {
-            "id": _x("c84502e821eb21ed84e9fd3ec40973abc8b32353"),
-            "branches": {
-                b"HEAD": None,
-            },
-        }
-
-        self.unresolved = {
-            "id": _x("84b4548ea486e4b0a7933fa541ff1503a0afe1e0"),
-            "branches": {
-                b"foo": {
-                    "target": b"bar",
-                    "target_type": "alias",
+        self.dangling_branch = Snapshot.from_dict(
+            {
+                "id": _x("c84502e821eb21ed84e9fd3ec40973abc8b32353"),
+                "branches": {
+                    b"HEAD": None,
                 },
-            },
-        }
+            }
+        )
+
+        self.unresolved = Snapshot.from_dict(
+            {
+                "id": _x("84b4548ea486e4b0a7933fa541ff1503a0afe1e0"),
+                "branches": {
+                    b"foo": {
+                        "target": b"bar",
+                        "target_type": "alias",
+                    },
+                },
+            }
+        )
 
         self.all_types = snapshot_example
 
     def test_empty_snapshot(self):
         self.assertEqual(
-            Snapshot.from_dict(remove_id(self.empty)).id,
-            self.empty["id"],
+            Snapshot.from_dict(remove_id(self.empty.to_dict())).id,
+            self.empty.id,
         )
 
     def test_dangling_branch(self):
         self.assertEqual(
-            Snapshot.from_dict(remove_id(self.dangling_branch)).id,
-            self.dangling_branch["id"],
+            Snapshot.from_dict(remove_id(self.dangling_branch.to_dict())).id,
+            self.dangling_branch.id,
         )
 
     def test_unresolved(self):
         self.assertEqual(
-            Snapshot.from_dict(remove_id(self.unresolved)).id, self.unresolved["id"]
+            Snapshot.from_dict(remove_id(self.unresolved.to_dict())).id,
+            self.unresolved.id,
         )
 
     def test_git_object_unresolved(self):
