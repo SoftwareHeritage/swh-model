@@ -44,8 +44,8 @@ def test_ensure_visit_status_date_consistency():
     parameters from the origin-visit {origin, visit, date}...
 
     """
-    visits = TEST_OBJECTS["origin_visit"]
-    visit_statuses = TEST_OBJECTS["origin_visit_status"]
+    visits = TEST_OBJECTS[ModelObjectType.ORIGIN_VISIT]
+    visit_statuses = TEST_OBJECTS[ModelObjectType.ORIGIN_VISIT_STATUS]
     for visit, visit_status in zip(visits, visit_statuses):
         assert visit.origin == visit_status.origin
         assert visit.visit == visit_status.visit
