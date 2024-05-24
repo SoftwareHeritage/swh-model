@@ -54,7 +54,7 @@ def test_ensure_visit_status_date_consistency():
 
 def test_ensure_visit_status_snapshot_consistency():
     """ensure origin-visit-status snapshots exist in the test dataset"""
-    snapshots = [snp.id for snp in TEST_OBJECTS["snapshot"]]
-    for visit_status in TEST_OBJECTS["origin_visit_status"]:
+    snapshots = [snp.id for snp in TEST_OBJECTS[ModelObjectType.SNAPSHOT]]
+    for visit_status in TEST_OBJECTS[ModelObjectType.ORIGIN_VISIT_STATUS]:
         if visit_status.snapshot:
             assert visit_status.snapshot in snapshots
