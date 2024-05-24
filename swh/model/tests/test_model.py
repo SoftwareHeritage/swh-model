@@ -32,6 +32,7 @@ from swh.model.model import (
     MetadataAuthorityType,
     MetadataFetcher,
     MissingData,
+    ModelObjectType,
     Origin,
     OriginVisit,
     OriginVisitStatus,
@@ -63,12 +64,17 @@ from swh.model.tests.test_identifiers import (
 EXAMPLE_HASH = hash_to_bytes("94a9ed024d3859793618152ea559a168bbcbb5e2")
 
 
-@given(strategies.objects())
+@given(
+    strategies.objects(
+        blacklist_types={
+            ModelObjectType.ORIGIN,
+            ModelObjectType.ORIGIN_VISIT,
+            ModelObjectType.ORIGIN_VISIT_STATUS,
+        }
+    )
+)
 def test_todict_inverse_fromdict(objtype_and_obj):
     (obj_type, obj) = objtype_and_obj
-
-    if obj_type in ("origin", "origin_visit"):
-        return
 
     obj_as_dict = obj.to_dict()
     obj_as_dict_copy = copy.deepcopy(obj_as_dict)
