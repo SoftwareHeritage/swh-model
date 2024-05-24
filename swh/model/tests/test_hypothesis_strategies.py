@@ -20,20 +20,12 @@ from swh.model.hypothesis_strategies import (
     skipped_contents,
     snapshots,
 )
-from swh.model.model import SnapshotTargetType
+from swh.model.model import ModelObjectType, SnapshotTargetType
 
 target_types = ("content", "directory", "revision", "release", "snapshot", "alias")
-all_but_skipped_content = (
-    "origin",
-    "origin_visit",
-    "origin_visit_status",
-    "snapshot",
-    "release",
-    "revision",
-    "directory",
-    "content",
-    "raw_extrinsic_metadata",
-)
+all_but_skipped_content = {
+    o_t for o_t in ModelObjectType if o_t != ModelObjectType.SKIPPED_CONTENT
+}
 
 
 @given(objects(blacklist_types=()))
@@ -45,18 +37,28 @@ def test_generation(obj_type_and_obj):
 @given(objects(split_content=False))
 def test_generation_merged_content(obj_type_and_obj):
     # we should never generate a "skipped_content" here
-    assert obj_type_and_obj[0] != "skipped_content"
+    assert obj_type_and_obj[0] != ModelObjectType.SKIPPED_CONTENT
 
 
 @given(objects(split_content=True, blacklist_types=all_but_skipped_content))
 def test_generation_split_content(obj_type_and_obj):
     # we should only generate "skipped_content"
-    assert obj_type_and_obj[0] == "skipped_content"
+    assert obj_type_and_obj[0] == ModelObjectType.SKIPPED_CONTENT
 
 
-@given(objects(blacklist_types=("origin_visit", "directory")))
+@given(
+    objects(
+        blacklist_types={
+            ModelObjectType.DIRECTORY,
+            ModelObjectType.ORIGIN_VISIT,
+        }
+    )
+)
 def test_generation_blacklist(obj_type_and_obj):
-    assert obj_type_and_obj[0] not in ("origin_visit", "directory")
+    assert obj_type_and_obj[0] not in {
+        ModelObjectType.DIRECTORY,
+        ModelObjectType.ORIGIN_VISIT,
+    }
 
 
 def assert_nested_dict(obj):
@@ -110,7 +112,11 @@ def test_dicts_generation_merged_content(obj_type_and_obj):
     assert obj_type_and_obj[0] != "skipped_content"
 
 
-@given(object_dicts(split_content=True, blacklist_types=all_but_skipped_content))
+@given(
+    object_dicts(
+        split_content=True, blacklist_types={e.value for e in all_but_skipped_content}
+    )
+)
 def test_dicts_generation_split_content(obj_type_and_obj):
     # we should only generate "skipped_content"
     assert obj_type_and_obj[0] == "skipped_content"
@@ -127,7 +133,7 @@ def test_model_to_dicts(obj_type_and_obj):
     object_type = object_.object_type
     obj_dict = object_.to_dict()
     assert_nested_dict(obj_dict)
-    if object_type in ("content", "skipped_content"):
+    if object_type in {ModelObjectType.CONTENT, ModelObjectType.SKIPPED_CONTENT}:
         COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {"length", "status"}
         if object_.ctime is not None:
             COMMON_KEYS |= {"ctime"}
@@ -140,9 +146,9 @@ def test_model_to_dicts(obj_type_and_obj):
             assert set(obj_dict) == COMMON_KEYS | {"data"}
         else:
             assert False, obj_dict
-    elif object_type == "release":
+    elif object_type == ModelObjectType.RELEASE:
         assert obj_dict["target_type"] in target_types
-    elif object_type == "snapshot":
+    elif object_type == ModelObjectType.RELEASE:
         for branch in obj_dict["branches"].values():
             assert branch is None or branch["target_type"] in target_types
 
