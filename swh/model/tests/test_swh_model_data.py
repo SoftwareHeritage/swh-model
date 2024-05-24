@@ -6,6 +6,7 @@
 import attr
 import pytest
 
+from swh.model.model import ModelObjectType
 from swh.model.tests.swh_model_data import TEST_OBJECTS
 
 
@@ -20,7 +21,12 @@ def test_swh_model_data(object_type, objects):
 
 @pytest.mark.parametrize(
     "object_type",
-    ("directory", "revision", "release", "snapshot"),
+    (
+        ModelObjectType.DIRECTORY,
+        ModelObjectType.REVISION,
+        ModelObjectType.RELEASE,
+        ModelObjectType.SNAPSHOT,
+    ),
 )
 def test_swh_model_data_hash(object_type):
     for obj in TEST_OBJECTS[object_type]:
