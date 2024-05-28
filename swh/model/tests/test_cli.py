@@ -96,7 +96,8 @@ class TestIdentify(DataMixin, unittest.TestCase):
         """identify symlink --- both itself and target"""
         regular = os.path.join(self.tmpdir_name, b"foo.txt")
         link = os.path.join(self.tmpdir_name, b"bar.txt")
-        open(regular, "w").write("foo\n")
+        with open(regular, "w") as f:
+            f.write("foo\n")
         os.symlink(os.path.basename(regular), link)
 
         result = self.runner.invoke(cli.identify, [link])
