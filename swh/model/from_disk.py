@@ -14,6 +14,7 @@ import enum
 import fnmatch
 import glob
 import os
+from pathlib import Path
 import re
 import stat
 from typing import (
@@ -157,14 +158,14 @@ class Content(MerkleLeaf):
         return cls(ret)
 
     @classmethod
-    def from_symlink(cls, *, path, mode):
+    def from_symlink(cls, *, path: Union[str, bytes, Path], mode):
         """Convert a symbolic link to a Software Heritage content entry"""
-        content = cls.from_bytes(mode=mode, data=os.readlink(path))
+        content = cls.from_bytes(mode=mode, data=os.readlink(os.fsencode(path)))
         content.data["path"] = path
         return content
 
     @classmethod
-    def from_file(cls, *, path, max_content_length=None):
+    def from_file(cls, *, path: Union[str, bytes, Path], max_content_length=None):
         """Compute the Software Heritage content entry corresponding to an
         on-disk file.
 
@@ -443,7 +444,7 @@ class Directory(MerkleNode):
     def from_disk(
         cls,
         *,
-        path: bytes,
+        path: Union[bytes, Path],
         path_filter: Callable[
             [bytes, bytes, Optional[List[bytes]]], bool
         ] = accept_all_paths,
@@ -474,6 +475,7 @@ class Directory(MerkleNode):
           progress_callback (Optional function): if given, returns for each
           non empty directories traversed the number of computed entries.
         """
+        path = bytes(path)
         top_path = path
         dirs: Dict[bytes, Directory] = {}
         if dir_filter is not None:
