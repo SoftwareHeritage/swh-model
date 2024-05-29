@@ -1,10 +1,11 @@
-# Copyright (C) 2017-2022 The Software Heritage developers
+# Copyright (C) 2017-2024 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
 from collections import defaultdict
 import os
+from pathlib import Path
 import tarfile
 import tempfile
 from typing import ClassVar, Optional
@@ -22,7 +23,7 @@ from swh.model.from_disk import (
 )
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
 
-TEST_DATA = os.path.join(os.path.dirname(__file__), "data")
+TEST_DATA = Path(__file__).parent / "data"
 
 
 class ModeToPerms(unittest.TestCase):
@@ -148,12 +149,12 @@ class TestDiskBackedContent(unittest.TestCase):
 class DataMixin:
     maxDiff: ClassVar[Optional[int]] = None
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.tmpdir = tempfile.TemporaryDirectory(prefix="swh.model.from_disk")
-        self.tmpdir_name = os.fsencode(self.tmpdir.name)
+        self.tmpdir_name = Path(self.tmpdir.name)
 
         self.contents = {
-            b"file": {
+            "file": {
                 "data": b"42\n",
                 "sha1": hash_to_bytes("34973274ccef6ab4dfaaf86599792fa9c3fe4689"),
                 "sha256": hash_to_bytes(
@@ -171,7 +172,7 @@ class DataMixin:
         }
 
         self.symlinks = {
-            b"symlink": {
+            "symlink": {
                 "data": b"target",
                 "blake2s256": hash_to_bytes(
                     "595d221b30fdd8e10e2fdf18376e688e"
@@ -189,7 +190,7 @@ class DataMixin:
         }
 
         self.specials = {
-            b"fifo": os.mkfifo,
+            "fifo": os.mkfifo,
         }
 
         self.empty_content = {
@@ -505,28 +506,27 @@ class DataMixin:
 
         assert left.to_model() == model.Directory.from_dict(right)
 
-    def make_contents(self, directory):
+    def make_contents(self, directory: Path) -> None:
         for filename, content in self.contents.items():
-            path = os.path.join(directory, filename)
-            with open(path, "wb") as f:
-                f.write(content["data"])
-            os.chmod(path, content["mode"])
+            path = directory / os.fsdecode(filename)
+            path.write_bytes(content["data"])  # type: ignore
+            path.chmod(content["mode"])  # type: ignore
 
-    def make_symlinks(self, directory):
+    def make_symlinks(self, directory: Path) -> None:
         for filename, symlink in self.symlinks.items():
-            path = os.path.join(directory, filename)
-            os.symlink(symlink["data"], path)
+            path = directory / os.fsdecode(filename)
+            path.symlink_to(symlink["data"])  # type: ignore
 
-    def make_specials(self, directory):
+    def make_specials(self, directory: Path) -> None:
         for filename, fn in self.specials.items():
-            path = os.path.join(directory, filename)
-            fn(path)
+            path = directory / os.fsdecode(filename)
+            fn(bytes(path))
 
-    def make_from_tarball(self, directory):
-        tarball = os.path.join(TEST_DATA, "dir-folders", "sample-folder.tgz")
+    def make_from_tarball(self, directory: Path) -> None:
+        tarball = TEST_DATA / "dir-folders" / "sample-folder.tgz"
 
         with tarfile.open(tarball, "r:gz") as f:
-            f.extractall(os.fsdecode(directory))
+            f.extractall(directory)
 
 
 class TestContent(DataMixin, unittest.TestCase):
@@ -565,7 +565,7 @@ class SymlinkToContent(DataMixin, unittest.TestCase):
 
     def test_symlink_to_content(self):
         for filename, symlink in self.symlinks.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             perms = 0o120000
             conv_content = Content.from_symlink(path=path, mode=perms)
             symlink_copy = symlink.copy()
@@ -574,7 +574,7 @@ class SymlinkToContent(DataMixin, unittest.TestCase):
 
     def test_symlink_to_base_model(self):
         for filename, symlink in self.symlinks.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             perms = 0o120000
             model_content = Content.from_symlink(path=path, mode=perms).to_model()
 
@@ -594,30 +594,30 @@ class FileToContent(DataMixin, unittest.TestCase):
 
     def test_symlink_to_content(self):
         for filename, symlink in self.symlinks.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             conv_content = Content.from_file(path=path)
             self.assertContentEqual(conv_content, symlink)
 
     def test_file_to_content(self):
         for filename, content in self.contents.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             conv_content = Content.from_file(path=path)
             self.assertContentEqual(conv_content, content)
 
     def test_special_to_content(self):
         for filename in self.specials:
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             conv_content = Content.from_file(path=path)
             self.assertContentEqual(conv_content, self.empty_content)
 
-        for path in ["/dev/null", "/dev/zero"]:
-            path = os.path.join(self.tmpdir_name, filename)
+        for path in [b"/dev/null", b"/dev/zero"]:
+            path = self.tmpdir_name / filename
             conv_content = Content.from_file(path=path)
             self.assertContentEqual(conv_content, self.empty_content)
 
     def test_symlink_to_content_model(self):
         for filename, symlink in self.symlinks.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             model_content = Content.from_file(path=path).to_model()
 
             right = symlink.copy()
@@ -628,7 +628,7 @@ class FileToContent(DataMixin, unittest.TestCase):
 
     def test_file_to_content_model(self):
         for filename, content in self.contents.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             model_content = Content.from_file(path=path).to_model()
 
             right = content.copy()
@@ -642,7 +642,7 @@ class FileToContent(DataMixin, unittest.TestCase):
 
     def test_special_to_content_model(self):
         for filename in self.specials:
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             model_content = Content.from_file(path=path).to_model()
 
             right = self.empty_content.copy()
@@ -663,7 +663,7 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_symlink_max_length(self):
         for max_content_length in [4, 10]:
             for filename, symlink in self.symlinks.items():
-                path = os.path.join(self.tmpdir_name, filename)
+                path = self.tmpdir_name / filename
                 content = Content.from_file(path=path)
                 if content.data["length"] > max_content_length:
                     with pytest.raises(Exception, match="too large"):
@@ -679,7 +679,7 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_file_max_length(self):
         for max_content_length in [2, 4]:
             for filename, content in self.contents.items():
-                path = os.path.join(self.tmpdir_name, filename)
+                path = self.tmpdir_name / filename
                 content = Content.from_file(path=path)
                 limited_content = Content.from_file(
                     path=path, max_content_length=max_content_length
@@ -695,7 +695,7 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_special_file_max_length(self):
         for max_content_length in [None, 0, 1]:
             for filename in self.specials:
-                path = os.path.join(self.tmpdir_name, filename)
+                path = self.tmpdir_name / filename
                 content = Content.from_file(path=path)
                 limited_content = Content.from_file(
                     path=path, max_content_length=max_content_length
@@ -705,7 +705,7 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_file_to_content_with_path(self):
         for filename, content in self.contents.items():
             content_w_path = content.copy()
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             content_w_path["path"] = path
             conv_content = Content.from_file(path=path)
             self.assertContentEqual(conv_content, content_w_path, check_path=True)
@@ -715,16 +715,16 @@ class FileToContent(DataMixin, unittest.TestCase):
 class DirectoryToObjects(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
-        contents = os.path.join(self.tmpdir_name, b"contents")
+        contents = self.tmpdir_name / "contents"
         os.mkdir(contents)
         self.make_contents(contents)
-        symlinks = os.path.join(self.tmpdir_name, b"symlinks")
+        symlinks = self.tmpdir_name / "symlinks"
         os.mkdir(symlinks)
         self.make_symlinks(symlinks)
-        specials = os.path.join(self.tmpdir_name, b"specials")
+        specials = self.tmpdir_name / "specials"
         os.mkdir(specials)
         self.make_specials(specials)
-        empties = os.path.join(self.tmpdir_name, b"empty1", b"empty2")
+        empties = self.tmpdir_name / "empty1" / "empty2"
         os.makedirs(empties)
 
     def check_collect(
@@ -746,14 +746,14 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         directory = Directory.from_disk(path=self.tmpdir_name)
 
         for name, value in self.contents.items():
-            self.assertContentEqual(directory[b"contents/" + name], value)
+            self.assertContentEqual(directory[b"contents/" + name.encode()], value)
 
         for name, value in self.symlinks.items():
-            self.assertContentEqual(directory[b"symlinks/" + name], value)
+            self.assertContentEqual(directory[b"symlinks/" + name.encode()], value)
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name],
+                directory[b"specials/" + name.encode()],
                 self.empty_content,
             )
 
@@ -782,14 +782,14 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         )
 
         for name, value in self.contents.items():
-            self.assertContentEqual(directory[b"contents/" + name], value)
+            self.assertContentEqual(directory[b"contents/" + name.encode()], value)
 
         for name, value in self.symlinks.items():
-            self.assertContentEqual(directory[b"symlinks/" + name], value)
+            self.assertContentEqual(directory[b"symlinks/" + name.encode()], value)
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name],
+                directory[b"specials/" + name.encode()],
                 self.empty_content,
             )
 
@@ -811,11 +811,11 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             path_filter=from_disk.ignore_named_directories([b"symlinks"]),
         )
         for name, value in self.contents.items():
-            self.assertContentEqual(directory[b"contents/" + name], value)
+            self.assertContentEqual(directory[b"contents/" + name.encode()], value)
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name],
+                directory[b"specials/" + name.encode()],
                 self.empty_content,
             )
 
@@ -841,11 +841,11 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             ),
         )
         for name, value in self.contents.items():
-            self.assertContentEqual(directory[b"contents/" + name], value)
+            self.assertContentEqual(directory[b"contents/" + name.encode()], value)
 
         for name in self.specials:
             self.assertContentEqual(
-                directory[b"specials/" + name],
+                directory[b"specials/" + name.encode()],
                 self.empty_content,
             )
 
@@ -865,10 +865,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
     def test_directory_entry_order(self):
         with tempfile.TemporaryDirectory() as dirname:
-            dirname = os.fsencode(dirname)
-            open(os.path.join(dirname, b"foo."), "a")
-            open(os.path.join(dirname, b"foo0"), "a")
-            os.mkdir(os.path.join(dirname, b"foo"))
+            dirname = Path(dirname)
+            (dirname / "foo.").touch()
+            (dirname / "foo0").touch()
+            (dirname / "foo").mkdir()
 
             directory = Directory.from_disk(path=dirname)
 
@@ -883,11 +883,11 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             return name.startswith(b"foo")
 
         with tempfile.TemporaryDirectory() as dirname:
-            dirname = os.fsencode(dirname)
-            open(os.path.join(dirname, b"foofile"), "a")
-            open(os.path.join(dirname, b"file"), "a")
-            os.mkdir(os.path.join(dirname, b"foo"))
-            os.mkdir(os.path.join(dirname, b"baz"))
+            dirname = Path(dirname)
+            (dirname / "foofile").touch()
+            (dirname / "file").touch()
+            (dirname / "foo").mkdir()
+            (dirname / "baz").mkdir()
 
             # No filters
             directory = Directory.from_disk(path=dirname)
@@ -943,9 +943,7 @@ class TarballTest(DataMixin, unittest.TestCase):
         self.make_from_tarball(self.tmpdir_name)
 
     def test_contents_match(self):
-        directory = Directory.from_disk(
-            path=os.path.join(self.tmpdir_name, b"sample-folder")
-        )
+        directory = Directory.from_disk(path=self.tmpdir_name / "sample-folder")
 
         for name, expected in self.tarball_contents.items():
             obj = directory[name]
@@ -964,9 +962,7 @@ class TarballIterDirectory(DataMixin, unittest.TestCase):
 
     def test_iter_directory(self):
         """Iter from_disk.directory should yield the full arborescence tree"""
-        directory = Directory.from_disk(
-            path=os.path.join(self.tmpdir_name, b"sample-folder")
-        )
+        directory = Directory.from_disk(path=self.tmpdir_name / "sample-folder")
 
         contents, skipped_contents, directories = from_disk.iter_directory(directory)
 

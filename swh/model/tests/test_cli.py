@@ -1,9 +1,9 @@
-# Copyright (C) 2018-2019 The Software Heritage developers
+# Copyright (C) 2018-2024 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
-import os
+from pathlib import Path
 import sys
 import tarfile
 import tempfile
@@ -37,8 +37,8 @@ class TestIdentify(DataMixin, unittest.TestCase):
         """identify file content"""
         self.make_contents(self.tmpdir_name)
         for filename, content in self.contents.items():
-            path = os.path.join(self.tmpdir_name, filename)
-            result = self.runner.invoke(cli.identify, ["--type", "content", path])
+            path = self.tmpdir_name / filename
+            result = self.runner.invoke(cli.identify, ["--type", "content", str(path)])
             self.assertSWHID(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
     def test_content_id_from_stdin(self):
@@ -51,22 +51,21 @@ class TestIdentify(DataMixin, unittest.TestCase):
     def test_directory_id(self):
         """identify an entire directory"""
         self.make_from_tarball(self.tmpdir_name)
-        path = os.path.join(self.tmpdir_name, b"sample-folder")
-        result = self.runner.invoke(cli.identify, ["--type", "directory", path])
+        path = self.tmpdir_name / "sample-folder"
+        result = self.runner.invoke(cli.identify, ["--type", "directory", str(path)])
         self.assertSWHID(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")
 
     @pytest.mark.requires_optional_deps
     def test_snapshot_id(self):
         """identify a snapshot"""
-        tarball = os.path.join(
-            os.path.dirname(__file__), "data", "repos", "sample-repo.tgz"
-        )
+        tarball = Path(__file__).parent / "data" / "repos" / "sample-repo.tgz"
         with tempfile.TemporaryDirectory(prefix="swh.model.cli") as d:
+            d = Path(d)
             with tarfile.open(tarball, "r:gz") as t:
                 t.extractall(d)
-                repo_dir = os.path.join(d, "sample-repo")
+                repo_dir = d / "sample-repo"
                 result = self.runner.invoke(
-                    cli.identify, ["--type", "snapshot", repo_dir]
+                    cli.identify, ["--type", "snapshot", str(repo_dir)]
                 )
                 self.assertSWHID(
                     result, "swh:1:snp:abc888898124270905a0ef3c67e872ce08e7e0c1"
@@ -94,38 +93,37 @@ class TestIdentify(DataMixin, unittest.TestCase):
 
     def test_symlink(self):
         """identify symlink --- both itself and target"""
-        regular = os.path.join(self.tmpdir_name, b"foo.txt")
-        link = os.path.join(self.tmpdir_name, b"bar.txt")
-        with open(regular, "w") as f:
-            f.write("foo\n")
-        os.symlink(os.path.basename(regular), link)
+        regular = self.tmpdir_name / "foo.txt"
+        link = self.tmpdir_name / "bar.txt"
+        regular.write_text("foo\n")
+        link.symlink_to(regular.name)
 
-        result = self.runner.invoke(cli.identify, [link])
+        result = self.runner.invoke(cli.identify, [str(link)])
         self.assertSWHID(result, "swh:1:cnt:257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
 
-        result = self.runner.invoke(cli.identify, ["--no-dereference", link])
+        result = self.runner.invoke(cli.identify, ["--no-dereference", str(link)])
         self.assertSWHID(result, "swh:1:cnt:996f1789ff67c0e3f69ef5933a55d54c5d0e9954")
 
     def test_show_filename(self):
         """filename is shown by default"""
         self.make_contents(self.tmpdir_name)
         for filename, content in self.contents.items():
-            path = os.path.join(self.tmpdir_name, filename)
-            result = self.runner.invoke(cli.identify, ["--type", "content", path])
+            path = self.tmpdir_name / filename
+            result = self.runner.invoke(cli.identify, ["--type", "content", str(path)])
 
             self.assertEqual(result.exit_code, 0)
             self.assertEqual(
                 result.output.rstrip(),
-                "swh:1:cnt:%s\t%s" % (hash_to_hex(content["sha1_git"]), path.decode()),
+                "swh:1:cnt:%s\t%s" % (hash_to_hex(content["sha1_git"]), path),
             )
 
     def test_hide_filename(self):
         """filename is hidden upon request"""
         self.make_contents(self.tmpdir_name)
         for filename, content in self.contents.items():
-            path = os.path.join(self.tmpdir_name, filename)
+            path = self.tmpdir_name / filename
             result = self.runner.invoke(
-                cli.identify, ["--type", "content", "--no-filename", path]
+                cli.identify, ["--type", "content", "--no-filename", str(path)]
             )
             self.assertSWHID(result, "swh:1:cnt:" + hash_to_hex(content["sha1_git"]))
 
@@ -156,36 +154,39 @@ class TestIdentify(DataMixin, unittest.TestCase):
             expected_id = "swh:1:cnt:" + hash_to_hex(content["sha1_git"])
 
             # match
-            path = os.path.join(self.tmpdir_name, filename)
-            result = self.runner.invoke(cli.identify, ["--verify", expected_id, path])
+            path = self.tmpdir_name / filename
+            result = self.runner.invoke(
+                cli.identify, ["--verify", expected_id, str(path)]
+            )
             self.assertEqual(result.exit_code, 0, result.output)
 
             # mismatch
             with open(path, "a") as f:
                 f.write("trailing garbage to make verification fail")
-            result = self.runner.invoke(cli.identify, ["--verify", expected_id, path])
+            result = self.runner.invoke(
+                cli.identify, ["--verify", expected_id, str(path)]
+            )
             self.assertEqual(result.exit_code, 1)
 
     def test_exclude(self):
         """exclude patterns"""
         self.make_from_tarball(self.tmpdir_name)
-        path = os.path.join(self.tmpdir_name, b"sample-folder")
+        path = self.tmpdir_name / "sample-folder"
 
-        excluded_dir = os.path.join(path, b"excluded_dir\x96")
-        os.mkdir(excluded_dir)
-        with open(os.path.join(excluded_dir, b"some_file"), "w") as f:
-            f.write("content")
+        excluded_dir = path / "excluded_dir\x96"
+        excluded_dir.mkdir()
+        (excluded_dir / "some_file").write_text("content")
 
         result = self.runner.invoke(
-            cli.identify, ["--type", "directory", "--exclude", "excluded_*", path]
+            cli.identify, ["--type", "directory", "--exclude", "excluded_*", str(path)]
         )
 
         self.assertSWHID(result, "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759")
 
     def test_recursive_directory(self):
         self.make_from_tarball(self.tmpdir_name)
-        path = os.path.join(self.tmpdir_name, b"sample-folder")
-        result = self.runner.invoke(cli.identify, ["--recursive", path])
+        path = self.tmpdir_name / "sample-folder"
+        result = self.runner.invoke(cli.identify, ["--recursive", str(path)])
         self.assertEqual(result.exit_code, 0, result.output)
 
         result = result.output.split()
@@ -201,9 +202,9 @@ class TestIdentify(DataMixin, unittest.TestCase):
 
     def test_recursive_directory_no_filename(self):
         self.make_from_tarball(self.tmpdir_name)
-        path = os.path.join(self.tmpdir_name, b"sample-folder")
+        path = self.tmpdir_name / "sample-folder"
         result = self.runner.invoke(
-            cli.identify, ["--recursive", "--no-filename", path]
+            cli.identify, ["--recursive", "--no-filename", str(path)]
         )
         self.assertEqual(result.exit_code, 0, result.output)
 
