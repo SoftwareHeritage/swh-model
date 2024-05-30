@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 import datetime
+import functools
 import string
 from typing import Any, Callable, List, Sequence, Set, Tuple, Union
 
@@ -548,13 +549,8 @@ def raw_extrinsic_metadata_d(**kwargs):
     return raw_extrinsic_metadata(**kwargs).map(RawExtrinsicMetadata.to_dict)
 
 
-def _tuplify(
-    object_type: ModelObjectType,
-) -> Callable[[BaseModel], Tuple[ModelObjectType, BaseModel]]:
-    def tupler(obj: BaseModel):
-        return (object_type, obj)
-
-    return tupler
+def _tuplify(object_type: ModelObjectType, obj: BaseModel):
+    return (object_type, obj)
 
 
 def objects(
@@ -591,10 +587,11 @@ def objects(
     else:
         strategies.append((ModelObjectType.CONTENT, contents))
 
-    candidates = []
-    for obj_type, obj_gen in strategies:
-        if obj_type not in blacklist_types:
-            candidates.append(obj_gen().map(_tuplify(obj_type)))
+    candidates = [
+        obj_gen().map(functools.partial(_tuplify, obj_type))
+        for (obj_type, obj_gen) in strategies
+        if obj_type not in blacklist_types
+    ]
     return one_of(*candidates)
 
 
