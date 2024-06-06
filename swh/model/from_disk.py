@@ -447,9 +447,6 @@ class Directory(MerkleNode):
         path_filter: Callable[
             [bytes, bytes, Optional[List[bytes]]], bool
         ] = accept_all_paths,
-        dir_filter: Optional[
-            Callable[[bytes, bytes, Optional[List[bytes]]], bool]
-        ] = None,
         max_content_length: Optional[int] = None,
         progress_callback: Optional[Callable[[int], None]] = None,
     ) -> "Directory":
@@ -465,10 +462,6 @@ class Directory(MerkleNode):
             for directories.
             Returns True if the path should be added, False if the
             path should be ignored.
-          dir_filter (DEPRECATED, function): a filter to ignore some directories
-            by name or contents. Takes two arguments: dirname and entries, and
-            returns True if the directory should be added, False if the
-            directory should be ignored.
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
           progress_callback (Optional function): if given, returns for each
@@ -476,17 +469,11 @@ class Directory(MerkleNode):
         """
         top_path = path
         dirs: Dict[bytes, Directory] = {}
-        if dir_filter is not None:
-            warnings.warn(
-                "`dir_filter` is deprecated. Use `path_filter` instead",
-                DeprecationWarning,
-            )
-
         for root, dentries, fentries in os.walk(top_path, topdown=False):
             entries = {}
             # Join fentries and dentries in the same processing, as symbolic
             # links to directories appear in dentries...
-            for name in fentries + dentries:
+            for name in dentries + fentries:
                 path = os.path.join(root, name)
                 if not os.path.isdir(path) or os.path.islink(path):
                     if not path_filter(path, name, None):
@@ -496,10 +483,7 @@ class Directory(MerkleNode):
                     )
                     entries[name] = content
                 else:
-                    if dir_filter is not None:
-                        if dir_filter(path, name, dirs[path].entries):
-                            entries[name] = dirs[path]
-                    elif path_filter(path, name, dirs[path].entries):
+                    if path_filter(path, name, dirs[path].entries):
                         entries[name] = dirs[path]
 
             dirs[root] = cls({"name": os.path.basename(root), "path": root})

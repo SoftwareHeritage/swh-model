@@ -905,25 +905,6 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                 b"foofile",
             ]
 
-            # Filter directories and paths (`path_filter` should take precedence)
-            with pytest.deprecated_call():
-                directory = Directory.from_disk(
-                    path=dirname, path_filter=filter_func, dir_filter=filter_func
-                )
-                assert [entry["name"] for entry in directory.entries] == [
-                    b"foo",
-                    b"foofile",
-                ]
-
-            # Test deprecated way
-            with pytest.deprecated_call():
-                directory = Directory.from_disk(path=dirname, dir_filter=filter_func)
-                assert [entry["name"] for entry in directory.entries] == [
-                    b"file",
-                    b"foo",
-                    b"foofile",
-                ]
-
     def test_directory_progress_callback(self):
         total = []
 
