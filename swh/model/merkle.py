@@ -200,7 +200,7 @@ class MerkleNode(dict, metaclass=abc.ABCMeta):
         by default (deduplication can be turned off setting the given argument
         'dedup' to False).
         """
-        yield from self._iter_tree(set(), dedup)
+        yield from self._iter_tree(seen=set(), dedup=dedup)
 
     def _iter_tree(self, seen: Set[bytes], dedup) -> Iterator[MerkleNode]:
         if self.hash not in seen:

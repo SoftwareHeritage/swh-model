@@ -806,9 +806,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         )
 
     def test_directory_to_objects_ignore_name(self):
+        pfilter = from_disk.ignore_named_directories([b"symlinks"])
         directory = Directory.from_disk(
             path=self.tmpdir_name,
-            path_filter=from_disk.ignore_named_directories([b"symlinks"]),
+            path_filter=pfilter,
         )
         for name, value in self.contents.items():
             self.assertContentEqual(directory[b"contents/" + name], value)
@@ -888,6 +889,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             open(os.path.join(dirname, b"file"), "a")
             os.mkdir(os.path.join(dirname, b"foo"))
             os.mkdir(os.path.join(dirname, b"baz"))
+            os.mkdir(os.path.join(dirname, b"foo", b"foo"))
 
             # No filters
             directory = Directory.from_disk(path=dirname)
@@ -914,7 +916,65 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
         Directory.from_disk(path=self.tmpdir_name, progress_callback=update_info)
         # Corresponds to the deeper files and directories plus the four top level ones
-        assert total == [1, 1, 1, 1, 4]
+        assert total == [4, 1, 1, 1, 1]
+
+    def test_exclude(self):
+        """exclude patterns"""
+        with tempfile.TemporaryDirectory() as dirname:
+            dirname = os.fsencode(dirname)
+            open(os.path.join(dirname, b"foofile"), "a")
+            open(os.path.join(dirname, b"file"), "a")
+            os.mkdir(os.path.join(dirname, b"foo"))
+            os.mkdir(os.path.join(dirname, b"baz"))
+            os.mkdir(os.path.join(dirname, b"foo", b"foo"))
+            os.mkdir(os.path.join(dirname, b"excluded_dir"))
+            os.mkdir(os.path.join(dirname, b"excluded_dir\x96"))
+            open(os.path.join(dirname, b"excluded_dir", b"file"), "a")
+            open(os.path.join(dirname, b"excluded_dir\x96", b"file"), "a")
+            os.mkdir(os.path.join(dirname, b"excluded_dir2"))
+            os.mkdir(os.path.join(dirname, b"excluded_dir2\x96"))
+            os.mkdir(os.path.join(dirname, b"foo", b"excluded_dir"))
+            os.mkdir(os.path.join(dirname, b"foo", b"excluded_dir2\x96"))
+
+            # no filter
+            directory = Directory.from_disk(path=dirname)
+            assert set(directory.keys()) == {
+                b"baz",
+                b"foo",
+                b"excluded_dir2\x96",
+                b"excluded_dir",
+                b"excluded_dir\x96",
+                b"excluded_dir2",
+                b"foofile",
+                b"file",
+            }
+            assert set(directory[b"foo"].keys()) == {
+                b"foo",
+                b"excluded_dir2\x96",
+                b"excluded_dir",
+            }
+            assert (
+                str(directory.swhid())
+                == "swh:1:dir:cd4dfab9b3e160a683f036841e03855929a07286"
+            )
+
+            from swh.model.from_disk import ignore_directories_patterns
+
+            exclude_patterns = [b"excluded_*"]
+            path_filter = ignore_directories_patterns(dirname, exclude_patterns)
+            directory_f = Directory.from_disk(path=dirname, path_filter=path_filter)
+            assert set(directory_f.keys()) == {b"baz", b"foo", b"foofile", b"file"}
+            # XXX should foo/excluded_dir and foo/excluded_dir2 be excluded as
+            # well? Currently they are not
+            assert set(directory_f[b"foo"].keys()) == {
+                b"foo",
+                b"excluded_dir2\x96",
+                b"excluded_dir",
+            }
+            assert (
+                str(directory_f.swhid())
+                == "swh:1:dir:adaeb949e1f09d28d334b7e360691ef9df934703"
+            )
 
 
 @pytest.mark.fs
