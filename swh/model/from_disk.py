@@ -472,29 +472,33 @@ class Directory(MerkleNode):
         dirs: Dict[bytes, Directory] = {}
         dirs[top_path] = cls({"name": os.path.basename(top_path), "path": top_path})
         filtered = []
-        for root, dentries, fentries in os.walk(top_path):
+        to_visit = [path]
+        while to_visit:
+            root = to_visit.pop()
             path, name = os.path.split(root)
-            if root != top_path and not path_filter(path, name, dentries + fentries):
-                # we should not traverse the current directory, so stop right now
-                dentries[:] = []
+            with os.scandir(root) as it:
+                entries_list = list(it)
+            if root != top_path and not path_filter(
+                path, name, [entry.path for entry in entries_list]
+            ):
+                # we should not traverse the current directory, so stop right now,
                 # but also mark it as removed (for later cleanup)
                 filtered.append(root)
                 continue
+
             entries = {}
-            # Join fentries and dentries in the same processing, as symbolic
-            # links to directories appear in dentries...
-            for name in dentries + fentries:
-                path = os.path.join(root, name)
-                if not os.path.isdir(path) or os.path.islink(path):
-                    if not path_filter(root, name, None):
+            for entry in entries_list:
+                if not entry.is_dir(follow_symlinks=False):
+                    if not path_filter(root, entry.name, None):
                         continue
                     content = Content.from_file(
-                        path=path, max_content_length=max_content_length
+                        path=entry.path, max_content_length=max_content_length
                     )
-                    entries[name] = content
+                    entries[entry.name] = content
                 else:
-                    entries[name] = cls({"name": os.path.basename(path), "path": path})
-                    dirs[path] = entries[name]
+                    entries[entry.name] = cls({"name": entry.name, "path": entry.path})
+                    dirs[entry.path] = entries[entry.name]
+                    to_visit.append(entry.path)
             dirs[root].update(entries)
 
             if progress_callback is not None:
