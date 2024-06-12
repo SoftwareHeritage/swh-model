@@ -4,6 +4,7 @@
 # See top-level LICENSE file for more information
 
 from collections import defaultdict
+from functools import partial
 import os
 from pathlib import Path
 import tarfile
@@ -24,6 +25,122 @@ from swh.model.from_disk import (
 from swh.model.hashutil import DEFAULT_ALGORITHMS, hash_to_bytes, hash_to_hex
 
 TEST_DATA = Path(__file__).parent / "data"
+
+
+def mk_tree(root: bytes, tree_desc: bytes):
+    """Create a directory tree under `root` with content generated from `tree_desc`
+
+    tree_desc is a simple textual representation of the tree structure; each
+    line is an element of the directory tree structure, a trailing '/' defines
+    a directory, otherwise it's an (empty) file; a symlink is specified with a
+    ' -> path' in the description. If the destination path starts with a slash ('/')
+    it is considered as absolute, ie. relative to the 'root' directory; e.g.
+
+      foo/bar/baz.txt
+      foo/baz/
+      foo/bar/toto -> baz.txt
+      foo/abstoto -> /foo/bar/baz.txt
+
+    will generate a directory structure like:
+
+    .
+    └── foo
+        ├── abstoto -> bar/baz.txt
+        ├── bar
+        │   ├── baz.txt
+        │   └── toto -> baz.txt
+        └── baz
+
+    The root directory must already exist.
+
+    """
+    if not os.path.isdir(root):
+        raise EnvironmentError("The root directory must exists and be writable")
+
+    symlinks = []
+    for entry in tree_desc.splitlines():
+        entry = entry.strip()
+        if not entry or entry.startswith(b"#"):
+            continue
+        entry = entry.strip().lstrip(b"/")
+        if b".." in entry:
+            raise ValueError(".. in path descr is forbidden...")
+        if b"->" in entry:
+            dst, src = entry.split(b"->")
+            symlinks.append((src.strip(), dst.strip()))
+            continue
+        path = os.path.join(root, entry)
+        if entry.endswith(b"/"):
+            os.makedirs(path, exist_ok=True)
+        else:
+            dirname = os.path.dirname(path)
+            os.makedirs(dirname, exist_ok=True)
+            open(path, "a")
+
+    # now create symlinks
+    while symlinks:
+        src, dst = symlinks.pop(0)
+        fp_dst = os.path.join(root, dst)
+        if src.startswith(b"/"):
+            rp_src = src.lstrip(b"/")
+        else:
+            rp_src = os.path.join(os.path.dirname(dst), src)
+        fp_src = os.path.join(root, rp_src)
+        if not os.path.exists(fp_src):
+            symlinks.append((src, dst))
+            continue
+        # create the parent directory of the dst, if need be
+        dirname = os.path.dirname(fp_dst)
+        os.makedirs(dirname, exist_ok=True)
+
+        rp_src = os.path.relpath(fp_src, os.path.dirname(fp_dst))
+        os.symlink(rp_src, fp_dst)
+
+
+def test_mk_tree(tmpdir):
+    desc = b"""
+      foo/bar/baz.txt
+      foo/baz/
+      foo/bar/toto -> baz.txt
+      foo/abstoto -> /foo/bar/baz.txt
+      baz/baz/baz/
+      # prefix / is ignored
+      /bar/a_file.txt
+      # symlink to a not yet defined target is ok
+      bar/baz/lnk -> /foo/bar/later.txt
+      foo/bar/later.txt
+      # symlink to another symlink is ok
+      bar/baz/lnk2 -> /foo/bar/toto
+      # even if the src of the symlink is defined after the dst
+      bar/baz/lnk3 -> /foo/bar/toto2
+      foo/bar/toto2 -> later.txt
+
+    """
+    from os.path import isdir, isfile, islink, realpath
+
+    join = partial(os.path.join, tmpdir)
+    tmpdir = os.fsencode(tmpdir)
+
+    mk_tree(tmpdir, desc)
+
+    assert isfile(join("foo/bar/baz.txt"))
+    assert isfile(join("foo/bar/later.txt"))
+    assert isfile(join("bar/a_file.txt"))
+
+    assert isdir(join("baz/baz/baz"))
+
+    assert islink(join("foo/bar/toto"))
+    assert realpath(join("foo/bar/toto")) == join("foo/bar/baz.txt")
+    assert islink(join("foo/bar/toto2"))
+    assert realpath(join("foo/bar/toto2")) == join("foo/bar/later.txt")
+    assert islink(join("foo/abstoto"))
+    assert realpath(join("foo/abstoto")) == join("foo/bar/baz.txt")
+    assert islink(join("bar/baz/lnk"))
+    assert realpath(join("bar/baz/lnk")) == join("foo/bar/later.txt")
+    assert islink(join("bar/baz/lnk2"))
+    assert realpath(join("bar/baz/lnk2")) == join("foo/bar/baz.txt")
+    assert islink(join("bar/baz/lnk3"))
+    assert realpath(join("bar/baz/lnk3")) == join("foo/bar/later.txt")
 
 
 class ModeToPerms(unittest.TestCase):
@@ -806,9 +923,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         )
 
     def test_directory_to_objects_ignore_name(self):
+        pfilter = from_disk.ignore_named_directories([b"symlinks"])
         directory = Directory.from_disk(
             path=self.tmpdir_name,
-            path_filter=from_disk.ignore_named_directories([b"symlinks"]),
+            path_filter=pfilter,
         )
         for name, value in self.contents.items():
             self.assertContentEqual(directory[b"contents/" + name.encode()], value)
@@ -865,11 +983,15 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
     def test_directory_entry_order(self):
         with tempfile.TemporaryDirectory() as dirname:
-            dirname = Path(dirname)
-            (dirname / "foo.").touch()
-            (dirname / "foo0").touch()
-            (dirname / "foo").mkdir()
-
+            dirname = os.fsencode(dirname)
+            mk_tree(
+                dirname,
+                b"""
+              /foo.
+              /foo0
+              /foo/
+            """,
+            )
             directory = Directory.from_disk(path=dirname)
 
         assert [entry["name"] for entry in directory.entries] == [
@@ -883,11 +1005,16 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             return name.startswith(b"foo")
 
         with tempfile.TemporaryDirectory() as dirname:
-            dirname = Path(dirname)
-            (dirname / "foofile").touch()
-            (dirname / "file").touch()
-            (dirname / "foo").mkdir()
-            (dirname / "baz").mkdir()
+            dirname = os.fsencode(dirname)
+            mk_tree(
+                dirname,
+                b"""
+              /foofile
+              /file
+              /foo/foo/
+              /baz/
+            """,
+            )
 
             # No filters
             directory = Directory.from_disk(path=dirname)
@@ -905,25 +1032,6 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
                 b"foofile",
             ]
 
-            # Filter directories and paths (`path_filter` should take precedence)
-            with pytest.deprecated_call():
-                directory = Directory.from_disk(
-                    path=dirname, path_filter=filter_func, dir_filter=filter_func
-                )
-                assert [entry["name"] for entry in directory.entries] == [
-                    b"foo",
-                    b"foofile",
-                ]
-
-            # Test deprecated way
-            with pytest.deprecated_call():
-                directory = Directory.from_disk(path=dirname, dir_filter=filter_func)
-                assert [entry["name"] for entry in directory.entries] == [
-                    b"file",
-                    b"foo",
-                    b"foofile",
-                ]
-
     def test_directory_progress_callback(self):
         total = []
 
@@ -933,7 +1041,67 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
         Directory.from_disk(path=self.tmpdir_name, progress_callback=update_info)
         # Corresponds to the deeper files and directories plus the four top level ones
-        assert total == [1, 1, 1, 1, 4]
+        assert total == [4, 1, 1, 1, 1]
+
+    def test_exclude(self):
+        """exclude patterns"""
+        with tempfile.TemporaryDirectory() as dirname:
+            dirname = os.fsencode(dirname)
+            mk_tree(
+                dirname,
+                b"""
+              /foofile
+              /file
+              /foo/foo/
+              /baz/
+              /excluded_dir/file
+              /excluded_dir\x96/file
+              /excluded_dir2/
+              /excluded_dir2\x96/
+              /foo/excluded_dir/
+              /foo/excluded_dir2\x96/
+            """,
+            )
+
+            # no filter
+            directory = Directory.from_disk(path=dirname)
+            assert set(directory.keys()) == {
+                b"baz",
+                b"foo",
+                b"excluded_dir2\x96",
+                b"excluded_dir",
+                b"excluded_dir\x96",
+                b"excluded_dir2",
+                b"foofile",
+                b"file",
+            }
+            assert set(directory[b"foo"].keys()) == {
+                b"foo",
+                b"excluded_dir2\x96",
+                b"excluded_dir",
+            }
+            assert (
+                str(directory.swhid())
+                == "swh:1:dir:cd4dfab9b3e160a683f036841e03855929a07286"
+            )
+
+            from swh.model.from_disk import ignore_directories_patterns
+
+            exclude_patterns = [b"excluded_*"]
+            path_filter = ignore_directories_patterns(dirname, exclude_patterns)
+            directory_f = Directory.from_disk(path=dirname, path_filter=path_filter)
+            assert set(directory_f.keys()) == {b"baz", b"foo", b"foofile", b"file"}
+            # XXX should foo/excluded_dir and foo/excluded_dir2 be excluded as
+            # well? Currently they are not
+            assert set(directory_f[b"foo"].keys()) == {
+                b"foo",
+                b"excluded_dir2\x96",
+                b"excluded_dir",
+            }
+            assert (
+                str(directory_f.swhid())
+                == "swh:1:dir:adaeb949e1f09d28d334b7e360691ef9df934703"
+            )
 
 
 @pytest.mark.fs

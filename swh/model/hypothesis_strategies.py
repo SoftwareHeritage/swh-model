@@ -4,13 +4,15 @@
 # See top-level LICENSE file for more information
 
 import datetime
+import functools
 import string
-from typing import Sequence
+from typing import Any, Callable, List, Sequence, Set, Tuple, Union
 
 from deprecated import deprecated
 from hypothesis import assume
 from hypothesis.extra.dateutil import timezones
 from hypothesis.strategies import (
+    SearchStrategy,
     binary,
     booleans,
     builds,
@@ -33,18 +35,20 @@ from hypothesis.strategies import (
 from .from_disk import DentryPerms
 from .model import (
     BaseContent,
+    BaseModel,
     Content,
     Directory,
     DirectoryEntry,
     MetadataAuthority,
     MetadataFetcher,
-    ObjectType,
+    ModelObjectType,
     Origin,
     OriginVisit,
     OriginVisitStatus,
     Person,
     RawExtrinsicMetadata,
     Release,
+    ReleaseTargetType,
     Revision,
     RevisionType,
     SkippedContent,
@@ -224,7 +228,7 @@ def origin_visit_statuses(**kwargs):
 @composite
 def releases_d(draw, **kwargs):
     defaults = dict(
-        target_type=sampled_from([x.value for x in ObjectType]),
+        target_type=sampled_from([x.value for x in ReleaseTargetType]),
         name=binary(),
         message=optional(binary()),
         synthetic=booleans(),
@@ -545,7 +549,17 @@ def raw_extrinsic_metadata_d(**kwargs):
     return raw_extrinsic_metadata(**kwargs).map(RawExtrinsicMetadata.to_dict)
 
 
-def objects(blacklist_types=("origin_visit_status",), split_content=False):
+def _tuplify(object_type: ModelObjectType, obj: BaseModel):
+    return (object_type, obj)
+
+
+def objects(
+    # remove the Union once deprecated usage have been migrated
+    blacklist_types: Union[Set[ModelObjectType] | Any] = {
+        ModelObjectType.ORIGIN_VISIT_STATUS,
+    },
+    split_content: bool = False,
+):
     """generates a random couple (type, obj)
 
     which obj is an instance of the Model class corresponding to obj_type.
@@ -555,30 +569,35 @@ def objects(blacklist_types=("origin_visit_status",), split_content=False):
     If `split_content` is True, generates Content and SkippedContent under different
     obj_type, resp. "content" and "skipped_content".
     """
-    strategies = [
-        ("origin", origins),
-        ("origin_visit", origin_visits),
-        ("origin_visit_status", origin_visit_statuses),
-        ("snapshot", snapshots),
-        ("release", releases),
-        ("revision", revisions),
-        ("directory", directories),
-        ("raw_extrinsic_metadata", raw_extrinsic_metadata),
+    strategies: List[
+        Tuple[ModelObjectType, Callable[[], SearchStrategy[BaseModel]]]
+    ] = [
+        (ModelObjectType.ORIGIN, origins),
+        (ModelObjectType.ORIGIN_VISIT, origin_visits),
+        (ModelObjectType.ORIGIN_VISIT_STATUS, origin_visit_statuses),
+        (ModelObjectType.SNAPSHOT, snapshots),
+        (ModelObjectType.RELEASE, releases),
+        (ModelObjectType.REVISION, revisions),
+        (ModelObjectType.DIRECTORY, directories),
+        (ModelObjectType.RAW_EXTRINSIC_METADATA, raw_extrinsic_metadata),
     ]
     if split_content:
-        strategies.append(("content", present_contents))
-        strategies.append(("skipped_content", skipped_contents))
+        strategies.append((ModelObjectType.CONTENT, present_contents))
+        strategies.append((ModelObjectType.SKIPPED_CONTENT, skipped_contents))
     else:
-        strategies.append(("content", contents))
-    args = [
-        obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
+        strategies.append((ModelObjectType.CONTENT, contents))
+
+    candidates = [
+        obj_gen().map(functools.partial(_tuplify, obj_type))
         for (obj_type, obj_gen) in strategies
         if obj_type not in blacklist_types
     ]
-    return one_of(*args)
+    return one_of(*candidates)
 
 
-def object_dicts(blacklist_types=("origin_visit_status",), split_content=False):
+def object_dicts(
+    blacklist_types=(ModelObjectType.ORIGIN_VISIT_STATUS,), split_content=False
+):
     """generates a random couple (type, dict)
 
     which dict is suitable for <ModelForType>.from_dict() factory methods.
@@ -590,20 +609,20 @@ def object_dicts(blacklist_types=("origin_visit_status",), split_content=False):
 
     """
     strategies = [
-        ("origin", origins_d),
-        ("origin_visit", origin_visits_d),
-        ("origin_visit_status", origin_visit_statuses_d),
-        ("snapshot", snapshots_d),
-        ("release", releases_d),
-        ("revision", revisions_d),
-        ("directory", directories_d),
-        ("raw_extrinsic_metadata", raw_extrinsic_metadata_d),
+        (ModelObjectType.ORIGIN, origins_d),
+        (ModelObjectType.ORIGIN_VISIT, origin_visits_d),
+        (ModelObjectType.ORIGIN_VISIT_STATUS, origin_visit_statuses_d),
+        (ModelObjectType.SNAPSHOT, snapshots_d),
+        (ModelObjectType.RELEASE, releases_d),
+        (ModelObjectType.REVISION, revisions_d),
+        (ModelObjectType.DIRECTORY, directories_d),
+        (ModelObjectType.RAW_EXTRINSIC_METADATA, raw_extrinsic_metadata_d),
     ]
     if split_content:
-        strategies.append(("content", present_contents_d))
-        strategies.append(("skipped_content", skipped_contents_d))
+        strategies.append((ModelObjectType.CONTENT, present_contents_d))
+        strategies.append((ModelObjectType.SKIPPED_CONTENT, skipped_contents_d))
     else:
-        strategies.append(("content", contents_d))
+        strategies.append((ModelObjectType.CONTENT, contents_d))
     args = [
         obj_gen().map(lambda x, obj_type=obj_type: (obj_type, x))
         for (obj_type, obj_gen) in strategies

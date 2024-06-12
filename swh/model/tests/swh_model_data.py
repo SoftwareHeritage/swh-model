@@ -4,7 +4,7 @@
 # See top-level LICENSE file for more information
 
 import datetime
-from typing import Dict, Sequence
+from typing import Dict, List, Sequence, cast
 
 import attr
 
@@ -18,6 +18,7 @@ from swh.model.model import (
     MetadataAuthority,
     MetadataAuthorityType,
     MetadataFetcher,
+    ModelObjectType,
     ObjectType,
     Origin,
     OriginVisit,
@@ -38,7 +39,7 @@ from swh.model.swhids import ExtendedSWHID
 
 UTC = datetime.timezone.utc
 
-CONTENTS = [
+CONTENTS: List[Content] = [
     Content(
         length=4,
         data=f"foo{i}".encode(),
@@ -56,7 +57,7 @@ CONTENTS = [
     for i in range(10)
 ]
 
-SKIPPED_CONTENTS = [
+SKIPPED_CONTENTS: List[SkippedContent] = [
     SkippedContent(
         length=4,
         status="absent",
@@ -84,12 +85,12 @@ duplicate_content2 = attr.evolve(duplicate_content1, sha1_git=bytes(sha1_array))
 DUPLICATE_CONTENTS = [duplicate_content1, duplicate_content2]
 
 
-COMMITTERS = [
+COMMITTERS: List[Person] = [
     Person(fullname=b"foo", name=b"foo", email=b""),
     Person(fullname=b"bar", name=b"bar", email=b""),
 ]
 
-DATES = [
+DATES: List[TimestampWithTimezone] = [
     TimestampWithTimezone(
         timestamp=Timestamp(
             seconds=1234567891,
@@ -106,7 +107,7 @@ DATES = [
     ),
 ]
 
-REVISIONS = [
+REVISIONS: List[Revision] = [
     Revision(
         id=hash_to_bytes("66c7c1cd9673275037140f2abff7b7b11fc9439c"),
         message=b"hello",
@@ -160,7 +161,7 @@ REVISIONS = [
     ),
 ]
 
-RELEASES = [
+RELEASES: List[Release] = [
     Release(
         id=hash_to_bytes("8059dc4e17fcd0e51ca3bcd6b80f4577d281fd08"),
         name=b"v0.0.1",
@@ -213,7 +214,7 @@ RELEASES = [
     ),
 ]
 
-ORIGINS = [
+ORIGINS: List[Origin] = [
     Origin(
         url="https://somewhere.org/den/fox",
     ),
@@ -222,7 +223,7 @@ ORIGINS = [
     ),
 ]
 
-ORIGIN_VISITS = [
+ORIGIN_VISITS: List[OriginVisit] = [
     OriginVisit(
         origin=ORIGINS[0].url,
         date=datetime.datetime(2013, 5, 7, 4, 20, 39, 369271, tzinfo=UTC),
@@ -259,7 +260,7 @@ ORIGIN_VISITS = [
 # visit dates counterpart. Otherwise, we are hitting storage-wise the "on conflict"
 # ignore policy (because origin-visit-add creates an origin-visit-status with the same
 # parameters from the origin-visit {origin, visit, date}...
-ORIGIN_VISIT_STATUSES = [
+ORIGIN_VISIT_STATUSES: List[OriginVisitStatus] = [
     OriginVisitStatus(
         origin=ORIGINS[0].url,
         date=datetime.datetime(2013, 5, 7, 4, 20, 39, 432222, tzinfo=UTC),
@@ -308,7 +309,7 @@ ORIGIN_VISIT_STATUSES = [
 ]
 
 
-DIRECTORIES = [
+DIRECTORIES: List[Directory] = [
     Directory(id=hash_to_bytes("4b825dc642cb6eb9a060e54bf8d69288fbee4904"), entries=()),
     Directory(
         id=hash_to_bytes("87b339104f7dc2a8163dec988445e3987995545f"),
@@ -352,7 +353,7 @@ DIRECTORIES = [
 ]
 
 
-SNAPSHOTS = [
+SNAPSHOTS: List[Snapshot] = [
     Snapshot(
         id=hash_to_bytes("9e78d7105c5e0f886487511e2a92377b4ee4c32a"),
         branches={
@@ -387,7 +388,7 @@ SNAPSHOTS = [
 ]
 
 
-METADATA_AUTHORITIES = [
+METADATA_AUTHORITIES: List[MetadataAuthority] = [
     MetadataAuthority(
         type=MetadataAuthorityType.FORGE,
         url="http://example.org/",
@@ -395,7 +396,7 @@ METADATA_AUTHORITIES = [
     ),
 ]
 
-METADATA_FETCHERS = [
+METADATA_FETCHERS: List[MetadataFetcher] = [
     MetadataFetcher(
         name="test-fetcher",
         version="1.0.0",
@@ -403,7 +404,7 @@ METADATA_FETCHERS = [
     )
 ]
 
-RAW_EXTRINSIC_METADATA = [
+RAW_EXTRINSIC_METADATA: List[RawExtrinsicMetadata] = [
     RawExtrinsicMetadata(
         target=Origin("http://example.org/foo.git").swhid(),
         discovery_date=datetime.datetime(2020, 7, 30, 17, 8, 20, tzinfo=UTC),
@@ -422,7 +423,7 @@ RAW_EXTRINSIC_METADATA = [
     ),
 ]
 
-EXTIDS = [
+EXTIDS: List[ExtID] = [
     ExtID(
         extid_type="git256",
         extid=b"\x03" * 32,
@@ -448,21 +449,28 @@ EXTIDS = [
     ),
 ]
 
-TEST_OBJECTS: Dict[str, Sequence[BaseModel]] = {
-    "content": CONTENTS,
-    "directory": DIRECTORIES,
-    "extid": EXTIDS,
-    "metadata_authority": METADATA_AUTHORITIES,
-    "metadata_fetcher": METADATA_FETCHERS,
-    "origin": ORIGINS,
-    "origin_visit": ORIGIN_VISITS,
-    "origin_visit_status": ORIGIN_VISIT_STATUSES,
-    "raw_extrinsic_metadata": RAW_EXTRINSIC_METADATA,
-    "release": RELEASES,
-    "revision": REVISIONS,
-    "snapshot": SNAPSHOTS,
-    "skipped_content": SKIPPED_CONTENTS,
-}
+TEST_OBJECTS: Dict[ModelObjectType, Sequence[BaseModel]] = {}
+# generate this mapping with code to avoid error
+for objects in [
+    CONTENTS,
+    DIRECTORIES,
+    EXTIDS,
+    METADATA_AUTHORITIES,
+    METADATA_FETCHERS,
+    ORIGINS,
+    ORIGIN_VISITS,
+    ORIGIN_VISIT_STATUSES,
+    RAW_EXTRINSIC_METADATA,
+    RELEASES,
+    REVISIONS,
+    SNAPSHOTS,
+    SKIPPED_CONTENTS,
+]:
+    objects = cast(List[BaseModel], objects)
+    object_type = objects[0].object_type
+    assert all(object_type == o.object_type for o in objects)
+    assert object_type not in TEST_OBJECTS
+    TEST_OBJECTS[object_type] = objects
 
 SAMPLE_FOLDER_SWHIDS = [
     "swh:1:dir:e8b0f1466af8608c8a3fb9879db172b887e80759",

@@ -6,6 +6,7 @@
 import attr
 import pytest
 
+from swh.model.model import ModelObjectType
 from swh.model.tests.swh_model_data import TEST_OBJECTS
 
 
@@ -20,7 +21,12 @@ def test_swh_model_data(object_type, objects):
 
 @pytest.mark.parametrize(
     "object_type",
-    ("directory", "revision", "release", "snapshot"),
+    (
+        ModelObjectType.DIRECTORY,
+        ModelObjectType.REVISION,
+        ModelObjectType.RELEASE,
+        ModelObjectType.SNAPSHOT,
+    ),
 )
 def test_swh_model_data_hash(object_type):
     for obj in TEST_OBJECTS[object_type]:
@@ -38,8 +44,8 @@ def test_ensure_visit_status_date_consistency():
     parameters from the origin-visit {origin, visit, date}...
 
     """
-    visits = TEST_OBJECTS["origin_visit"]
-    visit_statuses = TEST_OBJECTS["origin_visit_status"]
+    visits = TEST_OBJECTS[ModelObjectType.ORIGIN_VISIT]
+    visit_statuses = TEST_OBJECTS[ModelObjectType.ORIGIN_VISIT_STATUS]
     for visit, visit_status in zip(visits, visit_statuses):
         assert visit.origin == visit_status.origin
         assert visit.visit == visit_status.visit
@@ -48,7 +54,7 @@ def test_ensure_visit_status_date_consistency():
 
 def test_ensure_visit_status_snapshot_consistency():
     """ensure origin-visit-status snapshots exist in the test dataset"""
-    snapshots = [snp.id for snp in TEST_OBJECTS["snapshot"]]
-    for visit_status in TEST_OBJECTS["origin_visit_status"]:
+    snapshots = [snp.id for snp in TEST_OBJECTS[ModelObjectType.SNAPSHOT]]
+    for visit_status in TEST_OBJECTS[ModelObjectType.ORIGIN_VISIT_STATUS]:
         if visit_status.snapshot:
             assert visit_status.snapshot in snapshots

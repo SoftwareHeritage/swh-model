@@ -375,7 +375,7 @@ def ignore_directories_patterns(root_path: bytes, patterns: Iterable[bytes]):
         patterns: Iterable[Any] = sre_patterns,
         root_path: bytes = os.path.abspath(root_path),
     ):
-        full_path = os.path.abspath(dirpath)
+        full_path = os.path.abspath(os.path.join(dirpath, dirname))
         relative_path = os.path.relpath(full_path, root_path)
         return not any([pattern.match(relative_path) for pattern in patterns])
 
@@ -448,9 +448,6 @@ class Directory(MerkleNode):
         path_filter: Callable[
             [bytes, bytes, Optional[List[bytes]]], bool
         ] = accept_all_paths,
-        dir_filter: Optional[
-            Callable[[bytes, bytes, Optional[List[bytes]]], bool]
-        ] = None,
         max_content_length: Optional[int] = None,
         progress_callback: Optional[Callable[[int], None]] = None,
     ) -> "Directory":
@@ -466,52 +463,75 @@ class Directory(MerkleNode):
             for directories.
             Returns True if the path should be added, False if the
             path should be ignored.
-          dir_filter (DEPRECATED, function): a filter to ignore some directories
-            by name or contents. Takes two arguments: dirname and entries, and
-            returns True if the directory should be added, False if the
-            directory should be ignored.
           max_content_length (Optional[int]): if given, all contents larger
             than this will be skipped.
           progress_callback (Optional function): if given, returns for each
-          non empty directories traversed the number of computed entries.
+            non empty directories traversed the number of computed entries.
         """
         path = bytes(path)
         top_path = path
-        dirs: Dict[bytes, Directory] = {}
-        if dir_filter is not None:
-            warnings.warn(
-                "`dir_filter` is deprecated. Use `path_filter` instead",
-                DeprecationWarning,
-            )
 
-        for root, dentries, fentries in os.walk(top_path, topdown=False):
+        dirs: Dict[bytes, Directory] = {}
+        dirs[top_path] = cls({"name": os.path.basename(top_path), "path": top_path})
+        filtered = []
+        to_visit = [path]
+        while to_visit:
+            root = to_visit.pop()
+            path, name = os.path.split(root)
+            with os.scandir(root) as it:
+                entries_list = list(it)
+            if root != top_path and not path_filter(
+                path, name, [entry.path for entry in entries_list]
+            ):
+                # we should not traverse the current directory, so stop right now,
+                # but also mark it as removed (for later cleanup)
+                filtered.append(root)
+                continue
+
             entries = {}
-            # Join fentries and dentries in the same processing, as symbolic
-            # links to directories appear in dentries...
-            for name in fentries + dentries:
-                path = os.path.join(root, name)
-                if not os.path.isdir(path) or os.path.islink(path):
-                    if not path_filter(path, name, None):
+            for entry in entries_list:
+                if not entry.is_dir(follow_symlinks=False):
+                    if not path_filter(root, entry.name, None):
                         continue
                     content = Content.from_file(
-                        path=path, max_content_length=max_content_length
+                        path=entry.path, max_content_length=max_content_length
                     )
-                    entries[name] = content
+                    entries[entry.name] = content
                 else:
-                    if dir_filter is not None:
-                        if dir_filter(path, name, dirs[path].entries):
-                            entries[name] = dirs[path]
-                    elif path_filter(path, name, dirs[path].entries):
-                        entries[name] = dirs[path]
-
-            dirs[root] = cls({"name": os.path.basename(root), "path": root})
+                    entries[entry.name] = cls({"name": entry.name, "path": entry.path})
+                    dirs[entry.path] = entries[entry.name]
+                    to_visit.append(entry.path)
             dirs[root].update(entries)
 
             if progress_callback is not None:
                 if len(entries) > 0:
                     progress_callback(len(entries))
+        top_dir = dirs[top_path]
 
-        return dirs[top_path]
+        for path in reversed(filtered):
+            path = path[len(top_path) + 1 :]
+            del top_dir[path]
+        # a bit sad but now we have to traverse the gathered tree structure to
+        # filter it again (e.g. for the ignore_empty_directory filter to work
+        # recurssively)
+        todo: List[Tuple[bytes, Directory]] = [(b"", top_dir)]
+        traversal = []
+        while todo:
+            cpath, cdir = todo.pop(0)
+            traversal.append(cpath)
+            for dirname, subdir in cdir.items():
+                if subdir.object_type == FromDiskType.DIRECTORY:
+                    spath = cpath + b"/" + dirname
+                    todo.append((spath, subdir))
+        for dirpath in reversed(traversal):
+            node = top_dir[dirpath]
+            assert node.object_type == FromDiskType.DIRECTORY
+            path, name = os.path.split(dirpath)
+            if dirpath and not path_filter(path, name, list(node.keys())):
+                # should be filtered
+                del top_dir[dirpath]
+        top_dir.update_hash(force=True)
+        return top_dir
 
     def __init__(self, data=None):
         super().__init__(data=data)
