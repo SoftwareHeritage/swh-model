@@ -511,7 +511,7 @@ class Directory(MerkleNode):
             del top_dir[path]
         # a bit sad but now we have to traverse the gathered tree structure to
         # filter it again (e.g. for the ignore_empty_directory filter to work
-        # recurssively)
+        # recursively)
         todo: List[Tuple[bytes, Directory]] = [(b"", top_dir)]
         traversal = []
         while todo:
@@ -538,7 +538,7 @@ class Directory(MerkleNode):
 
     # note: the overwrite could probably be done by parametrysing the
     # MerkelNode type, but that is a much bigger rework than the series
-    # introducting this change.
+    # introducing this change.
     def iter_tree(self, dedup=True) -> Iterator[Union["Directory", "Content"]]:
         """Yields all children nodes, recursively. Common nodes are deduplicated
         by default (deduplication can be turned off setting the given argument

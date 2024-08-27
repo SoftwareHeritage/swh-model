@@ -135,7 +135,7 @@ def _origin_type_validator(
     # while still allowing subclasses to be used.
     if expected_type is None:
         expected_type = attribute.type
-    if not (type(value) == expected_type or isinstance(value, expected_type)):
+    if not (type(value) is expected_type or isinstance(value, expected_type)):
         if origin_value is None:
             origin_value = value
         raise AttributeTypeError(origin_value, attribute)
@@ -1415,9 +1415,9 @@ class Directory(HashableObjectWithManifest, BaseModel):
             raw_manifest = git_objects.directory_git_object(invalid_directory)
 
         # 2. look for duplicated entries:
-        entries_by_name: Dict[
-            bytes, Dict[str, List[DirectoryEntry]]
-        ] = collections.defaultdict(lambda: collections.defaultdict(list))
+        entries_by_name: Dict[bytes, Dict[str, List[DirectoryEntry]]] = (
+            collections.defaultdict(lambda: collections.defaultdict(list))
+        )
         for entry in entries:
             entries_by_name[entry.name][entry.type].append(entry)
 

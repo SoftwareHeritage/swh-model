@@ -28,6 +28,7 @@ repos:
       - id: codespell
         name: Check source code spelling
         stages: [commit]
+        args: [-L assertIn]
       - id: codespell
         name: Check commit message spelling
         stages: [commit-msg]
