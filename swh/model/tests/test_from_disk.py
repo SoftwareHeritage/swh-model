@@ -1,4 +1,3 @@
-# Copyright (C) 2017-2022 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -950,6 +949,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             expected_content_count=len(self.contents) + 1,
         )
 
+    def test_directory_to_objects_ignore_name_with_slash(self):
+        self.tmpdir_name = self.tmpdir_name + b"/"
+        self.test_directory_to_objects_ignore_name()
+
     def test_directory_to_objects_ignore_name_case(self):
         directory = Directory.from_disk(
             path=self.tmpdir_name,
@@ -1042,7 +1045,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         # Corresponds to the deeper files and directories plus the four top level ones
         assert total == [4, 1, 1, 1, 1]
 
-    def test_exclude(self):
+    def test_exclude_trailing(self):
+        self.test_exclude(trailing_slash=True)
+
+    def test_exclude(self, trailing_slash=False):
         """exclude patterns"""
         with tempfile.TemporaryDirectory() as dirname:
             dirname = os.fsencode(dirname)
@@ -1063,7 +1069,10 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             )
 
             # no filter
-            directory = Directory.from_disk(path=dirname)
+            dir_path = dirname
+            if trailing_slash:
+                dir_path += b"/"
+            directory = Directory.from_disk(path=dir_path)
             assert set(directory.keys()) == {
                 b"baz",
                 b"foo",
@@ -1088,7 +1097,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
             exclude_patterns = [b"excluded_*"]
             path_filter = ignore_directories_patterns(dirname, exclude_patterns)
-            directory_f = Directory.from_disk(path=dirname, path_filter=path_filter)
+            directory_f = Directory.from_disk(path=dir_path, path_filter=path_filter)
             assert set(directory_f.keys()) == {b"baz", b"foo", b"foofile", b"file"}
             # XXX should foo/excluded_dir and foo/excluded_dir2 be excluded as
             # well? Currently they are not

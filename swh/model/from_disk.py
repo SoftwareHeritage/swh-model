@@ -467,7 +467,15 @@ class Directory(MerkleNode):
           progress_callback (Optional function): if given, returns for each
             non empty directories traversed the number of computed entries.
         """
+        # the top might have been specified with a final slash. This will
+        # confuse various code.
+        #
+        # We should prevent '/' as is however
+        if 1 < len(path) and path[-1:] == b"/":
+            path = path[0:1] + path[1:].rstrip(b"/")
+        assert len(path) <= 1 or path[-1:] != b"/"
         top_path = path
+        top_path_prefix_size = len(top_path) + 1
 
         dirs: Dict[bytes, Directory] = {}
         dirs[top_path] = cls({"name": os.path.basename(top_path), "path": top_path})
@@ -507,7 +515,7 @@ class Directory(MerkleNode):
         top_dir = dirs[top_path]
 
         for path in reversed(filtered):
-            path = path[len(top_path) + 1 :]
+            path = path[top_path_prefix_size:]
             del top_dir[path]
         # a bit sad but now we have to traverse the gathered tree structure to
         # filter it again (e.g. for the ignore_empty_directory filter to work
