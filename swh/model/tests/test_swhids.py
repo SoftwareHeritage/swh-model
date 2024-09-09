@@ -276,118 +276,118 @@ def test_QualifiedSWHID_validation_error(ns, version, type, id, qualifiers):
         )
 
 
-@pytest.mark.parametrize(
-    "object_type,qualifiers,expected",
-    [
-        # No qualifier:
-        (ObjectType.CONTENT, {}, f"swh:1:cnt:{HASH}"),
-        # origin:
-        (ObjectType.CONTENT, {"origin": None}, f"swh:1:cnt:{HASH}"),
-        (ObjectType.CONTENT, {"origin": 42}, ValueError),
-        # visit:
-        (
-            ObjectType.CONTENT,
-            {"visit": f"swh:1:snp:{HASH}"},
-            f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"visit": CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH))},
-            f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
-        ),
-        (ObjectType.CONTENT, {"visit": 42}, TypeError),
-        (
-            ObjectType.CONTENT,
-            {"visit": f"swh:1:rel:{HASH}"},
-            ValidationError,
-        ),
-        (
-            ObjectType.CONTENT,
-            {"visit": CoreSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH))},
-            ValidationError,
-        ),
-        # anchor:
-        (
-            ObjectType.CONTENT,
-            {"anchor": f"swh:1:snp:{HASH}"},
-            f"swh:1:cnt:{HASH};anchor=swh:1:snp:{HASH}",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"anchor": CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH))},
-            f"swh:1:cnt:{HASH};anchor=swh:1:snp:{HASH}",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"anchor": f"swh:1:dir:{HASH}"},
-            f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"anchor": CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH))},
-            f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
-        ),
-        (ObjectType.CONTENT, {"anchor": 42}, TypeError),
-        (
-            ObjectType.CONTENT,
-            {"anchor": f"swh:1:cnt:{HASH}"},
-            ValidationError,
-        ),
-        (
-            ObjectType.CONTENT,
-            {"anchor": CoreSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH))},
-            ValidationError,
-        ),
-        # path:
-        (
-            ObjectType.CONTENT,
-            {"path": b"/foo"},
-            f"swh:1:cnt:{HASH};path=/foo",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"path": b"/foo;bar"},
-            f"swh:1:cnt:{HASH};path=/foo%3Bbar",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"path": "/foo"},
-            f"swh:1:cnt:{HASH};path=/foo",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"path": "/foo;bar"},
-            f"swh:1:cnt:{HASH};path=/foo%3Bbar",
-        ),
-        (ObjectType.CONTENT, {"path": 42}, Exception),
-        # lines:
-        (
-            ObjectType.CONTENT,
-            {"lines": (42, None)},
-            f"swh:1:cnt:{HASH};lines=42",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"lines": (21, 42)},
-            f"swh:1:cnt:{HASH};lines=21-42",
-        ),
-        (
-            ObjectType.CONTENT,
-            {"lines": 42},
-            TypeError,
-        ),
-        (
-            ObjectType.CONTENT,
-            {"lines": (None, 42)},
-            ValueError,
-        ),
-        (
-            ObjectType.CONTENT,
-            {"lines": ("42", None)},
-            ValueError,
-        ),
-    ],
-)
+QSWHID_EXPECTED = [
+    # No qualifier:
+    (ObjectType.CONTENT, {}, f"swh:1:cnt:{HASH}"),
+    # origin:
+    (ObjectType.CONTENT, {"origin": None}, f"swh:1:cnt:{HASH}"),
+    (ObjectType.CONTENT, {"origin": 42}, ValueError),
+    # visit:
+    (
+        ObjectType.CONTENT,
+        {"visit": f"swh:1:snp:{HASH}"},
+        f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"visit": CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH))},
+        f"swh:1:cnt:{HASH};visit=swh:1:snp:{HASH}",
+    ),
+    (ObjectType.CONTENT, {"visit": 42}, TypeError),
+    (
+        ObjectType.CONTENT,
+        {"visit": f"swh:1:rel:{HASH}"},
+        ValidationError,
+    ),
+    (
+        ObjectType.CONTENT,
+        {"visit": CoreSWHID(object_type=ObjectType.RELEASE, object_id=_x(HASH))},
+        ValidationError,
+    ),
+    # anchor:
+    (
+        ObjectType.CONTENT,
+        {"anchor": f"swh:1:snp:{HASH}"},
+        f"swh:1:cnt:{HASH};anchor=swh:1:snp:{HASH}",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"anchor": CoreSWHID(object_type=ObjectType.SNAPSHOT, object_id=_x(HASH))},
+        f"swh:1:cnt:{HASH};anchor=swh:1:snp:{HASH}",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"anchor": f"swh:1:dir:{HASH}"},
+        f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"anchor": CoreSWHID(object_type=ObjectType.DIRECTORY, object_id=_x(HASH))},
+        f"swh:1:cnt:{HASH};anchor=swh:1:dir:{HASH}",
+    ),
+    (ObjectType.CONTENT, {"anchor": 42}, TypeError),
+    (
+        ObjectType.CONTENT,
+        {"anchor": f"swh:1:cnt:{HASH}"},
+        ValidationError,
+    ),
+    (
+        ObjectType.CONTENT,
+        {"anchor": CoreSWHID(object_type=ObjectType.CONTENT, object_id=_x(HASH))},
+        ValidationError,
+    ),
+    # path:
+    (
+        ObjectType.CONTENT,
+        {"path": b"/foo"},
+        f"swh:1:cnt:{HASH};path=/foo",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"path": b"/foo;bar"},
+        f"swh:1:cnt:{HASH};path=/foo%3Bbar",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"path": "/foo"},
+        f"swh:1:cnt:{HASH};path=/foo",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"path": "/foo;bar"},
+        f"swh:1:cnt:{HASH};path=/foo%3Bbar",
+    ),
+    (ObjectType.CONTENT, {"path": 42}, Exception),
+    # lines:
+    (
+        ObjectType.CONTENT,
+        {"lines": (42, None)},
+        f"swh:1:cnt:{HASH};lines=42",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"lines": (21, 42)},
+        f"swh:1:cnt:{HASH};lines=21-42",
+    ),
+    (
+        ObjectType.CONTENT,
+        {"lines": 42},
+        TypeError,
+    ),
+    (
+        ObjectType.CONTENT,
+        {"lines": (None, 42)},
+        ValueError,
+    ),
+    (
+        ObjectType.CONTENT,
+        {"lines": ("42", None)},
+        ValueError,
+    ),
+]
+
+
+@pytest.mark.parametrize("object_type,qualifiers,expected", QSWHID_EXPECTED)
 def test_QualifiedSWHID_init(object_type, qualifiers, expected):
     """Tests validation and converters of qualifiers"""
     if isinstance(expected, type):
