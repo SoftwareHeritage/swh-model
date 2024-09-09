@@ -407,6 +407,24 @@ def test_QualifiedSWHID_init(object_type, qualifiers, expected):
         assert QualifiedSWHID.from_string(expected) == swhid
 
 
+@pytest.mark.parametrize(
+    "object_type,qualifiers",
+    [
+        (type_, dict_)
+        for (type_, dict_, str_or_exc) in QSWHID_EXPECTED
+        if isinstance(str_or_exc, str)
+    ],
+)
+def test_QualifiedSWHID_to_dict(object_type, qualifiers):
+    qswhid = QualifiedSWHID(object_type=object_type, object_id=_x(HASH), **qualifiers)
+    d = qswhid.to_dict()
+    swhid = CoreSWHID.from_string(d.pop("swhid"))
+    other = QualifiedSWHID(
+        object_type=swhid.object_type, object_id=swhid.object_id, **d
+    )
+    assert qswhid == other
+
+
 def test_QualifiedSWHID_hash():
     object_id = _x("94a9ed024d3859793618152ea559a168bbcbb5e2")
 

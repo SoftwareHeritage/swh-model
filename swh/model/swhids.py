@@ -123,6 +123,9 @@ class _BaseSWHID(Generic[_TObjectType]):
             )
 
     def __str__(self) -> str:
+        return self._format_core_swhid()
+
+    def _format_core_swhid(self) -> str:
         return SWHID_SEP.join(
             [
                 self.namespace,
@@ -291,8 +294,9 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
     when the anchor denotes a snapshot, the root directory is the one pointed to by HEAD
     (possibly indirectly), and undefined if such a reference is missing"""
 
+    Lines = Tuple[int, Optional[int]]
     lines = attr.ib(
-        type=Optional[Tuple[int, Optional[int]]],
+        type=Optional[Lines],
         default=None,
         validator=type_validator(),
         converter=_parse_lines_qualifier,
@@ -320,6 +324,17 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
                 "not '%s(type)s'",
                 params={"type": value.object_type.value},
             )
+
+    def to_dict(self) -> Dict[str, Optional[str | bytes | CoreSWHID | Lines]]:
+        """Returns a dictionary version of this QSWHID for json serialization"""
+        return {
+            "swhid": self._format_core_swhid(),
+            "origin": self.origin,
+            "visit": self.visit,
+            "anchor": self.anchor,
+            "path": self.path,
+            "lines": self.lines,
+        }
 
     def qualifiers(self) -> Dict[str, str]:
         """Returns URL-escaped qualifiers of this SWHID, for use in serialization"""
@@ -350,14 +365,7 @@ class QualifiedSWHID(_BaseSWHID[ObjectType]):
         return {k: v for (k, v) in d.items() if v is not None}
 
     def __str__(self) -> str:
-        swhid = SWHID_SEP.join(
-            [
-                self.namespace,
-                str(self.scheme_version),
-                self.object_type.value,
-                hash_to_hex(self.object_id),
-            ]
-        )
+        swhid = self._format_core_swhid()
         qualifiers = self.qualifiers()
         if qualifiers:
             for k, v in qualifiers.items():
