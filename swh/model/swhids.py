@@ -197,6 +197,17 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
             object_id=self.object_id,
         )
 
+    def to_qualified(self) -> QualifiedSWHID:
+        """Converts this CoreSWHID into a QualifiedSWHID.
+
+        As QualifiedSWHID is a superset of CoreSWHID, this is lossless."""
+        return QualifiedSWHID(
+            namespace=self.namespace,
+            scheme_version=self.scheme_version,
+            object_type=self.object_type,
+            object_id=self.object_id,
+        )
+
 
 def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]:
     if swhid is None or isinstance(swhid, CoreSWHID):

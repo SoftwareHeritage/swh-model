@@ -258,6 +258,18 @@ def test_core_to_extended(core, extended):
 
 
 @pytest.mark.parametrize(
+    "core,qualified",
+    [
+        pytest.param(core, qualified, id=string)
+        for (string, core, qualified, extended) in VALID_SWHIDS
+        if core is not None
+    ],
+)
+def test_core_to_qualified(core, qualified):
+    assert core.to_qualified() == qualified
+
+
+@pytest.mark.parametrize(
     "ns,version,type,id,qualifiers",
     [
         ("foo", 1, ObjectType.CONTENT, "abc8bc9d7a6bcf6db04f476d29314f157507d505", {}),
