@@ -639,6 +639,13 @@ class Timestamp(BaseModel):
     seconds = attr.ib(type=int)
     microseconds = attr.ib(type=int)
 
+    # maximum and minimum values allowed by datetime.datetime.fromtimestamp()
+    MIN_SECONDS = -62135510961  # 0001-01-02T00:00:00
+    MAX_SECONDS = 253402297199  # 9999-12-31T23:59:59
+
+    MIN_MICROSECONDS = 0
+    MAX_MICROSECONDS = 10**6 - 1
+
     @seconds.validator
     def check_seconds(self, attribute, value):
         """Check that seconds fit in a 64-bits signed integer."""
@@ -651,13 +658,9 @@ class Timestamp(BaseModel):
 
         # values outside this range do not fit in Python's datetime, so we cannot
         # write them to postgresql with psycopg2
-        if value < datetime.datetime.min.timestamp():
+        if not (self.MIN_SECONDS <= value <= self.MAX_SECONDS):
             raise ValueError(
-                f"Seconds must be greater or equal to {datetime.datetime.min.timestamp()}"
-            )
-        if value > datetime.datetime.max.timestamp():
-            raise ValueError(
-                f"Seconds must be lesser or equal to {datetime.datetime.max.timestamp()}"
+                f"Seconds must be in [{self.MIN_SECONDS}, {self.MAX_SECONDS}]"
             )
 
     @microseconds.validator
@@ -665,8 +668,10 @@ class Timestamp(BaseModel):
         """Checks that microseconds are positive and < 1000000."""
         if value.__class__ is not int:
             raise AttributeTypeError(value, attribute)
-        if not (0 <= value < 10**6):
-            raise ValueError("Microseconds must be in [0, 1000000[.")
+        if not (self.MIN_MICROSECONDS <= value <= self.MAX_MICROSECONDS):
+            raise ValueError(
+                "Microseconds must be in [{self.MIN_MICROSECONDS}, {self.MAX_MICROSECONDS}]."
+            )
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
