@@ -131,27 +131,9 @@ def persons(**kwargs):
 
 
 def timestamps_d(**kwargs):
-    max_seconds = datetime.datetime.max.replace(
-        tzinfo=datetime.timezone.utc
-    ).timestamp()
-    min_seconds = datetime.datetime.min.replace(
-        tzinfo=datetime.timezone.utc
-    ).timestamp()
-
-    # in Python 3.9, datetime.datetime.max is 9999-12-31T23:59:59.999999, which
-    # means its .timestamp() is 253402300799.999999 in UTC. Unfortunately, because of
-    # flotting-point loss of precision, this is rounded up to 253402300800.0, which
-    # is the timestamp of 10000-01-01T00:00:00 in UTC, which cannot be passed to
-    # datetime.datetime.fromtimestamp because it overflows.
-    # To work around this issue, we move from max_seconds and min_seconds one second
-    # closer to Epoch, which is more than enough (actually, subtracting 20ms from
-    # max_seconds is enough).
-    max_seconds -= 1
-    min_seconds += 1
-
     defaults = dict(
-        seconds=integers(min_seconds, max_seconds),
-        microseconds=integers(0, 1000000 - 1),
+        seconds=integers(Timestamp.MIN_SECONDS, Timestamp.MAX_SECONDS),
+        microseconds=integers(Timestamp.MIN_MICROSECONDS, Timestamp.MAX_MICROSECONDS),
     )
     return builds(dict, **{**defaults, **kwargs})
 
