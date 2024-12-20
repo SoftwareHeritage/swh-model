@@ -644,8 +644,21 @@ class Timestamp(BaseModel):
         """Check that seconds fit in a 64-bits signed integer."""
         if value.__class__ is not int:
             raise AttributeTypeError(value, attribute)
-        if not (-(2**63) <= value < 2**63):
-            raise ValueError("Seconds must be a signed 64-bits integer.")
+
+        # common good sense; less strict than the checks below
+        # if not (-(2**63) <= value < 2**63):
+        #     raise ValueError("Seconds must be a signed 64-bits integer.")
+
+        # values outside this range do not fit in Python's datetime, so we cannot
+        # write them to postgresql with psycopg2
+        if value < datetime.datetime.min.timestamp():
+            raise ValueError(
+                f"Seconds must be greater or equal to {datetime.datetime.min.timestamp()}"
+            )
+        if value > datetime.datetime.max.timestamp():
+            raise ValueError(
+                f"Seconds must be lesser or equal to {datetime.datetime.max.timestamp()}"
+            )
 
     @microseconds.validator
     def check_microseconds(self, attribute, value):
