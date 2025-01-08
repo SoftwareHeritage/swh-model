@@ -493,11 +493,44 @@ def test_timestamp_seconds():
     with pytest.raises(AttributeTypeError):
         Timestamp(seconds="0", microseconds=0)
 
-    attr.validate(Timestamp(seconds=2**63 - 1, microseconds=0))
+    print(dir(Timestamp))
+    import inspect
+
+    print(inspect.getmembers(Timestamp))
+
+    attr.validate(
+        Timestamp(
+            seconds=Timestamp.MAX_SECONDS, microseconds=Timestamp.MAX_MICROSECONDS
+        )
+    )
+    attr.validate(
+        Timestamp(
+            seconds=Timestamp.MIN_SECONDS, microseconds=Timestamp.MIN_MICROSECONDS
+        )
+    )
+
+    with pytest.raises(ValueError):
+        attr.validate(
+            Timestamp(
+                seconds=Timestamp.MAX_SECONDS + 1,
+                microseconds=Timestamp.MAX_MICROSECONDS,
+            )
+        )
+    with pytest.raises(ValueError):
+        attr.validate(
+            Timestamp(
+                seconds=Timestamp.MIN_SECONDS - 1,
+                microseconds=Timestamp.MIN_MICROSECONDS,
+            )
+        )
+
+    with pytest.raises(ValueError):
+        attr.validate(Timestamp(seconds=2**63 - 1, microseconds=0))
     with pytest.raises(ValueError):
         Timestamp(seconds=2**63, microseconds=0)
 
-    attr.validate(Timestamp(seconds=-(2**63), microseconds=0))
+    with pytest.raises(ValueError):
+        attr.validate(Timestamp(seconds=-(2**63), microseconds=0))
     with pytest.raises(ValueError):
         Timestamp(seconds=-(2**63) - 1, microseconds=0)
 
@@ -507,12 +540,24 @@ def test_timestamp_microseconds():
     with pytest.raises(AttributeTypeError):
         Timestamp(seconds=0, microseconds="0")
 
-    attr.validate(Timestamp(seconds=0, microseconds=10**6 - 1))
     with pytest.raises(ValueError):
-        Timestamp(seconds=0, microseconds=10**6)
-
+        attr.validate(
+            Timestamp(
+                seconds=Timestamp.MAX_SECONDS,
+                microseconds=Timestamp.MAX_MICROSECONDS + 1,
+            )
+        )
     with pytest.raises(ValueError):
-        Timestamp(seconds=0, microseconds=-1)
+        attr.validate(Timestamp(seconds=0, microseconds=Timestamp.MAX_MICROSECONDS + 1))
+    with pytest.raises(ValueError):
+        attr.validate(Timestamp(seconds=0, microseconds=Timestamp.MIN_MICROSECONDS - 1))
+    with pytest.raises(ValueError):
+        attr.validate(
+            Timestamp(
+                seconds=Timestamp.MIN_SECONDS,
+                microseconds=Timestamp.MIN_MICROSECONDS - 1,
+            )
+        )
 
 
 def test_timestamp_from_dict():
