@@ -648,7 +648,8 @@ class Timestamp(BaseModel):
 
     @seconds.validator
     def check_seconds(self, attribute, value):
-        """Check that seconds fit in a 64-bits signed integer."""
+        """Check that ``seconds`` can be stored in all supported mediums
+        (PostgreSQL/Cassandra/ORC; PostgreSQL being the limiting factor)."""
         if value.__class__ is not int:
             raise AttributeTypeError(value, attribute)
 
