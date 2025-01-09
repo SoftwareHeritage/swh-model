@@ -493,10 +493,6 @@ def test_timestamp_seconds():
     with pytest.raises(AttributeTypeError):
         Timestamp(seconds="0", microseconds=0)
 
-    print(dir(Timestamp))
-    import inspect
-
-    print(inspect.getmembers(Timestamp))
 
     attr.validate(
         Timestamp(
