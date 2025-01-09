@@ -493,7 +493,6 @@ def test_timestamp_seconds():
     with pytest.raises(AttributeTypeError):
         Timestamp(seconds="0", microseconds=0)
 
-
     attr.validate(
         Timestamp(
             seconds=Timestamp.MAX_SECONDS, microseconds=Timestamp.MAX_MICROSECONDS
