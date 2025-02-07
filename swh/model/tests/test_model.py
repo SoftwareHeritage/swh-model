@@ -739,6 +739,18 @@ def test_timestampwithtimezone_to_datetime(date, tz, microsecond):
     assert tstz.to_datetime().utcoffset() == date.utcoffset()
 
 
+def test_timestampwithtimezone_to_datetime__tz_overflow():
+    ts = 1582810759
+    date = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
+    tstz = TimestampWithTimezone(
+        timestamp=Timestamp(seconds=ts, microseconds=0), offset_bytes=b"+9959"
+    )
+
+    assert tstz.to_datetime() == date
+    assert tstz.to_datetime().utcoffset() == date.utcoffset()
+    assert int(tstz.to_datetime().timestamp()) == ts
+
+
 def test_person_from_fullname():
     """The author should have name, email and fullname filled."""
     actual_person = Person.from_fullname(b"tony <ynot@dagobah>")
