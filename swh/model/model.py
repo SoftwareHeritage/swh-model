@@ -782,10 +782,15 @@ class TimestampWithTimezone(BaseModel):
         Beware that this conversion can be lossy: ``-0000`` and 'weird' offsets
         cannot be represented. Also note that it may fail due to type overflow.
         """
-        timestamp = datetime.datetime.fromtimestamp(
-            self.timestamp.seconds,
-            datetime.timezone(datetime.timedelta(minutes=self.offset_minutes())),
-        )
+        td = datetime.timedelta(minutes=self.offset_minutes())
+        try:
+            tz = datetime.timezone(td)
+        except ValueError:
+            # Larger or smaller than 24h, so it's bogus. self.timestamp.seconds is
+            # a number of seconds since Epoch, so it's safe to ignore the timezone
+            # and replace it with any other one. We arbitrarily pick UTC.
+            tz = datetime.timezone.utc
+        timestamp = datetime.datetime.fromtimestamp(self.timestamp.seconds, tz)
         timestamp = timestamp.replace(microsecond=self.timestamp.microseconds)
         return timestamp
 
