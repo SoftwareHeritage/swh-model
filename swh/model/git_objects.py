@@ -516,7 +516,7 @@ def snapshot_git_object(
 
 
 def raw_extrinsic_metadata_git_object(
-    metadata: Union[Dict, model.RawExtrinsicMetadata]
+    metadata: Union[Dict, model.RawExtrinsicMetadata],
 ) -> bytes:
     """Formats RawExtrinsicMetadata as a git-like object.
 

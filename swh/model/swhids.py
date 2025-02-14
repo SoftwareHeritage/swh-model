@@ -217,7 +217,7 @@ def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]
 
 
 def _parse_lines_qualifier(
-    lines: Union[str, Tuple[int, Optional[int]], None]
+    lines: Union[str, Tuple[int, Optional[int]], None],
 ) -> Optional[Tuple[int, Optional[int]]]:
     try:
         if lines is None or isinstance(lines, tuple):

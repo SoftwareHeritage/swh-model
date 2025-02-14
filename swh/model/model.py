@@ -85,7 +85,7 @@ def parents_repr(parents: Tuple[Sha1Git, ...]):
 
 
 def freeze_optional_dict(
-    d: Union[None, Dict, ImmutableDict]
+    d: Union[None, Dict, ImmutableDict],
 ) -> Optional[ImmutableDict]:
     if isinstance(d, dict):
         return ImmutableDict(d)
