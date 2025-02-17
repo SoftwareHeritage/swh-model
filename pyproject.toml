@@ -93,6 +93,5 @@ norecursedirs = "build docs .*"
 asyncio_mode = "strict"
 consider_namespace_packages = true
 markers = [
-    "fs: tests that involve filesystem ios",
     "requires_optional_deps: tests in test_cli.py that should not run if optional dependencies are not installed",
 ]

@@ -826,7 +826,6 @@ class FileToContent(DataMixin, unittest.TestCase):
             self.assertContentEqual(conv_content, content_w_path, check_path=True)
 
 
-@pytest.mark.fs
 class DirectoryToObjects(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -1112,7 +1111,6 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             )
 
 
-@pytest.mark.fs
 class TarballTest(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()

@@ -19,7 +19,6 @@ from swh.model.tests.swh_model_data import SAMPLE_FOLDER_SWHIDS
 from swh.model.tests.test_from_disk import DataMixin
 
 
-@pytest.mark.fs
 class TestIdentify(DataMixin, unittest.TestCase):
     def setUp(self):
         super().setUp()
