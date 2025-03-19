@@ -45,6 +45,7 @@ from swh.model.model import (
     SnapshotBranch,
     SnapshotTargetType,
     Timestamp,
+    TimestampOverflowException,
     TimestampWithTimezone,
     optimized_validator,
 )
@@ -504,14 +505,14 @@ def test_timestamp_seconds():
         )
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TimestampOverflowException):
         attr.validate(
             Timestamp(
                 seconds=Timestamp.MAX_SECONDS + 1,
                 microseconds=Timestamp.MAX_MICROSECONDS,
             )
         )
-    with pytest.raises(ValueError):
+    with pytest.raises(TimestampOverflowException):
         attr.validate(
             Timestamp(
                 seconds=Timestamp.MIN_SECONDS - 1,
@@ -519,14 +520,14 @@ def test_timestamp_seconds():
             )
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TimestampOverflowException):
         attr.validate(Timestamp(seconds=2**63 - 1, microseconds=0))
     with pytest.raises(ValueError):
         Timestamp(seconds=2**63, microseconds=0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TimestampOverflowException):
         attr.validate(Timestamp(seconds=-(2**63), microseconds=0))
-    with pytest.raises(ValueError):
+    with pytest.raises(TimestampOverflowException):
         Timestamp(seconds=-(2**63) - 1, microseconds=0)
 
 

@@ -630,6 +630,13 @@ class Person(BaseModel):
         return super().from_dict(d)
 
 
+class TimestampOverflowException(ValueError):
+    """Raised when trying to build :class:`Timestamp` from a timestamp too far in
+    the past or future"""
+
+    pass
+
+
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)
 class Timestamp(BaseModel):
     """Represents a naive timestamp from a VCS."""
@@ -655,12 +662,12 @@ class Timestamp(BaseModel):
 
         # common good sense; less strict than the checks below
         # if not (-(2**63) <= value < 2**63):
-        #     raise ValueError("Seconds must be a signed 64-bits integer.")
+        #     raise TimestampOverflowException("Seconds must be a signed 64-bits integer.")
 
         # values outside this range do not fit in Python's datetime, so we cannot
         # write them to postgresql with psycopg2
         if not (self.MIN_SECONDS <= value <= self.MAX_SECONDS):
-            raise ValueError(
+            raise TimestampOverflowException(
                 f"Seconds must be in [{self.MIN_SECONDS}, {self.MAX_SECONDS}]"
             )
 
