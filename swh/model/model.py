@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2024 The Software Heritage developers
+# Copyright (C) 2018-2025 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -324,15 +324,7 @@ def optimize_all_validators(cls, old_fields):
         if validator is not None:
             f = f.evolve(validator=validator)
         new_fields.append(f)
-    if attr.__version__ < "21.3.0":
-        # https://github.com/python-attrs/attrs/issues/821
-        from attr._make import _make_attr_tuple_class
-
-        attr_names = [f.name for f in new_fields]
-        AttrsClass = _make_attr_tuple_class(cls.__name__, attr_names)
-        return AttrsClass(new_fields)
-    else:
-        return new_fields
+    return new_fields
 
 
 ModelType = TypeVar("ModelType", bound="BaseModel")
