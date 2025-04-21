@@ -93,22 +93,6 @@ def freeze_optional_dict(
         return d
 
 
-def dictify(value):
-    "Helper function used by BaseModel.to_dict()"
-    if isinstance(value, BaseModel):
-        return value.to_dict()
-    elif isinstance(value, (CoreSWHID, ExtendedSWHID)):
-        return str(value)
-    elif isinstance(value, Enum):
-        return value.value
-    elif isinstance(value, (dict, ImmutableDict)):
-        return {k: dictify(v) for k, v in value.items()}
-    elif isinstance(value, tuple):
-        return tuple(dictify(v) for v in value)
-    else:
-        return value
-
-
 def generic_type_validator(instance, attribute, value):
     """validates the type of an attribute value whatever the attribute type"""
     raise NotImplementedError("generic type check should have been optimized")
