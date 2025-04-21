@@ -558,6 +558,13 @@ class Person(BaseModel):
     name = attr.ib(type=Optional[bytes], validator=generic_type_validator, eq=False)
     email = attr.ib(type=Optional[bytes], validator=generic_type_validator, eq=False)
 
+    def to_dict(self) -> dict:
+        return {
+            "fullname": self.fullname,
+            "name": self.name,
+            "email": self.email,
+        }
+
     @classmethod
     def from_fullname(cls, fullname: bytes):
         """Returns a Person object, by guessing the name and email from the
@@ -653,6 +660,12 @@ class Timestamp(BaseModel):
     MIN_MICROSECONDS = 0
     MAX_MICROSECONDS = 10**6 - 1
 
+    def to_dict(self) -> dict:
+        return {
+            "seconds": self.seconds,
+            "microseconds": self.microseconds,
+        }
+
     @seconds.validator
     def check_seconds(self, attribute, value):
         """Check that ``seconds`` can be stored in all supported mediums
@@ -698,6 +711,12 @@ class TimestampWithTimezone(BaseModel):
     However, when created from git objects, it must be the exact bytes used in the
     original objects, so it may differ from this format when they do.
     """
+
+    def to_dict(self) -> dict:
+        return {
+            "timestamp": self.timestamp.to_dict(),
+            "offset_bytes": self.offset_bytes,
+        }
 
     @classmethod
     def from_numeric_offset(
@@ -894,6 +913,12 @@ class Origin(BaseHashableModel):
 
     id = attr.ib(type=Sha1Git, validator=generic_type_validator, default=b"")
 
+    def to_dict(self) -> dict:
+        return {
+            "url": self.url,
+            "id": self.id,
+        }
+
     def unique_key(self) -> KeyType:
         return {"url": self.url}
 
@@ -945,10 +970,14 @@ class OriginVisit(BaseModel):
     def to_dict(self):
         """Serializes the date as a string and omits the visit id if it is
         `None`."""
-        ov = super().to_dict()
-        if ov["visit"] is None:
-            del ov["visit"]
-        return ov
+        d = {
+            "origin": self.origin,
+            "date": self.date,
+            "type": self.type,
+        }
+        if self.visit:
+            d["visit"] = self.visit
+        return d
 
     def unique_key(self) -> KeyType:
         return {"origin": self.origin, "date": str(self.date)}
@@ -981,6 +1010,17 @@ class OriginVisitStatus(BaseModel):
         converter=freeze_optional_dict,
         default=None,
     )
+
+    def to_dict(self) -> dict:
+        return {
+            "origin": self.origin,
+            "visit": self.visit,
+            "date": self.date,
+            "status": self.status,
+            "snapshot": self.snapshot,
+            "type": self.type,
+            "metadata": self.metadata.to_dict() if self.metadata is not None else None,
+        }
 
     @date.validator
     def check_date(self, attribute, value):
@@ -1051,6 +1091,12 @@ class SnapshotBranch(BaseModel):
     target = attr.ib(type=bytes, repr=hash_repr)
     target_type = attr.ib(type=SnapshotTargetType, validator=generic_type_validator)
 
+    def to_dict(self) -> dict:
+        return {
+            "target": self.target,
+            "target_type": self.target_type.value,
+        }
+
     @target.validator
     def check_target(self, attribute, value):
         """Checks the target type is not an alias, checks the target is a
@@ -1089,6 +1135,15 @@ class Snapshot(BaseHashableModel):
     id = attr.ib(
         type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
     )
+
+    def to_dict(self) -> dict:
+        return {
+            "branches": {
+                k: (v.to_dict() if v is not None else v)
+                for k, v in self.branches.items()
+            },
+            "id": self.id,
+        }
 
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(
@@ -1150,11 +1205,22 @@ class Release(HashableObjectWithManifest, BaseModel):
         if self.author is None and self.date is not None:
             raise ValueError("release date must be None if author is None.")
 
-    def to_dict(self):
-        rel = super().to_dict()
-        if rel["metadata"] is None:
-            del rel["metadata"]
-        return rel
+    def to_dict(self) -> dict:
+        d = {
+            "name": self.name,
+            "message": self.message,
+            "target": self.target,
+            "target_type": self.target_type.value,
+            "synthetic": self.synthetic,
+            "author": self.author.to_dict() if self.author is not None else None,
+            "date": self.date.to_dict() if self.date is not None else None,
+            "id": self.id,
+        }
+        if self.metadata is not None:
+            d["metadata"] = self.metadata.to_dict()
+        if self.raw_manifest is not None:
+            d["raw_manifest"] = self.raw_manifest
+        return d
 
     @classmethod
     def from_dict(cls, d):
@@ -1241,6 +1307,31 @@ class Revision(HashableObjectWithManifest, BaseModel):
         default=(),
     )
     raw_manifest = attr.ib(type=Optional[bytes], default=None)
+
+    def to_dict(self) -> dict:
+        d = {
+            "message": self.message,
+            "author": self.author.to_dict() if self.author is not None else None,
+            "committer": (
+                self.committer.to_dict() if self.committer is not None else None
+            ),
+            "date": self.date.to_dict() if self.date is not None else None,
+            "committer_date": (
+                self.committer_date.to_dict()
+                if self.committer_date is not None
+                else None
+            ),
+            "type": self.type.value,
+            "directory": self.directory,
+            "synthetic": self.synthetic,
+            "metadata": self.metadata.to_dict() if self.metadata is not None else None,
+            "parents": self.parents,
+            "id": self.id,
+            "extra_headers": self.extra_headers,
+        }
+        if self.raw_manifest is not None:
+            d["raw_manifest"] = self.raw_manifest
+        return d
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -1353,6 +1444,14 @@ class DirectoryEntry(BaseModel):
         "rev": SwhidObjectType.REVISION,
     }
 
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "type": self.type,
+            "target": self.target,
+            "perms": self.perms,
+        }
+
     @name.validator
     def check_name(self, attribute, value):
         if value.__class__ is not bytes:
@@ -1377,6 +1476,15 @@ class Directory(HashableObjectWithManifest, BaseModel):
         type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
     )
     raw_manifest = attr.ib(type=Optional[bytes], default=None)
+
+    def to_dict(self) -> dict:
+        d = {
+            "entries": tuple(d.to_dict() for d in self.entries),
+            "id": self.id,
+        }
+        if self.raw_manifest is not None:
+            d["raw_manifest"] = self.raw_manifest
+        return d
 
     def _compute_hash_from_attributes(self) -> bytes:
         return _compute_hash_from_manifest(git_objects.directory_git_object(self))
@@ -1495,6 +1603,9 @@ class BaseContent(BaseModel, ABC):
         type=str, validator=attr.validators.in_(["visible", "hidden", "absent"])
     )
 
+    def to_dict(self) -> dict:
+        return {"status": self.status}
+
     @staticmethod
     def _hash_data(data: bytes):
         """Hash some data, returning most of the fields of a content object"""
@@ -1555,6 +1666,22 @@ class Content(BaseContent):
         eq=False,
     )
 
+    def to_dict(self) -> dict:
+        loaded = self.with_data(raise_if_missing=False)
+        d = {
+            "sha1": loaded.sha1,
+            "sha1_git": loaded.sha1_git,
+            "sha256": loaded.sha256,
+            "blake2s256": loaded.blake2s256,
+            "length": loaded.length,
+            "status": loaded.status,
+        }
+        if loaded.data is not None:
+            d["data"] = loaded.data
+        if loaded.ctime is not None:
+            d["ctime"] = loaded.ctime
+        return d
+
     @length.validator
     def check_length(self, attribute, value):
         """Checks the length is positive."""
@@ -1571,13 +1698,6 @@ class Content(BaseContent):
                 raise AttributeTypeError(value, attribute)
             if value.tzinfo is None:
                 raise ValueError("ctime must be a timezone-aware datetime.")
-
-    def to_dict(self):
-        content = super(Content, self.with_data(raise_if_missing=False)).to_dict()
-        for k in ("get_data", "data", "ctime"):
-            if content[k] is None:
-                del content[k]
-        return content
 
     @classmethod
     def from_data(cls, data, status="visible", ctime=None) -> Content:
@@ -1682,13 +1802,21 @@ class SkippedContent(BaseContent):
             elif value.tzinfo is None:
                 raise ValueError("ctime must be a timezone-aware datetime.")
 
-    def to_dict(self):
-        content = super().to_dict()
-        if content["origin"] is None:
-            del content["origin"]
-        if content["ctime"] is None:
-            del content["ctime"]
-        return content
+    def to_dict(self) -> dict:
+        d: Dict[str, Any] = {
+            "sha1": self.sha1,
+            "sha1_git": self.sha1_git,
+            "sha256": self.sha256,
+            "blake2s256": self.blake2s256,
+            "length": self.length,
+            "status": self.status,
+            "reason": self.reason,
+        }
+        if self.origin is not None:
+            d["origin"] = self.origin
+        if self.ctime is not None:
+            d["ctime"] = self.ctime
+        return d
 
     @classmethod
     def from_data(
@@ -1751,10 +1879,13 @@ class MetadataAuthority(BaseModel):
         converter=freeze_optional_dict,
     )
 
-    def to_dict(self):
-        d = super().to_dict()
-        if d["metadata"] is None:
-            del d["metadata"]
+    def to_dict(self) -> dict:
+        d = {
+            "type": self.type.value,
+            "url": self.url,
+        }
+        if self.metadata is not None:
+            d["metadata"] = self.metadata.to_dict()
         return d
 
     @classmethod
@@ -1785,10 +1916,13 @@ class MetadataFetcher(BaseModel):
         converter=freeze_optional_dict,
     )
 
-    def to_dict(self):
-        d = super().to_dict()
-        if d["metadata"] is None:
-            del d["metadata"]
+    def to_dict(self) -> dict:
+        d: Dict[str, Any] = {
+            "name": self.name,
+            "version": self.version,
+        }
+        if self.metadata is not None:
+            d["metadata"] = self.metadata.to_dict()
         return d
 
     def unique_key(self) -> KeyType:
@@ -2006,20 +2140,29 @@ class RawExtrinsicMetadata(BaseHashableModel):
             )
 
     def to_dict(self):
-        d = super().to_dict()
-
-        context_keys = (
-            "origin",
-            "visit",
-            "snapshot",
-            "release",
-            "revision",
-            "directory",
-            "path",
-        )
-        for context_key in context_keys:
-            if d[context_key] is None:
-                del d[context_key]
+        d = {
+            "target": str(self.target),
+            "discovery_date": self.discovery_date,
+            "authority": self.authority.to_dict(),
+            "fetcher": self.fetcher.to_dict(),
+            "format": self.format,
+            "metadata": self.metadata,
+            "id": self.id,
+        }
+        if self.origin is not None:
+            d["origin"] = self.origin
+        if self.visit is not None:
+            d["visit"] = self.visit
+        if self.snapshot is not None:
+            d["snapshot"] = str(self.snapshot)
+        if self.release is not None:
+            d["release"] = str(self.release)
+        if self.revision is not None:
+            d["revision"] = str(self.revision)
+        if self.directory is not None:
+            d["directory"] = str(self.directory)
+        if self.path is not None:
+            d["path"] = self.path
         return d
 
     @classmethod
@@ -2074,6 +2217,17 @@ class ExtID(BaseHashableModel):
     id = attr.ib(
         type=Sha1Git, validator=generic_type_validator, default=b"", repr=hash_repr
     )
+
+    def to_dict(self) -> dict:
+        return {
+            "extid_type": self.extid_type,
+            "extid": self.extid,
+            "target": str(self.target),
+            "extid_version": self.extid_version,
+            "payload_type": self.payload_type,
+            "payload": self.payload,
+            "id": self.id,
+        }
 
     @payload_type.validator
     def check_payload_type(self, attribute, value):
