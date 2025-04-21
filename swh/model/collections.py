@@ -38,6 +38,9 @@ class ImmutableDict(Mapping, Generic[KT, VT]):
     def data(self):
         return tuple(self._data.items())
 
+    def to_dict(self) -> dict:
+        return self._data.copy()
+
     def __repr__(self):
         return f"ImmutableDict({dict(self.data)!r})"
 
