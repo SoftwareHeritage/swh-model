@@ -419,7 +419,7 @@ class BaseModel(ABC):
     def to_dict(self):
         """Wrapper of `attr.asdict` that can be overridden by subclasses
         that have special handling of some of the fields."""
-        return dictify(attr.asdict(self, recurse=False))
+        raise NotImplementedError
 
     @classmethod
     def from_dict(cls, d):
