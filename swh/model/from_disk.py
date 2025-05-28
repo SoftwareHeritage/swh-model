@@ -164,7 +164,7 @@ class Content(MerkleLeaf):
         return content
 
     @classmethod
-    def from_file(cls, *, path, max_content_length=None):
+    def from_file(cls, *, path: Union[bytes, str], max_content_length: Optional[int]):
         """Compute the Software Heritage content entry corresponding to an
         on-disk file.
 
@@ -174,7 +174,7 @@ class Content(MerkleLeaf):
 
         Args:
           save_path (bool): add the file path to the entry
-          max_content_length (Optional[int]): if given, all contents larger
+          max_content_length: if not ``None``, all contents larger
             than this will be skipped.
 
         """

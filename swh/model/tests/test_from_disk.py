@@ -711,30 +711,32 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_symlink_to_content(self):
         for filename, symlink in self.symlinks.items():
             path = os.path.join(self.tmpdir_name, filename)
-            conv_content = Content.from_file(path=path)
+            conv_content = Content.from_file(path=path, max_content_length=None)
             self.assertContentEqual(conv_content, symlink)
 
     def test_file_to_content(self):
         for filename, content in self.contents.items():
             path = os.path.join(self.tmpdir_name, filename)
-            conv_content = Content.from_file(path=path)
+            conv_content = Content.from_file(path=path, max_content_length=None)
             self.assertContentEqual(conv_content, content)
 
     def test_special_to_content(self):
         for filename in self.specials:
             path = os.path.join(self.tmpdir_name, filename)
-            conv_content = Content.from_file(path=path)
+            conv_content = Content.from_file(path=path, max_content_length=None)
             self.assertContentEqual(conv_content, self.empty_content)
 
         for path in ["/dev/null", "/dev/zero"]:
             path = os.path.join(self.tmpdir_name, filename)
-            conv_content = Content.from_file(path=path)
+            conv_content = Content.from_file(path=path, max_content_length=None)
             self.assertContentEqual(conv_content, self.empty_content)
 
     def test_symlink_to_content_model(self):
         for filename, symlink in self.symlinks.items():
             path = os.path.join(self.tmpdir_name, filename)
-            model_content = Content.from_file(path=path).to_model()
+            model_content = Content.from_file(
+                path=path, max_content_length=None
+            ).to_model()
 
             right = symlink.copy()
             for key in ("perms", "path", "mode"):
@@ -745,7 +747,9 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_file_to_content_model(self):
         for filename, content in self.contents.items():
             path = os.path.join(self.tmpdir_name, filename)
-            model_content = Content.from_file(path=path).to_model()
+            model_content = Content.from_file(
+                path=path, max_content_length=None
+            ).to_model()
 
             right = content.copy()
             for key in ("perms", "mode"):
@@ -759,7 +763,9 @@ class FileToContent(DataMixin, unittest.TestCase):
     def test_special_to_content_model(self):
         for filename in self.specials:
             path = os.path.join(self.tmpdir_name, filename)
-            model_content = Content.from_file(path=path).to_model()
+            model_content = Content.from_file(
+                path=path, max_content_length=None
+            ).to_model()
 
             right = self.empty_content.copy()
             for key in ("perms", "path", "mode"):
@@ -768,7 +774,9 @@ class FileToContent(DataMixin, unittest.TestCase):
             assert model_content == model.Content.from_dict(right)
 
         for path in ["/dev/null", "/dev/zero"]:
-            model_content = Content.from_file(path=path).to_model()
+            model_content = Content.from_file(
+                path=path, max_content_length=None
+            ).to_model()
 
             right = self.empty_content.copy()
             for key in ("perms", "path", "mode"):
@@ -780,7 +788,7 @@ class FileToContent(DataMixin, unittest.TestCase):
         for max_content_length in [4, 10]:
             for filename, symlink in self.symlinks.items():
                 path = os.path.join(self.tmpdir_name, filename)
-                content = Content.from_file(path=path)
+                content = Content.from_file(path=path, max_content_length=None)
                 if content.data["length"] > max_content_length:
                     with pytest.raises(Exception, match="too large"):
                         Content.from_file(
@@ -796,7 +804,7 @@ class FileToContent(DataMixin, unittest.TestCase):
         for max_content_length in [2, 4]:
             for filename, content in self.contents.items():
                 path = os.path.join(self.tmpdir_name, filename)
-                content = Content.from_file(path=path)
+                content = Content.from_file(path=path, max_content_length=None)
                 limited_content = Content.from_file(
                     path=path, max_content_length=max_content_length
                 )
@@ -812,7 +820,7 @@ class FileToContent(DataMixin, unittest.TestCase):
         for max_content_length in [None, 0, 1]:
             for filename in self.specials:
                 path = os.path.join(self.tmpdir_name, filename)
-                content = Content.from_file(path=path)
+                content = Content.from_file(path=path, max_content_length=None)
                 limited_content = Content.from_file(
                     path=path, max_content_length=max_content_length
                 )
@@ -823,7 +831,7 @@ class FileToContent(DataMixin, unittest.TestCase):
             content_w_path = content.copy()
             path = os.path.join(self.tmpdir_name, filename)
             content_w_path["path"] = path
-            conv_content = Content.from_file(path=path)
+            conv_content = Content.from_file(path=path, max_content_length=None)
             self.assertContentEqual(conv_content, content_w_path, check_path=True)
 
 

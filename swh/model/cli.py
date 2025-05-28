@@ -60,7 +60,7 @@ class CoreSWHIDParamType(click.ParamType):
 def swhid_of_file(path) -> CoreSWHID:
     from swh.model.from_disk import Content
 
-    object = Content.from_file(path=path)
+    object = Content.from_file(path=path, max_content_length=None)
     return object.swhid()
 
 
