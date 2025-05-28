@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020  The Software Heritage developers
+# Copyright (C) 2018-2025  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -85,7 +85,10 @@ def model_of_dir(
     )
 
     return Directory.from_disk(
-        path=path, path_filter=path_filter, progress_callback=update_info
+        path=path,
+        path_filter=path_filter,
+        progress_callback=update_info,
+        max_content_length=None,
     )
 
 

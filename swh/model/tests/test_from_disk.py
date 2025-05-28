@@ -1,3 +1,4 @@
+# Copyright (C) 2017-2025  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -669,7 +670,7 @@ class TestDirectory(DataMixin, unittest.TestCase):
 
     def test_directory_swhid(self):
         directory_swhid = "swh:1:dir:" + hash_to_hex(self.empty_directory["id"])
-        directory = Directory.from_disk(path=self.tmpdir_name)
+        directory = Directory.from_disk(path=self.tmpdir_name, max_content_length=None)
         assert str(directory.swhid()) == directory_swhid
 
 
@@ -857,7 +858,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
         self.assertEqual(len(contents), expected_content_count)
 
     def test_directory_to_objects(self):
-        directory = Directory.from_disk(path=self.tmpdir_name)
+        directory = Directory.from_disk(path=self.tmpdir_name, max_content_length=None)
 
         for name, value in self.contents.items():
             self.assertContentEqual(directory[b"contents/" + name], value)
@@ -892,7 +893,9 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
     def test_directory_to_objects_ignore_empty(self):
         directory = Directory.from_disk(
-            path=self.tmpdir_name, path_filter=from_disk.ignore_empty_directories
+            path=self.tmpdir_name,
+            path_filter=from_disk.ignore_empty_directories,
+            max_content_length=None,
         )
 
         for name, value in self.contents.items():
@@ -922,8 +925,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
     def test_directory_to_objects_ignore_name(self):
         pfilter = from_disk.ignore_named_directories([b"symlinks"])
         directory = Directory.from_disk(
-            path=self.tmpdir_name,
-            path_filter=pfilter,
+            path=self.tmpdir_name, path_filter=pfilter, max_content_length=None
         )
         for name, value in self.contents.items():
             self.assertContentEqual(directory[b"contents/" + name], value)
@@ -958,6 +960,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             path_filter=from_disk.ignore_named_directories(
                 [b"symLiNks"], case_sensitive=False
             ),
+            max_content_length=None,
         )
         for name, value in self.contents.items():
             self.assertContentEqual(directory[b"contents/" + name], value)
@@ -993,7 +996,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
               /foo/
             """,
             )
-            directory = Directory.from_disk(path=dirname)
+            directory = Directory.from_disk(path=dirname, max_content_length=None)
 
         assert [entry["name"] for entry in directory.entries] == [
             b"foo.",
@@ -1018,7 +1021,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             )
 
             # No filters
-            directory = Directory.from_disk(path=dirname)
+            directory = Directory.from_disk(path=dirname, max_content_length=None)
             assert [entry["name"] for entry in directory.entries] == [
                 b"baz",
                 b"file",
@@ -1027,7 +1030,9 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             ]
 
             # Filter paths
-            directory = Directory.from_disk(path=dirname, path_filter=filter_func)
+            directory = Directory.from_disk(
+                path=dirname, path_filter=filter_func, max_content_length=None
+            )
             assert [entry["name"] for entry in directory.entries] == [
                 b"foo",
                 b"foofile",
@@ -1040,7 +1045,11 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             assert type(arg) is int
             total.append(arg)
 
-        Directory.from_disk(path=self.tmpdir_name, progress_callback=update_info)
+        Directory.from_disk(
+            path=self.tmpdir_name,
+            progress_callback=update_info,
+            max_content_length=None,
+        )
         # Corresponds to the deeper files and directories plus the four top level ones
         assert total == [4, 1, 1, 1, 1]
 
@@ -1071,7 +1080,7 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
             dir_path = dirname
             if trailing_slash:
                 dir_path += b"/"
-            directory = Directory.from_disk(path=dir_path)
+            directory = Directory.from_disk(path=dir_path, max_content_length=None)
             assert set(directory.keys()) == {
                 b"baz",
                 b"foo",
@@ -1096,7 +1105,9 @@ class DirectoryToObjects(DataMixin, unittest.TestCase):
 
             exclude_patterns = [b"excluded_*"]
             path_filter = ignore_directories_patterns(dirname, exclude_patterns)
-            directory_f = Directory.from_disk(path=dir_path, path_filter=path_filter)
+            directory_f = Directory.from_disk(
+                path=dir_path, path_filter=path_filter, max_content_length=None
+            )
             assert set(directory_f.keys()) == {b"baz", b"foo", b"foofile", b"file"}
             # XXX should foo/excluded_dir and foo/excluded_dir2 be excluded as
             # well? Currently they are not
@@ -1118,7 +1129,8 @@ class TarballTest(DataMixin, unittest.TestCase):
 
     def test_contents_match(self):
         directory = Directory.from_disk(
-            path=os.path.join(self.tmpdir_name, b"sample-folder")
+            path=os.path.join(self.tmpdir_name, b"sample-folder"),
+            max_content_length=None,
         )
 
         for name, expected in self.tarball_contents.items():
@@ -1139,7 +1151,8 @@ class TarballIterDirectory(DataMixin, unittest.TestCase):
     def test_iter_directory(self):
         """Iter from_disk.directory should yield the full arborescence tree"""
         directory = Directory.from_disk(
-            path=os.path.join(self.tmpdir_name, b"sample-folder")
+            path=os.path.join(self.tmpdir_name, b"sample-folder"),
+            max_content_length=None,
         )
 
         contents, skipped_contents, directories = from_disk.iter_directory(directory)

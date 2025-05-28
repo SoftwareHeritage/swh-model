@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2022 The Software Heritage developers
+# Copyright (C) 2017-2025 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -447,7 +447,7 @@ class Directory(MerkleNode):
         path_filter: Callable[
             [bytes, bytes, Optional[List[bytes]]], bool
         ] = accept_all_paths,
-        max_content_length: Optional[int] = None,
+        max_content_length: Optional[int],
         progress_callback: Optional[Callable[[int], None]] = None,
     ) -> "Directory":
         """Compute the Software Heritage objects for a given directory tree
@@ -462,7 +462,7 @@ class Directory(MerkleNode):
             for directories.
             Returns True if the path should be added, False if the
             path should be ignored.
-          max_content_length (Optional[int]): if given, all contents larger
+          max_content_length: if not ``None``, all contents larger
             than this will be skipped.
           progress_callback (Optional function): if given, returns for each
             non empty directories traversed the number of computed entries.

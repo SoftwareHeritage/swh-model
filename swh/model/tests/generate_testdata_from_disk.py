@@ -1,4 +1,4 @@
-# Copyright (C) 2017 The Software Heritage developers
+# Copyright (C) 2017-2025 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -86,7 +86,9 @@ if __name__ == "__main__":
         basename = os.path.basename(dirname)
         varname = "expected_%s" % basename
         testdata = generate_from_directory(
-            varname, Directory.from_disk(path=os.fsencode(dirname)), indent=8
+            varname,
+            Directory.from_disk(path=os.fsencode(dirname), max_content_length=None),
+            indent=8,
         )
         print(testdata)
         print()
