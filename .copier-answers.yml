@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: v0.3.3
+_commit: v0.3.4
 _src_path: https://gitlab.softwareheritage.org/swh/devel/swh-py-template.git
 description: Software Heritage data model
 distribution_name: swh-model
@@ -7,5 +7,5 @@ have_cli: true
 have_workers: false
 package_root: swh/model
 project_name: swh.model
-python_minimal_version: '3.7'
+python_minimal_version: '3.10'
 readme_format: rst

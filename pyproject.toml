@@ -88,11 +88,11 @@ ignore = [
     "W503" # line break before binary operator <https://github.com/psf/black/issues/52>
 ]
 max-line-length = 88
+exclude = ["build/", ".tox/"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules -p no:pytest_swh_core"
 norecursedirs = "build docs .*"
-asyncio_mode = "strict"
 consider_namespace_packages = true
 markers = [
     "requires_optional_deps: tests in test_cli.py that should not run if optional dependencies are not installed",
