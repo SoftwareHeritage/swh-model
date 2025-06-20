@@ -366,7 +366,7 @@ def test_unique_key():
     )
 
     cont = Content.from_data(b"foo")
-    assert cont.unique_key().hex() == "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"
+    assert cont.unique_key() == cont.hashes()
 
     kwargs = {
         **cont.to_dict(),

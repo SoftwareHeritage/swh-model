@@ -1714,7 +1714,7 @@ class Content(BaseContent):
         return attr.evolve(self, data=new_data, get_data=None)
 
     def unique_key(self) -> KeyType:
-        return self.sha1  # TODO: use a dict of hashes
+        return self.hashes()
 
     def swhid(self) -> CoreSWHID:
         """Returns a SWHID representing this object."""
