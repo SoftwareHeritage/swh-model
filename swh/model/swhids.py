@@ -231,6 +231,10 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
 
     @staticmethod
     def from_bytes(input: bytes) -> CoreSWHID:
+        """
+        Reconstructs a ``CoreSWHID`` from the result of ``to_bytes`` (or SWHIDs
+        serialized the in compressed graph).
+        """
         if len(input) != 22:
             raise ValidationError("CoreSWHID should be serialized as exactly 22 bytes")
         if input[0] != 1:
