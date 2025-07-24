@@ -208,6 +208,48 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
             object_id=self.object_id,
         )
 
+    def to_bytes(self) -> bytes:
+        """
+        Serialize as 22 bytes:
+         * version (1 byte), should equal 1,
+         * object type (1 byte), encoded like ``NodeType`` in the ``swh-graph`` crate,
+         * object identifier
+        """
+        match self.object_type:
+            case ObjectType.CONTENT:
+                object_type = 0
+            case ObjectType.DIRECTORY:
+                object_type = 1
+            # ORIGIN is 2 but is not an ObjectType
+            case ObjectType.RELEASE:
+                object_type = 3
+            case ObjectType.REVISION:
+                object_type = 4
+            case ObjectType.SNAPSHOT:
+                object_type = 5
+        return bytes([1, object_type]) + self.object_id
+
+    @staticmethod
+    def from_bytes(input: bytes) -> CoreSWHID:
+        if len(input) != 22:
+            raise ValidationError("CoreSWHID should be serialized as exactly 22 bytes")
+        if input[0] != 1:
+            raise ValidationError("Version byte should be 0x01")
+        match input[1]:
+            case 0:
+                object_type = ObjectType.CONTENT
+            case 1:
+                object_type = ObjectType.DIRECTORY
+            case 3:
+                object_type = ObjectType.RELEASE
+            case 4:
+                object_type = ObjectType.REVISION
+            case 5:
+                object_type = ObjectType.SNAPSHOT
+            case _:
+                raise ValidationError(f"Unsupported object type byte 0x{input[1]:x}")
+        return CoreSWHID(object_type=object_type, object_id=input[2:])
+
 
 def _parse_core_swhid(swhid: Union[str, CoreSWHID, None]) -> Optional[CoreSWHID]:
     if swhid is None or isinstance(swhid, CoreSWHID):

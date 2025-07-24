@@ -270,6 +270,32 @@ def test_core_to_qualified(core, qualified):
 
 
 @pytest.mark.parametrize(
+    "core",
+    [
+        pytest.param(core)
+        for (string, core, qualified, extended) in VALID_SWHIDS
+        if core is not None
+    ],
+)
+def test_core_to_bytes(core):
+    assert core == CoreSWHID.from_bytes(core.to_bytes())
+
+
+@pytest.mark.parametrize(
+    "input",
+    [
+        bytes.fromhex("0101abc8bc9d7a6bcf6dc04f476d29314f157507f5"),  # wrong length
+        bytes.fromhex("0101abc8bc9d7a6bcf6dc04f476d29314f157507f50100"),  # wrong length
+        bytes.fromhex("0201abc8bc9d7a6bcf6dc04f476d29314f157507f501"),  # wrong version
+        bytes.fromhex("0102abc8bc9d7a6bcf6dc04f476d29314f157507f501"),  # wrong type
+    ],
+)
+def test_core_from_bytes_errors(input):
+    with pytest.raises(ValidationError):
+        CoreSWHID.from_bytes(input)
+
+
+@pytest.mark.parametrize(
     "ns,version,type,id,qualifiers",
     [
         ("foo", 1, ObjectType.CONTENT, "abc8bc9d7a6bcf6db04f476d29314f157507d505", {}),
