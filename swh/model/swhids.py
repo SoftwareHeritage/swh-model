@@ -236,7 +236,7 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
         serialized the in compressed graph).
         """
         if len(input) != 22:
-            raise ValidationError("CoreSWHID should be serialized as exactly 22 bytes")
+            raise ValidationError("Invalid binary SWHID: it should be exactly 22 bytes")
         if input[0] != 1:
             raise ValidationError("Version byte should be 0x01")
         match input[1]:
