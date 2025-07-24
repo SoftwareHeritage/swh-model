@@ -238,7 +238,7 @@ class CoreSWHID(_BaseSWHID[ObjectType]):
         if len(input) != 22:
             raise ValidationError("Invalid binary SWHID: it should be exactly 22 bytes")
         if input[0] != 1:
-            raise ValidationError("Version byte should be 0x01")
+            raise ValidationError("Invalid binary SWHID: Version byte should be 0x01")
         match input[1]:
             case 0:
                 object_type = ObjectType.CONTENT
