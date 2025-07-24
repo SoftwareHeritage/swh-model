@@ -280,6 +280,19 @@ def test_core_to_qualified(core, qualified):
 def test_core_to_bytes(core):
     assert core == CoreSWHID.from_bytes(core.to_bytes())
 
+def test_core_to_bytes_examples():
+    assert _x("0100"+HASH) == CoreSWHID(
+            object_type=ObjectType.CONTENT,
+            object_id=_x(HASH),
+        ).to_bytes()
+    assert _x("0101"+HASH) == CoreSWHID(
+            object_type=ObjectType.DIRECTORY,
+            object_id=_x(HASH),
+        ).to_bytes()
+    assert _x("0105"+HASH) == CoreSWHID(
+            object_type=ObjectType.SNAPSHOT,
+            object_id=_x(HASH),
+        ).to_bytes()
 
 @pytest.mark.parametrize(
     "input",
