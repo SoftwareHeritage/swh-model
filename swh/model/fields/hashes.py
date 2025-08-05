@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2025  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -26,6 +26,7 @@ def validate_hash(value, hash_type):
         "sha1": 20,
         "sha1_git": 20,
         "sha256": 32,
+        "blake2s256": 32,
     }
 
     hex_digits = set(string.hexdigits)
@@ -116,3 +117,8 @@ def validate_sha1_git(sha1_git):
 def validate_sha256(sha256):
     """Validate that sha256 is a valid sha256 hash"""
     return validate_hash(sha256, "sha256")
+
+
+def validate_blake2s256(blake2s256):
+    """Validate that blake256 is a valid blake256 hash"""
+    return validate_hash(blake2s256, "blake2s256")

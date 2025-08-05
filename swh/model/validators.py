@@ -5,7 +5,7 @@
 
 from . import fields
 from .exceptions import NON_FIELD_ERRORS, ValidationError
-from .hashutil import MultiHash, hash_to_bytes
+from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytes
 
 
 def validate_content(content):
@@ -17,7 +17,7 @@ def validate_content(content):
         return fields.validate_enum(status, {"absent", "visible", "hidden"})
 
     def validate_keys(content):
-        hashes = {"sha1", "sha1_git", "sha256"}
+        hashes = DEFAULT_ALGORITHMS
         errors = []
 
         out = True
@@ -66,6 +66,7 @@ def validate_content(content):
         "sha1": (False, fields.validate_sha1),
         "sha1_git": (False, fields.validate_sha1_git),
         "sha256": (False, fields.validate_sha256),
+        "blake2s256": (False, fields.validate_blake2s256),
         "status": (True, validate_content_status),
         "length": (True, fields.validate_int),
         "ctime": (True, fields.validate_datetime),

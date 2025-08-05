@@ -1,4 +1,4 @@
-# Copyright (C) 2015  The Software Heritage developers
+# Copyright (C) 2015-2025  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -7,7 +7,12 @@
 # flake8: noqa
 
 from .compound import validate_against_schema, validate_all_keys, validate_any_key
-from .hashes import validate_sha1, validate_sha1_git, validate_sha256
+from .hashes import (
+    validate_blake2s256,
+    validate_sha1,
+    validate_sha1_git,
+    validate_sha256,
+)
 from .simple import (
     validate_bytes,
     validate_datetime,
