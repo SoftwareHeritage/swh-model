@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018  The Software Heritage developers
+# Copyright (C) 2015-2025  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -56,14 +56,23 @@ import functools
 import hashlib
 from io import BytesIO
 import os
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, FrozenSet, Literal, Optional, Tuple, Union
 
 ALGORITHMS = set(
     ["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512", "md5", "sha512"]
 )
 """Hashing algorithms supported by this module"""
 
-DEFAULT_ALGORITHMS = set(["sha1", "sha256", "sha1_git", "blake2s256"])
+LiteralHashAlgo = Literal["sha1", "sha256", "sha1_git", "blake2s256"]
+DEFAULT_ALGORITHMS_LIST: Tuple[LiteralHashAlgo, ...] = (
+    "sha1",
+    "sha256",
+    "sha1_git",
+    "blake2s256",
+)
+"""Algorithms computed when identifying Content objects (as a tuple, with order)."""
+
+DEFAULT_ALGORITHMS: FrozenSet[LiteralHashAlgo] = frozenset(DEFAULT_ALGORITHMS_LIST)
 """Algorithms computed by default when calling the functions from this module.
 
 Subset of :const:`ALGORITHMS`.

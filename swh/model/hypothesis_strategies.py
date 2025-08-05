@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2021 The Software Heritage developers
+# Copyright (C) 2019-2025 The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -33,6 +33,7 @@ from hypothesis.strategies import (
 )
 
 from .from_disk import DentryPerms
+from .hashutil import DEFAULT_ALGORITHMS_LIST
 from .model import (
     BaseContent,
     BaseModel,
@@ -381,9 +382,7 @@ def skipped_contents_d(
 ):
     result = BaseContent._hash_data(draw(binary(max_size=4096)))
     result.pop("data")
-    nullify_attrs = draw(
-        sets(sampled_from(["sha1", "sha1_git", "sha256", "blake2s256"]))
-    )
+    nullify_attrs = draw(sets(sampled_from(DEFAULT_ALGORITHMS_LIST)))
     for k in nullify_attrs:
         result[k] = None
     result["reason"] = draw(reason)
