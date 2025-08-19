@@ -155,28 +155,28 @@ def directory_git_object(directory: Union[Dict, model.Directory]) -> bytes:
 
     2. For each entry of the directory, the following bytes are output:
 
-      - the octal representation of the permissions for the entry (stored in
-        the 'perms' member), which is a representation of the entry type:
+       - the octal representation of the permissions for the entry (stored in
+         the 'perms' member), which is a representation of the entry type:
 
-        - b'100644' (int 33188) for files
-        - b'100755' (int 33261) for executable files
-        - b'120000' (int 40960) for symbolic links
-        - b'40000'  (int 16384) for directories
-        - b'160000' (int 57344) for references to revisions
+         - b'100644' (int 33188) for files
+         - b'100755' (int 33261) for executable files
+         - b'120000' (int 40960) for symbolic links
+         - b'40000'  (int 16384) for directories
+         - b'160000' (int 57344) for references to revisions
 
-      - an ascii space (b'\x20')
-      - the entry's name (as raw bytes), stored in the 'name' member
-      - a null byte (b'\x00')
-      - the 20 byte long identifier of the object pointed at by the entry,
-        stored in the 'target' member:
+       - an ascii space (``b'\\x20'``)
+       - the entry's name (as raw bytes), stored in the 'name' member
+       - a null byte (``b'\\x00'``)
+       - the 20 byte long identifier of the object pointed at by the entry,
+         stored in the 'target' member:
 
-        - for files or executable files: their blob sha1_git
-        - for symbolic links: the blob sha1_git of a file containing the link
-          destination
-        - for directories: their intrinsic identifier
-        - for revisions: their intrinsic identifier
+         - for files or executable files: their blob sha1_git
+         - for symbolic links: the blob sha1_git of a file containing the link
+           destination
+         - for directories: their intrinsic identifier
+         - for revisions: their intrinsic identifier
 
-      (Note that there is no separator between entries)
+       Note that there is no separator between entries.
 
     """
     if isinstance(directory, dict):
