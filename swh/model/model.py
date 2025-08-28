@@ -494,12 +494,6 @@ class HashableObjectWithManifest(BaseHashableModel):
     This should only be used as a last resort, and only set in the Git loader,
     for objects too corrupt to fit the data model."""
 
-    def to_dict(self):
-        d = super().to_dict()
-        if d["raw_manifest"] is None:
-            del d["raw_manifest"]
-        return d
-
     def compute_hash(self) -> bytes:
         """Derived model classes must implement this to compute
         the object hash.
