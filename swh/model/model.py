@@ -33,6 +33,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 import warnings
 
@@ -46,7 +47,13 @@ from typing_extensions import Final
 
 from . import git_objects
 from .collections import ImmutableDict
-from .hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytehex, hash_to_hex
+from .hashutil import (
+    DEFAULT_ALGORITHMS,
+    HashDict,
+    MultiHash,
+    hash_to_bytehex,
+    hash_to_hex,
+)
 from .swhids import CoreSWHID
 from .swhids import ExtendedObjectType as SwhidExtendedObjectType
 from .swhids import ExtendedSWHID
@@ -60,7 +67,7 @@ class MissingData(Exception):
     pass
 
 
-KeyType = Union[Dict[str, str], Dict[str, bytes], bytes]
+KeyType = HashDict | Dict[str, str] | bytes
 """The type returned by BaseModel.unique_key()."""
 
 
@@ -1601,9 +1608,12 @@ class BaseContent(BaseModel, ABC):
             raise ValueError("{} is not a valid hash name.".format(hash_name))
         return getattr(self, hash_name)
 
-    def hashes(self) -> Dict[str, bytes]:
+    def hashes(self) -> HashDict:
         """Returns a dictionary {hash_name: hash_value}"""
-        return {algo: getattr(self, algo) for algo in DEFAULT_ALGORITHMS}
+        # not sure if there is an easy way to workaround this cast...
+        return cast(
+            HashDict, {algo: getattr(self, algo) for algo in DEFAULT_ALGORITHMS}
+        )
 
 
 @attr.s(frozen=True, slots=True, field_transformer=optimize_all_validators)

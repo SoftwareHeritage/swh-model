@@ -58,6 +58,8 @@ from io import BytesIO
 import os
 from typing import Callable, Dict, FrozenSet, Literal, Optional, Tuple, Union
 
+from typing_extensions import TypedDict
+
 ALGORITHMS = set(
     ["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512", "md5", "sha512"]
 )
@@ -77,6 +79,18 @@ DEFAULT_ALGORITHMS: FrozenSet[LiteralHashAlgo] = frozenset(DEFAULT_ALGORITHMS_LI
 
 Subset of :const:`ALGORITHMS`.
 """
+
+
+class HashDict(TypedDict, total=False):
+    sha1: bytes
+    sha1_git: bytes
+    sha256: bytes
+    blake2s256: bytes
+
+
+class TotalHashDict(HashDict, total=True):
+    pass
+
 
 HASH_BLOCK_SIZE = 32768
 """Block size for streaming hash computations made in this module"""

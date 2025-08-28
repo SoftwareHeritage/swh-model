@@ -13,7 +13,7 @@ from unittest.mock import patch
 import pytest
 
 from swh.model import hashutil
-from swh.model.hashutil import DEFAULT_ALGORITHMS, MultiHash, hash_to_bytehex
+from swh.model.hashutil import DEFAULT_ALGORITHMS, HashDict, MultiHash, hash_to_bytehex
 
 
 @contextlib.contextmanager
@@ -331,3 +331,8 @@ def test_hashdata_tag(hashgit_test_data):
 
     # then
     assert actual_hash == hashgit_test_data.checksums["tag_sha1_git"]
+
+
+def test_hashdict_keys():
+    """Ensure HashDict is consistent with DEFAULT_ALGORITHMS"""
+    assert HashDict.__annotations__.keys() == DEFAULT_ALGORITHMS
