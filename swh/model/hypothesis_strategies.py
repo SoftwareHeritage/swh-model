@@ -199,7 +199,6 @@ def origin_visit_statuses_d(**kwargs):
         ),
         date=aware_datetimes(),
         snapshot=optional(sha1_git()),
-        metadata=optional(metadata_dicts()),
     )
     return builds(dict, **{**defaults, **kwargs})
 
@@ -216,7 +215,6 @@ def releases_d(draw, **kwargs):
         message=optional(binary()),
         synthetic=booleans(),
         target=sha1_git(),
-        metadata=optional(revision_metadata()),
         raw_manifest=optional(binary()),
     )
 
@@ -245,9 +243,6 @@ def releases(**kwargs):
     return releases_d(**kwargs).map(Release.from_dict)
 
 
-revision_metadata = metadata_dicts
-
-
 def extra_headers():
     return lists(
         tuples(binary(min_size=0, max_size=50), binary(min_size=0, max_size=500))
@@ -262,7 +257,6 @@ def revisions_d(draw, **kwargs):
         parents=tuples(sha1_git()),
         directory=sha1_git(),
         type=sampled_from([x.value for x in RevisionType]),
-        metadata=optional(revision_metadata()),
         extra_headers=extra_headers(),
         raw_manifest=optional(binary()),
     )
