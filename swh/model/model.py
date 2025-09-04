@@ -67,7 +67,9 @@ class MissingData(Exception):
     pass
 
 
-KeyType = HashDict | Dict[str, str] | bytes
+# Should be HashDict instead of Dict[str, bytes] but mypy does not support this
+# for now https://github.com/python/mypy/issues/7981
+KeyType = Dict[str, bytes] | Dict[str, str] | bytes
 """The type returned by BaseModel.unique_key()."""
 
 
@@ -1718,7 +1720,7 @@ class Content(BaseContent):
         return attr.evolve(self, data=new_data, get_data=None)
 
     def unique_key(self) -> KeyType:
-        return self.hashes()
+        return cast(Dict[str, bytes], self.hashes())
 
     def swhid(self) -> CoreSWHID:
         """Returns a SWHID representing this object."""
@@ -1825,7 +1827,7 @@ class SkippedContent(BaseContent):
         return super().from_dict(d2, use_subclass=False)
 
     def unique_key(self) -> KeyType:
-        return self.hashes()
+        return cast(Dict[str, bytes], self.hashes())
 
     def swhid(self) -> Optional[CoreSWHID]:
         """Returns a SWHID representing this object or None if unset."""
