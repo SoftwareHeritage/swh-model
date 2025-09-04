@@ -56,7 +56,7 @@ import functools
 import hashlib
 from io import BytesIO
 import os
-from typing import Callable, Dict, FrozenSet, Literal, Optional, Tuple, Union
+from typing import Callable, Dict, FrozenSet, Literal, Optional, Tuple, Union, final
 
 from typing_extensions import TypedDict
 
@@ -81,6 +81,7 @@ Subset of :const:`ALGORITHMS`.
 """
 
 
+@final
 class HashDict(TypedDict, total=False):
     sha1: bytes
     sha1_git: bytes
@@ -88,8 +89,12 @@ class HashDict(TypedDict, total=False):
     blake2s256: bytes
 
 
-class TotalHashDict(HashDict, total=True):
-    pass
+@final
+class TotalHashDict(TypedDict, total=True):
+    sha1: bytes
+    sha1_git: bytes
+    sha256: bytes
+    blake2s256: bytes
 
 
 HASH_BLOCK_SIZE = 32768
