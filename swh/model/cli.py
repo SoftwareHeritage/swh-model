@@ -3,9 +3,11 @@
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
 
+from __future__ import annotations
+
 import os
 import sys
-from typing import Callable, Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional
 
 # WARNING: do not import unnecessary things here to keep cli startup time under
 # control
@@ -27,8 +29,9 @@ except ImportError:
     # stub so that swh-identify can be used when swh-core isn't installed
     cli_command = click.command
 
-from swh.model.from_disk import Directory
-from swh.model.swhids import CoreSWHID
+if TYPE_CHECKING:
+    from swh.model import from_disk
+    from swh.model.swhids import CoreSWHID
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -50,6 +53,7 @@ class CoreSWHIDParamType(click.ParamType):
 
     def convert(self, value, param, ctx) -> CoreSWHID:
         from swh.model.exceptions import ValidationError
+        from swh.model.swhids import CoreSWHID
 
         try:
             return CoreSWHID.from_string(value)
@@ -75,8 +79,12 @@ def model_of_dir(
     path: bytes,
     exclude_patterns: Optional[Iterable[bytes]] = None,
     update_info: Optional[Callable[[int], None]] = None,
-) -> Directory:
-    from swh.model.from_disk import accept_all_paths, ignore_directories_patterns
+) -> from_disk.Directory:
+    from swh.model.from_disk import (
+        Directory,
+        accept_all_paths,
+        ignore_directories_patterns,
+    )
 
     path_filter = (
         ignore_directories_patterns(path, exclude_patterns)
