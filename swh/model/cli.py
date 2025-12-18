@@ -128,19 +128,19 @@ def swhid_of_git_repo(path) -> CoreSWHID:
     repo = dulwich.repo.Repo(path)
 
     branches: Dict[bytes, Optional[Dict]] = {}
-    for ref, target in repo.refs.as_dict().items():
-        obj = repo[target]
+    for ref, ref_target in repo.refs.as_dict().items():
+        obj = repo[ref_target]
         if obj:
             branches[ref] = {
-                "target": hashutil.bytehex_to_hash(target),
+                "target": hashutil.bytehex_to_hash(ref_target),
                 "target_type": _DULWICH_TYPES[obj.type_name],
             }
         else:
             branches[ref] = None
 
-    for ref, target in repo.refs.get_symrefs().items():
-        branches[ref] = {
-            "target": target,
+    for sym_ref, sym_ref_target in repo.refs.get_symrefs().items():
+        branches[sym_ref] = {
+            "target": sym_ref_target,
             "target_type": "alias",
         }
 
