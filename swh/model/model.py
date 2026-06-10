@@ -2098,7 +2098,7 @@ class RawExtrinsicMetadata(BaseHashableModel):
         ):
             raise ValueError(
                 f"Unexpected 'path' context for "
-                f"{self.target.object_type.name.lower()} object: {value}"
+                f"{self.target.object_type.name.lower()} object: {value!r}"
             )
 
     @directory.validator
