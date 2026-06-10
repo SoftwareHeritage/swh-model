@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2021  The Software Heritage developers
+# Copyright (C) 2015-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -272,9 +272,7 @@ tag 0.0.1
 tagger Antoine R. Dumont (@ardumont) <antoine.romain.dumont@gmail.com> 1444225145 +0200
 
 blah
-""".encode(
-            "utf-8"
-        )  # NOQA
+""".encode("utf-8")  # NOQA
 
         checksums = {
             "blob_sha1_git": bytes.fromhex(

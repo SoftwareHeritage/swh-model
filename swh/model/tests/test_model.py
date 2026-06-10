@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020  The Software Heritage developers
+# Copyright (C) 2019-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -75,7 +75,7 @@ EXAMPLE_HASH = hash_to_bytes("94a9ed024d3859793618152ea559a168bbcbb5e2")
     )
 )
 def test_todict_inverse_fromdict(objtype_and_obj):
-    (obj_type, obj) = objtype_and_obj
+    obj_type, obj = objtype_and_obj
 
     obj_as_dict = obj.to_dict()
     obj_as_dict_copy = copy.deepcopy(obj_as_dict)
@@ -106,7 +106,7 @@ RE_FIX_TZ_FILE = re.compile(r"tzfile\('([^/][^']*)'\)")
 def test_repr(objtype_and_obj):
     """Checks every model object has a working repr(), and that it can be eval()uated
     (so that printed objects can be copy-pasted to write test cases.)"""
-    (obj_type, obj) = objtype_and_obj
+    obj_type, obj = objtype_and_obj
 
     r = repr(obj)
     env = {
@@ -382,7 +382,7 @@ def test_unique_key():
 
 @given(strategies.objects())
 def test_anonymization(objtype_and_obj):
-    (obj_type, obj) = objtype_and_obj
+    obj_type, obj = objtype_and_obj
 
     def check_person(p):
         if p is not None:
@@ -1182,7 +1182,7 @@ def test_directory_from_possibly_duplicated_entries__rev_and_dir(rev_first):
     )
     if rev_first:
         entries = tuple(reversed(entries))
-    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    is_corrupt, dir_ = Directory.from_possibly_duplicated_entries(entries=entries)
     assert is_corrupt
     assert dir_.entries == (
         DirectoryEntry(name=b"foo", type="rev", target=b"\x00" * 20, perms=0),
@@ -1209,7 +1209,7 @@ def test_directory_from_possibly_duplicated_entries__file_and_dir(file_first):
     )
     if file_first:
         entries = tuple(reversed(entries))
-    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    is_corrupt, dir_ = Directory.from_possibly_duplicated_entries(entries=entries)
     assert is_corrupt
     assert dir_.entries == (
         DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
@@ -1233,7 +1233,7 @@ def test_directory_from_possibly_duplicated_entries__two_files1():
         DirectoryEntry(name=b"foo", type="file", target=b"\x01" * 20, perms=1),
         DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
     )
-    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    is_corrupt, dir_ = Directory.from_possibly_duplicated_entries(entries=entries)
     assert is_corrupt
 
     assert dir_.entries == (
@@ -1260,7 +1260,7 @@ def test_directory_from_possibly_duplicated_entries__two_files2():
         DirectoryEntry(name=b"foo", type="file", target=b"\x00" * 20, perms=0),
         DirectoryEntry(name=b"foo", type="file", target=b"\x01" * 20, perms=1),
     )
-    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(entries=entries)
+    is_corrupt, dir_ = Directory.from_possibly_duplicated_entries(entries=entries)
     assert is_corrupt
 
     assert dir_.entries == (
@@ -1283,7 +1283,7 @@ def test_directory_from_possibly_duplicated_entries__preserve_manifest():
         DirectoryEntry(name=b"foo", type="dir", target=b"\x01" * 20, perms=1),
         DirectoryEntry(name=b"foo", type="rev", target=b"\x00" * 20, perms=0),
     )
-    (is_corrupt, dir_) = Directory.from_possibly_duplicated_entries(
+    is_corrupt, dir_ = Directory.from_possibly_duplicated_entries(
         entries=entries, raw_manifest=b"blah"
     )
     assert is_corrupt

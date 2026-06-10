@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2021  The Software Heritage developers
+# Copyright (C) 2015-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -25,7 +25,6 @@ This is used for two purposes:
   <persistent-identifiers>`
 * Write git objects to reproduce git repositories that were ingested in the archive.
 """
-
 
 from __future__ import annotations
 

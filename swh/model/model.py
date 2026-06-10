@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025  The Software Heritage developers
+# Copyright (C) 2018-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -231,7 +231,7 @@ def _immutable_dict_validator(
 
     if expected_type is None:
         expected_type = attribute.type
-    (expected_key_type, expected_value_type) = expected_type.__args__
+    expected_key_type, expected_value_type = expected_type.__args__
 
     key_validator = optimized_validator(expected_key_type)
     value_validator = optimized_validator(expected_value_type)
@@ -705,7 +705,7 @@ class TimestampWithTimezone(BaseModel):
         format (with ``offset`` and ``negative_utc`` instead of ``offset_bytes``).
         """
         negative = offset < 0 or negative_utc
-        (hours, minutes) = divmod(abs(offset), 60)
+        hours, minutes = divmod(abs(offset), 60)
         offset_bytes = f"{'-' if negative else '+'}{hours:02}{minutes:02}".encode()
         tstz = TimestampWithTimezone(timestamp=timestamp, offset_bytes=offset_bytes)
         assert tstz.offset_minutes() == offset, (tstz.offset_minutes(), offset)
@@ -1319,7 +1319,7 @@ class Revision(HashableObjectWithManifest, BaseModel):
         if self.metadata:
             metadata = self.metadata
             if not self.extra_headers and "extra_headers" in metadata:
-                (extra_headers, metadata) = metadata.copy_pop("extra_headers")
+                extra_headers, metadata = metadata.copy_pop("extra_headers")
                 object.__setattr__(
                     self,
                     "extra_headers",

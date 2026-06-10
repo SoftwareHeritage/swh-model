@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020  The Software Heritage developers
+# Copyright (C) 2019-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -30,7 +30,7 @@ all_but_skipped_content = {
 
 @given(objects(blacklist_types=()))
 def test_generation(obj_type_and_obj):
-    (obj_type, object_) = obj_type_and_obj
+    obj_type, object_ = obj_type_and_obj
     attr.validate(object_)
 
 
@@ -79,7 +79,7 @@ def assert_nested_dict(obj):
 
 @given(object_dicts(blacklist_types=()))
 def test_dicts_generation(obj_type_and_obj):
-    (obj_type, object_) = obj_type_and_obj
+    obj_type, object_ = obj_type_and_obj
     assert_nested_dict(object_)
     if obj_type == ModelObjectType.CONTENT:
         COMMON_KEYS = set(DEFAULT_ALGORITHMS) | {"length", "status", "ctime"}

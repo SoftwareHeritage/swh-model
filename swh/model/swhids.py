@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2025  The Software Heritage developers
+# Copyright (C) 2015-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -270,7 +270,7 @@ def _parse_lines_qualifier(
         if lines is None or isinstance(lines, tuple):
             return lines
         elif "-" in lines:
-            (from_, to) = lines.split("-", 2)
+            from_, to = lines.split("-", 2)
             return (int(from_), int(to))
         else:
             return (int(lines), None)
