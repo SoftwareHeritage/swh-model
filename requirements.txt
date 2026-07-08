@@ -7,4 +7,3 @@ deprecated
 hypothesis
 iso8601
 python-dateutil
-typing_extensions

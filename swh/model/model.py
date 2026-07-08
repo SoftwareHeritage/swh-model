@@ -26,6 +26,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Final,
     Iterable,
     List,
     Optional,
@@ -43,7 +44,6 @@ from attr.validators import and_
 from attrs_strict import AttributeTypeError
 import dateutil.parser
 import iso8601
-from typing_extensions import Final
 
 from . import git_objects
 from .collections import ImmutableDict

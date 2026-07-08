@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2025  The Software Heritage developers
+# Copyright (C) 2015-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -56,9 +56,17 @@ import functools
 import hashlib
 from io import BytesIO
 import os
-from typing import Callable, Dict, FrozenSet, Literal, Optional, Tuple, Union, final
-
-from typing_extensions import TypedDict
+from typing import (
+    Callable,
+    Dict,
+    FrozenSet,
+    Literal,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    final,
+)
 
 ALGORITHMS = set(
     ["sha1", "sha256", "sha1_git", "blake2s256", "blake2b512", "md5", "sha512"]
