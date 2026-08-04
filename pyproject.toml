@@ -3,7 +3,6 @@ name = "swh.model"
 authors = [
     { name = "Software Heritage developers", email = "swh-devel@inria.fr" },
 ]
-
 description = "Software Heritage data model"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 requires-python = ">=3.11"
@@ -18,22 +17,13 @@ classifiers = [
 ]
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
-[tool.setuptools.packages.find]
-include = ["swh.*"]
 
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
-
-[tool.setuptools.dynamic.optional-dependencies]
-cli = { file = "requirements-cli.txt" }
-testing = { file = ["requirements-cli.txt", "requirements-test.txt"] }
-testing_minimal = { file = "requirements-test.txt" }
-
-[project.entry-points.console_scripts]
+[project.scripts]
 "swh.identify" = "swh.model.cli:identify"
 
 [project.entry-points."swh.cli.subcommands"]
 "swh.model" = "swh.model.cli"
+
 
 [project.urls]
 "Homepage" = "https://gitlab.softwareheritage.org/swh/devel/swh-model"
@@ -43,11 +33,23 @@ testing_minimal = { file = "requirements-test.txt" }
 "Source" = "https://gitlab.softwareheritage.org/swh/devel/swh-model.git"
 
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools_scm]
-fallback_version = "0.0.1"
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+cli = ["requirements-cli.txt"]
+testing = ["requirements-cli.txt", "requirements-test.txt"]
+testing_minimal = ["requirements-test.txt"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["swh"]
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.1"
 
 [tool.black]
 target-version = ['py311', 'py312', 'py313']
