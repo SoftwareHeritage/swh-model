@@ -128,7 +128,7 @@ def _origin_type_validator(
     # while still allowing subclasses to be used.
     if expected_type is None:
         expected_type = attribute.type
-    if not (type(value) is expected_type or isinstance(value, expected_type)):
+    if not isinstance(value, expected_type):
         if origin_value is None:
             origin_value = value
         raise AttributeTypeError(origin_value, attribute)
@@ -169,8 +169,7 @@ def _tuple_bytes_bytes_validator(
     expected_type=None,
     origin_value=None,
 ):
-    type_ = type(value)
-    if type_ != tuple and not isinstance(value, tuple):
+    if not isinstance(value, tuple):
         if origin_value is None:
             origin_value = value
         raise AttributeTypeError(origin_value, attribute)
@@ -193,10 +192,9 @@ def _tuple_finite_validator(
 ):
     # might be useful to optimise the sub-validator tuple, in practice, we only
     # have [bytes, bytes]
-    type_ = type(value)
     if origin_value is None:
         origin_value = value
-    if type_ != tuple and not isinstance(value, tuple):
+    if not isinstance(value, tuple):
         raise AttributeTypeError(origin_value, attribute)
     if expected_type is None:
         expected_type = attribute.type
@@ -223,10 +221,9 @@ def _immutable_dict_validator(
     expected_type=None,
     origin_value=None,
 ):
-    value_type = type(value)
     if origin_value is None:
         origin_value = value
-    if value_type != ImmutableDict and not isinstance(value, ImmutableDict):
+    if not isinstance(value, ImmutableDict):
         raise AttributeTypeError(origin_value, attribute)
 
     if expected_type is None:
