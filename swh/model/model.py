@@ -96,7 +96,7 @@ def parents_repr(parents: Tuple[Sha1Git, ...]):
 def freeze_optional_dict(
     d: Union[None, Dict, ImmutableDict],
 ) -> Optional[ImmutableDict]:
-    if isinstance(d, dict):
+    if type(d) is dict or isinstance(d, dict):
         return ImmutableDict(d)
     else:
         return d
@@ -123,7 +123,7 @@ def _origin_type_validator(
 ):
     # This is functionally equivalent to using just this:
     #   return isinstance(value, type)
-    # but using type equality before isinstance allows very quick checks
+    # but using type identity before isinstance allows very quick checks
     # when the exact class is used (which is the overwhelming majority of cases)
     # while still allowing subclasses to be used.
     if expected_type is None:
@@ -144,7 +144,7 @@ def _tuple_infinite_validator(
     type_ = type(value)
     if origin_value is None:
         origin_value = value
-    if type_ != tuple and not isinstance(value, tuple):
+    if type_ is not tuple and not isinstance(value, tuple):
         raise AttributeTypeError(origin_value, attribute)
     if expected_type is None:
         expected_type = attribute.type
@@ -170,7 +170,7 @@ def _tuple_bytes_bytes_validator(
     origin_value=None,
 ):
     type_ = type(value)
-    if type_ != tuple and not isinstance(value, tuple):
+    if type_ is not tuple and not isinstance(value, tuple):
         if origin_value is None:
             origin_value = value
         raise AttributeTypeError(origin_value, attribute)
@@ -196,7 +196,7 @@ def _tuple_finite_validator(
     type_ = type(value)
     if origin_value is None:
         origin_value = value
-    if type_ != tuple and not isinstance(value, tuple):
+    if type_ is not tuple and not isinstance(value, tuple):
         raise AttributeTypeError(origin_value, attribute)
     if expected_type is None:
         expected_type = attribute.type
@@ -226,7 +226,7 @@ def _immutable_dict_validator(
     value_type = type(value)
     if origin_value is None:
         origin_value = value
-    if value_type != ImmutableDict and not isinstance(value, ImmutableDict):
+    if value_type is not ImmutableDict and not isinstance(value, ImmutableDict):
         raise AttributeTypeError(origin_value, attribute)
 
     if expected_type is None:
@@ -342,8 +342,10 @@ HashableModelType = TypeVar("HashableModelType", bound="BaseHashableModel")
 
 class _StringCompatibleEnum(Enum):
     def __eq__(self, other):
-        # stay compatible with legacy string comparison (for now)
-        if isinstance(other, str):
+        # stay compatible with legacy string comparison (for now).
+        # first check type identity, as it is faster than isinstance()
+        # and should by true-y in most cases
+        if type(other) is not type(self) and isinstance(other, str):
             warnings.warn(
                 "Use the enum value instead of string",
                 category=DeprecationWarning,
@@ -719,7 +721,14 @@ class TimestampWithTimezone(BaseModel):
         accepted by :func:`swh.model.normalize_timestamp`."""
         # TODO: this accept way more types than just dicts; find a better
         # name
-        if isinstance(time_representation, dict):
+
+        # We use type identity before isinstance as it is faster and
+        # should be enough in most cases.
+        if type(time_representation) is dict or (
+            type(time_representation) is not datetime.datetime
+            and type(time_representation) is not int
+            and isinstance(time_representation, dict)
+        ):
             ts = time_representation["timestamp"]
             if isinstance(ts, dict):
                 seconds = ts.get("seconds", 0)
@@ -745,7 +754,10 @@ class TimestampWithTimezone(BaseModel):
                 offset = time_representation["offset"]
                 negative_utc = time_representation.get("negative_utc") or False
                 return cls.from_numeric_offset(timestamp, offset, negative_utc)
-        elif isinstance(time_representation, datetime.datetime):
+        elif type(time_representation) is datetime.datetime or (
+            type(time_representation) is not int
+            and isinstance(time_representation, datetime.datetime)
+        ):
             # TODO: warn when using from_dict() on a datetime
             utcoffset = time_representation.utcoffset()
             time_representation = time_representation.astimezone(datetime.timezone.utc)
@@ -766,7 +778,7 @@ class TimestampWithTimezone(BaseModel):
             return cls.from_numeric_offset(
                 Timestamp(seconds=seconds, microseconds=microseconds), offset, False
             )
-        elif isinstance(time_representation, int):
+        elif type(time_representation) is int or isinstance(time_representation, int):
             # TODO: warn when using from_dict() on an int
             seconds = time_representation
             timestamp = Timestamp(seconds=time_representation, microseconds=0)
@@ -1695,9 +1707,11 @@ class Content(BaseContent):
 
     @classmethod
     def from_dict(cls, d):
-        if isinstance(d.get("ctime"), str):
+        ctime = d.get("ctime")
+        type_ = type(ctime)
+        if type_ is str or (type is not dict and isinstance(ctime, str)):
             d = d.copy()
-            d["ctime"] = dateutil.parser.parse(d["ctime"])
+            d["ctime"] = dateutil.parser.parse(ctime)
         return super().from_dict(d, use_subclass=False)
 
     def with_data(self, raise_if_missing: bool = True) -> Content:
@@ -1912,7 +1926,9 @@ class MetadataFetcher(BaseModel):
 
 
 def normalize_discovery_date(value: Any) -> datetime.datetime:
-    if not isinstance(value, datetime.datetime):
+    if type(value) is not datetime.datetime and not isinstance(
+        value, datetime.datetime
+    ):
         raise TypeError("discovery_date must be a timezone-aware datetime.")
 
     if value.tzinfo is None:
