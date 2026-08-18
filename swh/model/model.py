@@ -134,32 +134,33 @@ def _origin_type_validator(
         raise AttributeTypeError(origin_value, attribute)
 
 
-def _tuple_infinite_validator(
-    instance,
-    attribute,
-    value,
-    expected_type=None,
-    origin_value=None,
-):
-    type_ = type(value)
-    if origin_value is None:
-        origin_value = value
-    if type_ != tuple and not isinstance(value, tuple):
-        raise AttributeTypeError(origin_value, attribute)
-    if expected_type is None:
-        expected_type = attribute.type
-    args = expected_type.__args__
-    # assert len(args) == 2 and args[1] is Ellipsis
-    expected_value_type = args[0]
+def _optimize_tuple_infinite_validator(expected_value_type):
     validator = optimized_validator(expected_value_type)
-    for i in value:
-        validator(
-            instance,
-            attribute,
-            i,
-            expected_type=expected_value_type,
-            origin_value=origin_value,
-        )
+
+    def _tuple_infinite_validator(
+        instance,
+        attribute,
+        value,
+        expected_type=None,
+        origin_value=None,
+    ):
+        type_ = type(value)
+        if origin_value is None:
+            origin_value = value
+        if type_ != tuple and not isinstance(value, tuple):
+            raise AttributeTypeError(origin_value, attribute)
+        # args = expected_type.__args__
+        # assert args == (expected_value_type, Ellipsis)
+        for i in value:
+            validator(
+                instance,
+                attribute,
+                i,
+                expected_type=expected_value_type,
+                origin_value=origin_value,
+            )
+
+    return _tuple_infinite_validator
 
 
 def _tuple_bytes_bytes_validator(
@@ -271,7 +272,7 @@ def optimized_validator(type_):
         args = type_.__args__
         if len(args) == 2 and args[1] is Ellipsis:
             # Infinite tuple
-            return _tuple_infinite_validator
+            return _optimize_tuple_infinite_validator(args[0])
         elif args == (bytes, bytes):
             return _tuple_bytes_bytes_validator
         else:
