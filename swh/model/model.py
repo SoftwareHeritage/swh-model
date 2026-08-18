@@ -278,13 +278,11 @@ def optimized_validator(type_):
             return _tuple_finite_validator
     elif origin is Union:
         args = type_.__args__
-        if type(None) in args:
-            # special-case for Optional[]. It's common and cheap to check
-            # before regular validators.
-            allows_none = True
-        else:
-            allows_none = False
         all_validators = tuple((optimized_validator(t), t) for t in args)
+
+        # special-case for Optional[]. It's common and cheap to check
+        # before regular validators.
+        allows_none = type(None) in args
 
         def union_validator(
             instance,
