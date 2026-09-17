@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025  The Software Heritage developers
+# Copyright (C) 2018-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -15,7 +15,7 @@ try:
     import click
 except ImportError:
     print(
-        "Cannot run swh-identify; the Click package is not installed."
+        "Cannot run swh identify; the Click package is not installed."
         "Please install 'swh.model[cli]' for full functionality.",
         file=sys.stderr,
     )
@@ -26,7 +26,7 @@ try:
 
     cli_command = swh.core.cli.swh.command
 except ImportError:
-    # stub so that swh-identify can be used when swh-core isn't installed
+    # stub so that swh identify can be used when swh-core isn't installed
     cli_command = click.command
 
 if TYPE_CHECKING:

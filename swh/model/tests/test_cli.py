@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019  The Software Heritage developers
+# Copyright (C) 2018-2026  The Software Heritage developers
 # See the AUTHORS file at the top-level directory of this distribution
 # License: GNU General Public License version 3, or any later version
 # See top-level LICENSE file for more information
@@ -72,7 +72,7 @@ class TestIdentify(DataMixin, unittest.TestCase):
                 )
 
     def test_snapshot_without_dulwich(self):
-        """checks swh-identify returns a 'nice' message instead of a traceback
+        """checks swh identify returns a 'nice' message instead of a traceback
         when dulwich is not installed"""
         with unittest.mock.patch.dict(sys.modules, {"dulwich": None}):
             with tempfile.TemporaryDirectory(prefix="swh.model.cli") as d:
