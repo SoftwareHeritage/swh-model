@@ -277,6 +277,10 @@ def optimized_validator(type_):
         args = type_.__args__
         all_validators = tuple((optimized_validator(t), t) for t in args)
 
+        # special-case for Optional[]. It's common and cheap to check
+        # before regular validators.
+        allows_none = type(None) in args
+
         def union_validator(
             instance,
             attribute,
@@ -284,6 +288,8 @@ def optimized_validator(type_):
             expected_type=None,
             origin_value=None,
         ):
+            if allows_none and value is None:
+                return
             if origin_value is None:
                 origin_value = value
             for validator, type_ in all_validators:
